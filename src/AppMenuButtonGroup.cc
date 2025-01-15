@@ -500,7 +500,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
 
         const auto *deco = qobject_cast<Decoration *>(decoration());
 
-        QPoint decoPos(e->globalPos());
+        QPoint decoPos(e->globalPosition().toPoint());
         decoPos -= deco->windowPos();
         decoPos.ry() += deco->titleBarHeight();
         // qCDebug(category) << "MouseMove";

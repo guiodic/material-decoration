@@ -336,7 +336,7 @@ void Decoration::hoverMoveEvent(QHoverEvent *event)
     KDecoration2::Decoration::hoverMoveEvent(event);
     // qCDebug(category) << "Decoration::hoverMoveEvent" << event;
 
-    const bool dragStarted = dragMoveTick(event->pos());
+    const bool dragStarted = dragMoveTick(event->position().toPoint());
     // qCDebug(category) << "    " << "dragStarted" << dragStarted;
     if (dragStarted) {
         m_menuButtons->unPressAllButtons();
