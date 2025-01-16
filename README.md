@@ -1,5 +1,14 @@
 ![Demo](data/preview.png)
 
+# Build instructions for Plasma 6
+```
+mkdir build
+cd build
+cmake .. -DQT_MAJOR_VERSION=6 -DQT_VERSION_MAJOR=6
+make
+sudo cp ./src/materialdecoration.so /usr/lib/qt6/plugins/org.kde.kdecoration2/materialdecoration.so
+```
+
 ## material-decoration
 
 Material-ish window decoration theme for KWin.
