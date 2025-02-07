@@ -80,7 +80,7 @@ protected:
 
 private Q_SLOTS:
     void onWinIdChanged();
-    void onX11WindowChanged(WId id);
+    // void onX11WindowChanged(WId id); // UNUSED, remove 
     void onX11WindowRemoved(WId id);
 
     void update();
