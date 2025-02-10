@@ -133,12 +133,16 @@ void AppMenuModel::x11Init()
 
 // In KF5 5.101, KWindowSystem moved several signals to KX11Extras
 // Eg: https://invent.kde.org/frameworks/kwindowsystem/-/commit/7cfd7c36eb017242d7a0202db82895be6b8fb81c
+
+
 #if HAVE_KF5_101 // KX11Extras
     // Select non-deprecated overloaded method. Uses coding pattern from:
     // https://invent.kde.org/plasma/plasma-workspace/blame/master/libtaskmanager/xwindowsystemeventbatcher.cpp#L30
+    /* UNUSED
     void (KX11Extras::*myWindowChangeSignal)(WId window, NET::Properties properties, NET::Properties2 properties2) = &KX11Extras::windowChanged;
     connect(KX11Extras::self(), myWindowChangeSignal,
             this, &AppMenuModel::onX11WindowChanged);
+    */        
 
     // There are apps that are not releasing their menu properly after closing
     // and as such their menu is still shown even though the app does not exist
@@ -146,12 +150,16 @@ void AppMenuModel::x11Init()
     connect(KX11Extras::self(), &KX11Extras::windowRemoved,
             this, &AppMenuModel::onX11WindowRemoved);
 #else // KF5 5.100 KWindowSystem
+    /* UNUSED
     void (KWindowSystem::*myWindowChangeSignal)(WId window, NET::Properties properties, NET::Properties2 properties2) = &KWindowSystem::windowChanged;
     connect(KWindowSystem::self(), myWindowChangeSignal,
             this, &AppMenuModel::onX11WindowChanged);
+    */
     connect(KWindowSystem::self(), &KWindowSystem::windowRemoved,
             this, &AppMenuModel::onX11WindowRemoved);
 #endif
+    
+
 
     connect(this, &AppMenuModel::modelNeedsUpdate, this, [this] {
         if (!m_updatePending) {
@@ -192,7 +200,7 @@ void AppMenuModel::setWinId(const QVariant &id)
     if (m_winId == id) {
         return;
     }
-    qCDebug(category) << "AppMenuModel::setWinId" << m_winId << " => " << id;
+    // qCDebug(category) << "AppMenuModel::setWinId" << m_winId << " => " << id;
     m_winId = id;
     emit winIdChanged();
 }
@@ -279,9 +287,17 @@ void AppMenuModel::onWinIdChanged()
         auto updateMenuFromWindowIfHasMenu = [this, &getWindowPropertyString](WId id) {
             const QString serviceName = QString::fromUtf8(getWindowPropertyString(id, s_x11AppMenuServiceNamePropertyName));
             const QString menuObjectPath = QString::fromUtf8(getWindowPropertyString(id, s_x11AppMenuObjectPathPropertyName));
+            const QString winClass = QString::fromUtf8(getWindowPropertyString(id, "WM_CLASS"));
 
             if (!serviceName.isEmpty() && !menuObjectPath.isEmpty()) {
                 updateApplicationMenu(serviceName, menuObjectPath);
+                // if it is libreoffice we need to monitor it 
+                if (winClass.contains ("soffice.bin"))   {
+                       // qCDebug(category) << winClass << " Great Scott! it's LibreOffice, we need to monitor it!";
+                       qApp->removeNativeEventFilter(this);
+                       qApp->installNativeEventFilter(this);
+                       m_delayedMenuWindowId = id;
+                };  
                 return true;
             }
 
@@ -309,12 +325,14 @@ void AppMenuModel::onWinIdChanged()
     }
 }
 
+/* UNUSED, remove
 void AppMenuModel::onX11WindowChanged(WId id)
 {
     if (m_winId.toUInt() == id) {
         
     }
 }
+*/
 
 void AppMenuModel::onX11WindowRemoved(WId id)
 {
