@@ -200,7 +200,7 @@ void AppMenuModel::setWinId(const QVariant &id)
     if (m_winId == id) {
         return;
     }
-    qCDebug(category) << "AppMenuModel::setWinId" << m_winId << " => " << id;
+    // qCDebug(category) << "AppMenuModel::setWinId" << m_winId << " => " << id;
     m_winId = id;
     emit winIdChanged();
 }
@@ -293,7 +293,7 @@ void AppMenuModel::onWinIdChanged()
                 updateApplicationMenu(serviceName, menuObjectPath);
                 // if it is libreoffice we need to monitor it 
                 if (winClass.contains ("soffice.bin"))   {
-                       qCDebug(category) << winClass << " Great Scott! it's LibreOffice, we need to monitor it!";
+                       // qCDebug(category) << winClass << " Great Scott! it's LibreOffice, we need to monitor it!";
                        qApp->removeNativeEventFilter(this);
                        qApp->installNativeEventFilter(this);
                        m_delayedMenuWindowId = id;
