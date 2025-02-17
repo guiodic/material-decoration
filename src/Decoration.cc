@@ -38,7 +38,7 @@
 #include <KWindowSystem>
 
 // KWIN
-#include <kwin/window.h>
+// #include <kwin/window.h>
 #include <kwin/x11window.h>
 
 // Qt

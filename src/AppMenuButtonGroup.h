@@ -28,7 +28,7 @@
 // Qt
 #include <QMenu>
 #include <QVariantAnimation>
-#include <QWidget>
+// #include <QWidget>
 
 namespace Material
 {

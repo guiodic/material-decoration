@@ -38,7 +38,7 @@
 #include <NETWM>
 
 // KWIN
-#include <kwin/window.h>
+// #include <kwin/window.h>
 #include <kwin/x11window.h>
 
 // Qt
@@ -47,9 +47,9 @@
 #include <QMenu>
 #include <QPainter>
 #include <QVariantAnimation>
-#include <QObject>
-#include <QMetaObject>
-#include <QMetaProperty>
+// #include <QObject>
+// #include <QMetaObject>
+// #include <QMetaProperty>
 
 
 namespace Material
