@@ -25,7 +25,7 @@
 #include "AppMenuButtonGroup.h"
 
 // KDecoration
-#include <KDecoration2/DecoratedClient>
+#include <KDecoration3/DecoratedWindow>
 
 // KF
 #include <KColorUtils>
@@ -38,7 +38,7 @@ namespace Material
 {
 
 AppMenuButton::AppMenuButton(Decoration *decoration, const int buttonIndex, QObject *parent)
-    : Button(KDecoration2::DecorationButtonType::Custom, decoration, parent)
+    : Button(KDecoration3::DecorationButtonType::Custom, decoration, parent)
     , m_buttonIndex(buttonIndex)
 {
     setCheckable(true);

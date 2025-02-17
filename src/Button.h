@@ -19,8 +19,8 @@
 #pragma once
 
 // KDecoration
-#include <KDecoration2/Decoration>
-#include <KDecoration2/DecorationButton>
+#include <KDecoration3/Decoration>
+#include <KDecoration3/DecorationButton>
 
 // Qt
 #include <QMargins>
@@ -32,12 +32,12 @@ namespace Material
 
 class Decoration;
 
-class Button : public KDecoration2::DecorationButton
+class Button : public KDecoration3::DecorationButton
 {
     Q_OBJECT
 
 public:
-    Button(KDecoration2::DecorationButtonType type, Decoration *decoration, QObject *parent = nullptr);
+    Button(KDecoration3::DecorationButtonType type, Decoration *decoration, QObject *parent = nullptr);
     ~Button() override;
 
     Q_PROPERTY(bool animationEnabled READ animationEnabled WRITE setAnimationEnabled NOTIFY animationEnabledChanged)
@@ -47,7 +47,7 @@ public:
     Q_PROPERTY(QMargins* padding READ padding NOTIFY paddingChanged)
 
     // Passed to DecorationButtonGroup in Decoration
-    static KDecoration2::DecorationButton *create(KDecoration2::DecorationButtonType type, KDecoration2::Decoration *decoration, QObject *parent = nullptr);
+    static KDecoration3::DecorationButton *create(KDecoration3::DecorationButtonType type, KDecoration3::Decoration *decoration, QObject *parent = nullptr);
 
     // This is called by:
     // registerPlugin<Material::Button>(QStringLiteral("button"))
@@ -55,7 +55,7 @@ public:
     explicit Button(QObject *parent, const QVariantList &args);
 
 
-    void paint(QPainter *painter, const QRect &repaintRegion) override;
+    void paint(QPainter *painter, const QRectF &repaintRegion) override;
     virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal gridUnit);
 
     virtual void updateSize(int contentWidth, int contentHeight);

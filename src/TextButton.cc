@@ -24,8 +24,8 @@
 #include "Decoration.h"
 
 // KDecoration
-#include <KDecoration2/DecoratedClient>
-#include <KDecoration2/DecorationSettings>
+#include <KDecoration3/DecoratedWindow>
+#include <KDecoration3/DecorationSettings>
 
 // Qt
 #include <QDebug>

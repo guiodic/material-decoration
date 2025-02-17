@@ -23,7 +23,7 @@
 #include "Decoration.h"
 
 // KDecoration
-#include <KDecoration2/DecoratedClient>
+#include <KDecoration3/DecoratedWindow>
 
 // KF
 #include <KIconLoader>
@@ -39,8 +39,8 @@ class AppIconButton
 {
 
 public:
-    static void init(Button *button, KDecoration2::DecoratedClient *decoratedClient) {
-        QObject::connect(decoratedClient, &KDecoration2::DecoratedClient::iconChanged,
+    static void init(Button *button, KDecoration3::DecoratedWindow *decoratedClient) {
+        QObject::connect(decoratedClient, &KDecoration3::DecoratedWindow::iconChanged,
             button, [button] {
                 button->update();
             }
@@ -55,7 +55,7 @@ public:
         appIconRect.moveCenter(contentRect.center().toPoint());
 
         const auto *deco = qobject_cast<Decoration *>(button->decoration());
-        auto *decoratedClient = deco->client();
+        auto *decoratedClient = deco->window();
 
         const QPalette activePalette = KIconLoader::global()->customPalette();
         QPalette palette = decoratedClient->palette();

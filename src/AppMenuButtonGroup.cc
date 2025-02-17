@@ -28,12 +28,18 @@
 #include "MenuOverflowButton.h"
 
 // KDecoration
-#include <KDecoration2/DecoratedClient>
-#include <KDecoration2/DecorationButton>
-#include <KDecoration2/DecorationButtonGroup>
+#include <KDecoration3/DecoratedWindow>
+#include <KDecoration3/DecorationButton>
+#include <KDecoration3/DecorationButtonGroup>
 
 // KF
 #include <KWindowSystem>
+#include <KX11Extras>
+#include <NETWM>
+
+// KWIN
+#include <kwin/window.h>
+#include <kwin/x11window.h>
 
 // Qt
 #include <QAction>
@@ -41,13 +47,16 @@
 #include <QMenu>
 #include <QPainter>
 #include <QVariantAnimation>
+#include <QObject>
+#include <QMetaObject>
+#include <QMetaProperty>
 
 
 namespace Material
 {
 
 AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
-    : KDecoration2::DecorationButtonGroup(decoration)
+    : KDecoration3::DecorationButtonGroup(decoration)
     , m_appMenuModel(nullptr)
     , m_currentIndex(-1)
     , m_overflowIndex(-1)
@@ -85,8 +94,8 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
         // update();
     });
 
-    auto decoratedClient = decoration->client();
-    connect(decoratedClient, &KDecoration2::DecoratedClient::hasApplicationMenuChanged,
+    auto decoratedClient = decoration->window();
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::hasApplicationMenuChanged,
             this, &AppMenuButtonGroup::updateAppMenuModel);
     connect(this, &AppMenuButtonGroup::requestActivateIndex,
             this, &AppMenuButtonGroup::trigger);
@@ -205,7 +214,7 @@ void AppMenuButtonGroup::setOpacity(qreal value)
         m_opacity = value;
 
         for (int i = 0; i < buttons().length(); i++) {
-            KDecoration2::DecorationButton* decoButton = buttons().value(i);
+            KDecoration3::DecorationButton* decoButton = buttons().value(i);
             auto *button = qobject_cast<Button *>(decoButton);
             if (button) {
                 button->setOpacity(m_opacity);
@@ -216,10 +225,10 @@ void AppMenuButtonGroup::setOpacity(qreal value)
     }
 }
 
-KDecoration2::DecorationButton* AppMenuButtonGroup::buttonAt(int x, int y) const
+KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(int x, int y) const
 {
     for (int i = 0; i < buttons().length(); i++) {
-        KDecoration2::DecorationButton* button = buttons().value(i);
+        KDecoration3::DecorationButton* button = buttons().value(i);
         if (!button->isVisible()) {
             continue;
         }
@@ -234,14 +243,14 @@ void AppMenuButtonGroup::resetButtons()
 {
     // qCDebug(category) << "    resetButtons";
     // qCDebug(category) << "        before" << buttons();
-//  const QPointer<KDecoration2::DecorationButton> &button : buttonList
-//    auto list = QVector<QPointer<KDecoration2::DecorationButton>>(buttons());
+//  const QPointer<KDecoration3::DecorationButton> &button : buttonList
+//    auto list = QVector<QPointer<KDecoration3::DecorationButton>>(buttons());
     // qCDebug(category) << "          list" << list;
-    removeButton(KDecoration2::DecorationButtonType::Custom);
+    removeButton(KDecoration3::DecorationButtonType::Custom);
     // qCDebug(category) << "     remCustom" << buttons();
 
     for (int i = 0; i < buttons().length(); i++) {
-        KDecoration2::DecorationButton* decoButton = buttons().value(i);
+        KDecoration3::DecorationButton* decoButton = buttons().value(i);
         auto *button = qobject_cast<Button *>(decoButton);
         delete button;
     }
@@ -264,7 +273,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
     if (!deco) {
         return;
     }
-    auto decoratedClient = deco->client();
+    auto decoratedClient = deco->window();
 
     // Don't display AppMenu in modal windows.
     if (decoratedClient->isModal()) {
@@ -305,7 +314,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
                 b->setVisible(false);
             }
             
-            addButton(QPointer<KDecoration2::DecorationButton>(b));
+            addButton(QPointer<KDecoration3::DecorationButton>(b));
         }
         m_overflowIndex = m_appMenuModel->rowCount();
         addButton(new MenuOverflowButton(deco, m_overflowIndex, this));
@@ -317,7 +326,17 @@ void AppMenuButtonGroup::updateAppMenuModel()
         // qCDebug(category) << "windowId" << decoratedClient->windowId();
         if (KWindowSystem::isPlatformX11()) {
 #if HAVE_X11
-            WId windowId = decoratedClient->windowId();
+            // WId windowId = decoratedClient->windowId(); REMOVED IN KDecoration3
+            
+            //SO ... WE ASK TO KWIN
+            KWin::X11Window *kwinWindow = static_cast<KWin::X11Window *>(decoratedClient->decoration()->parent());
+            // qCDebug(category) << "KWin window: " << kwinWindow->window();            
+            WId windowId = 0;
+            if (kwinWindow) { 
+                windowId = kwinWindow->window();
+            };   
+            //
+            
             if (windowId != 0) {
                 initAppMenuModel();
                 m_appMenuModel->setWinId(windowId);
@@ -336,7 +355,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 {
     // qCDebug(category) << "updateOverflow" << availableRect;
     bool showOverflow = false;
-    for (KDecoration2::DecorationButton *button : buttons()) {
+    for (KDecoration3::DecorationButton *button : buttons()) {
         // qCDebug(category) << "    " << button->geometry() << button;
         if (qobject_cast<MenuOverflowButton *>(button)) {
             button->setVisible(showOverflow);
@@ -357,7 +376,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 
 void AppMenuButtonGroup::trigger(int buttonIndex) {
     // qCDebug(category) << "AppMenuButtonGroup::trigger" << buttonIndex;
-    KDecoration2::DecorationButton* button = buttons().value(buttonIndex);
+    KDecoration3::DecorationButton* button = buttons().value(buttonIndex);
 
     // https://github.com/psifidotos/applet-window-appmenu/blob/908e60831d7d68ee56a56f9c24017a71822fc02d/lib/appmenuapplet.cpp#L167
     QMenu *actionMenu = nullptr;
@@ -368,7 +387,7 @@ void AppMenuButtonGroup::trigger(int buttonIndex) {
         actionMenu->setAttribute(Qt::WA_DeleteOnClose);
 
         int overflowStartsAt = 0;
-        for (KDecoration2::DecorationButton *b : buttons()) {
+        for (KDecoration3::DecorationButton *b : buttons()) {
             TextButton* textButton = qobject_cast<TextButton *>(b);
             if (textButton && textButton->isEnabled() && !textButton->isVisible()) {
                 overflowStartsAt = textButton->buttonIndex();
@@ -398,7 +417,7 @@ void AppMenuButtonGroup::trigger(int buttonIndex) {
 
     const auto *deco = qobject_cast<Decoration *>(decoration());
     // if (actionMenu && deco) {
-    //     auto *decoratedClient = deco->client();
+    //     auto *decoratedClient = deco->window();
     //     actionMenu->setPalette(decoratedClient->palette());
     // }
 
@@ -508,7 +527,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         // qCDebug(category) << "       windowPos" << deco->windowPos();
         // qCDebug(category) << "  titleBarHeight" << deco->titleBarHeight();
 
-        KDecoration2::DecorationButton* item = buttonAt(decoPos.x(), decoPos.y());
+        KDecoration3::DecorationButton* item = buttonAt(decoPos.x(), decoPos.y());
         if (!item) {
             return false;
         }
@@ -537,7 +556,7 @@ void AppMenuButtonGroup::unPressAllButtons()
 {
     // qCDebug(category) << "AppMenuButtonGroup::unPressAllButtons";
     for (int i = 0; i < buttons().length(); i++) {
-        KDecoration2::DecorationButton* button = buttons().value(i);
+        KDecoration3::DecorationButton* button = buttons().value(i);
 
         // Hack to setPressed(false)
         button->setEnabled(!button->isEnabled());

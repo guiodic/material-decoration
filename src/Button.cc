@@ -33,9 +33,9 @@
 #include "MinimizeButton.h"
 
 // KDecoration
-#include <KDecoration2/DecoratedClient>
-#include <KDecoration2/Decoration>
-#include <KDecoration2/DecorationButton>
+#include <KDecoration3/DecoratedWindow>
+#include <KDecoration3/Decoration>
+#include <KDecoration3/DecorationButton>
 
 // KF
 #include <KColorUtils>
@@ -51,7 +51,7 @@
 namespace Material
 {
 
-Button::Button(KDecoration2::DecorationButtonType type, Decoration *decoration, QObject *parent)
+Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, QObject *parent)
     : DecorationButton(type, decoration, parent)
     , m_animationEnabled(true)
     , m_animation(new QVariantAnimation(this))
@@ -94,46 +94,46 @@ Button::Button(KDecoration2::DecorationButtonType type, Decoration *decoration, 
 
     setHeight(decoration->titleBarHeight());
 
-    auto *decoratedClient = decoration->client();
+    auto *decoratedClient = decoration->window();
 
     switch (type) {
-    case KDecoration2::DecorationButtonType::Menu:
+    case KDecoration3::DecorationButtonType::Menu:
         AppIconButton::init(this, decoratedClient);
         break;
 
-    case KDecoration2::DecorationButtonType::ApplicationMenu:
+    case KDecoration3::DecorationButtonType::ApplicationMenu:
         ApplicationMenuButton::init(this, decoratedClient);
         break;
 
-    case KDecoration2::DecorationButtonType::OnAllDesktops:
+    case KDecoration3::DecorationButtonType::OnAllDesktops:
         OnAllDesktopsButton::init(this, decoratedClient);
         break;
 
-    case KDecoration2::DecorationButtonType::ContextHelp:
+    case KDecoration3::DecorationButtonType::ContextHelp:
         ContextHelpButton::init(this, decoratedClient);
         break;
 
-    case KDecoration2::DecorationButtonType::Shade:
+    case KDecoration3::DecorationButtonType::Shade:
         ShadeButton::init(this, decoratedClient);
         break;
 
-    case KDecoration2::DecorationButtonType::KeepAbove:
+    case KDecoration3::DecorationButtonType::KeepAbove:
         KeepAboveButton::init(this, decoratedClient);
         break;
 
-    case KDecoration2::DecorationButtonType::KeepBelow:
+    case KDecoration3::DecorationButtonType::KeepBelow:
         KeepBelowButton::init(this, decoratedClient);
         break;
 
-    case KDecoration2::DecorationButtonType::Close:
+    case KDecoration3::DecorationButtonType::Close:
         CloseButton::init(this, decoratedClient);
         break;
 
-    case KDecoration2::DecorationButtonType::Maximize:
+    case KDecoration3::DecorationButtonType::Maximize:
         MaximizeButton::init(this, decoratedClient);
         break;
 
-    case KDecoration2::DecorationButtonType::Minimize:
+    case KDecoration3::DecorationButtonType::Minimize:
         MinimizeButton::init(this, decoratedClient);
         break;
 
@@ -146,7 +146,7 @@ Button::~Button()
 {
 }
 
-KDecoration2::DecorationButton* Button::create(KDecoration2::DecorationButtonType type, KDecoration2::Decoration *decoration, QObject *parent)
+KDecoration3::DecorationButton* Button::create(KDecoration3::DecorationButtonType type, KDecoration3::Decoration *decoration, QObject *parent)
 {
     auto deco = qobject_cast<Decoration*>(decoration);
     if (!deco) {
@@ -154,16 +154,16 @@ KDecoration2::DecorationButton* Button::create(KDecoration2::DecorationButtonTyp
     }
 
     switch (type) {
-    case KDecoration2::DecorationButtonType::Menu:
-    // case KDecoration2::DecorationButtonType::ApplicationMenu:
-    case KDecoration2::DecorationButtonType::OnAllDesktops:
-    case KDecoration2::DecorationButtonType::ContextHelp:
-    case KDecoration2::DecorationButtonType::Shade:
-    case KDecoration2::DecorationButtonType::KeepAbove:
-    case KDecoration2::DecorationButtonType::KeepBelow:
-    case KDecoration2::DecorationButtonType::Close:
-    case KDecoration2::DecorationButtonType::Maximize:
-    case KDecoration2::DecorationButtonType::Minimize:
+    case KDecoration3::DecorationButtonType::Menu:
+    // case KDecoration3::DecorationButtonType::ApplicationMenu:
+    case KDecoration3::DecorationButtonType::OnAllDesktops:
+    case KDecoration3::DecorationButtonType::ContextHelp:
+    case KDecoration3::DecorationButtonType::Shade:
+    case KDecoration3::DecorationButtonType::KeepAbove:
+    case KDecoration3::DecorationButtonType::KeepBelow:
+    case KDecoration3::DecorationButtonType::Close:
+    case KDecoration3::DecorationButtonType::Maximize:
+    case KDecoration3::DecorationButtonType::Minimize:
         return new Button(type, deco, parent);
 
     default:
@@ -172,11 +172,11 @@ KDecoration2::DecorationButton* Button::create(KDecoration2::DecorationButtonTyp
 }
 
 Button::Button(QObject *parent, const QVariantList &args)
-    : Button(args.at(0).value<KDecoration2::DecorationButtonType>(), args.at(1).value<Decoration*>(), parent)
+    : Button(args.at(0).value<KDecoration3::DecorationButtonType>(), args.at(1).value<Decoration*>(), parent)
 {
 }
 
-void Button::paint(QPainter *painter, const QRect &repaintRegion)
+void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 {
     Q_UNUSED(repaintRegion)
 
@@ -229,43 +229,43 @@ void Button::paint(QPainter *painter, const QRect &repaintRegion)
 
     // Icon
     switch (type()) {
-    case KDecoration2::DecorationButtonType::Menu:
+    case KDecoration3::DecorationButtonType::Menu:
         AppIconButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
 
-    case KDecoration2::DecorationButtonType::ApplicationMenu:
+    case KDecoration3::DecorationButtonType::ApplicationMenu:
         ApplicationMenuButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
 
-    case KDecoration2::DecorationButtonType::OnAllDesktops:
+    case KDecoration3::DecorationButtonType::OnAllDesktops:
         OnAllDesktopsButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
 
-    case KDecoration2::DecorationButtonType::ContextHelp:
+    case KDecoration3::DecorationButtonType::ContextHelp:
         ContextHelpButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
 
-    case KDecoration2::DecorationButtonType::Shade:
+    case KDecoration3::DecorationButtonType::Shade:
         ShadeButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
 
-    case KDecoration2::DecorationButtonType::KeepAbove:
+    case KDecoration3::DecorationButtonType::KeepAbove:
         KeepAboveButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
 
-    case KDecoration2::DecorationButtonType::KeepBelow:
+    case KDecoration3::DecorationButtonType::KeepBelow:
         KeepBelowButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
 
-    case KDecoration2::DecorationButtonType::Close:
+    case KDecoration3::DecorationButtonType::Close:
         CloseButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
 
-    case KDecoration2::DecorationButtonType::Maximize:
+    case KDecoration3::DecorationButtonType::Maximize:
         MaximizeButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
 
-    case KDecoration2::DecorationButtonType::Minimize:
+    case KDecoration3::DecorationButtonType::Minimize:
         MinimizeButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
 
@@ -328,19 +328,19 @@ QColor Button::backgroundColor() const
     }
 
     //--- CloseButton
-    if (type() == KDecoration2::DecorationButtonType::Close) {
-        auto *decoratedClient = deco->client();
+    if (type() == KDecoration3::DecorationButtonType::Close) {
+        auto *decoratedClient = deco->window();
         const QColor hoveredColor = decoratedClient->color(
-            KDecoration2::ColorGroup::Warning,
-            KDecoration2::ColorRole::Foreground
+            KDecoration3::ColorGroup::Warning,
+            KDecoration3::ColorRole::Foreground
         );
         QColor normalColor = QColor(hoveredColor);
         normalColor.setAlphaF(0);
 
         if (isPressed()) {
             const QColor pressedColor = decoratedClient->color(
-                KDecoration2::ColorGroup::Warning,
-                KDecoration2::ColorRole::Foreground
+                KDecoration3::ColorGroup::Warning,
+                KDecoration3::ColorRole::Foreground
             ).lighter();
             return KColorUtils::mix(normalColor, pressedColor, m_transitionValue);
         }
@@ -351,7 +351,7 @@ QColor Button::backgroundColor() const
     }
 
     //--- Checked
-    if (isChecked() && type() != KDecoration2::DecorationButtonType::Maximize) {
+    if (isChecked() && type() != KDecoration3::DecorationButtonType::Maximize) {
         const QColor normalColor = deco->titleBarForegroundColor();
 
         if (isPressed()) {
@@ -400,7 +400,7 @@ QColor Button::foregroundColor() const
     }
 
     //--- Checked
-    if (isChecked() && type() != KDecoration2::DecorationButtonType::Maximize) {
+    if (isChecked() && type() != KDecoration3::DecorationButtonType::Maximize) {
         const QColor activeColor = KColorUtils::mix(
             deco->titleBarBackgroundColor(),
             deco->titleBarForegroundColor(),
@@ -425,20 +425,20 @@ QColor Button::foregroundColor() const
         // Breeze GTK has huge margins around the button. It looks better
         // when we just change the fgColor on hover instead of the bgColor.
         QColor hoveredColor;
-        if (m_isGtkButton && type() == KDecoration2::DecorationButtonType::Close) {
-            auto *decoratedClient = deco->client();
+        if (m_isGtkButton && type() == KDecoration3::DecorationButtonType::Close) {
+            auto *decoratedClient = deco->window();
             hoveredColor = decoratedClient->color(
-                KDecoration2::ColorGroup::Warning,
-                KDecoration2::ColorRole::Foreground
+                KDecoration3::ColorGroup::Warning,
+                KDecoration3::ColorRole::Foreground
             );
-        } else if (m_isGtkButton && type() == KDecoration2::DecorationButtonType::Maximize) {
+        } else if (m_isGtkButton && type() == KDecoration3::DecorationButtonType::Maximize) {
             const int grayValue = qGray(deco->titleBarBackgroundColor().rgb());
             if (grayValue < 128) { // Dark Bg
                 hoveredColor = QColor(100, 196, 86); // from SierraBreeze
             } else { // Light Bg
                 hoveredColor = QColor(40, 200, 64); // from SierraBreeze
             }
-        } else if (m_isGtkButton && type() == KDecoration2::DecorationButtonType::Minimize) {
+        } else if (m_isGtkButton && type() == KDecoration3::DecorationButtonType::Minimize) {
             const int grayValue = qGray(deco->titleBarBackgroundColor().rgb());
             if (grayValue < 128) {
                 hoveredColor = QColor(223, 192, 76); // from SierraBreeze

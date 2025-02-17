@@ -22,7 +22,7 @@
 #include "Material.h"
 
 // KDecoration
-#include <KDecoration2/DecoratedClient>
+#include <KDecoration3/DecoratedWindow>
 
 // Qt
 #include <QPainter>
@@ -34,7 +34,7 @@ class ApplicationMenuButton
 {
 
 public:
-    static void init(Button *button, KDecoration2::DecoratedClient *decoratedClient) {
+    static void init(Button *button, KDecoration3::DecoratedWindow *decoratedClient) {
         button->setVisible(decoratedClient->hasApplicationMenu());
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal gridUnit) {

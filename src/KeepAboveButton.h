@@ -22,7 +22,7 @@
 #include "Material.h"
 
 // KDecoration
-#include <KDecoration2/DecoratedClient>
+#include <KDecoration3/DecoratedWindow>
 
 // Qt
 #include <QPainter>
@@ -34,7 +34,7 @@ class KeepAboveButton
 {
 
 public:
-    static void init(Button *button, KDecoration2::DecoratedClient *decoratedClient) {
+    static void init(Button *button, KDecoration3::DecoratedWindow *decoratedClient) {
         Q_UNUSED(decoratedClient)
 
         button->setVisible(true);
