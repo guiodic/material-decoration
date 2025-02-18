@@ -22,7 +22,7 @@
 #include "Material.h"
 
 // KDecoration
-#include <KDecoration2/DecoratedClient>
+#include <KDecoration3/DecoratedWindow>
 
 // Qt
 #include <QPainter>
@@ -34,8 +34,8 @@ class ShadeButton
 {
 
 public:
-    static void init(Button *button, KDecoration2::DecoratedClient *decoratedClient) {
-        QObject::connect(decoratedClient, &KDecoration2::DecoratedClient::shadeableChanged,
+    static void init(Button *button, KDecoration3::DecoratedWindow *decoratedClient) {
+        QObject::connect(decoratedClient, &KDecoration3::DecoratedWindow::shadeableChanged,
                 button, &Button::setVisible);
 
         button->setVisible(decoratedClient->isShadeable());

@@ -21,7 +21,7 @@
 #include "Button.h"
 
 // KDecoration
-#include <KDecoration2/DecoratedClient>
+#include <KDecoration3/DecoratedWindow>
 
 // Qt
 #include <QPainter>
@@ -33,8 +33,8 @@ class MinimizeButton
 {
 
 public:
-    static void init(Button *button, KDecoration2::DecoratedClient *decoratedClient) {
-        QObject::connect(decoratedClient, &KDecoration2::DecoratedClient::minimizeableChanged,
+    static void init(Button *button, KDecoration3::DecoratedWindow *decoratedClient) {
+        QObject::connect(decoratedClient, &KDecoration3::DecoratedWindow::minimizeableChanged,
                 button, &Button::setVisible);
 
         button->setVisible(decoratedClient->isMinimizeable());

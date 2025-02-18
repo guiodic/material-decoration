@@ -6,8 +6,12 @@ mkdir build
 cd build
 cmake .. -DQT_MAJOR_VERSION=6 -DQT_VERSION_MAJOR=6
 make
-sudo cp ./src/materialdecoration.so /usr/lib/qt6/plugins/org.kde.kdecoration2/materialdecoration.so
+sudo make install
 ```
+
+for Arch and derivatives, please install the AUR package material-kwin-decoration-git
+
+NOTE: the master branch is aligned with the latest Plasma versions. For earlier ones, see the other branches
 
 ## material-decoration
 

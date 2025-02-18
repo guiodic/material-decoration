@@ -24,7 +24,7 @@
 #include "ApplicationMenuButton.h"
 
 // KDecoration
-#include <KDecoration2/DecoratedClient>
+#include <KDecoration3/DecoratedWindow>
 
 // Qt
 #include <QDebug>
@@ -37,7 +37,7 @@ namespace Material
 MenuOverflowButton::MenuOverflowButton(Decoration *decoration, const int buttonIndex, QObject *parent)
     : AppMenuButton(decoration, buttonIndex, parent)
 {
-    auto *decoratedClient = decoration->client();
+    auto *decoratedClient = decoration->window();
 
     setVisible(decoratedClient->hasApplicationMenu());
 }

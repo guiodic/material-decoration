@@ -19,10 +19,12 @@
 
 // Qt
 #include <QLoggingCategory>
+#include <QWidget>
 
 
 namespace Material
 {
+      
     static const QLoggingCategory category("kdecoration.material");
     static const QString s_configFilename = QStringLiteral("kdecoration_materialrc");
 

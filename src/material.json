@@ -5,10 +5,10 @@
         "Id": "com.github.zren.material",
         "Name": "Material",
         "ServiceTypes": [
-            "org.kde.kdecoration2"
+            "org.kde.kdecoration3"
         ]
     },
-    "org.kde.kdecoration2": {
+    "org.kde.kdecoration3": {
         "blur": true,
         "kcmodule": true,
         "recommendedBorderSize": "None"

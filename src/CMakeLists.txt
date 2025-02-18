@@ -3,7 +3,7 @@ set(DKDE_INSTALL_USE_QT_SYS_PATHS=ON)
 set(DQT_MAJOR_VERSION=6)
 set(DQT_VERSION_MAJOR=6)
 
-find_package (KDecoration2 REQUIRED)
+find_package (KDecoration3 REQUIRED)
 
 find_package (Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS
     Core
@@ -21,6 +21,9 @@ find_package (KF6 REQUIRED COMPONENTS
     KCMUtils
 )
 
+find_package(KWin REQUIRED)
+
+include_directories(/usr/include/kwin)
 
 # X11
 find_package(X11 REQUIRED)
@@ -64,13 +67,13 @@ endif()
 #endif()
 
 
-# KDecoration2/Plasma Version
-if(${KDecoration2_VERSION} VERSION_GREATER_EQUAL "5.25.0")
-    set(HAVE_KDecoration2_5_25 ON)
+# KDecoration3/Plasma Version
+if(${KDecoration3_VERSION} VERSION_GREATER_EQUAL "5.25.0")
+    set(HAVE_KDecoration3_5_25 ON)
 else()
-    set(HAVE_KDecoration2_5_25 OFF)
+    set(HAVE_KDecoration3_5_25 OFF)
 endif()
-message(STATUS "HAVE_KDecoration2_5_25: ${HAVE_KDecoration2_5_25} (${KDecoration2_VERSION})")
+message(STATUS "HAVE_KDecoration3_5_25: ${HAVE_KDecoration3_5_25} (${KDecoration3_VERSION})")
 
 # KF5 Version
 #if(${KF5_VERSION} VERSION_GREATER_EQUAL "5.101.0")
@@ -119,10 +122,12 @@ target_link_libraries (materialdecoration
         KF6::WindowSystem
         KF6::KCMUtils
         ${X11_LIBRARIES}
+
 #        ${Wayland_LIBRARIES}
 
     PRIVATE
-        KDecoration2::KDecoration
+        KDecoration3::KDecoration
+        kwin
 )
 if (Qt6_FOUND)
     # The QX11Info class has been removed.
@@ -137,5 +142,9 @@ elseif(Qt5_FOUND)
     )
 endif()
 
-install (TARGETS materialdecoration
-         DESTINATION ${PLUGIN_INSTALL_DIR}/org.kde.kdecoration2)
+include(KDEInstallDirs)
+install(TARGETS materialdecoration
+        DESTINATION ${KDE_INSTALL_PLUGINDIR}/org.kde.kdecoration3)
+
+#install (TARGETS materialdecoration
+#         DESTINATION ${PLUGIN_INSTALL_DIR}/org.kde.kdecoration3)

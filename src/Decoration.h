@@ -24,9 +24,9 @@
 #include "InternalSettings.h"
 
 // KDecoration
-#include <KDecoration2/Decoration>
-#include <KDecoration2/DecorationButton>
-#include <KDecoration2/DecorationButtonGroup>
+#include <KDecoration3/Decoration>
+#include <KDecoration3/DecorationButton>
+#include <KDecoration3/DecorationButtonGroup>
 
 // Qt
 #include <QHoverEvent>
@@ -48,7 +48,7 @@ class Button;
 class TextButton;
 class MenuOverflowButton;
 
-class Decoration : public KDecoration2::Decoration
+class Decoration : public KDecoration3::Decoration
 {
     Q_OBJECT
 
@@ -59,7 +59,7 @@ public:
     QRect titleBarRect() const;
     QRect centerRect() const;
 
-    void paint(QPainter *painter, const QRect &repaintRegion) override;
+    void paint(QPainter *painter, const QRectF &repaintRegion) override;
 
 public slots:
     bool init() override;
@@ -82,12 +82,12 @@ private:
     void updateResizeBorders();
     void updateTitleBar();
     void updateTitleBarHoverState();
-    void setButtonGroupHeight(KDecoration2::DecorationButtonGroup *buttonGroup, int buttonHeight);
-    void setButtonGroupHorzPadding(KDecoration2::DecorationButtonGroup *buttonGroup, int value);
-    void setButtonGroupVertPadding(KDecoration2::DecorationButtonGroup *buttonGroup, int value);
+    void setButtonGroupHeight(KDecoration3::DecorationButtonGroup *buttonGroup, int buttonHeight);
+    void setButtonGroupHorzPadding(KDecoration3::DecorationButtonGroup *buttonGroup, int value);
+    void setButtonGroupVertPadding(KDecoration3::DecorationButtonGroup *buttonGroup, int value);
     void updateButtonHeight();
     void updateButtonsGeometry();
-    void setButtonGroupAnimation(KDecoration2::DecorationButtonGroup *buttonGroup, bool enabled, int duration);
+    void setButtonGroupAnimation(KDecoration3::DecorationButtonGroup *buttonGroup, bool enabled, int duration);
     void updateButtonAnimation();
     void updateShadow();
 
@@ -121,14 +121,14 @@ private:
     QColor titleBarBackgroundColor() const;
     QColor titleBarForegroundColor() const;
 
-    void paintFrameBackground(QPainter *painter, const QRect &repaintRegion) const;
-    void paintTitleBarBackground(QPainter *painter, const QRect &repaintRegion) const;
-    void paintCaption(QPainter *painter, const QRect &repaintRegion) const;
-    void paintButtons(QPainter *painter, const QRect &repaintRegion) const;
-    void paintOutline(QPainter *painter, const QRect &repaintRegion) const;
+    void paintFrameBackground(QPainter *painter, const QRectF &repaintRegion) const;
+    void paintTitleBarBackground(QPainter *painter, const QRectF &repaintRegion) const;
+    void paintCaption(QPainter *painter, const QRectF &repaintRegion) const;
+    void paintButtons(QPainter *painter, const QRectF &repaintRegion) const;
+    void paintOutline(QPainter *painter, const QRectF &repaintRegion) const;
 
-    KDecoration2::DecorationButtonGroup *m_leftButtons;
-    KDecoration2::DecorationButtonGroup *m_rightButtons;
+    KDecoration3::DecorationButtonGroup *m_leftButtons;
+    KDecoration3::DecorationButtonGroup *m_rightButtons;
     AppMenuButtonGroup *m_menuButtons;
 
     QSharedPointer<InternalSettings> m_internalSettings;

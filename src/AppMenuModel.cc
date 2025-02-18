@@ -393,7 +393,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     m_importer = new KDBusMenuImporter(serviceName, menuObjectPath, this);
     QMetaObject::invokeMethod(m_importer, "updateMenu", Qt::QueuedConnection);
 
-    connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, [=](QMenu *menu) {
+    connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, [this](QMenu *menu) {
         m_menu = m_importer->menu();
         if (m_menu.isNull() || menu != m_menu) {
             return;

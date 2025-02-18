@@ -21,20 +21,21 @@
 #include "AppMenuModel.h"
 
 // KDecoration
-#include <KDecoration2/DecoratedClient>
-#include <KDecoration2/DecorationButton>
-#include <KDecoration2/DecorationButtonGroup>
+#include <KDecoration3/DecoratedWindow>
+#include <KDecoration3/DecorationButton>
+#include <KDecoration3/DecorationButtonGroup>
 
 // Qt
 #include <QMenu>
 #include <QVariantAnimation>
+// #include <QWidget>
 
 namespace Material
 {
 
 class Decoration;
 
-class AppMenuButtonGroup : public KDecoration2::DecorationButtonGroup
+class AppMenuButtonGroup : public KDecoration3::DecorationButtonGroup
 {
     Q_OBJECT
 
@@ -51,6 +52,7 @@ public:
     Q_PROPERTY(int animationDuration READ animationDuration WRITE setAnimationDuration NOTIFY animationDurationChanged)
     Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity NOTIFY opacityChanged)
 
+ 
     int currentIndex() const;
     void setCurrentIndex(int set);
 
@@ -77,7 +79,7 @@ public:
 
     bool isMenuOpen() const;
 
-    KDecoration2::DecorationButton* buttonAt(int x, int y) const;
+    KDecoration3::DecorationButton* buttonAt(int x, int y) const;
 
     void unPressAllButtons();
 
