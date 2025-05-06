@@ -292,7 +292,7 @@ void AppMenuModel::onWinIdChanged()
             if (!serviceName.isEmpty() && !menuObjectPath.isEmpty()) {
                 updateApplicationMenu(serviceName, menuObjectPath);
                 // if it is libreoffice we need to monitor it 
-                if (winClass.contains ("soffice.bin"))   {
+                if ((winClass.contains ("soffice.bin")) || (winClass.contains ("libreoffice")))   {
                        // qCDebug(category) << winClass << " Great Scott! it's LibreOffice, we need to monitor it!";
                        qApp->removeNativeEventFilter(this);
                        qApp->installNativeEventFilter(this);
