@@ -34,8 +34,8 @@
 
 // KF
 #include <KWindowSystem>
-#include <KX11Extras>
-#include <NETWM>
+// #include <KX11Extras>
+// #include <NETWM>
 
 // KWIN
 // #include <kwin/window.h>
