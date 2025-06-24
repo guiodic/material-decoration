@@ -38,8 +38,7 @@
 #include <KWindowSystem>
 
 // KWIN
-// #include <kwin/window.h>
-#include <kwin/x11window.h>
+#include <kwin-x11/x11window.h>
 
 // Qt
 #include <QApplication>

@@ -21,9 +21,9 @@ find_package (KF6 REQUIRED COMPONENTS
     KCMUtils
 )
 
-find_package(KWin REQUIRED)
+find_package(KWinX11 REQUIRED)
 
-include_directories(/usr/include/kwin)
+include_directories(/usr/include/kwin-x11)
 
 # X11
 find_package(X11 REQUIRED)
