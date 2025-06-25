@@ -24,7 +24,7 @@
 
 namespace Material
 {
-      
+    constexpr int kDecorationRadius = 8;  
     static const QLoggingCategory category("kdecoration.material");
     static const QString s_configFilename = QStringLiteral("kdecoration_materialrc");
 

@@ -47,9 +47,38 @@
 #include <QVariantAnimation>
 #include <QtMath> // qFloor
 
-
 namespace Material
 {
+
+//for rounded corners
+static QPainterPath roundedRectSelective(const QRectF &rect, qreal radius, bool topLeft, bool topRight, bool bottomRight, bool bottomLeft)
+{
+    QPainterPath path;
+    path.moveTo(rect.left() + (topLeft ? radius : 0), rect.top());
+
+    // Top edge
+    path.lineTo(rect.right() - (topRight ? radius : 0), rect.top());
+    if (topRight)
+        path.quadTo(rect.right(), rect.top(), rect.right(), rect.top() + radius);
+
+    // Right edge
+    path.lineTo(rect.right(), rect.bottom() - (bottomRight ? radius : 0));
+    if (bottomRight)
+        path.quadTo(rect.right(), rect.bottom(), rect.right() - radius, rect.bottom());
+
+    // Bottom edge
+    path.lineTo(rect.left() + (bottomLeft ? radius : 0), rect.bottom());
+    if (bottomLeft)
+        path.quadTo(rect.left(), rect.bottom(), rect.left(), rect.bottom() - radius);
+
+    // Left edge
+    path.lineTo(rect.left(), rect.top() + (topLeft ? radius : 0));
+    if (topLeft)
+        path.quadTo(rect.left(), rect.top(), rect.left() + radius, rect.top());
+
+    path.closeSubpath();
+    return path;
+}
 
 Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, QObject *parent)
     : DecorationButton(type, decoration, parent)
@@ -66,7 +95,7 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
             update();
         });
 
-    if (QCoreApplication::applicationName() == QStringLiteral("kded5")) {
+    if (QCoreApplication::applicationName() == QStringLiteral("kded6")) {
         // See: https://github.com/Zren/material-decoration/issues/22
         // kde-gtk-config has a kded5 module which renders the buttons to svgs for gtk.
         m_isGtkButton = true;
@@ -155,7 +184,6 @@ KDecoration3::DecorationButton* Button::create(KDecoration3::DecorationButtonTyp
 
     switch (type) {
     case KDecoration3::DecorationButtonType::Menu:
-    // case KDecoration3::DecorationButtonType::ApplicationMenu:
     case KDecoration3::DecorationButtonType::OnAllDesktops:
     case KDecoration3::DecorationButtonType::ContextHelp:
     case KDecoration3::DecorationButtonType::Shade:
@@ -179,103 +207,103 @@ Button::Button(QObject *parent, const QVariantList &args)
 void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 {
     Q_UNUSED(repaintRegion)
-
+    // qCDebug(category) << "BUTTON geometry:" << geometry();
     // Buttons are coded assuming 24 units in size.
     const QRectF buttonRect = geometry();
     const QRectF contentRect = contentArea();
 
-    const qreal iconScale = contentRect.height()/24;
+    const qreal iconScale = contentRect.height() / 24;
     int iconSize;
     if (m_isGtkButton) {
-        // See: https://github.com/Zren/material-decoration/issues/22
-        // kde-gtk-config has a kded5 module which renders the buttons to svgs for gtk.
-
-        // The svgs are 50x50, located at ~/.config/gtk-3.0/assets/
-        // They are usually scaled down to just 18x18 when drawn in gtk headerbars.
-        // The Gtk theme already has a fairly large amount of padding, as
-        // the Breeze theme doesn't currently follow fitt's law. So use less padding
-        // around the icon so that the icon is not a very tiny 8px.
-
-        // 15% top/bottom padding, 70% leftover for the icon.
-        // 24 = 3.5 topPadding + 17 icon + 3.5 bottomPadding
-        // 17/24 * 18 = 12.75
         iconSize = qRound(iconScale * 17);
     } else {
-        // 30% top/bottom padding, 40% leftover for the icon.
-        // 24 = 7 topPadding + 10 icon + 7 bottomPadding
         iconSize = qRound(iconScale * 10);
     }
     QRectF iconRect = QRectF(0, 0, iconSize, iconSize);
     iconRect.moveCenter(contentRect.center().toPoint());
 
-    const qreal gridUnit = iconRect.height()/10;
+    const qreal gridUnit = iconRect.height() / 10;
 
     painter->save();
-
-    painter->setRenderHints(QPainter::Antialiasing, false);
-
-    // Opacity
+    painter->setRenderHints(QPainter::Antialiasing, true);
     painter->setOpacity(m_opacity);
 
-    // Background.
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(backgroundColor());
-    painter->drawRect(buttonRect);
+    // Calcolo angoli arrotondati
+    const Decoration *deco = qobject_cast<const Decoration *>(decoration());
+    auto *buttonGroup = qobject_cast<KDecoration3::DecorationButtonGroup *>(parent());
+    bool roundTopLeft = false;
+    bool roundTopRight = false;
+    if (deco && buttonGroup) {
+        auto buttons = buttonGroup->buttons();
+        int idx = buttons.indexOf(this);
+        bool isMaximized = deco->window() && deco->window()->isMaximized();
+        if (!isMaximized) {
+            if (buttonGroup == deco->leftButtons() && idx == 0) {
+                roundTopLeft = true;
+            }
+            if (buttonGroup == deco->rightButtons() && idx == buttons.count() - 1) {
+                roundTopRight = true;
+            }
+        }
+    }
 
-    // Foreground.
+    // Path arrotondata senza shrink
+    const qreal radius = Material::kDecorationRadius;
+    QColor bg = backgroundColor();
+    // PATCH: Usa un rettangolo leggermente più grande per evitare artefatti di antialiasing sugli angoli
+    QRectF bigRect = buttonRect.adjusted(-0.5, -0.5, 0.5, 0.5);
+    QPainterPath path = roundedRectSelective(bigRect, radius, roundTopLeft, roundTopRight, false, false);
+    painter->setClipPath(path);
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(bg);
+    painter->drawRect(bigRect);
+    painter->setClipping(false);
+
+    // Foreground e icona
     setPenWidth(painter, gridUnit, 1);
     painter->setBrush(Qt::NoBrush);
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, false);
 
-
-    // Icon
     switch (type()) {
     case KDecoration3::DecorationButtonType::Menu:
         AppIconButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
-
     case KDecoration3::DecorationButtonType::ApplicationMenu:
         ApplicationMenuButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
-
     case KDecoration3::DecorationButtonType::OnAllDesktops:
         OnAllDesktopsButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
-
     case KDecoration3::DecorationButtonType::ContextHelp:
         ContextHelpButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
-
     case KDecoration3::DecorationButtonType::Shade:
         ShadeButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
-
     case KDecoration3::DecorationButtonType::KeepAbove:
         KeepAboveButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
-
     case KDecoration3::DecorationButtonType::KeepBelow:
         KeepBelowButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
-
     case KDecoration3::DecorationButtonType::Close:
         CloseButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
-
     case KDecoration3::DecorationButtonType::Maximize:
         MaximizeButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
-
     case KDecoration3::DecorationButtonType::Minimize:
         MinimizeButton::paintIcon(this, painter, iconRect, gridUnit);
         break;
-
     default:
         paintIcon(painter, iconRect, gridUnit);
         break;
     }
-
+    
     painter->restore();
 }
+
 
 void Button::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal gridUnit)
 {
@@ -322,9 +350,7 @@ QColor Button::backgroundColor() const
     }
 
     if (m_isGtkButton) {
-        // Breeze GTK has huge margins around the button. It looks better
-        // when we just change the fgColor on hover instead of the bgColor.
-        return Qt::transparent;
+        return deco->titleBarBackgroundColor();
     }
 
     //--- CloseButton
@@ -334,9 +360,7 @@ QColor Button::backgroundColor() const
             KDecoration3::ColorGroup::Warning,
             KDecoration3::ColorRole::Foreground
         );
-        QColor normalColor = QColor(hoveredColor);
-        normalColor.setAlphaF(0);
-
+        QColor normalColor = deco->titleBarBackgroundColor(); // <-- Cambiato qui!
         if (isPressed()) {
             const QColor pressedColor = decoratedClient->color(
                 KDecoration3::ColorGroup::Warning,
@@ -344,16 +368,15 @@ QColor Button::backgroundColor() const
             ).lighter();
             return KColorUtils::mix(normalColor, pressedColor, m_transitionValue);
         }
-
         if (isHovered()) {
             return KColorUtils::mix(normalColor, hoveredColor, m_transitionValue);
         }
+        return normalColor;
     }
 
     //--- Checked
     if (isChecked() && type() != KDecoration3::DecorationButtonType::Maximize) {
         const QColor normalColor = deco->titleBarForegroundColor();
-
         if (isPressed()) {
             const QColor pressedColor = KColorUtils::mix(
                 deco->titleBarBackgroundColor(),
@@ -372,13 +395,7 @@ QColor Button::backgroundColor() const
     }
 
     //--- Normal
-    const QColor hoveredColor = KColorUtils::mix(
-        deco->titleBarBackgroundColor(),
-        deco->titleBarForegroundColor(),
-        0.2);
-    QColor normalColor = QColor(hoveredColor);
-    normalColor.setAlphaF(0);
-
+    QColor normalColor = deco->titleBarBackgroundColor(); // <-- Cambiato qui!
     if (isPressed()) {
         const QColor pressedColor = KColorUtils::mix(
             deco->titleBarBackgroundColor(),
@@ -387,6 +404,10 @@ QColor Button::backgroundColor() const
         return KColorUtils::mix(normalColor, pressedColor, m_transitionValue);
     }
     if (isHovered()) {
+        const QColor hoveredColor = KColorUtils::mix(
+            deco->titleBarBackgroundColor(),
+            deco->titleBarForegroundColor(),
+            0.2);
         return KColorUtils::mix(normalColor, hoveredColor, m_transitionValue);
     }
     return normalColor;
@@ -422,8 +443,6 @@ QColor Button::foregroundColor() const
         0.8);
 
     if (isPressed() || isHovered()) {
-        // Breeze GTK has huge margins around the button. It looks better
-        // when we just change the fgColor on hover instead of the bgColor.
         QColor hoveredColor;
         if (m_isGtkButton && type() == KDecoration3::DecorationButtonType::Close) {
             auto *decoratedClient = deco->window();
@@ -433,17 +452,17 @@ QColor Button::foregroundColor() const
             );
         } else if (m_isGtkButton && type() == KDecoration3::DecorationButtonType::Maximize) {
             const int grayValue = qGray(deco->titleBarBackgroundColor().rgb());
-            if (grayValue < 128) { // Dark Bg
-                hoveredColor = QColor(100, 196, 86); // from SierraBreeze
-            } else { // Light Bg
-                hoveredColor = QColor(40, 200, 64); // from SierraBreeze
+            if (grayValue < 128) {
+                hoveredColor = QColor(100, 196, 86); // Dark Bg
+            } else {
+                hoveredColor = QColor(40, 200, 64); // Light Bg
             }
         } else if (m_isGtkButton && type() == KDecoration3::DecorationButtonType::Minimize) {
             const int grayValue = qGray(deco->titleBarBackgroundColor().rgb());
             if (grayValue < 128) {
-                hoveredColor = QColor(223, 192, 76); // from SierraBreeze
-            } else { // Light Bg
-                hoveredColor = QColor(255, 188, 48); // from SierraBreeze
+                hoveredColor = QColor(223, 192, 76); // Dark Bg
+            } else {
+                hoveredColor = QColor(255, 188, 48); // Light Bg
             }
         } else {
             hoveredColor = deco->titleBarForegroundColor();
@@ -457,7 +476,6 @@ QColor Button::foregroundColor() const
 
     return normalColor;
 }
-
 
 QRectF Button::contentArea() const
 {
@@ -553,6 +571,5 @@ void Button::updateAnimationState(bool hovered)
         setTransitionValue(1);
     }
 }
-
 
 } // namespace Material
