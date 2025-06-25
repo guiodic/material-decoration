@@ -100,7 +100,7 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
         // kde-gtk-config has a kded5 module which renders the buttons to svgs for gtk.
         m_isGtkButton = true;
     }
-
+    this->installEventFilter(this);
     // Animation based on SierraBreezeEnhanced
     // https://github.com/kupiqu/SierraBreezeEnhanced/blob/master/breezebutton.cpp#L45
     // The GTK bridge needs animations disabled to render hover states. See Issue #50.
@@ -247,17 +247,20 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         }
     }
 
-    // Path arrotondata senza shrink
+    //Solo path arrotondato. Niente drawRect: gli angoli restano arrotondati.
     const qreal radius = Material::kDecorationRadius;
-    QColor bg = backgroundColor();
-    // PATCH: Usa un rettangolo leggermente più grande per evitare artefatti di antialiasing sugli angoli
-    QRectF bigRect = buttonRect.adjusted(-0.5, -0.5, 0.5, 0.5);
-    QPainterPath path = roundedRectSelective(bigRect, radius, roundTopLeft, roundTopRight, false, false);
-    painter->setClipPath(path);
+    QColor btnBg = backgroundColor();
+    btnBg.setAlpha(255);
+    
+    QRectF bigRect = buttonRect.adjusted(0, -0.5, 0.5, 0.5);
+    QPainterPath path = roundedRectSelective(bigRect, radius + 0.5, roundTopLeft, roundTopRight, false, false);
     painter->setPen(Qt::NoPen);
-    painter->setBrush(bg);
-    painter->drawRect(bigRect);
-    painter->setClipping(false);
+    painter->setBrush(btnBg);
+    painter->drawPath(path);
+    // cleaning
+    //painter->setPen(Qt::NoPen);
+    //painter->setBrush(backgroundColor()); // o colore della titlebar
+    //painter->drawRect(QRectF(buttonRect.left(), buttonRect.top(), 1, buttonRect.height()));
 
     // Foreground e icona
     setPenWidth(painter, gridUnit, 1);
@@ -571,5 +574,14 @@ void Button::updateAnimationState(bool hovered)
         setTransitionValue(1);
     }
 }
+
+/* bool Material::Button::eventFilter(QObject *watched, QEvent *event)
+{
+    if (event->type() == QEvent::Leave) {
+        setTransitionValue(0);
+        update();
+    }
+    return KDecoration3::DecorationButton::eventFilter(watched, event);
+} */
 
 } // namespace Material

@@ -102,6 +102,10 @@ private:
     qreal m_transitionValue;
     QMargins *m_padding;
     bool m_isGtkButton;
+    
+/* protected:
+    bool eventFilter(QObject *watched, QEvent *event) override; */
+    
 };
 
 } // namespace Material
