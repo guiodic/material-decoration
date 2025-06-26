@@ -66,7 +66,7 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
             update();
         });
 
-    if (QCoreApplication::applicationName() == QStringLiteral("kded5")) {
+    if (QCoreApplication::applicationName() == QStringLiteral("kded6")) {
         // See: https://github.com/Zren/material-decoration/issues/22
         // kde-gtk-config has a kded5 module which renders the buttons to svgs for gtk.
         m_isGtkButton = true;
