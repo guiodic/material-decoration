@@ -49,7 +49,6 @@
 #include <QRegion>
 #include <QSharedPointer>
 #include <QWheelEvent>
-#include <QPainterPath> // for rounded corners
 
 // X11
 #if HAVE_X11
@@ -63,6 +62,7 @@
 
 namespace Material
 {
+    
 
 namespace
 {
@@ -205,7 +205,7 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
     paintTitleBarBackground(painter, repaintRegion);
     paintButtons(painter, repaintRegion);
     paintCaption(painter, repaintRegion);
-    // qCDebug(category) << "DECORATION rect:" << rect();
+
     // Don't paint outline for NoBorder, NoSideBorder, or Tiny borders.
     if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
         paintOutline(painter, repaintRegion);
@@ -401,36 +401,10 @@ void Decoration::onSectionUnderMouseChanged(const Qt::WindowFrameSection value)
     updateTitleBarHoverState();
 }
 
-/*
 void Decoration::updateBlur()
 {
 #if HAVE_KDecoration3_5_25
     setBlurRegion(QRegion(0, 0, size().width(), size().height()));
-#endif
-}
-*/
-
-
-// for rounded corners
-void Decoration::updateBlur()
-{
-#if HAVE_KDecoration3_5_25
-    QPainterPath path;
-    QRect r(0, 0, size().width(), size().height());
-    qreal radius = kDecorationRadius;
-    const auto *decoratedClient = window();
-    if (decoratedClient && decoratedClient->isMaximized()) {
-        radius = 0.0;
-    }
-    path.moveTo(r.topLeft() + QPointF(radius, 0));
-    path.lineTo(r.topRight() - QPointF(radius, 0));
-    path.quadTo(r.topRight(), r.topRight() + QPointF(0, radius));
-    path.lineTo(r.bottomRight());
-    path.lineTo(r.bottomLeft());
-    path.lineTo(r.topLeft() + QPointF(0, radius));
-    path.quadTo(r.topLeft(), r.topLeft() + QPointF(radius, 0));
-    path.closeSubpath();
-    setBlurRegion(QRegion(path.toFillPolygon().toPolygon()));
 #endif
 }
 
@@ -663,25 +637,7 @@ void Decoration::updateShadow()
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
-    
-    // painter.drawRect(innerRect);
-    
-    //for rounded radius
-    qreal radius = kDecorationRadius;
-    const auto *decoratedClient = window();
-    if (decoratedClient && decoratedClient->isMaximized()) {
-        radius = 0.0;
-    }
-    QPainterPath path;
-    path.moveTo(innerRect.topLeft() + QPointF(radius, 0));
-    path.lineTo(innerRect.topRight() - QPointF(radius, 0));
-    path.quadTo(innerRect.topRight(), innerRect.topRight() + QPointF(0, radius));
-    path.lineTo(innerRect.bottomRight());
-    path.lineTo(innerRect.bottomLeft());
-    path.lineTo(innerRect.topLeft() + QPointF(0, radius));
-    path.quadTo(innerRect.topLeft(), innerRect.topLeft() + QPointF(radius, 0));
-    path.closeSubpath();
-    painter.drawPath(path);
+    painter.drawRect(innerRect);
 
     painter.end();
 
@@ -998,7 +954,7 @@ void Decoration::sendMoveEvent(const QPoint pos)
     }
 }
 
-/* void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRegion) const
+void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRegion) const
 {
     Q_UNUSED(repaintRegion)
 
@@ -1012,40 +968,7 @@ void Decoration::sendMoveEvent(const QPoint pos)
     painter->drawRect(rect());
 
     painter->restore();
-} */
-
-
-// for rounded corners
-void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRegion) const
-{
-    Q_UNUSED(repaintRegion)
-
-    painter->save();
-    painter->setRenderHint(QPainter::Antialiasing, true);
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(borderColor());
-
-    QRectF r = rect();
-    qreal radius = kDecorationRadius;
-    const auto *decoratedClient = window();
-    if (decoratedClient && decoratedClient->isMaximized()) {
-        radius = 0.0;
-    }
-    QPainterPath path;
-    path.moveTo(r.topLeft() + QPointF(radius, 0));
-    path.lineTo(r.topRight() - QPointF(radius, 0));
-    path.quadTo(r.topRight(), r.topRight() + QPointF(0, radius));
-    path.lineTo(r.bottomRight());
-    path.lineTo(r.bottomLeft());
-    path.lineTo(r.topLeft() + QPointF(0, radius));
-    path.quadTo(r.topLeft(), r.topLeft() + QPointF(radius, 0));
-    path.closeSubpath();
-
-    painter->drawPath(path);
-
-    painter->restore();
 }
-
 
 QColor Decoration::borderColor() const
 {
@@ -1084,7 +1007,7 @@ QColor Decoration::titleBarForegroundColor() const
     return decoratedClient->color(group, KDecoration3::ColorRole::Foreground);
 }
 
-/* void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repaintRegion) const
+void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repaintRegion) const
 {
     Q_UNUSED(repaintRegion)
 
@@ -1093,39 +1016,7 @@ QColor Decoration::titleBarForegroundColor() const
     painter->setBrush(titleBarBackgroundColor());
     painter->drawRect(QRect(0, 0, size().width(), titleBarHeight()));
     painter->restore();
-} */
-
-// for rounded corners
-
-void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repaintRegion) const
-{
-    Q_UNUSED(repaintRegion)
-
-    painter->save();
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(titleBarBackgroundColor());
-
-    QRectF r(0, 0, size().width(), titleBarHeight());
-    qreal radius = kDecorationRadius;
-    const auto *decoratedClient = window();
-    if (decoratedClient && decoratedClient->isMaximized()) {
-        radius = 0.0;
-    }
-    QPainterPath path;
-    path.moveTo(r.topLeft() + QPointF(radius, 0));
-    path.lineTo(r.topRight() - QPointF(radius, 0));
-    path.quadTo(r.topRight(), r.topRight() + QPointF(0, radius));
-    path.lineTo(r.bottomRight());
-    path.lineTo(r.bottomLeft());
-    path.lineTo(r.topLeft() + QPointF(0, radius));
-    path.quadTo(r.topLeft(), r.topLeft() + QPointF(radius, 0));
-    path.closeSubpath();
-
-    painter->drawPath(path);
-
-    painter->restore();
 }
-
 
 void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) const
 {
@@ -1235,7 +1126,7 @@ void Decoration::paintButtons(QPainter *painter, const QRectF &repaintRegion) co
     m_menuButtons->paint(painter, repaintRegion);
 }
 
-/* void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) const
+void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) const
 {
     Q_UNUSED(repaintRegion)
 
@@ -1248,61 +1139,6 @@ void Decoration::paintButtons(QPainter *painter, const QRectF &repaintRegion) co
     painter->setPen(outlineColor);
     painter->drawRect( rect().adjusted( 0, 0, -1, -1 ) );
     painter->restore();
-} */
-
-//for rounded corners
-void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) const
-{
-    Q_UNUSED(repaintRegion)
-
-    painter->save();
-    painter->setRenderHint(QPainter::Antialiasing, true);
-    painter->setBrush(Qt::NoBrush);
-    QColor outlineColor(titleBarForegroundColor());
-    outlineColor.setAlphaF(0.25);
-    painter->setPen(outlineColor);
-
-    QRectF r = rect().adjusted(0.5, 0.5, -1.5, -1.5); // Bordo ben centrato su pixel
-    qreal radius = kDecorationRadius;
-    const auto *decoratedClient = window();
-    if (decoratedClient && decoratedClient->isMaximized()) {
-        radius = 0.0;
-    }
-    QPainterPath path;
-    path.moveTo(r.topLeft() + QPointF(radius, 0));
-    path.lineTo(r.topRight() - QPointF(radius, 0));
-    path.quadTo(r.topRight(), r.topRight() + QPointF(0, radius));
-    path.lineTo(r.bottomRight());
-    path.lineTo(r.bottomLeft());
-    path.lineTo(r.topLeft() + QPointF(0, radius));
-    path.quadTo(r.topLeft(), r.topLeft() + QPointF(radius, 0));
-    path.closeSubpath();
-
-    painter->drawPath(path);
-
-    painter->restore();
-}
-
-// for rounded corners
-QRegion Decoration::region() const
-{
-    QPainterPath path;
-    QRect r(0, 0, size().width(), size().height());
-    qreal radius = kDecorationRadius;
-    const auto *decoratedClient = window();
-    if (decoratedClient && decoratedClient->isMaximized()) {
-        radius = 0.0;
-    }
-    path.moveTo(r.topLeft() + QPointF(radius, 0));
-    path.lineTo(r.topRight() - QPointF(radius, 0));
-    path.quadTo(r.topRight(), r.topRight() + QPointF(0, radius));
-    path.lineTo(r.bottomRight());
-    path.lineTo(r.bottomLeft());
-    path.lineTo(r.topLeft() + QPointF(0, radius));
-    path.quadTo(r.topLeft(), r.topLeft() + QPointF(radius, 0));
-    path.closeSubpath();
-
-    return QRegion(path.toFillPolygon().toPolygon());
 }
 
 } // namespace Material

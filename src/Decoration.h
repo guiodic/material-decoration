@@ -58,11 +58,6 @@ public:
 
     QRect titleBarRect() const;
     QRect centerRect() const;
-    
-    // for rounded corners
-    QRegion region() const; 
-    KDecoration3::DecorationButtonGroup* leftButtons() const { return m_leftButtons; }
-    KDecoration3::DecorationButtonGroup* rightButtons() const { return m_rightButtons; }
 
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
 
