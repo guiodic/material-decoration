@@ -1283,8 +1283,7 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
     painter->restore();
 }
 
-// for rounded corners 
-/*
+// for rounded corners
 QRegion Decoration::region() const
 {
     QPainterPath path;
@@ -1304,6 +1303,6 @@ QRegion Decoration::region() const
     path.closeSubpath();
 
     return QRegion(path.toFillPolygon().toPolygon());
-} */
+}
 
 } // namespace Material
