@@ -24,6 +24,7 @@
 #include <QTimer>
 #include <QToolButton>
 #include <QWidgetAction>
+#include <QMouseEvent> // submenu-opening-onhover
 
 // Local
 #include "dbusmenushortcut_p.h"
@@ -528,12 +529,33 @@ void DBusMenuImporter::slotMenuAboutToShow()
 
 QMenu *DBusMenuImporter::createMenu(QWidget *parent)
 {
-    return new QMenu(parent);
+    //return new QMenu(parent);
+    
+    // submenu-opening-onhover
+    QMenu *menu = new QMenu(parent);
+    menu->installEventFilter(this); 
+    return menu;
 }
 
 QIcon DBusMenuImporter::iconForName(const QString &name)
 {
     return QIcon::fromTheme(name);
 }
+
+// submenu-opening-onhover
+bool DBusMenuImporter::eventFilter(QObject *watched, QEvent *event)
+{
+    QMenu *menu = qobject_cast<QMenu *>(watched);
+    if (menu && event->type() == QEvent::MouseMove) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+        QAction *action = menu->actionAt(mouseEvent->pos());
+        if (action && action->menu()) {
+            menu->setActiveAction(action);
+        }
+    }
+    // to the base class
+    return QObject::eventFilter(watched, event);
+}
+
 
 #include "moc_dbusmenuimporter.cpp"
