@@ -357,7 +357,7 @@ void Decoration::hoverMoveEvent(QHoverEvent *event)
     // } else if (wasHovered && contains) {
     //     // HoverMove
     // }
-    updateBlur();
+    // updateBlur();
 }
 
 void Decoration::mouseReleaseEvent(QMouseEvent *event)
@@ -778,17 +778,7 @@ template <typename T> using ScopedPointer = QScopedPointer<T, QScopedPointerPodD
 
 QPoint Decoration::windowPos() const
 {
-    const auto *decoratedClient = window();
-    // WId windowId = decoratedClient->windowId(); REMOVED IN KDecoration3
-            
-            //SO ... WE ASK TO KWIN
-            KWin::X11Window *kwinWindow = static_cast<KWin::X11Window *>(decoratedClient->decoration()->parent());
-            // qCDebug(category) << "KWin window: " << kwinWindow->window();            
-            WId windowId = 0;
-            if (kwinWindow) { 
-                windowId = kwinWindow->window();
-            };   
-            //
+    const WId windowId = safeWindowId();
 
     if (KWindowSystem::isPlatformX11()) {
 #if HAVE_X11
@@ -856,17 +846,7 @@ bool Decoration::dragMoveTick(const QPoint pos)
 
 void Decoration::sendMoveEvent(const QPoint pos)
 {
-    const auto *decoratedClient = window();
-    // WId windowId = decoratedClient->windowId(); REMOVED IN KDecoration3
-            
-             //SO ... WE ASK TO KWIN
-            KWin::X11Window *kwinWindow = static_cast<KWin::X11Window *>(decoratedClient->decoration()->parent());
-            // qCDebug(category) << "KWin window: " << kwinWindow->window();            
-            WId windowId = 0;
-            if (kwinWindow) { 
-                windowId = kwinWindow->window();
-            };   
-            //
+    const WId windowId = safeWindowId();
 
     QPoint globalPos = windowPos()
         - QPoint(0, titleBarHeight())
@@ -1139,6 +1119,20 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
     painter->setPen(outlineColor);
     painter->drawRect( rect().adjusted( 0, 0, -1, -1 ) );
     painter->restore();
+}
+
+WId Decoration::safeWindowId() const
+{
+    const auto *decoratedClient = window();
+    if (!decoratedClient) {
+        return 0;
+    }
+
+    if (const auto *kwinWindow = qobject_cast<const KWin::X11Window *>(decoratedClient->decoration()->parent())) {
+        return kwinWindow->window();
+    }
+
+    return 0;
 }
 
 } // namespace Material

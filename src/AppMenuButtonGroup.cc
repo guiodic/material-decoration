@@ -325,17 +325,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
         // qCDebug(category) << "windowId" << decoratedClient->windowId();
         if (KWindowSystem::isPlatformX11()) {
 #if HAVE_X11
-            // WId windowId = decoratedClient->windowId(); REMOVED IN KDecoration3
-            
-            //SO ... WE ASK TO KWIN
-            KWin::X11Window *kwinWindow = static_cast<KWin::X11Window *>(decoratedClient->decoration()->parent());
-            // qCDebug(category) << "KWin window: " << kwinWindow->window();            
-            WId windowId = 0;
-            if (kwinWindow) { 
-                windowId = kwinWindow->window();
-            };   
-            //
-            
+            const WId windowId = deco->safeWindowId();
             if (windowId != 0) {
                 initAppMenuModel();
                 m_appMenuModel->setWinId(windowId);

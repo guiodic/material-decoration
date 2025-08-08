@@ -57,7 +57,7 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     , m_animation(new QVariantAnimation(this))
     , m_opacity(1)
     , m_transitionValue(0)
-    , m_padding(new QMargins())
+    , m_padding()
     , m_isGtkButton(false)
 {
     connect(this, &Button::hoveredChanged, this,
@@ -287,8 +287,8 @@ void Button::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal gr
 void Button::updateSize(int contentWidth, int contentHeight)
 {
     const QSize size(
-        m_padding->left() + contentWidth + m_padding->right(),
-        m_padding->top() + contentHeight + m_padding->bottom()
+        m_padding.left() + contentWidth + m_padding.right(),
+        m_padding.top() + contentHeight + m_padding.bottom()
     );
     setGeometry(QRect(geometry().topLeft().toPoint(), size));
 }
@@ -462,10 +462,10 @@ QColor Button::foregroundColor() const
 QRectF Button::contentArea() const
 {
     return geometry().adjusted(
-        m_padding->left(),
-        m_padding->top(),
-        -m_padding->right(),
-        -m_padding->bottom()
+        m_padding.left(),
+        m_padding.top(),
+        -m_padding.right(),
+        -m_padding.bottom()
     );
 }
 
@@ -521,21 +521,21 @@ void Button::setTransitionValue(qreal value)
     }
 }
 
-QMargins* Button::padding()
+QMargins &Button::padding()
 {
     return m_padding;
 }
 
 void Button::setHorzPadding(int value)
 {
-    padding()->setLeft(value);
-    padding()->setRight(value);
+    padding().setLeft(value);
+    padding().setRight(value);
 }
 
 void Button::setVertPadding(int value)
 {
-    padding()->setTop(value);
-    padding()->setBottom(value);
+    padding().setTop(value);
+    padding().setBottom(value);
 }
 
 void Button::updateAnimationState(bool hovered)

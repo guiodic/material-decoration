@@ -44,7 +44,7 @@ public:
     Q_PROPERTY(int animationDuration READ animationDuration WRITE setAnimationDuration NOTIFY animationDurationChanged)
     Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity NOTIFY opacityChanged)
     Q_PROPERTY(qreal transitionValue READ transitionValue WRITE setTransitionValue NOTIFY transitionValueChanged)
-    Q_PROPERTY(QMargins* padding READ padding NOTIFY paddingChanged)
+    // Q_PROPERTY(QMargins* padding READ padding NOTIFY paddingChanged)
 
     // Passed to DecorationButtonGroup in Decoration
     static KDecoration3::DecorationButton *create(KDecoration3::DecorationButtonType type, KDecoration3::Decoration *decoration, QObject *parent = nullptr);
@@ -81,7 +81,7 @@ public:
     qreal transitionValue() const;
     void setTransitionValue(qreal value);
 
-    QMargins* padding();
+    QMargins &padding();
     void setHorzPadding(int value);
     void setVertPadding(int value);
 
@@ -100,7 +100,7 @@ private:
     QVariantAnimation *m_animation;
     qreal m_opacity;
     qreal m_transitionValue;
-    QMargins *m_padding;
+    QMargins m_padding;
     bool m_isGtkButton;
 };
 
