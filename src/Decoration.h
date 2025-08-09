@@ -61,6 +61,8 @@ public:
 
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
 
+    WId safeWindowId() const;
+
 public slots:
     bool init() override;
     void reconfigure();
