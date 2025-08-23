@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2025 Guido Iodice <guido[dot]iodice[at]gmail[dot]com>
  * Copyright (C) 2020 Chris Holland <zrenfire@gmail.com>
  * Copyright (C) 2016 Kai Uwe Broulik <kde@privat.broulik.de>
  * Copyright (C) 2014 by Hugo Pereira Da Costa <hugo.pereira@free.fr>
@@ -26,6 +27,7 @@
 #include "AppMenuButton.h"
 #include "TextButton.h"
 #include "MenuOverflowButton.h"
+#include "SearchButton.h"
 
 // KDecoration
 #include <KDecoration3/DecoratedWindow>
@@ -34,8 +36,7 @@
 
 // KF
 #include <KWindowSystem>
-// #include <KX11Extras>
-// #include <NETWM>
+#include <KLocalizedString>
 
 // KWIN
 #include <kwin-x11/x11window.h>
@@ -44,11 +45,17 @@
 #include <QAction>
 #include <QDebug>
 #include <QMenu>
+#include <QSet>
 #include <QPainter>
 #include <QVariantAnimation>
-// #include <QObject>
-// #include <QMetaObject>
-// #include <QMetaProperty>
+#include <QLineEdit>
+#include <QListView>
+#include <QStandardItemModel>
+#include <QGraphicsDropShadowEffect>
+#include <QTimer>
+#include <QApplication>
+#include <QKeyEvent>
+#include <QMouseEvent>
 
 
 namespace Material
@@ -65,6 +72,12 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     , m_animationEnabled(false)
     , m_animation(new QVariantAnimation(this))
     , m_opacity(1)
+    , m_searchButton(nullptr)
+    , m_searchLineEdit(new QLineEdit())
+    , m_searchResultsView(new QListView())
+    , m_searchResultsModel(new QStandardItemModel(this))
+    , m_searchContainer(new QWidget(nullptr))
+    , m_searchUiVisible(false)
 {
     // Assign showing and opacity before we bind the onShowingChanged animation
     // so that new windows do not animate.
@@ -100,10 +113,39 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
             this, &AppMenuButtonGroup::trigger);
     connect(this, &AppMenuButtonGroup::requestActivateOverflow,
             this, &AppMenuButtonGroup::triggerOverflow);
+
+    m_searchContainer->setAttribute(Qt::WA_TranslucentBackground);
+    m_searchContainer->setAttribute(Qt::WA_NativeWindow);
+    m_searchContainer->winId();           // force as native window
+    m_searchContainer->hide();            
+    m_searchContainer->setWindowFlags(Qt::Popup);
+    m_searchLineEdit->setParent(m_searchContainer);
+    m_searchResultsView->setParent(m_searchContainer);
+
+    auto *layout = new QVBoxLayout(m_searchContainer);
+    layout->addWidget(m_searchLineEdit, 0, Qt::AlignTop);
+    layout->addWidget(m_searchResultsView);
+    layout->setContentsMargins(0, 0, 0, 0);
+    m_searchContainer->setLayout(layout);
+
+    m_searchResultsView->setModel(m_searchResultsModel);
+
+    connect(m_searchLineEdit, &QLineEdit::textChanged, this, &AppMenuButtonGroup::filterMenu);
+    connect(m_searchResultsView, &QListView::clicked, this, &AppMenuButtonGroup::onSearchResultClicked);
+    connect(m_searchResultsView, &QListView::activated, this, &AppMenuButtonGroup::onSearchReturnPressed);
+    connect(m_searchLineEdit, &QLineEdit::returnPressed, this, &AppMenuButtonGroup::onSearchReturnPressed);
+
+    m_searchContainer->installEventFilter(this);
+    m_searchLineEdit->installEventFilter(this);
+    m_searchLineEdit->setFocusPolicy(Qt::StrongFocus);
+    m_searchLineEdit->setFixedWidth(searchWidth);
+    m_searchLineEdit->setFixedHeight(searchHeight);
+    m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu","Search")+QStringLiteral("…"));
 }
 
 AppMenuButtonGroup::~AppMenuButtonGroup()
 {
+    delete m_searchContainer;
 }
 
 int AppMenuButtonGroup::currentIndex() const
@@ -241,21 +283,27 @@ KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(int x, int y) const
 void AppMenuButtonGroup::resetButtons()
 {
     // qCDebug(category) << "    resetButtons";
-    // qCDebug(category) << "        before" << buttons();
-//  const QPointer<KDecoration3::DecorationButton> &button : buttonList
-//    auto list = QVector<QPointer<KDecoration3::DecorationButton>>(buttons());
-    // qCDebug(category) << "          list" << list;
-    removeButton(KDecoration3::DecorationButtonType::Custom);
-    // qCDebug(category) << "     remCustom" << buttons();
-
-    for (int i = 0; i < buttons().length(); i++) {
-        KDecoration3::DecorationButton* decoButton = buttons().value(i);
-        auto *button = qobject_cast<Button *>(decoButton);
-        delete button;
+    const auto currentButtons = buttons();
+    if (currentButtons.isEmpty()) {
+        return;
     }
 
-    // qCDebug(category) << "         after" << list;
+    // This removes all buttons with the "Custom" type from the group's list,
+    // but does not delete the button widgets themselves.
+    removeButton(KDecoration3::DecorationButtonType::Custom);
+
+    // Now we can safely delete the buttons we took ownership of.
+    qDeleteAll(currentButtons);
+
     emit menuUpdated();
+}
+
+void AppMenuButtonGroup::onMenuReadyForSearch()
+{
+    m_menuReadyForSearch = true;
+    if (!m_lastSearchQuery.isEmpty()) {
+        filterMenu(m_lastSearchQuery);
+    }
 }
 
 void AppMenuButtonGroup::initAppMenuModel()
@@ -263,6 +311,8 @@ void AppMenuButtonGroup::initAppMenuModel()
     m_appMenuModel = new AppMenuModel(this);
     connect(m_appMenuModel, &AppMenuModel::modelReset,
         this, &AppMenuButtonGroup::updateAppMenuModel);
+    connect(m_appMenuModel, &AppMenuModel::menuReadyForSearch,
+        this, &AppMenuButtonGroup::onMenuReadyForSearch);
     // qCDebug(category) << "AppMenuModel" << m_appMenuModel;
 }
 
@@ -289,6 +339,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
         // Update AppMenuModel
         // qCDebug(category) << "AppMenuModel" << m_appMenuModel;
 
+        m_menuReadyForSearch = false;
         resetButtons();
 
         // Populate
@@ -315,8 +366,15 @@ void AppMenuButtonGroup::updateAppMenuModel()
             
             addButton(QPointer<KDecoration3::DecorationButton>(b));
         }
-        m_overflowIndex = m_appMenuModel->rowCount();
-        addButton(new MenuOverflowButton(deco, m_overflowIndex, this));
+        
+        if (m_appMenuModel->rowCount() > 0) {
+            m_overflowIndex = m_appMenuModel->rowCount();
+            addButton(new MenuOverflowButton(deco, m_overflowIndex, this));
+            
+            m_searchButton = new SearchButton(deco, this);
+            connect(m_searchButton, &SearchButton::clicked, this, &AppMenuButtonGroup::toggleSearch);
+            addButton(m_searchButton);
+        }
 
         emit menuUpdated();
 
@@ -338,6 +396,41 @@ void AppMenuButtonGroup::updateAppMenuModel()
 #endif
         }
     }
+}
+
+QString AppMenuButtonGroup::getActionPath(QAction *action) const
+{
+    QStringList path;
+    if (!action) {
+        return QString();
+    }
+
+    path.prepend(action->text().remove(QLatin1Char('&')));
+
+    QSet<QMenu*> visitedMenus;
+    QMenu *currentMenu = qobject_cast<QMenu*>(action->parent());
+
+    while (currentMenu) {
+        if (visitedMenus.contains(currentMenu)) {
+            qWarning() << "Menu hierarchy cycle detected, breaking.";
+            break;
+        }
+        visitedMenus.insert(currentMenu);
+
+        QAction *parentAction = currentMenu->menuAction();
+        if (parentAction) {
+            const QString text = parentAction->text().remove(QLatin1Char('&'));
+            if (!text.isEmpty()) {
+                path.prepend(text);
+            }
+            currentMenu = qobject_cast<QMenu*>(parentAction->parent());
+        } else {
+            // Root menu
+            currentMenu = nullptr;
+        }
+    }
+
+    return path.join(QStringLiteral(" » "));
 }
 
 void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
@@ -364,6 +457,9 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 }
 
 void AppMenuButtonGroup::trigger(int buttonIndex) {
+    if (!m_appMenuModel || buttonIndex > m_appMenuModel->rowCount()) {
+        return; // Search button clicked or model not ready
+    }
     // qCDebug(category) << "AppMenuButtonGroup::trigger" << buttonIndex;
     KDecoration3::DecorationButton* button = buttons().value(buttonIndex);
 
@@ -479,10 +575,34 @@ void AppMenuButtonGroup::triggerOverflow()
 // FIXME TODO doesn't work on submenu
 bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
 {
+    //qCDebug(category) << "watched (in eventfilter): " << watched << " | event:" << event;
+    if (watched == m_searchLineEdit) {
+       // qCDebug(category) << "watched == m_searchLineEdit";
+        if (event->type() == QEvent::KeyPress) {
+            auto *keyEvent = static_cast<QKeyEvent *>(event);
+            if (keyEvent->key() == Qt::Key_Down) {
+                if (m_searchResultsModel->rowCount() > 0) {
+                    m_searchResultsView->setFocus();
+                    m_searchResultsView->setCurrentIndex(m_searchResultsModel->index(0, 0));
+                    return true; // Event handled
+                }
+            }
+        }
+    }
+
+    if (watched == m_searchContainer) {
+      //  qCDebug(category) << "watched == m_searchContainer";
+         if (event->type() == QEvent::Close) {
+                if (m_searchUiVisible) {
+                         toggleSearch();
+                }
+         }
+    }
+
     auto *menu = qobject_cast<QMenu *>(watched);
 
     if (!menu) {
-        return false;
+        return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
     }
 
     if (event->type() == QEvent::KeyPress) {
@@ -533,7 +653,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         }
     }
 
-    return false;
+    return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
 }
 
 bool AppMenuButtonGroup::isMenuOpen() const
@@ -580,6 +700,171 @@ void AppMenuButtonGroup::onShowingChanged(bool showing)
     } else {
         setOpacity(showing ? 1 : 0);
     }
+}
+
+void AppMenuButtonGroup::toggleSearch()
+{
+    qCDebug(category) << "m_searchUiVisible: " << m_searchUiVisible;
+    if (m_searchUiVisible) {
+        m_searchContainer->hide();
+        m_searchLineEdit->clear();
+        m_searchUiVisible = false;
+    } else {
+        m_searchResultsView->hide();
+        m_searchContainer->adjustSize();
+        repositionSearchPopup();
+        m_searchContainer->show();
+        m_searchContainer->raise();
+        m_searchLineEdit->activateWindow();
+        m_searchLineEdit->setFocus();
+        m_searchUiVisible = true;
+    }
+}
+
+void AppMenuButtonGroup::filterMenu(const QString &text)
+{
+    m_lastSearchQuery = text;
+    m_searchResultsModel->clear();
+
+    if (text.isEmpty()) {
+        m_searchResultsView->hide();
+        m_searchContainer->adjustSize();
+        repositionSearchPopup();
+        m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu","Search")+QStringLiteral("…"));
+        return;
+    }
+
+    if (!m_appMenuModel || !m_menuReadyForSearch) {
+        // Menu is not ready yet, search will be re-triggered later
+        return;
+    }
+
+    QList<QAction *> results;
+    for (int row = 0; row < m_appMenuModel->rowCount(); ++row) {
+        const QModelIndex menuIndex = m_appMenuModel->index(row, 0);
+        QAction *action = (QAction *)m_appMenuModel->data(menuIndex, AppMenuModel::ActionRole).value<void *>();
+        if (action) {
+            if (action->menu()) {
+                searchMenu(action->menu(), text, results);
+            } else {
+                QString fullPath = getActionPath(action);
+                if (fullPath.contains(text, Qt::CaseInsensitive)) {
+                    results.append(action);
+                }
+            }
+        }
+    }
+
+    for (QAction *action : results) {
+        QString text = getActionPath(action);
+        QStandardItem *item = new QStandardItem(action->icon(), text);
+        item->setData(QVariant::fromValue(action), Qt::UserRole);
+        if (!action->isEnabled()) {
+            item->setEnabled(false);
+        }
+        m_searchResultsModel->appendRow(item);
+    }
+    
+    m_searchResultsView->setVisible(m_searchResultsModel->rowCount() > 0);
+    m_searchContainer->adjustSize();
+    QPoint globalPos = m_searchContainer->mapToGlobal(QPoint(0, 0));
+    globalPos = clampToScreen(globalPos);
+    m_searchContainer->move(globalPos);
+    
+    if (m_searchResultsModel->rowCount() <= 0) {
+        repositionSearchPopup();
+    }    
+    
+}
+
+void AppMenuButtonGroup::onSearchResultClicked(const QModelIndex &index)
+{
+    if (!index.isValid()) {
+        return;
+    }
+
+    QAction *action = index.data(Qt::UserRole).value<QAction *>();
+    if (action && action->isEnabled()) {
+        action->trigger();
+    }
+
+    toggleSearch(); // Hide search after selection
+}
+
+void AppMenuButtonGroup::repositionSearchPopup()
+{
+    auto *deco = qobject_cast<Decoration *>(decoration());
+    if (!deco || !m_searchButton) {
+        return;
+    }
+
+    const QRectF searchButtonGeometry = m_searchButton->geometry();
+    const QPoint position = searchButtonGeometry.topLeft().toPoint();
+    QPoint globalPos(position);
+    globalPos += deco->windowPos();
+
+    m_searchContainer->move(clampToScreen(globalPos));
+}
+
+void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results)
+{
+    for (QAction *action : menu->actions()) {
+        if (action->isSeparator()) {
+            continue;
+        }
+        if (action->menu()) {
+            searchMenu(action->menu(), text, results);
+        } else {
+            QString fullPath = getActionPath(action);
+            if (fullPath.contains(text, Qt::CaseInsensitive)) {
+                results.append(action);
+            }
+        }
+    }
+}
+
+void AppMenuButtonGroup::onSearchReturnPressed()
+{
+    if (m_searchResultsView->selectionModel()->hasSelection()) {
+        onSearchResultClicked(m_searchResultsView->selectionModel()->currentIndex());
+    } else if (m_searchResultsModel->rowCount() > 0) {
+        onSearchResultClicked(m_searchResultsModel->index(0, 0));
+    }
+}
+
+QPoint AppMenuButtonGroup::clampToScreen(QPoint globalPos) const
+{
+    QScreen *screen = m_searchContainer ? m_searchContainer->screen()
+                                        : QGuiApplication::screenAt(globalPos);
+    if (!screen) screen = QGuiApplication::primaryScreen();
+    if (!screen) return globalPos; // fallback
+
+    const QRect bounds = screen->availableGeometry();
+    int w = searchWidth;
+    int h = searchHeight;
+    
+    if (m_searchResultsView->isVisible()) { 
+        w = m_searchContainer->width();
+        h = m_searchContainer->height();
+    } else { 
+        if (m_searchLineEdit->isVisible()) { 
+            w = m_searchLineEdit->width();
+            h = m_searchLineEdit->height();
+        }
+    }
+
+    int minX = bounds.left();
+    int maxX = bounds.left() + bounds.width()  - w;
+    int minY = bounds.top();
+    int maxY = bounds.top()  + bounds.height() - h;
+
+    if (w > bounds.width())  { minX = maxX = bounds.left(); }
+    if (h > bounds.height()) { minY = maxY = bounds.top();  }
+
+    globalPos.setX(qBound(minX, globalPos.x(), maxX));
+    globalPos.setY(qBound(minY, globalPos.y(), maxY));
+
+    return globalPos;
 }
 
 } // namespace Material

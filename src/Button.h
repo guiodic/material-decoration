@@ -95,7 +95,7 @@ signals:
     void transitionValueChanged(qreal);
     void paddingChanged();
 
-private:
+protected:
     bool m_animationEnabled;
     QVariantAnimation *m_animation;
     qreal m_opacity;

@@ -19,6 +19,7 @@
 
 // own
 #include "AppMenuModel.h"
+#include "SearchButton.h"
 
 // KDecoration
 #include <KDecoration3/DecoratedWindow>
@@ -28,7 +29,10 @@
 // Qt
 #include <QMenu>
 #include <QVariantAnimation>
-// #include <QWidget>
+#include <QLineEdit>
+#include <QListView>
+#include <QStandardItemModel>
+#include <QVBoxLayout>
 
 namespace Material
 {
@@ -52,7 +56,7 @@ public:
     Q_PROPERTY(int animationDuration READ animationDuration WRITE setAnimationDuration NOTIFY animationDurationChanged)
     Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity NOTIFY opacityChanged)
 
- 
+
     int currentIndex() const;
     void setCurrentIndex(int set);
 
@@ -84,6 +88,7 @@ public:
     void unPressAllButtons();
 
 public slots:
+    void onMenuReadyForSearch();
     void initAppMenuModel();
     void updateAppMenuModel();
     void updateOverflow(QRectF availableRect);
@@ -91,9 +96,13 @@ public slots:
     void triggerOverflow();
     void updateShowing();
     void onMenuAboutToHide();
+    void toggleSearch();
 
 private slots:
     void onShowingChanged(bool hovered);
+    void filterMenu(const QString &text);
+    void onSearchResultClicked(const QModelIndex &index);
+    void onSearchReturnPressed();
 
 signals:
     void menuUpdated();
@@ -114,6 +123,10 @@ protected:
 
 private:
     void resetButtons();
+    void searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results);
+    QString getActionPath(QAction *action) const;
+    void repositionSearchPopup();
+    QPoint clampToScreen(QPoint globalPos) const;
 
     AppMenuModel *m_appMenuModel;
     int m_currentIndex;
@@ -126,6 +139,18 @@ private:
     QVariantAnimation *m_animation;
     qreal m_opacity;
     QPointer<QMenu> m_currentMenu;
+
+    SearchButton *m_searchButton;
+    QLineEdit *m_searchLineEdit;
+    QListView *m_searchResultsView;
+    QStandardItemModel *m_searchResultsModel;
+    QWidget *m_searchContainer;
+    bool m_searchUiVisible = false;
+    const int searchWidth=400;
+    const int searchHeight=34;
+
+    bool m_menuReadyForSearch = false;
+    QString m_lastSearchQuery;
 };
 
 } // namespace Material

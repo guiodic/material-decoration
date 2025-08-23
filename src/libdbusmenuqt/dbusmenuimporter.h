@@ -74,7 +74,7 @@ protected:
      */
     virtual QIcon iconForName(const QString &);
     
-    bool eventFilter(QObject *watched, QEvent *event) override; // submenu-opening-onhover
+  //  bool eventFilter(QObject *watched, QEvent *event) override; // submenu-opening-onhover
 
 private Q_SLOTS:
     void sendClickedEvent(int);

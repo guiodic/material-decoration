@@ -89,9 +89,14 @@ signals:
     void menuAvailableChanged();
     void modelNeedsUpdate();
     void winIdChanged();
+    void menuReadyForSearch();
+
+private Q_SLOTS:
+    void onMenuUpdated(QMenu *menu);
 
 private:
     bool m_menuAvailable;
+    int m_pendingMenuUpdates = 0;
     bool m_updatePending = false;
 
     QVariant m_winId{-1};
@@ -106,6 +111,8 @@ private:
     QString m_menuObjectPath;
 
     QPointer<KDBusMenuImporter> m_importer;
+
+    void cacheSubMenus(QMenu *menu);
 };
 
 } // namespace Material

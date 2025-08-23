@@ -393,36 +393,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     m_importer = new KDBusMenuImporter(serviceName, menuObjectPath, this);
     QMetaObject::invokeMethod(m_importer, "updateMenu", Qt::QueuedConnection);
 
-    connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, [this](QMenu *menu) {
-        m_menu = m_importer->menu();
-        if (m_menu.isNull() || menu != m_menu) {
-            return;
-        }
-
-        // cache first layer of sub menus, which we'll be popping up
-        const auto actions = m_menu->actions();
-        for (QAction *a : actions) {
-            // signal dataChanged when the action changes
-            connect(a, &QAction::changed, this, [this, a] {
-                if (m_menuAvailable && m_menu) {
-                    const int actionIdx = m_menu->actions().indexOf(a);
-                    if (actionIdx > -1) {
-                        const QModelIndex modelIdx = index(actionIdx, 0);
-                        emit dataChanged(modelIdx, modelIdx);
-                    }
-                }
-            });
-
-            connect(a, &QAction::destroyed, this, &AppMenuModel::modelNeedsUpdate);
-
-            if (a->menu()) {
-                m_importer->updateMenu(a->menu());
-            }
-        }
-
-        setMenuAvailable(true);
-        emit modelNeedsUpdate();
-    });
+    connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, &AppMenuModel::onMenuUpdated);
 
     connect(m_importer.data(), &DBusMenuImporter::actionActivationRequested, this, [this](QAction *action) {
         // TODO submenus
@@ -436,6 +407,65 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
             emit requestActivateIndex(it - actions.begin());
         }
     });
+}
+
+void AppMenuModel::onMenuUpdated(QMenu *menu)
+{
+    if (m_menu.isNull()) { // First time update, this is the main menu
+        m_menu = menu;
+        if (m_menu.isNull()) {
+            return;
+        }
+
+        // Connect signals for top-level actions
+        const auto actions = m_menu->actions();
+        for (QAction *a : actions) {
+            connect(a, &QAction::changed, this, [this, a] {
+                if (m_menuAvailable && m_menu) {
+                    const int actionIdx = m_menu->actions().indexOf(a);
+                    if (actionIdx > -1) {
+                        const QModelIndex modelIdx = index(actionIdx, 0);
+                        emit dataChanged(modelIdx, modelIdx);
+                    }
+                }
+            });
+            connect(a, &QAction::destroyed, this, &AppMenuModel::modelNeedsUpdate);
+        }
+
+        setMenuAvailable(true);
+        emit modelNeedsUpdate();
+
+        // Start caching submenus
+        m_pendingMenuUpdates = 0;
+        cacheSubMenus(m_menu);
+        if (m_pendingMenuUpdates == 0) {
+            emit menuReadyForSearch();
+        }
+    } else { // This is a submenu update
+        cacheSubMenus(menu);
+        if (m_pendingMenuUpdates > 0) {
+            m_pendingMenuUpdates--;
+            if (m_pendingMenuUpdates == 0) {
+                emit menuReadyForSearch();
+            }
+        }
+    }
+}
+
+void AppMenuModel::cacheSubMenus(QMenu *menu)
+{
+    if (!menu) {
+        return;
+    }
+
+    const auto actions = menu->actions();
+    for (QAction *a : actions) {
+        if (auto subMenu = a->menu()) {
+            m_pendingMenuUpdates++;
+            m_importer->updateMenu(subMenu);
+            cacheSubMenus(subMenu);
+        }
+    }
 }
 
 bool AppMenuModel::nativeEventFilter(const QByteArray &eventType, void *message, qintptr *result)
