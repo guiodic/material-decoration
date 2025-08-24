@@ -25,7 +25,7 @@
                 <choice name="AlignRight" />
                 <choice name="TitleHidden" />
             </choices>
-            <default>AlignCenterFullWidth</default>
+            <default>AlignCenter</default>
         </entry>
 
         <!-- opacity -->
