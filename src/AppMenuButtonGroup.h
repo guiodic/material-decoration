@@ -30,9 +30,6 @@
 #include <QMenu>
 #include <QVariantAnimation>
 #include <QLineEdit>
-#include <QListView>
-#include <QStandardItemModel>
-#include <QVBoxLayout>
 
 namespace Material
 {
@@ -101,8 +98,8 @@ public slots:
 private slots:
     void onShowingChanged(bool hovered);
     void filterMenu(const QString &text);
-    void onSearchResultClicked(const QModelIndex &index);
     void onSearchReturnPressed();
+    void onSearchMenuHidden();
 
 signals:
     void menuUpdated();
@@ -141,13 +138,9 @@ private:
     QPointer<QMenu> m_currentMenu;
 
     SearchButton *m_searchButton;
-    QLineEdit *m_searchLineEdit;
-    QListView *m_searchResultsView;
-    QStandardItemModel *m_searchResultsModel;
-    QWidget *m_searchContainer;
+    QPointer<QMenu> m_searchMenu;
+    QPointer<QLineEdit> m_searchLineEdit;
     bool m_searchUiVisible = false;
-    const int searchWidth=400;
-    const int searchHeight=34;
 
     bool m_menuReadyForSearch = false;
     QString m_lastSearchQuery;

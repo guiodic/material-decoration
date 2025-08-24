@@ -44,19 +44,18 @@
 
 // Qt
 #include <QAction>
-#include <QDebug>
-#include <QMenu>
-#include <QSet>
-#include <QPainter>
-#include <QVariantAnimation>
-#include <QLineEdit>
-#include <QListView>
-#include <QStandardItemModel>
-#include <QGraphicsDropShadowEffect>
-#include <QTimer>
 #include <QApplication>
+#include <QDebug>
+#include <QEvent>
 #include <QKeyEvent>
+#include <QMenu>
 #include <QMouseEvent>
+#include <QPainter>
+#include <QScreen>
+#include <QSet>
+#include <QTimer>
+#include <QVariantAnimation>
+#include <QWidgetAction>
 
 
 namespace Material
@@ -74,10 +73,8 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     , m_animation(new QVariantAnimation(this))
     , m_opacity(1)
     , m_searchButton(nullptr)
-    , m_searchLineEdit(new QLineEdit())
-    , m_searchResultsView(new QListView())
-    , m_searchResultsModel(new QStandardItemModel(this))
-    , m_searchContainer(new QWidget(nullptr))
+    , m_searchMenu(new QMenu(nullptr))
+    , m_searchLineEdit(new QLineEdit(m_searchMenu))
     , m_searchUiVisible(false)
 {
     // Assign showing and opacity before we bind the onShowingChanged animation
@@ -115,39 +112,21 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     connect(this, &AppMenuButtonGroup::requestActivateOverflow,
             this, &AppMenuButtonGroup::triggerOverflow);
 
-    m_searchContainer->setAttribute(Qt::WA_TranslucentBackground);
-    m_searchContainer->setAttribute(Qt::WA_NativeWindow);
-    m_searchContainer->winId();           // force as native window
-    m_searchContainer->hide();            
-    m_searchContainer->setWindowFlags(Qt::Popup);
-    m_searchLineEdit->setParent(m_searchContainer);
-    m_searchResultsView->setParent(m_searchContainer);
-
-    auto *layout = new QVBoxLayout(m_searchContainer);
-    layout->addWidget(m_searchLineEdit, 0, Qt::AlignTop);
-    layout->addWidget(m_searchResultsView);
-    layout->setContentsMargins(0, 0, 0, 0);
-    m_searchContainer->setLayout(layout);
-
-    m_searchResultsView->setModel(m_searchResultsModel);
+    auto *searchAction = new QWidgetAction(m_searchMenu);
+    searchAction->setDefaultWidget(m_searchLineEdit);
+    m_searchMenu->addAction(searchAction);
+    m_searchMenu->addSeparator();
 
     connect(m_searchLineEdit, &QLineEdit::textChanged, this, &AppMenuButtonGroup::filterMenu);
-    connect(m_searchResultsView, &QListView::clicked, this, &AppMenuButtonGroup::onSearchResultClicked);
-    connect(m_searchResultsView, &QListView::activated, this, &AppMenuButtonGroup::onSearchReturnPressed);
     connect(m_searchLineEdit, &QLineEdit::returnPressed, this, &AppMenuButtonGroup::onSearchReturnPressed);
+    connect(m_searchMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onSearchMenuHidden);
 
-    m_searchContainer->installEventFilter(this);
     m_searchLineEdit->installEventFilter(this);
     m_searchLineEdit->setFocusPolicy(Qt::StrongFocus);
-    m_searchLineEdit->setFixedWidth(searchWidth);
-    m_searchLineEdit->setFixedHeight(searchHeight);
     m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu","Search")+QStringLiteral("…"));
 }
 
-AppMenuButtonGroup::~AppMenuButtonGroup()
-{
-    delete m_searchContainer;
-}
+AppMenuButtonGroup::~AppMenuButtonGroup() = default;
 
 int AppMenuButtonGroup::currentIndex() const
 {
@@ -600,28 +579,15 @@ void AppMenuButtonGroup::triggerOverflow()
 // FIXME TODO doesn't work on submenu
 bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
 {
-    //qCDebug(category) << "watched (in eventfilter): " << watched << " | event:" << event;
     if (watched == m_searchLineEdit) {
-       // qCDebug(category) << "watched == m_searchLineEdit";
         if (event->type() == QEvent::KeyPress) {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
             if (keyEvent->key() == Qt::Key_Down) {
-                if (m_searchResultsModel->rowCount() > 0) {
-                    m_searchResultsView->setFocus();
-                    m_searchResultsView->setCurrentIndex(m_searchResultsModel->index(0, 0));
-                    return true; // Event handled
-                }
+                m_searchMenu->setFocus();
+                // The menu will select the first item automatically
+                return true; // Event handled
             }
         }
-    }
-
-    if (watched == m_searchContainer) {
-      //  qCDebug(category) << "watched == m_searchContainer";
-         if (event->type() == QEvent::Close) {
-                if (m_searchUiVisible) {
-                         toggleSearch();
-                }
-         }
     }
 
     auto *menu = qobject_cast<QMenu *>(watched);
@@ -729,17 +695,13 @@ void AppMenuButtonGroup::onShowingChanged(bool showing)
 
 void AppMenuButtonGroup::toggleSearch()
 {
-    qCDebug(category) << "m_searchUiVisible: " << m_searchUiVisible;
     if (m_searchUiVisible) {
-        m_searchContainer->hide();
-        m_searchLineEdit->clear();
-        m_searchUiVisible = false;
+        m_searchMenu->hide();
+        // The rest is handled by onSearchMenuHidden()
     } else {
-        m_searchResultsView->hide();
-        m_searchContainer->adjustSize();
+        // We show the menu in repositionSearchPopup, which is called when the text changes
+        // or initially here.
         repositionSearchPopup();
-        m_searchContainer->show();
-        m_searchContainer->raise();
         m_searchLineEdit->activateWindow();
         m_searchLineEdit->setFocus();
         m_searchUiVisible = true;
@@ -749,13 +711,17 @@ void AppMenuButtonGroup::toggleSearch()
 void AppMenuButtonGroup::filterMenu(const QString &text)
 {
     m_lastSearchQuery = text;
-    m_searchResultsModel->clear();
 
-    if (text.isEmpty()) {
-        m_searchResultsView->hide();
-        m_searchContainer->adjustSize();
-        repositionSearchPopup();
-        m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu","Search")+QStringLiteral("…"));
+    // Clear previous results, keeping the search bar and separator
+    const auto actions = m_searchMenu->actions();
+    for (int i = actions.count() - 1; i >= 2; --i) {
+        m_searchMenu->removeAction(actions.at(i));
+    }
+
+    if (text.length() < 3) {
+        if (text.isEmpty()) {
+            m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu", "Search") + QStringLiteral("…"));
+        }
         return;
     }
 
@@ -781,39 +747,25 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     }
 
     for (QAction *action : results) {
-        QString text = getActionPath(action);
-        QStandardItem *item = new QStandardItem(action->icon(), text);
-        item->setData(QVariant::fromValue(action), Qt::UserRole);
-        if (!action->isEnabled()) {
-            item->setEnabled(false);
-        }
-        m_searchResultsModel->appendRow(item);
+        QAction *newAction = new QAction(action->icon(), getActionPath(action), m_searchMenu);
+        newAction->setEnabled(action->isEnabled());
+        newAction->setCheckable(action->isCheckable());
+        newAction->setChecked(action->isChecked());
+        connect(newAction, &QAction::triggered, this, [action, this]() {
+            action->trigger();
+            m_searchMenu->hide();
+        });
+        m_searchMenu->addAction(newAction);
     }
-    
-    m_searchResultsView->setVisible(m_searchResultsModel->rowCount() > 0);
-    m_searchContainer->adjustSize();
-    QPoint globalPos = m_searchContainer->mapToGlobal(QPoint(0, 0));
-    globalPos = clampToScreen(globalPos);
-    m_searchContainer->move(globalPos);
-    
-    if (m_searchResultsModel->rowCount() <= 0) {
-        repositionSearchPopup();
-    }    
-    
 }
 
-void AppMenuButtonGroup::onSearchResultClicked(const QModelIndex &index)
+void AppMenuButtonGroup::onSearchMenuHidden()
 {
-    if (!index.isValid()) {
-        return;
+    if (m_searchButton) {
+        m_searchButton->setChecked(false);
     }
-
-    QAction *action = index.data(Qt::UserRole).value<QAction *>();
-    if (action && action->isEnabled()) {
-        action->trigger();
-    }
-
-    toggleSearch(); // Hide search after selection
+    m_searchLineEdit->clear();
+    m_searchUiVisible = false;
 }
 
 void AppMenuButtonGroup::repositionSearchPopup()
@@ -828,7 +780,7 @@ void AppMenuButtonGroup::repositionSearchPopup()
     QPoint globalPos(position);
     globalPos += deco->windowPos();
 
-    m_searchContainer->move(clampToScreen(globalPos));
+    m_searchMenu->popup(globalPos);
 }
 
 void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results)
@@ -850,33 +802,24 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAct
 
 void AppMenuButtonGroup::onSearchReturnPressed()
 {
-    if (m_searchResultsView->selectionModel()->hasSelection()) {
-        onSearchResultClicked(m_searchResultsView->selectionModel()->currentIndex());
-    } else if (m_searchResultsModel->rowCount() > 0) {
-        onSearchResultClicked(m_searchResultsModel->index(0, 0));
+    // Trigger the first "real" action in the menu
+    const auto actions = m_searchMenu->actions();
+    if (actions.count() > 2) { // 0 is search bar, 1 is separator
+        actions.at(2)->trigger();
     }
 }
 
 QPoint AppMenuButtonGroup::clampToScreen(QPoint globalPos) const
 {
-    QScreen *screen = m_searchContainer ? m_searchContainer->screen()
-                                        : QGuiApplication::screenAt(globalPos);
+    // This function is no longer used by the search popup, as QMenu handles
+    // screen clamping automatically. We leave it for other potential uses.
+    QScreen *screen = QGuiApplication::screenAt(globalPos);
     if (!screen) screen = QGuiApplication::primaryScreen();
     if (!screen) return globalPos; // fallback
 
     const QRect bounds = screen->availableGeometry();
-    int w = searchWidth;
-    int h = searchHeight;
-    
-    if (m_searchResultsView->isVisible()) { 
-        w = m_searchContainer->width();
-        h = m_searchContainer->height();
-    } else { 
-        if (m_searchLineEdit->isVisible()) { 
-            w = m_searchLineEdit->width();
-            h = m_searchLineEdit->height();
-        }
-    }
+    int w = 100; // dummy value
+    int h = 100; // dummy value
 
     int minX = bounds.left();
     int maxX = bounds.left() + bounds.width()  - w;
