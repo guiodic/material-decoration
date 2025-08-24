@@ -211,7 +211,6 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
     if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
         paintOutline(painter, repaintRegion);
     }
-    updateBlur();
 }
 
 bool Decoration::init()
@@ -538,6 +537,7 @@ void Decoration::updateButtonsGeometry()
         m_menuButtons->updateOverflow(availableRect);
     }
 
+    updateBlur();
     update();
 }
 
