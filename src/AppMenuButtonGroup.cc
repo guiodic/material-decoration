@@ -336,44 +336,66 @@ void AppMenuButtonGroup::updateAppMenuModel()
     }
 
     if (m_appMenuModel) {
-        // Update AppMenuModel
-        // qCDebug(category) << "AppMenuModel" << m_appMenuModel;
-
         m_menuReadyForSearch = false;
-        resetButtons();
 
-        // Populate
-        for (int row = 0; row < m_appMenuModel->rowCount(); row++) {
-            const QModelIndex index = m_appMenuModel->index(row, 0);
-            const QString itemLabel = m_appMenuModel->data(index, AppMenuModel::MenuRole).toString();
+        const int modelActionCount = m_appMenuModel->rowCount();
+        // The button list contains menu buttons, plus an overflow button and a search button
+        const int currentButtonCount = buttons().count() > 0 ? buttons().count() - 2 : 0;
 
-            // https://github.com/psifidotos/applet-window-appmenu/blob/908e60831d7d68ee56a56f9c24017a71822fc02d/lib/appmenuapplet.cpp#L167
-            const QVariant data = m_appMenuModel->data(index, AppMenuModel::ActionRole);
-            QAction *itemAction = (QAction *)data.value<void *>();
+        // If the number of actions is the same, just update the existing buttons
+        if (modelActionCount > 0 && modelActionCount == currentButtonCount) {
+            for (int row = 0; row < modelActionCount; ++row) {
+                TextButton *button = qobject_cast<TextButton*>(buttons().at(row));
+                if (button) {
+                    const QModelIndex index = m_appMenuModel->index(row, 0);
+                    const QString itemLabel = m_appMenuModel->data(index, AppMenuModel::MenuRole).toString();
+                    const QVariant data = m_appMenuModel->data(index, AppMenuModel::ActionRole);
+                    QAction *itemAction = (QAction *)data.value<void *>();
 
-            // qCDebug(category) << "    " << itemAction;
+                    button->setText(itemLabel);
+                    button->setAction(itemAction);
 
-            TextButton *b = new TextButton(deco, row, this);
-            b->setText(itemLabel);
-            b->setAction(itemAction);
-            b->setOpacity(m_opacity);
-
-            // Skip items with empty labels (The first item in a Gtk app)
-            if (itemLabel.isEmpty()) {
-                b->setEnabled(false);
-                b->setVisible(false);
+                    if (itemLabel.isEmpty()) {
+                        button->setEnabled(false);
+                        button->setVisible(false);
+                    } else {
+                        button->setEnabled(true);
+                    }
+                }
             }
-            
-            addButton(QPointer<KDecoration3::DecorationButton>(b));
-        }
-        
-        if (m_appMenuModel->rowCount() > 0) {
-            m_overflowIndex = m_appMenuModel->rowCount();
-            addButton(new MenuOverflowButton(deco, m_overflowIndex, this));
-            
-            m_searchButton = new SearchButton(deco, this);
-            connect(m_searchButton, &SearchButton::clicked, this, &AppMenuButtonGroup::toggleSearch);
-            addButton(m_searchButton);
+        } else { // Fallback to the old, brute-force method if counts differ
+            resetButtons();
+
+            // Populate
+            for (int row = 0; row < m_appMenuModel->rowCount(); row++) {
+                const QModelIndex index = m_appMenuModel->index(row, 0);
+                const QString itemLabel = m_appMenuModel->data(index, AppMenuModel::MenuRole).toString();
+
+                const QVariant data = m_appMenuModel->data(index, AppMenuModel::ActionRole);
+                QAction *itemAction = (QAction *)data.value<void *>();
+
+                TextButton *b = new TextButton(deco, row, this);
+                b->setText(itemLabel);
+                b->setAction(itemAction);
+                b->setOpacity(m_opacity);
+
+                // Skip items with empty labels (The first item in a Gtk app)
+                if (itemLabel.isEmpty()) {
+                    b->setEnabled(false);
+                    b->setVisible(false);
+                }
+
+                addButton(QPointer<KDecoration3::DecorationButton>(b));
+            }
+
+            if (m_appMenuModel->rowCount() > 0) {
+                m_overflowIndex = m_appMenuModel->rowCount();
+                addButton(new MenuOverflowButton(deco, m_overflowIndex, this));
+
+                m_searchButton = new SearchButton(deco, this);
+                connect(m_searchButton, &SearchButton::clicked, this, &AppMenuButtonGroup::toggleSearch);
+                addButton(m_searchButton);
+            }
         }
 
         emit menuUpdated();

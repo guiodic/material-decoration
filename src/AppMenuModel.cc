@@ -121,6 +121,11 @@ AppMenuModel::AppMenuModel(QObject *parent)
             emit modelNeedsUpdate();
         }
     });
+
+    m_updateTimer = new QTimer(this);
+    m_updateTimer->setSingleShot(true);
+    m_updateTimer->setInterval(100); // 100ms debounce interval
+    connect(m_updateTimer, &QTimer::timeout, this, &AppMenuModel::performMenuUpdate);
 }
 
 AppMenuModel::~AppMenuModel() = default;
@@ -227,77 +232,31 @@ void AppMenuModel::update()
 
 void AppMenuModel::onWinIdChanged()
 {
-
     if (KWindowSystem::isPlatformX11()) {
 #if HAVE_X11
-
         qApp->removeNativeEventFilter(this);
 
         const WId id = m_winId.toUInt();
-
         if (!id) {
             setMenuAvailable(false);
             emit modelNeedsUpdate();
             return;
         }
 
-        auto *c = QX11Info::connection();
-
-        auto getWindowPropertyString = [c](WId id, const QByteArray &name) -> QByteArray {
-            QByteArray value;
-
-            if (!s_atoms.contains(name))
-            {
-                const xcb_intern_atom_cookie_t atomCookie = xcb_intern_atom(c, false, name.length(), name.constData());
-                QScopedPointer<xcb_intern_atom_reply_t, QScopedPointerPodDeleter> atomReply(xcb_intern_atom_reply(c, atomCookie, nullptr));
-
-                if (atomReply.isNull()) {
-                    return value;
-                }
-
-                s_atoms[name] = atomReply->atom;
-
-                if (s_atoms[name] == XCB_ATOM_NONE) {
-                    return value;
-                }
-            }
-
-            static const long MAX_PROP_SIZE = 10000;
-            auto propertyCookie = xcb_get_property(c, false, id, s_atoms[name], XCB_ATOM_STRING, 0, MAX_PROP_SIZE);
-            QScopedPointer<xcb_get_property_reply_t, QScopedPointerPodDeleter> propertyReply(xcb_get_property_reply(c, propertyCookie, nullptr));
-
-            if (propertyReply.isNull())
-            {
-                return value;
-            }
-
-            if (propertyReply->type == XCB_ATOM_STRING && propertyReply->format == 8 && propertyReply->value_len > 0)
-            {
-                const char *data = (const char *) xcb_get_property_value(propertyReply.data());
-                int len = propertyReply->value_len;
-
-                if (data) {
-                    value = QByteArray(data, data[len - 1] ? len : len - 1);
-                }
-            }
-
-            return value;
-        };
-
-        auto updateMenuFromWindowIfHasMenu = [this, &getWindowPropertyString](WId id) {
-            const QString serviceName = QString::fromUtf8(getWindowPropertyString(id, s_x11AppMenuServiceNamePropertyName));
-            const QString menuObjectPath = QString::fromUtf8(getWindowPropertyString(id, s_x11AppMenuObjectPathPropertyName));
-            const QString winClass = QString::fromUtf8(getWindowPropertyString(id, "WM_CLASS"));
+        auto updateMenuFromWindowIfHasMenu = [this](WId id) {
+            const QString serviceName = QString::fromUtf8(x11GetWindowProperty(id, s_x11AppMenuServiceNamePropertyName));
+            const QString menuObjectPath = QString::fromUtf8(x11GetWindowProperty(id, s_x11AppMenuObjectPathPropertyName));
 
             if (!serviceName.isEmpty() && !menuObjectPath.isEmpty()) {
                 updateApplicationMenu(serviceName, menuObjectPath);
-                // if it is libreoffice we need to monitor it 
+
+                // ALWAYS monitor LibreOffice for menu changes, as the object path can change
+                // when a new document is opened from the startcenter.
+                const QString winClass = QString::fromUtf8(x11GetWindowProperty(id, "WM_CLASS"));
                 if ((winClass.contains ("soffice.bin")) || (winClass.contains ("libreoffice")))   {
-                       // qCDebug(category) << winClass << " Great Scott! it's LibreOffice, we need to monitor it!";
-                       qApp->removeNativeEventFilter(this);
                        qApp->installNativeEventFilter(this);
                        m_delayedMenuWindowId = id;
-                };  
+                }
                 return true;
             }
 
@@ -323,6 +282,52 @@ void AppMenuModel::onWinIdChanged()
         // TODO
 #endif
     }
+}
+
+QByteArray AppMenuModel::x11GetWindowProperty(WId id, const QByteArray &name)
+{
+    QByteArray value;
+
+#if HAVE_X11
+    auto *c = QX11Info::connection();
+
+    if (!s_atoms.contains(name))
+    {
+        const xcb_intern_atom_cookie_t atomCookie = xcb_intern_atom(c, false, name.length(), name.constData());
+        QScopedPointer<xcb_intern_atom_reply_t, QScopedPointerPodDeleter> atomReply(xcb_intern_atom_reply(c, atomCookie, nullptr));
+
+        if (atomReply.isNull()) {
+            return value;
+        }
+
+        s_atoms[name] = atomReply->atom;
+
+        if (s_atoms[name] == XCB_ATOM_NONE) {
+            return value;
+        }
+    }
+
+    static const long MAX_PROP_SIZE = 10000;
+    auto propertyCookie = xcb_get_property(c, false, id, s_atoms[name], XCB_ATOM_STRING, 0, MAX_PROP_SIZE);
+    QScopedPointer<xcb_get_property_reply_t, QScopedPointerPodDeleter> propertyReply(xcb_get_property_reply(c, propertyCookie, nullptr));
+
+    if (propertyReply.isNull())
+    {
+        return value;
+    }
+
+    if (propertyReply->type == XCB_ATOM_STRING && propertyReply->format == 8 && propertyReply->value_len > 0)
+    {
+        const char *data = (const char *) xcb_get_property_value(propertyReply.data());
+        int len = propertyReply->value_len;
+
+        if (data) {
+            value = QByteArray(data, data[len - 1] ? len : len - 1);
+        }
+    }
+#endif
+
+    return value;
 }
 
 /* UNUSED, remove
@@ -490,8 +495,9 @@ bool AppMenuModel::nativeEventFilter(const QByteArray &eventType, void *message,
 
             if (serviceNameAtom != XCB_ATOM_NONE && objectPathAtom != XCB_ATOM_NONE) { // shouldn't happen
                 if (event->atom == serviceNameAtom || event->atom == objectPathAtom) {
-                    // see if we now have a menu
-                    onWinIdChanged();
+                    // A property has changed, which could be part of a storm of events.
+                    // Start (or restart) a timer to handle the update once the storm subsides.
+                    m_updateTimer->start();
                 }
             }
         }
@@ -502,6 +508,17 @@ bool AppMenuModel::nativeEventFilter(const QByteArray &eventType, void *message,
 #endif
 
     return false;
+}
+
+void AppMenuModel::performMenuUpdate()
+{
+    // This check is important to avoid doing work if the window is no longer valid
+    if (m_delayedMenuWindowId == 0) {
+        return;
+    }
+    const QString serviceName = QString::fromUtf8(x11GetWindowProperty(m_delayedMenuWindowId, s_x11AppMenuServiceNamePropertyName));
+    const QString menuObjectPath = QString::fromUtf8(x11GetWindowProperty(m_delayedMenuWindowId, s_x11AppMenuObjectPathPropertyName));
+    updateApplicationMenu(serviceName, menuObjectPath);
 }
 
 } // namespace Material

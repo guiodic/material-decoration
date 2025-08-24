@@ -31,6 +31,7 @@
 #include <QPointer>
 #include <QRect>
 #include <QStringList>
+#include <QTimer>
 
 
 namespace Material
@@ -93,8 +94,10 @@ signals:
 
 private Q_SLOTS:
     void onMenuUpdated(QMenu *menu);
+    void performMenuUpdate();
 
 private:
+    QTimer *m_updateTimer;
     bool m_menuAvailable;
     int m_pendingMenuUpdates = 0;
     bool m_updatePending = false;
@@ -113,6 +116,7 @@ private:
     QPointer<KDBusMenuImporter> m_importer;
 
     void cacheSubMenus(QMenu *menu);
+    QByteArray x11GetWindowProperty(WId id, const QByteArray &name);
 };
 
 } // namespace Material
