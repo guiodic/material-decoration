@@ -402,12 +402,14 @@ void AppMenuButtonGroup::updateAppMenuModel()
     }
 }
 
-QString AppMenuButtonGroup::getActionPath(QAction *action) const
+AppMenuButtonGroup::ActionInfo AppMenuButtonGroup::getActionPath(QAction *action) const
 {
-    QStringList path;
     if (!action) {
-        return QString();
+        return { QString(), false };
     }
+
+    QStringList path;
+    bool isEffectivelyEnabled = action->isEnabled();
 
     path.prepend(action->text().remove(QLatin1Char('&')));
 
@@ -423,6 +425,9 @@ QString AppMenuButtonGroup::getActionPath(QAction *action) const
 
         QAction *parentAction = currentMenu->menuAction();
         if (parentAction) {
+            if (!parentAction->isEnabled()) {
+                isEffectivelyEnabled = false;
+            }
             const QString text = parentAction->text().remove(QLatin1Char('&'));
             if (!text.isEmpty()) {
                 path.prepend(text);
@@ -434,7 +439,7 @@ QString AppMenuButtonGroup::getActionPath(QAction *action) const
         }
     }
 
-    return path.join(QStringLiteral(" » "));
+    return { path.join(QStringLiteral(" » ")), isEffectivelyEnabled };
 }
 
 void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
@@ -738,8 +743,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
             if (action->menu()) {
                 searchMenu(action->menu(), text, results);
             } else {
-                QString fullPath = getActionPath(action);
-                if (fullPath.contains(text, Qt::CaseInsensitive)) {
+                if (getActionPath(action).path.contains(text, Qt::CaseInsensitive)) {
                     results.append(action);
                 }
             }
@@ -747,8 +751,9 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     }
 
     for (QAction *action : results) {
-        QAction *newAction = new QAction(action->icon(), getActionPath(action), m_searchMenu);
-        newAction->setEnabled(action->isEnabled());
+        const ActionInfo info = getActionPath(action);
+        QAction *newAction = new QAction(action->icon(), info.path, m_searchMenu);
+        newAction->setEnabled(info.isEffectivelyEnabled);
         newAction->setCheckable(action->isCheckable());
         newAction->setChecked(action->isChecked());
         connect(newAction, &QAction::triggered, this, [action, this]() {
@@ -792,8 +797,8 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAct
         if (action->menu()) {
             searchMenu(action->menu(), text, results);
         } else {
-            QString fullPath = getActionPath(action);
-            if (fullPath.contains(text, Qt::CaseInsensitive)) {
+            const ActionInfo info = getActionPath(action);
+            if (info.path.contains(text, Qt::CaseInsensitive)) {
                 results.append(action);
             }
         }
