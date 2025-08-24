@@ -28,6 +28,7 @@
 #include "TextButton.h"
 #include "MenuOverflowButton.h"
 #include "SearchButton.h"
+//#include "InternalSettings.h"
 
 // KDecoration
 #include <KDecoration3/DecoratedWindow>
@@ -391,10 +392,12 @@ void AppMenuButtonGroup::updateAppMenuModel()
             if (m_appMenuModel->rowCount() > 0) {
                 m_overflowIndex = m_appMenuModel->rowCount();
                 addButton(new MenuOverflowButton(deco, m_overflowIndex, this));
-
-                m_searchButton = new SearchButton(deco, this);
-                connect(m_searchButton, &SearchButton::clicked, this, &AppMenuButtonGroup::toggleSearch);
-                addButton(m_searchButton);
+                
+                if (deco->searchEnabled()) {
+                    m_searchButton = new SearchButton(deco, this);
+                    connect(m_searchButton, &SearchButton::clicked, this, &AppMenuButtonGroup::toggleSearch);
+                    addButton(m_searchButton);
+                }
             }
         }
 

@@ -94,6 +94,7 @@ private:
     void updateShadow();
 
     bool menuAlwaysShow() const;
+    bool searchEnabled() const;
     bool animationsEnabled() const;
     int animationsDuration() const;
     int buttonPadding() const;

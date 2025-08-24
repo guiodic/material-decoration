@@ -658,6 +658,11 @@ bool Decoration::menuAlwaysShow() const
     return m_internalSettings->menuAlwaysShow();
 }
 
+bool Decoration::searchEnabled() const
+{
+    return m_internalSettings->searchEnabled();
+}
+
 bool Decoration::animationsEnabled() const
 {
     return m_internalSettings->animationsEnabled();

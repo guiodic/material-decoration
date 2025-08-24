@@ -40,6 +40,9 @@
         <entry name="MenuAlwaysShow" type="Bool">
             <default>true</default>
         </entry>
+        <entry name="SearchEnabled" type="Bool">
+            <default>false</default>
+        </entry>
         <entry name="MenuButtonHorzPadding" type="Int">
             <default>4</default>
         </entry>
