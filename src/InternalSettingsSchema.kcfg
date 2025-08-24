@@ -41,7 +41,7 @@
             <default>true</default>
         </entry>
         <entry name="SearchEnabled" type="Bool">
-            <default>false</default>
+            <default>true</default>
         </entry>
         <entry name="MenuButtonHorzPadding" type="Int">
             <default>4</default>
