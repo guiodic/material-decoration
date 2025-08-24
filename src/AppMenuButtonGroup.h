@@ -93,7 +93,6 @@ public slots:
     void triggerOverflow();
     void updateShowing();
     void onMenuAboutToHide();
-    void toggleSearch();
 
 private slots:
     void onShowingChanged(bool hovered);
@@ -119,15 +118,20 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
+    struct ActionInfo {
+        QString path;
+        bool isEffectivelyEnabled;
+    };
+
     void resetButtons();
     void searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results);
-    QString getActionPath(QAction *action) const;
-    void repositionSearchPopup();
+    ActionInfo getActionPath(QAction *action) const;
     QPoint clampToScreen(QPoint globalPos) const;
 
     AppMenuModel *m_appMenuModel;
     int m_currentIndex;
     int m_overflowIndex;
+    int m_searchIndex;
     bool m_overflowing;
     bool m_hovered;
     bool m_showing;

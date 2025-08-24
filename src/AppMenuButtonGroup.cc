@@ -66,6 +66,7 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     , m_appMenuModel(nullptr)
     , m_currentIndex(-1)
     , m_overflowIndex(-1)
+    , m_searchIndex(-1)
     , m_hovered(false)
     , m_showing(true)
     , m_alwaysShow(true)
@@ -116,6 +117,8 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     searchAction->setDefaultWidget(m_searchLineEdit);
     m_searchMenu->addAction(searchAction);
     m_searchMenu->addSeparator();
+
+    m_searchMenu->installEventFilter(this);
 
     connect(m_searchLineEdit, &QLineEdit::textChanged, this, &AppMenuButtonGroup::filterMenu);
     connect(m_searchLineEdit, &QLineEdit::returnPressed, this, &AppMenuButtonGroup::onSearchReturnPressed);
@@ -373,8 +376,11 @@ void AppMenuButtonGroup::updateAppMenuModel()
                 addButton(new MenuOverflowButton(deco, m_overflowIndex, this));
                 
                 if (deco->searchEnabled()) {
+                    m_searchIndex = m_appMenuModel->rowCount() + 1;
                     m_searchButton = new SearchButton(deco, this);
-                    connect(m_searchButton, &SearchButton::clicked, this, &AppMenuButtonGroup::toggleSearch);
+                    connect(m_searchButton, &SearchButton::clicked, this, [this] {
+                        trigger(m_searchIndex);
+                    });
                     addButton(m_searchButton);
                 }
             }
@@ -466,8 +472,31 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 }
 
 void AppMenuButtonGroup::trigger(int buttonIndex) {
+    if (buttonIndex == m_searchIndex) {
+        if (m_searchUiVisible) {
+            m_searchMenu->hide();
+            // onSearchMenuHidden will do the rest
+        } else {
+            const auto *deco = qobject_cast<Decoration *>(decoration());
+            if (!deco || !m_searchButton) {
+                return;
+            }
+            const QRectF searchButtonGeometry = m_searchButton->geometry();
+            const QPoint position = searchButtonGeometry.topLeft().toPoint();
+            QPoint globalPos(position);
+            globalPos += deco->windowPos();
+
+            m_searchMenu->popup(globalPos);
+
+            m_searchLineEdit->activateWindow();
+            m_searchLineEdit->setFocus();
+            m_searchUiVisible = true;
+        }
+        return;
+    }
+
     if (!m_appMenuModel || buttonIndex > m_appMenuModel->rowCount()) {
-        return; // Search button clicked or model not ready
+        return; // Overflow button clicked or model not ready
     }
     // qCDebug(category) << "AppMenuButtonGroup::trigger" << buttonIndex;
     KDecoration3::DecorationButton* button = buttons().value(buttonIndex);
@@ -698,21 +727,6 @@ void AppMenuButtonGroup::onShowingChanged(bool showing)
     }
 }
 
-void AppMenuButtonGroup::toggleSearch()
-{
-    if (m_searchUiVisible) {
-        m_searchMenu->hide();
-        // The rest is handled by onSearchMenuHidden()
-    } else {
-        // We show the menu in repositionSearchPopup, which is called when the text changes
-        // or initially here.
-        repositionSearchPopup();
-        m_searchLineEdit->activateWindow();
-        m_searchLineEdit->setFocus();
-        m_searchUiVisible = true;
-    }
-}
-
 void AppMenuButtonGroup::filterMenu(const QString &text)
 {
     m_lastSearchQuery = text;
@@ -771,21 +785,6 @@ void AppMenuButtonGroup::onSearchMenuHidden()
     }
     m_searchLineEdit->clear();
     m_searchUiVisible = false;
-}
-
-void AppMenuButtonGroup::repositionSearchPopup()
-{
-    auto *deco = qobject_cast<Decoration *>(decoration());
-    if (!deco || !m_searchButton) {
-        return;
-    }
-
-    const QRectF searchButtonGeometry = m_searchButton->geometry();
-    const QPoint position = searchButtonGeometry.topLeft().toPoint();
-    QPoint globalPos(position);
-    globalPos += deco->windowPos();
-
-    m_searchMenu->popup(globalPos);
 }
 
 void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results)
