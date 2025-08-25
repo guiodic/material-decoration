@@ -663,6 +663,11 @@ bool Decoration::searchEnabled() const
     return m_internalSettings->searchEnabled();
 }
 
+bool Decoration::showDisabledActions() const
+{
+    return m_internalSettings->showDisabledActions();
+}
+
 bool Decoration::animationsEnabled() const
 {
     return m_internalSettings->animationsEnabled();

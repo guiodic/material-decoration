@@ -793,8 +793,16 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         }
     }
 
+    const auto *deco = qobject_cast<const Decoration *>(decoration());
+    if (!deco) {
+        return;
+    }
+
     for (QAction *action : results) {
         const ActionInfo info = getActionPath(action);
+        if (!info.isEffectivelyEnabled && !deco->showDisabledActions()) {
+            continue;
+        }
         QAction *newAction = new QAction(action->icon(), info.path, m_searchMenu);
         newAction->setEnabled(info.isEffectivelyEnabled);
         newAction->setCheckable(action->isCheckable());

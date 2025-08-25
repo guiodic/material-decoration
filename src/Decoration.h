@@ -95,6 +95,7 @@ private:
 
     bool menuAlwaysShow() const;
     bool searchEnabled() const;
+    bool showDisabledActions() const;
     bool animationsEnabled() const;
     int animationsDuration() const;
     int buttonPadding() const;
