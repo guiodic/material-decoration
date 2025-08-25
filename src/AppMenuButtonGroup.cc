@@ -888,7 +888,7 @@ void AppMenuButtonGroup::clampToScreen(QMenu* menu)
 
     // Set max size as requested by user
     menu->setMaximumHeight(bounds.height());
-    menu->setMaximumWidth(bounds.width());
+    menu->setMaximumWidth(static_cast<int>(bounds.width() * 0.8));
 
     int w = menu->width();
     int h = menu->height();
