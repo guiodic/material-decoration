@@ -617,8 +617,24 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         if (event->type() == QEvent::KeyPress) {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
             if (keyEvent->key() == Qt::Key_Down) {
-                m_searchMenu->setFocus();
-                // The menu will select the first item automatically
+                const auto actions = m_searchMenu->actions();
+                if (actions.count() > 2) {
+                    m_searchMenu->setFocus();
+                    m_searchMenu->setActiveAction(actions.at(2));
+                    return true; // Event handled
+                }
+            }
+        }
+    }
+
+    if (watched == m_searchMenu && event->type() == QEvent::KeyPress) {
+        auto *keyEvent = static_cast<QKeyEvent *>(event);
+        if (keyEvent->key() == Qt::Key_Up) {
+            const auto actions = m_searchMenu->actions();
+            QAction *activeAction = m_searchMenu->activeAction();
+            if (actions.count() > 2 && activeAction == actions.at(2)) {
+                m_searchLineEdit->setFocus();
+                m_searchMenu->setActiveAction(nullptr);
                 return true; // Event handled
             }
         }
