@@ -859,27 +859,55 @@ void AppMenuButtonGroup::onSearchReturnPressed()
 
 void AppMenuButtonGroup::clampToScreen(QMenu* menu)
 {
-    QPoint menuPos=menu->pos();
-    QScreen *screen = QGuiApplication::screenAt(menuPos);
+    const auto *deco = qobject_cast<Decoration *>(decoration());
+    if (!deco) {
+        return;
+    }
+
+    KDecoration3::DecorationButton* anchorButton = nullptr;
+    if (menu == m_searchMenu) {
+        anchorButton = m_searchButton;
+    } else if (m_currentIndex >= 0 && m_currentIndex < buttons().length()) {
+        anchorButton = buttons().value(m_currentIndex);
+    }
+
+    QPoint idealPos;
+    if (anchorButton) {
+        const QRectF buttonGeometry = anchorButton->geometry();
+        idealPos = buttonGeometry.topLeft().toPoint();
+        idealPos += deco->windowPos();
+    } else {
+        idealPos = menu->pos();
+    }
+
+    QScreen *screen = QGuiApplication::screenAt(idealPos);
     if (!screen) screen = QGuiApplication::primaryScreen();
     if (!screen) return;
 
     const QRect bounds = screen->availableGeometry();
+
+    // Set max size as requested by user
+    menu->setMaximumHeight(bounds.height());
+    menu->setMaximumWidth(bounds.width());
+
     int w = menu->width();
     int h = menu->height();
-    
+
     int minX = bounds.left();
     int maxX = bounds.left() + bounds.width()  - w;
     int minY = bounds.top();
-    int maxY = bounds.top()  + bounds.height() - h;
+    int maxY =
+        bounds.top()  + bounds.height() - h;
 
     if (w > bounds.width())  { minX = maxX = bounds.left(); }
     if (h > bounds.height()) { minY = maxY = bounds.top();  }
 
-    menuPos.setX(qBound(minX, menuPos.x(), maxX));
-    menuPos.setY(qBound(minY, menuPos.y(), maxY));
+    idealPos.setX(qBound(minX, idealPos.x(), maxX));
+    idealPos.setY(qBound(minY, idealPos.y(), maxY));
 
-    menu->move(menuPos);
+    if (menu->pos() != idealPos) {
+        menu->move(idealPos);
+    }
 }
 
 } // namespace Material

@@ -144,6 +144,7 @@ private:
 
     SearchButton *m_searchButton;
     QPointer<QMenu> m_searchMenu;
+    QPointer<QMenu> m_resultsMenu;
     QPointer<QLineEdit> m_searchLineEdit;
     bool m_searchUiVisible = false;
 
