@@ -658,6 +658,8 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
     if (!menu) {
         return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
     }
+    
+    
 
     if (event->type() == QEvent::KeyPress) {
         auto *e = static_cast<QKeyEvent *>(event);
@@ -705,6 +707,11 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
             }
             return false;
         }
+    }
+    
+    if (event->type() == QEvent::Resize || event->type() == QEvent::Show) { 
+        clampToScreen(menu);
+        return true;
     }
 
     return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
@@ -850,18 +857,17 @@ void AppMenuButtonGroup::onSearchReturnPressed()
     }
 }
 
-QPoint AppMenuButtonGroup::clampToScreen(QPoint globalPos) const
+void AppMenuButtonGroup::clampToScreen(QMenu* menu)
 {
-    // This function is no longer used by the search popup, as QMenu handles
-    // screen clamping automatically. We leave it for other potential uses.
-    QScreen *screen = QGuiApplication::screenAt(globalPos);
+    QPoint menuPos=menu->pos();
+    QScreen *screen = QGuiApplication::screenAt(menuPos);
     if (!screen) screen = QGuiApplication::primaryScreen();
-    if (!screen) return globalPos; // fallback
+    if (!screen) return;
 
     const QRect bounds = screen->availableGeometry();
-    int w = 100; // dummy value
-    int h = 100; // dummy value
-
+    int w = menu->width();
+    int h = menu->height();
+    
     int minX = bounds.left();
     int maxX = bounds.left() + bounds.width()  - w;
     int minY = bounds.top();
@@ -870,10 +876,10 @@ QPoint AppMenuButtonGroup::clampToScreen(QPoint globalPos) const
     if (w > bounds.width())  { minX = maxX = bounds.left(); }
     if (h > bounds.height()) { minY = maxY = bounds.top();  }
 
-    globalPos.setX(qBound(minX, globalPos.x(), maxX));
-    globalPos.setY(qBound(minY, globalPos.y(), maxY));
+    menuPos.setX(qBound(minX, menuPos.x(), maxX));
+    menuPos.setY(qBound(minY, menuPos.y(), maxY));
 
-    return globalPos;
+    menu->move(menuPos);
 }
 
 } // namespace Material

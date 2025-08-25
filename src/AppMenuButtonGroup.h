@@ -127,7 +127,7 @@ private:
     void resetButtons();
     void searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results);
     ActionInfo getActionPath(QAction *action) const;
-    QPoint clampToScreen(QPoint globalPos) const;
+    void clampToScreen(QMenu* menu);
 
     AppMenuModel *m_appMenuModel;
     int m_currentIndex;
