@@ -628,11 +628,14 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
             auto *keyEvent = static_cast<QKeyEvent *>(event);
             if (keyEvent->key() == Qt::Key_Down) {
                 const auto actions = m_searchMenu->actions();
-                if (actions.count() > 2) {
-                    m_searchMenu->setFocus();
-                    m_searchMenu->setActiveAction(actions.at(2));
-                    return true; // Event handled
+                for (int i = 2; i < actions.count(); ++i) {
+                    if (actions.at(i)->isEnabled()) {
+                        m_searchMenu->setFocus();
+                        m_searchMenu->setActiveAction(actions.at(i));
+                        return true; // Event handled
+                    }
                 }
+                return true; // Consume the event even if no action is enabled
             }
         }
     }
