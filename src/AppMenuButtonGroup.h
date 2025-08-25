@@ -123,6 +123,7 @@ private:
         bool isEffectivelyEnabled;
     };
 
+    void setupSearchMenu();
     void resetButtons();
     void searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results);
     ActionInfo getActionPath(QAction *action) const;

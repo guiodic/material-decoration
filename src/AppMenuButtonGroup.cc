@@ -74,8 +74,8 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     , m_animation(new QVariantAnimation(this))
     , m_opacity(1)
     , m_searchButton(nullptr)
-    , m_searchMenu(new QMenu(nullptr))
-    , m_searchLineEdit(new QLineEdit(m_searchMenu))
+    , m_searchMenu(nullptr)
+    , m_searchLineEdit(nullptr)
     , m_searchUiVisible(false)
 {
     // Assign showing and opacity before we bind the onShowingChanged animation
@@ -113,6 +113,15 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     connect(this, &AppMenuButtonGroup::requestActivateOverflow,
             this, &AppMenuButtonGroup::triggerOverflow);
 
+}
+
+AppMenuButtonGroup::~AppMenuButtonGroup() = default;
+
+void AppMenuButtonGroup::setupSearchMenu()
+{
+    m_searchMenu = new QMenu(nullptr);
+    m_searchLineEdit = new QLineEdit(m_searchMenu);
+
     auto *searchAction = new QWidgetAction(m_searchMenu);
     searchAction->setDefaultWidget(m_searchLineEdit);
     m_searchMenu->addAction(searchAction);
@@ -128,8 +137,6 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     m_searchLineEdit->setFocusPolicy(Qt::StrongFocus);
     m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu","Search")+QStringLiteral("…"));
 }
-
-AppMenuButtonGroup::~AppMenuButtonGroup() = default;
 
 int AppMenuButtonGroup::currentIndex() const
 {
@@ -473,6 +480,9 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 
 void AppMenuButtonGroup::trigger(int buttonIndex) {
     if (buttonIndex == m_searchIndex) {
+        if (!m_searchMenu) {
+            setupSearchMenu();
+        }
         if (m_searchUiVisible) {
             m_searchMenu->hide();
             // onSearchMenuHidden will do the rest
