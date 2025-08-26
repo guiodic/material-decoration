@@ -711,7 +711,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
     
     if (event->type() == QEvent::Resize || event->type() == QEvent::Show) { 
         clampToScreen(menu);
-        return true;
+        return true; //TODO check if this is ok
     }
 
     return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
@@ -768,9 +768,12 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     m_lastSearchQuery = text;
 
     // Clear previous results, keeping the search bar and separator
+    //m_searchMenu->setUpdatesEnabled(false); //TODO check if this is ok
     const auto actions = m_searchMenu->actions();
     for (int i = actions.count() - 1; i >= 2; --i) {
-        m_searchMenu->removeAction(actions.at(i));
+        QAction *a = actions.at(i);
+        m_searchMenu->removeAction(a);
+        a->deleteLater(); //TODO check if this is ok
     }
 
     if (text.length() < 3) {
@@ -781,6 +784,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     }
 
     if (!m_appMenuModel || !m_menuReadyForSearch) {
+        qCDebug(category) << "[filterMenu] skipped because model not ready";
         // Menu is not ready yet, search will be re-triggered later
         return;
     }
@@ -820,6 +824,9 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         });
         m_searchMenu->addAction(newAction);
     }
+    
+    // reset 
+    m_searchMenu->setActiveAction(nullptr); //TODO check if this is ok
 }
 
 void AppMenuButtonGroup::onSearchMenuHidden()
@@ -886,7 +893,7 @@ void AppMenuButtonGroup::clampToScreen(QMenu* menu)
 
     const QRect bounds = screen->availableGeometry();
 
-    // Set max size as requested by user
+    // Set max size 
     menu->setMaximumHeight(bounds.height());
     menu->setMaximumWidth(static_cast<int>(bounds.width() * 0.8));
 
@@ -906,7 +913,10 @@ void AppMenuButtonGroup::clampToScreen(QMenu* menu)
     idealPos.setY(qBound(minY, idealPos.y(), maxY));
 
     if (menu->pos() != idealPos) {
-        menu->move(idealPos);
+        //menu->move(idealPos);
+        if (menu->pos() != idealPos) {
+            menu->move(idealPos);
+        }
     }
 }
 
