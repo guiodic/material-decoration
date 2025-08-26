@@ -121,6 +121,7 @@ void AppMenuButtonGroup::setupSearchMenu()
 {
     m_searchMenu = new QMenu(nullptr);
     m_searchLineEdit = new QLineEdit(m_searchMenu);
+    m_searchLineEdit->setMinimumWidth(200);
 
     auto *searchAction = new QWidgetAction(m_searchMenu);
     searchAction->setDefaultWidget(m_searchLineEdit);
@@ -136,6 +137,7 @@ void AppMenuButtonGroup::setupSearchMenu()
     m_searchLineEdit->installEventFilter(this);
     m_searchLineEdit->setFocusPolicy(Qt::StrongFocus);
     m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu","Search")+QStringLiteral("…"));
+    m_searchLineEdit->setClearButtonEnabled(false);
 }
 
 int AppMenuButtonGroup::currentIndex() const
@@ -778,10 +780,14 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
     if (text.length() < 3) {
         if (text.isEmpty()) {
+            m_searchLineEdit->setClearButtonEnabled(false);
             m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu", "Search") + QStringLiteral("…"));
         }
+        m_searchLineEdit->setClearButtonEnabled(true);
         return;
-    }
+    } else {
+        m_searchLineEdit->setClearButtonEnabled(true);
+    }    
 
     if (!m_appMenuModel || !m_menuReadyForSearch) {
         qCDebug(category) << "[filterMenu] skipped because model not ready";
