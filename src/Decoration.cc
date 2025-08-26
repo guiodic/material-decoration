@@ -49,7 +49,7 @@
 #include <QRegion>
 #include <QSharedPointer>
 #include <QWheelEvent>
-#include <QMutex>
+//#include <QMutex>
 
 // X11
 #if HAVE_X11
@@ -565,8 +565,8 @@ void Decoration::updateButtonAnimation()
 
 void Decoration::updateShadow()
 {
-    static QMutex s_shadowMutex;
-    QMutexLocker locker(&s_shadowMutex);
+    //static QMutex s_shadowMutex; //TODO check if it is ok
+    //QMutexLocker locker(&s_shadowMutex);
 
     const QColor shadowColor = m_internalSettings->shadowColor();
     const int shadowStrengthInt = m_internalSettings->shadowStrength();

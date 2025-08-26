@@ -913,11 +913,9 @@ void AppMenuButtonGroup::clampToScreen(QMenu* menu)
     idealPos.setY(qBound(minY, idealPos.y(), maxY));
 
     if (menu->pos() != idealPos) {
-        //menu->move(idealPos);
-        if (menu->pos() != idealPos) {
             menu->move(idealPos);
-        }
     }
+    
 }
 
 } // namespace Material
