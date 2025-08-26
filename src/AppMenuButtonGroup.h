@@ -150,6 +150,7 @@ private:
 
     bool m_menuReadyForSearch = false;
     QString m_lastSearchQuery;
+    QList<QAction *> m_lastResults;
 };
 
 } // namespace Material
