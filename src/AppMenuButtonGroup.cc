@@ -769,12 +769,15 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 {
     m_lastSearchQuery = text;
 
+    // Clear results if search text is too short
     if (text.length() < 3) {
-        m_lastResults.clear();
         const auto actions = m_searchMenu->actions();
-        for (int i = actions.count() - 1; i >= 2; --i) {
-            m_searchMenu->removeAction(actions.at(i));
+        if (actions.count() > 2) {
+             for (int i = actions.count() - 1; i >= 2; --i) {
+                actions.at(i)->deleteLater();
+            }
         }
+        m_lastResults.clear();
         if (text.isEmpty()) {
             m_searchLineEdit->setClearButtonEnabled(false);
             m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu", "Search") + QStringLiteral("…"));
@@ -790,6 +793,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         return;
     }
 
+    // Find results
     QList<QAction *> results;
     for (int row = 0; row < m_appMenuModel->rowCount(); ++row) {
         const QModelIndex menuIndex = m_appMenuModel->index(row, 0);
@@ -805,16 +809,19 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         }
     }
 
+    // If results are the same as last time, do nothing to prevent the freeze.
     if (m_lastResults == results) {
         return;
     }
     m_lastResults = results;
 
+    // Clear previous results
     const auto actions = m_searchMenu->actions();
     for (int i = actions.count() - 1; i >= 2; --i) {
-        m_searchMenu->removeAction(actions.at(i));
+        actions.at(i)->deleteLater();
     }
 
+    // Add new results
     const auto *deco = qobject_cast<const Decoration *>(decoration());
     if (!deco) {
         return;
@@ -835,9 +842,6 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         });
         m_searchMenu->addAction(newAction);
     }
-    
-    // reset 
-    m_searchMenu->setActiveAction(nullptr); //TODO check if this is ok
 }
 
 void AppMenuButtonGroup::onSearchMenuHidden()
