@@ -563,27 +563,19 @@ void AppMenuButtonGroup::trigger(int buttonIndex) {
     const auto *deco = qobject_cast<Decoration *>(decoration());
 
     if (actionMenu && deco) {
-        // The order of operations here is critical to prevent a positioning bug.
-        // The internal state (m_currentIndex, button check states) must be updated *before*
-        // calling popup(), because popup() emits a signal that triggers `clampToScreen`,
-        // which reads the internal state to position the menu.
-
-        // 1. Clean up the previously open menu and update button check states.
+        // This logic is carefully ordered to fix multiple bugs:
+        // 1. The menu positioning bug (m_currentIndex must be set before popup).
+        // 2. The focus flicker bug (new menu must be shown before old one is hidden).
+        
         QMenu *oldMenu = m_currentMenu;
-        if (oldMenu && oldMenu != actionMenu) {
-            disconnect(oldMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onMenuAboutToHide);
-            oldMenu->hide();
-        }
-        if (0 <= m_currentIndex && m_currentIndex < buttons().length()) {
-            buttons().value(m_currentIndex)->setChecked(false);
-        }
+        KDecoration3::DecorationButton* oldButton = (0 <= m_currentIndex && m_currentIndex < buttons().length()) ? buttons().value(m_currentIndex) : nullptr;
 
-        // 2. Set the new internal state.
+        // 1. Set the new internal state. This must happen before popup for positioning.
         setCurrentIndex(buttonIndex);
         button->setChecked(true);
         m_currentMenu = actionMenu;
 
-        // 3. Calculate position and show the new menu.
+        // 2. Calculate position and show the new menu. This must happen before hiding the old one to prevent flicker.
         const QRectF buttonRect = button->geometry();
         const QPoint position = buttonRect.topLeft().toPoint();
         QPoint rootPosition(position);
@@ -592,8 +584,17 @@ void AppMenuButtonGroup::trigger(int buttonIndex) {
         actionMenu->installEventFilter(this);
         actionMenu->popup(rootPosition);
 
-        // 4. Connect the hide signal for the new menu.
+        // 3. Connect the hide signal for the new menu.
         connect(actionMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onMenuAboutToHide, Qt::UniqueConnection);
+        
+        // 4. Clean up the old menu and button state.
+        if (oldMenu && oldMenu != actionMenu) {
+            disconnect(oldMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onMenuAboutToHide);
+            oldMenu->hide();
+        }
+        if (oldButton) {
+            oldButton->setChecked(false);
+        }
     }
 }
 

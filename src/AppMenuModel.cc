@@ -124,8 +124,13 @@ AppMenuModel::AppMenuModel(QObject *parent)
 
     m_updateTimer = new QTimer(this);
     m_updateTimer->setSingleShot(true);
-    m_updateTimer->setInterval(200); // 150ms debounce interval
+    m_updateTimer->setInterval(200); // 200ms debounce interval
     connect(m_updateTimer, &QTimer::timeout, this, &AppMenuModel::performMenuUpdate);
+
+    m_deepCacheTimer = new QTimer(this);
+    m_deepCacheTimer->setSingleShot(true);
+    m_deepCacheTimer->setInterval(600);
+    connect(m_deepCacheTimer, &QTimer::timeout, this, &AppMenuModel::doDeepCaching);
 }
 
 AppMenuModel::~AppMenuModel() = default;
@@ -440,14 +445,18 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         setMenuAvailable(true);
         emit modelNeedsUpdate();
 
-        // Start caching submenus
-        m_pendingMenuUpdates = 0;
-        cacheSubMenus(m_menu);
-        if (m_pendingMenuUpdates == 0) {
-            emit menuReadyForSearch();
+        // --- Two-stage caching ---
+        // 1. Fetch the first level of submenus immediately for UI responsiveness.
+        fetchImmediateSubmenus(m_menu);
+        // 2. Start a timer to fetch all deeper submenus later, to avoid startup jank.
+        m_deepCacheTimer->start();
+
+    } else { // This is a submenu update.
+        if (m_deepCachingAllowed) {
+            // If the delay has passed, continue caching recursively.
+            cacheSubMenus(menu);
         }
-    } else { // This is a submenu update
-        cacheSubMenus(menu);
+        // Still need to track pending updates for the `menuReadyForSearch` signal.
         if (m_pendingMenuUpdates > 0) {
             m_pendingMenuUpdates--;
             if (m_pendingMenuUpdates == 0) {
@@ -457,8 +466,36 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
     }
 }
 
+void AppMenuModel::fetchImmediateSubmenus(QMenu *menu)
+{
+    if (!menu) {
+        return;
+    }
+
+    const auto actions = menu->actions();
+    for (QAction *a : actions) {
+        if (auto subMenu = a->menu()) {
+            // This just fetches the immediate children, it does not recurse.
+            m_importer->updateMenu(subMenu);
+        }
+    }
+}
+
+void AppMenuModel::doDeepCaching()
+{
+    // The timer has fired, now we can do the expensive recursive caching.
+    m_deepCachingAllowed = true;
+    // Kick off the deep scan from the root. This will find L1 menus that have already
+    // arrived and process their children.
+    cacheSubMenus(m_menu);
+}
+
 void AppMenuModel::cacheSubMenus(QMenu *menu)
 {
+    // This function is now the recursive part of the cache engine.
+    // It is only called on a menu when its contents are available.
+    // It finds all children of `menu` and triggers an update for them.
+    // The recursion continues when `onMenuUpdated` is called for those children.
     if (!menu) {
         return;
     }
@@ -468,7 +505,6 @@ void AppMenuModel::cacheSubMenus(QMenu *menu)
         if (auto subMenu = a->menu()) {
             m_pendingMenuUpdates++;
             m_importer->updateMenu(subMenu);
-            cacheSubMenus(subMenu);
         }
     }
 }

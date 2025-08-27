@@ -95,10 +95,13 @@ signals:
 private Q_SLOTS:
     void onMenuUpdated(QMenu *menu);
     void performMenuUpdate();
+    void doDeepCaching();
 
 private:
     QTimer *m_updateTimer;
+    QTimer *m_deepCacheTimer;
     bool m_menuAvailable;
+    bool m_deepCachingAllowed = false;
     int m_pendingMenuUpdates = 0;
     bool m_updatePending = false;
 
@@ -115,6 +118,7 @@ private:
 
     QPointer<KDBusMenuImporter> m_importer;
 
+    void fetchImmediateSubmenus(QMenu *menu);
     void cacheSubMenus(QMenu *menu);
     QByteArray x11GetWindowProperty(WId id, const QByteArray &name);
 };
