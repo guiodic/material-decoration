@@ -512,6 +512,11 @@ void AppMenuButtonGroup::trigger(int buttonIndex) {
         return;
     }
 
+    // If a menu button is triggered, hide the search UI if it's open.
+    if (m_searchUiVisible) {
+        m_searchMenu->hide();
+    }
+
     if (!m_appMenuModel || buttonIndex > m_appMenuModel->rowCount()) {
         return; // Overflow button clicked or model not ready
     }
@@ -556,52 +561,16 @@ void AppMenuButtonGroup::trigger(int buttonIndex) {
     }
 
     const auto *deco = qobject_cast<Decoration *>(decoration());
-    // if (actionMenu && deco) {
-    //     auto *decoratedClient = deco->window();
-    //     actionMenu->setPalette(decoratedClient->palette());
-    // }
 
     if (actionMenu && deco) {
-        QRectF buttonRect = button->geometry();
-        QPoint position = buttonRect.topLeft().toPoint();
-        QPoint rootPosition(position);
-        rootPosition += deco->windowPos();
-        // qCDebug(category) << "    windowPos" << windowPos;
+        // The order of operations here is critical to prevent a positioning bug.
+        // The internal state (m_currentIndex, button check states) must be updated *before*
+        // calling popup(), because popup() emits a signal that triggers `clampToScreen`,
+        // which reads the internal state to position the menu.
 
-        // auto connection( QX11Info::connection() );
-
-        // button release event
-        // xcb_button_release_event_t releaseEvent;
-        // memset(&releaseEvent, 0, sizeof(releaseEvent));
-
-        // releaseEvent.response_type = XCB_BUTTON_RELEASE;
-        // releaseEvent.event =  windowId;
-        // releaseEvent.child = XCB_WINDOW_NONE;
-        // releaseEvent.root = QX11Info::appRootWindow();
-        // releaseEvent.event_x = position.x();
-        // releaseEvent.event_y = position.y();
-        // releaseEvent.root_x = rootPosition.x();
-        // releaseEvent.root_y = rootPosition.y();
-        // releaseEvent.detail = XCB_BUTTON_INDEX_1;
-        // releaseEvent.state = XCB_BUTTON_MASK_1;
-        // releaseEvent.time = XCB_CURRENT_TIME;
-        // releaseEvent.same_screen = true;
-        // xcb_send_event( connection, false, windowId, XCB_EVENT_MASK_BUTTON_RELEASE, reinterpret_cast<const char*>(&releaseEvent));
-
-        // xcb_ungrab_pointer( connection, XCB_TIME_CURRENT_TIME );
-        //---
-
-        actionMenu->installEventFilter(this);
-
-        if (!KWindowSystem::isPlatformWayland()) {
-            actionMenu->popup(rootPosition);
-        }
-
+        // 1. Clean up the previously open menu and update button check states.
         QMenu *oldMenu = m_currentMenu;
-        m_currentMenu = actionMenu;
-
         if (oldMenu && oldMenu != actionMenu) {
-            // Don't reset the currentIndex when another menu is already shown
             disconnect(oldMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onMenuAboutToHide);
             oldMenu->hide();
         }
@@ -609,14 +578,21 @@ void AppMenuButtonGroup::trigger(int buttonIndex) {
             buttons().value(m_currentIndex)->setChecked(false);
         }
 
-        if (KWindowSystem::isPlatformWayland()) {
-            actionMenu->popup(rootPosition);
-        }
-
+        // 2. Set the new internal state.
         setCurrentIndex(buttonIndex);
         button->setChecked(true);
+        m_currentMenu = actionMenu;
 
-        // FIXME TODO connect only once
+        // 3. Calculate position and show the new menu.
+        const QRectF buttonRect = button->geometry();
+        const QPoint position = buttonRect.topLeft().toPoint();
+        QPoint rootPosition(position);
+        rootPosition += deco->windowPos();
+
+        actionMenu->installEventFilter(this);
+        actionMenu->popup(rootPosition);
+
+        // 4. Connect the hide signal for the new menu.
         connect(actionMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onMenuAboutToHide, Qt::UniqueConnection);
     }
 }

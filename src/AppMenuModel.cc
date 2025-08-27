@@ -124,7 +124,7 @@ AppMenuModel::AppMenuModel(QObject *parent)
 
     m_updateTimer = new QTimer(this);
     m_updateTimer->setSingleShot(true);
-    m_updateTimer->setInterval(150); // 150ms debounce interval
+    m_updateTimer->setInterval(200); // 150ms debounce interval
     connect(m_updateTimer, &QTimer::timeout, this, &AppMenuModel::performMenuUpdate);
 }
 
