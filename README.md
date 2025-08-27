@@ -30,19 +30,21 @@ Window Decorations > Buttons Tab.
 
 ### Search Button
 
-To show/hide SearchButton (the lens), edit ~/.config/kdecoration_materialrc
-
-```
-[Windeco]
-SearchEnabled=true
-```
-or
+To hide SearchButton (the lens), edit ~/.config/kdecoration_materialrc
 
 ```
 [Windeco]
 SearchEnabled=false
 ```
 then restart kwin: `systemctl --user restart plasma-kwin_x11.service`
+
+Disabled menu actions (the gray ones) are not displayed in the search by default.
+If you wish to activate them:
+
+```
+[Windeco]
+ShowDisabledActions=true
+```
 
 ....
 
