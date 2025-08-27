@@ -537,7 +537,6 @@ void Decoration::updateButtonsGeometry()
         m_menuButtons->updateOverflow(availableRect);
     }
 
-    updateBlur();
     update();
 }
 
