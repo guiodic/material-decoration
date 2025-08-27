@@ -76,8 +76,13 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     , m_searchButton(nullptr)
     , m_searchMenu(nullptr)
     , m_searchLineEdit(nullptr)
+    , m_searchDebounceTimer(nullptr)
     , m_searchUiVisible(false)
 {
+    m_searchDebounceTimer = new QTimer(this);
+    m_searchDebounceTimer->setInterval(200);
+    m_searchDebounceTimer->setSingleShot(true);
+    connect(m_searchDebounceTimer, &QTimer::timeout, this, &AppMenuButtonGroup::onSearchTimerTimeout);
     // Assign showing and opacity before we bind the onShowingChanged animation
     // so that new windows do not animate.
     setAlwaysShow(decoration->menuAlwaysShow());
@@ -130,7 +135,7 @@ void AppMenuButtonGroup::setupSearchMenu()
 
     m_searchMenu->installEventFilter(this);
 
-    connect(m_searchLineEdit, &QLineEdit::textChanged, this, &AppMenuButtonGroup::filterMenu);
+    connect(m_searchLineEdit, &QLineEdit::textChanged, m_searchDebounceTimer, qOverload<>(&QTimer::start));
     connect(m_searchLineEdit, &QLineEdit::returnPressed, this, &AppMenuButtonGroup::onSearchReturnPressed);
     connect(m_searchMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onSearchMenuHidden);
 
@@ -852,6 +857,13 @@ void AppMenuButtonGroup::onSearchMenuHidden()
     m_searchLineEdit->clear();
     m_searchUiVisible = false;
     m_lastResults.clear();
+}
+
+void AppMenuButtonGroup::onSearchTimerTimeout()
+{
+    if (m_searchLineEdit) {
+        filterMenu(m_searchLineEdit->text());
+    }
 }
 
 void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results)

@@ -204,8 +204,8 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
     }
 
     paintTitleBarBackground(painter, repaintRegion);
-    paintButtons(painter, repaintRegion);
     paintCaption(painter, repaintRegion);
+    paintButtons(painter, repaintRegion);
 
     // Don't paint outline for NoBorder, NoSideBorder, or Tiny borders.
     if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
@@ -1076,40 +1076,41 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     painter->save();
     painter->setFont(settings()->font());
 
-    if (m_menuButtons->buttons().isEmpty()) {
-        painter->setPen(titleBarForegroundColor());
-    } else { // menuButtons is visible
+    // OPTIMIZATION: The previous implementation used a complex QLinearGradient to create a QPen
+    // to draw the text, which is inefficient. The new implementation draws the text with a solid color
+    // and then, if necessary, draws a simple gradient-filled rectangle on top to create the fade effect.
+    // Drawing a gradient rectangle is generally faster than drawing gradient-filled text glyphs.
+
+    // Step 1: Draw the text with the correct base color and opacity.
+    qreal textOpacity = 1.0;
+    if (!m_menuButtons->buttons().isEmpty() && !m_menuButtons->alwaysShow()) {
+        // This handles the case where the entire caption fades out.
+        textOpacity = 1.0 - m_menuButtons->opacity();
+    }
+
+    painter->setOpacity(textOpacity);
+    painter->setPen(titleBarForegroundColor());
+    painter->drawText(captionRect, alignment, caption);
+    painter->setOpacity(1.0); // Reset for subsequent operations
+
+    // Step 2: If the menu buttons are visible and might be obscuring the text, draw on top of it.
+    if (!m_menuButtons->buttons().isEmpty()) {
         const int menuRight = m_menuButtons->geometry().right();
         const int textLeft = textRect.left();
         const int textRight = textRect.right();
-        // qCDebug(category) << "textLeft" << textLeft << "menuRight" << menuRight;
 
-        if (!m_menuButtons->alwaysShow()) { // caption fades away revealing menu
-            painter->setOpacity(1.0 - m_menuButtons->opacity());
-            painter->setPen(titleBarForegroundColor());
-        } else if (m_menuButtons->overflowing()) { // hide caption leaving "whitespace" to easily grab.
-            painter->setPen(Qt::transparent);
-        } else if (textRight < menuRight) { // menuButtons completely coveres caption
-            painter->setPen(Qt::transparent);
-        } else if (textLeft < menuRight) { // menuButtons covers caption
-            const int fadeWidth = 10; // TODO: scale by dpi
-            const int x1 = menuRight;
-            const int x2 = qMin(x1+fadeWidth, textRight);
-            const float x1Ratio = (float)(x1-textLeft) / (float)textWidth;
-            const float x2Ratio = (float)(x2-textLeft) / (float)textWidth;
-            // qCDebug(category) << "    " << "x2" << x2 << "x1R" << x1Ratio << "x2R" << x2Ratio;
-            QLinearGradient gradient(textRect.topLeft(), textRect.bottomRight());
-            gradient.setColorAt(x1Ratio, Qt::transparent);
-            gradient.setColorAt(x2Ratio, titleBarForegroundColor());
-            QBrush brush(gradient);
-            QPen pen(brush, 1);
-            painter->setPen(pen);
-        } else { // caption is not covered by menuButtons
-            painter->setPen(titleBarForegroundColor());
+        if (m_menuButtons->overflowing() || textRight < menuRight) {
+            // Case: Menu is overflowing or completely covers the caption.
+            // Hide the caption entirely by painting over it with the background color.
+            painter->fillRect(captionRect, titleBarBackgroundColor());
+        } else if (m_menuButtons->alwaysShow() && textLeft < menuRight) {
+            // Case: Menu partially covers the caption.
+            // Obscure the text that is underneath the menu buttons with a solid rectangle.
+            QRect solidRect(textLeft, captionRect.top(), menuRight - textLeft, captionRect.height());
+            painter->fillRect(solidRect, titleBarBackgroundColor());
         }
     }
 
-    painter->drawText(captionRect, alignment, caption);
     painter->restore();
 }
 

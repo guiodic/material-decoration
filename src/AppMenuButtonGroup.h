@@ -28,6 +28,7 @@
 
 // Qt
 #include <QMenu>
+#include <QTimer>
 #include <QVariantAnimation>
 #include <QLineEdit>
 
@@ -99,6 +100,7 @@ private slots:
     void filterMenu(const QString &text);
     void onSearchReturnPressed();
     void onSearchMenuHidden();
+    void onSearchTimerTimeout();
 
 signals:
     void menuUpdated();
@@ -145,6 +147,7 @@ private:
     SearchButton *m_searchButton;
     QPointer<QMenu> m_searchMenu;
     QPointer<QLineEdit> m_searchLineEdit;
+    QTimer *m_searchDebounceTimer;
     bool m_searchUiVisible = false;
 
     bool m_menuReadyForSearch = false;
