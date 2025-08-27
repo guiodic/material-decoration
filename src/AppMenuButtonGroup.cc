@@ -794,6 +794,9 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     if (m_lastResults == results) {
         return;
     }
+
+    m_searchMenu->setUpdatesEnabled(false);
+
     m_lastResults = results;
 
     // Clear previous results
@@ -805,6 +808,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     // Add new results
     const auto *deco = qobject_cast<const Decoration *>(decoration());
     if (!deco) {
+        m_searchMenu->setUpdatesEnabled(true);
         return;
     }
 
@@ -823,6 +827,9 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         });
         m_searchMenu->addAction(newAction);
     }
+
+    m_searchMenu->setUpdatesEnabled(true);
+    //m_searchMenu->adjustSize();
 }
 
 void AppMenuButtonGroup::onSearchMenuHidden()
