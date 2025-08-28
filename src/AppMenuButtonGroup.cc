@@ -860,17 +860,24 @@ void AppMenuButtonGroup::onSearchReturnPressed()
 
 void AppMenuButtonGroup::clampToScreen(QMenu* menu)
 {
+    qCDebug(category) << "[clampToScreen]";
+    qCDebug(category) << " m_currentIndex  =" << m_currentIndex;
+    qCDebug(category) << " m_overflowIndex =" << m_overflowIndex;
+    qCDebug(category) << " m_searchIndex   =" << m_searchIndex;
+    qCDebug(category) << " buttons length  =" << buttons().length();
+    
+    
     const auto *deco = qobject_cast<Decoration *>(decoration());
     if (!deco) {
         return;
     }
 
     KDecoration3::DecorationButton* anchorButton = nullptr;
-    if (menu == m_searchMenu) {
-        anchorButton = buttons().value(m_searchIndex);
-    } else if (m_currentIndex >= 0 && m_currentIndex < buttons().length()) {
-        anchorButton = buttons().value(m_currentIndex);
-    }
+  //  if (menu == m_searchMenu) {
+  //      anchorButton = buttons().value(m_searchIndex);
+  //  } else if (m_currentIndex >= 0 && m_currentIndex < buttons().length()) {
+    anchorButton = buttons().value(m_currentIndex);
+  //  }
 
     QPoint idealPos;
     if (anchorButton) {
