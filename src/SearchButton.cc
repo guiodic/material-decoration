@@ -23,10 +23,9 @@
 namespace Material
 {
 
-SearchButton::SearchButton(Decoration *decoration, QObject *parent)
-    : Button(KDecoration3::DecorationButtonType::Custom, decoration, parent)
+SearchButton::SearchButton(Decoration *decoration, const int buttonIndex, QObject *parent)
+    : AppMenuButton(decoration, buttonIndex, parent)
 {
-    setCheckable(true);
 }
 
 SearchButton::~SearchButton() = default;

@@ -17,18 +17,18 @@
 
 #pragma once
 
-#include "Button.h"
+#include "AppMenuButton.h"
 
 namespace Material
 {
 
 class Decoration;
 
-class SearchButton : public Button
+class SearchButton : public AppMenuButton
 {
     Q_OBJECT
 public:
-    explicit SearchButton(Decoration *decoration, QObject *parent = nullptr);
+    explicit SearchButton(Decoration *decoration, const int buttonIndex, QObject *parent = nullptr);
     ~SearchButton() override;
 
 protected:

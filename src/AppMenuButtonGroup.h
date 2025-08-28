@@ -19,7 +19,6 @@
 
 // own
 #include "AppMenuModel.h"
-#include "SearchButton.h"
 
 // KDecoration
 #include <KDecoration3/DecoratedWindow>
@@ -99,7 +98,6 @@ private slots:
     void onShowingChanged(bool hovered);
     void filterMenu(const QString &text);
     void onSearchReturnPressed();
-    void onSearchMenuHidden();
     void onSearchTimerTimeout();
 
 signals:
@@ -144,7 +142,6 @@ private:
     qreal m_opacity;
     QPointer<QMenu> m_currentMenu;
 
-    SearchButton *m_searchButton;
     QPointer<QMenu> m_searchMenu;
     QPointer<QLineEdit> m_searchLineEdit;
     QTimer *m_searchDebounceTimer;

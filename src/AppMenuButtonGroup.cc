@@ -73,7 +73,6 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     , m_animationEnabled(false)
     , m_animation(new QVariantAnimation(this))
     , m_opacity(1)
-    , m_searchButton(nullptr)
     , m_searchMenu(nullptr)
     , m_searchLineEdit(nullptr)
     , m_searchDebounceTimer(nullptr)
@@ -137,7 +136,6 @@ void AppMenuButtonGroup::setupSearchMenu()
 
     connect(m_searchLineEdit, &QLineEdit::textChanged, m_searchDebounceTimer, qOverload<>(&QTimer::start));
     connect(m_searchLineEdit, &QLineEdit::returnPressed, this, &AppMenuButtonGroup::onSearchReturnPressed);
-    connect(m_searchMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onSearchMenuHidden);
 
     m_searchLineEdit->installEventFilter(this);
     m_searchLineEdit->setFocusPolicy(Qt::StrongFocus);
@@ -388,14 +386,10 @@ void AppMenuButtonGroup::updateAppMenuModel()
             if (m_appMenuModel->rowCount() > 0) {
                 m_overflowIndex = m_appMenuModel->rowCount();
                 addButton(new MenuOverflowButton(deco, m_overflowIndex, this));
-                
+
                 if (deco->searchEnabled()) {
                     m_searchIndex = m_appMenuModel->rowCount() + 1;
-                    m_searchButton = new SearchButton(deco, this);
-                    connect(m_searchButton, &SearchButton::clicked, this, [this] {
-                        trigger(m_searchIndex);
-                    });
-                    addButton(m_searchButton);
+                    addButton(new SearchButton(deco, m_searchIndex, this));
                 }
             }
         }
@@ -485,55 +479,39 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
     setOverflowing(showOverflow);
 }
 
-void AppMenuButtonGroup::trigger(int buttonIndex) {
-    if (buttonIndex == m_searchIndex) {
-        if (!m_searchMenu) {
-            setupSearchMenu();
-        }
-        if (m_searchUiVisible) {
-            m_searchMenu->hide();
-            // onSearchMenuHidden will do the rest
-        } else {
-            const auto *deco = qobject_cast<Decoration *>(decoration());
-            if (!deco || !m_searchButton) {
-                return;
-            }
-            const QRectF searchButtonGeometry = m_searchButton->geometry();
-            const QPoint position = searchButtonGeometry.topLeft().toPoint();
-            QPoint globalPos(position);
-            globalPos += deco->windowPos();
+void AppMenuButtonGroup::trigger(int buttonIndex)
+{
+    if (buttonIndex > m_appMenuModel->rowCount() + 1) {
+        return; // out of bounds
+    }
 
-            m_searchMenu->popup(globalPos);
-
-            m_searchLineEdit->activateWindow();
-            m_searchLineEdit->setFocus();
-            m_searchUiVisible = true;
-        }
+    KDecoration3::DecorationButton *button = buttons().value(buttonIndex);
+    if (!button) {
         return;
     }
 
-    // If a menu button is triggered, hide the search UI if it's open.
-    if (m_searchUiVisible) {
-        m_searchMenu->hide();
-    }
-
-    if (!m_appMenuModel || buttonIndex > m_appMenuModel->rowCount()) {
-        return; // Overflow button clicked or model not ready
-    }
-    // qCDebug(category) << "AppMenuButtonGroup::trigger" << buttonIndex;
-    KDecoration3::DecorationButton* button = buttons().value(buttonIndex);
-
-    // https://github.com/psifidotos/applet-window-appmenu/blob/908e60831d7d68ee56a56f9c24017a71822fc02d/lib/appmenuapplet.cpp#L167
     QMenu *actionMenu = nullptr;
 
-    if (buttonIndex == m_appMenuModel->rowCount()) {
+    if (buttonIndex == m_searchIndex) {
+        if (m_currentIndex == m_searchIndex) {
+            // Clicked on the already-open search button, so close it.
+            if (m_searchMenu) {
+                m_searchMenu->hide();
+            }
+            return;
+        }
+        if (!m_searchMenu) {
+            setupSearchMenu();
+        }
+        actionMenu = m_searchMenu;
+    } else if (buttonIndex == m_overflowIndex) {
         // Overflow Menu
         actionMenu = new QMenu();
         actionMenu->setAttribute(Qt::WA_DeleteOnClose);
 
         int overflowStartsAt = 0;
         for (KDecoration3::DecorationButton *b : buttons()) {
-            TextButton* textButton = qobject_cast<TextButton *>(b);
+            TextButton *textButton = qobject_cast<TextButton *>(b);
             if (textButton && textButton->isEnabled() && !textButton->isVisible()) {
                 overflowStartsAt = textButton->buttonIndex();
                 break;
@@ -547,16 +525,17 @@ void AppMenuButtonGroup::trigger(int buttonIndex) {
             action = (QAction *)data.value<void *>();
             actionMenu->addAction(action);
         }
-
     } else {
+        // Regular menu button
+        if (!m_appMenuModel) {
+            return;
+        }
         const QModelIndex modelIndex = m_appMenuModel->index(buttonIndex, 0);
         const QVariant data = m_appMenuModel->data(modelIndex, AppMenuModel::ActionRole);
         QAction *itemAction = (QAction *)data.value<void *>();
-        // qCDebug(category) << "    action" << itemAction;
 
         if (itemAction) {
             actionMenu = itemAction->menu();
-            // qCDebug(category) << "    menu" << actionMenu;
         }
     }
 
@@ -566,9 +545,9 @@ void AppMenuButtonGroup::trigger(int buttonIndex) {
         // This logic is carefully ordered to fix multiple bugs:
         // 1. The menu positioning bug (m_currentIndex must be set before popup).
         // 2. The focus flicker bug (new menu must be shown before old one is hidden).
-        
+
         QMenu *oldMenu = m_currentMenu;
-        KDecoration3::DecorationButton* oldButton = (0 <= m_currentIndex && m_currentIndex < buttons().length()) ? buttons().value(m_currentIndex) : nullptr;
+        KDecoration3::DecorationButton *oldButton = (0 <= m_currentIndex && m_currentIndex < buttons().length()) ? buttons().value(m_currentIndex) : nullptr;
 
         // 1. Set the new internal state. This must happen before popup for positioning.
         setCurrentIndex(buttonIndex);
@@ -584,15 +563,21 @@ void AppMenuButtonGroup::trigger(int buttonIndex) {
         actionMenu->installEventFilter(this);
         actionMenu->popup(rootPosition);
 
+        if (buttonIndex == m_searchIndex) {
+            m_searchLineEdit->activateWindow();
+            m_searchLineEdit->setFocus();
+            m_searchUiVisible = true;
+        }
+
         // 3. Connect the hide signal for the new menu.
         connect(actionMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onMenuAboutToHide, Qt::UniqueConnection);
-        
+
         // 4. Clean up the old menu and button state.
         if (oldMenu && oldMenu != actionMenu) {
             disconnect(oldMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onMenuAboutToHide);
             oldMenu->hide();
         }
-        if (oldButton) {
+        if (oldButton && oldButton != button) {
             oldButton->setChecked(false);
         }
     }
@@ -725,10 +710,17 @@ void AppMenuButtonGroup::updateShowing()
 
 void AppMenuButtonGroup::onMenuAboutToHide()
 {
+    if (m_currentIndex == m_searchIndex) {
+        m_searchLineEdit->clear();
+        m_searchUiVisible = false;
+        m_lastResults.clear();
+    }
+
     if (0 <= m_currentIndex && m_currentIndex < buttons().length()) {
         buttons().value(m_currentIndex)->setChecked(false);
     }
     setCurrentIndex(-1);
+    m_currentMenu = nullptr;
 }
 
 void AppMenuButtonGroup::onShowingChanged(bool showing)
@@ -833,16 +825,6 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     //m_searchMenu->adjustSize();
 }
 
-void AppMenuButtonGroup::onSearchMenuHidden()
-{
-    if (m_searchButton) {
-        m_searchButton->setChecked(false);
-    }
-    m_searchLineEdit->clear();
-    m_searchUiVisible = false;
-    m_lastResults.clear();
-}
-
 void AppMenuButtonGroup::onSearchTimerTimeout()
 {
     if (m_searchLineEdit) {
@@ -885,7 +867,7 @@ void AppMenuButtonGroup::clampToScreen(QMenu* menu)
 
     KDecoration3::DecorationButton* anchorButton = nullptr;
     if (menu == m_searchMenu) {
-        anchorButton = m_searchButton;
+        anchorButton = buttons().value(m_searchIndex);
     } else if (m_currentIndex >= 0 && m_currentIndex < buttons().length()) {
         anchorButton = buttons().value(m_currentIndex);
     }
