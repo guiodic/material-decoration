@@ -680,7 +680,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
     
     if (event->type() == QEvent::Resize || event->type() == QEvent::Show) { 
         clampToScreen(menu);
-        return true; //TODO check if this is ok
+        return false;
     }
 
     return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
@@ -860,12 +860,6 @@ void AppMenuButtonGroup::onSearchReturnPressed()
 
 void AppMenuButtonGroup::clampToScreen(QMenu* menu)
 {
-    // If this menu has a parent widget that is also a menu, it's a submenu.
-    // Let Qt handle its position.
-    if (qobject_cast<QMenu*>(menu->parentWidget())) {
-        return;
-    }
-
     const auto *deco = qobject_cast<Decoration *>(decoration());
     if (!deco) {
         return;
