@@ -534,10 +534,7 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
     const auto *deco = qobject_cast<Decoration *>(decoration());
 
     if (actionMenu && deco) {
-        // This logic is carefully ordered to fix multiple bugs:
-        // 1. The menu positioning bug (m_currentIndex must be set before popup).
-        // 2. The focus flicker bug (new menu must be shown before old one is hidden).
-
+       
         QMenu *oldMenu = m_currentMenu;
         KDecoration3::DecorationButton *oldButton = (0 <= m_currentIndex && m_currentIndex < buttons().length()) ? buttons().value(m_currentIndex) : nullptr;
 
@@ -584,6 +581,8 @@ void AppMenuButtonGroup::triggerOverflow()
 // FIXME TODO doesn't work on submenu
 bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
 {
+    
+    //Jump to the first valid action when the user press Key_Down in searchLineEdit
     if (watched == m_searchLineEdit) {
         if (event->type() == QEvent::KeyPress) {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
@@ -601,6 +600,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         }
     }
 
+    //Jump to searchLineEdit when the user press Key_Up in menu
     if (watched == m_searchMenu && event->type() == QEvent::KeyPress) {
         auto *keyEvent = static_cast<QKeyEvent *>(event);
         if (keyEvent->key() == Qt::Key_Up) {
