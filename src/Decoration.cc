@@ -476,6 +476,7 @@ void Decoration::setButtonGroupHorzPadding(KDecoration3::DecorationButtonGroup *
     }
 }
 
+/*
 void Decoration::setButtonGroupVertPadding(KDecoration3::DecorationButtonGroup *buttonGroup, int value)
 {
     for (int i = 0; i < buttonGroup->buttons().length(); i++) {
@@ -486,6 +487,7 @@ void Decoration::setButtonGroupVertPadding(KDecoration3::DecorationButtonGroup *
         }
     }
 }
+*/
 
 void Decoration::updateButtonHeight()
 {

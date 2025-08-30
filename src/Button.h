@@ -83,7 +83,7 @@ public:
 
     QMargins &padding();
     void setHorzPadding(int value);
-    void setVertPadding(int value);
+   // void setVertPadding(int value);
 
 private Q_SLOTS:
     void updateAnimationState(bool hovered);
