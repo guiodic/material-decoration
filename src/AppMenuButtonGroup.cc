@@ -333,19 +333,25 @@ void AppMenuButtonGroup::updateAppMenuModel()
     if (m_appMenuModel) {
         m_menuReadyForSearch = false;
 
-        const int modelActionCount = m_appMenuModel->rowCount();
+        QMenu *menu = m_appMenuModel->menu();
+        if (!menu) {
+            resetButtons();
+            emit menuUpdated();
+            return;
+        }
+
+        const auto actions = menu->actions();
+        const int menuActionCount = actions.count();
         // The button list contains menu buttons, plus an overflow button and a search button
         const int currentButtonCount = buttons().count() > 0 ? buttons().count() - 2 : 0;
 
         // If the number of actions is the same, just update the existing buttons
-        if (modelActionCount > 0 && modelActionCount == currentButtonCount) {
-            for (int row = 0; row < modelActionCount; ++row) {
-                TextButton *button = qobject_cast<TextButton*>(buttons().at(row));
+        if (menuActionCount > 0 && menuActionCount == currentButtonCount) {
+            for (int i = 0; i < menuActionCount; ++i) {
+                QAction *itemAction = actions.at(i);
+                TextButton *button = qobject_cast<TextButton*>(buttons().at(i));
                 if (button) {
-                    const QModelIndex index = m_appMenuModel->index(row, 0);
-                    const QString itemLabel = m_appMenuModel->data(index, AppMenuModel::MenuRole).toString();
-                    const QVariant data = m_appMenuModel->data(index, AppMenuModel::ActionRole);
-                    QAction *itemAction = (QAction *)data.value<void *>();
+                    const QString itemLabel = itemAction->text();
 
                     button->setText(itemLabel);
                     button->setAction(itemAction);
@@ -362,14 +368,11 @@ void AppMenuButtonGroup::updateAppMenuModel()
             resetButtons();
 
             // Populate
-            for (int row = 0; row < m_appMenuModel->rowCount(); row++) {
-                const QModelIndex index = m_appMenuModel->index(row, 0);
-                const QString itemLabel = m_appMenuModel->data(index, AppMenuModel::MenuRole).toString();
+            for (int i = 0; i < menuActionCount; ++i) {
+                QAction *itemAction = actions.at(i);
+                const QString itemLabel = itemAction->text();
 
-                const QVariant data = m_appMenuModel->data(index, AppMenuModel::ActionRole);
-                QAction *itemAction = (QAction *)data.value<void *>();
-
-                TextButton *b = new TextButton(deco, row, this);
+                TextButton *b = new TextButton(deco, i, this);
                 b->setText(itemLabel);
                 b->setAction(itemAction);
                 b->setOpacity(m_opacity);
@@ -383,12 +386,12 @@ void AppMenuButtonGroup::updateAppMenuModel()
                 addButton(QPointer<KDecoration3::DecorationButton>(b));
             }
 
-            if (m_appMenuModel->rowCount() > 0) {
-                m_overflowIndex = m_appMenuModel->rowCount();
+            if (menuActionCount > 0) {
+                m_overflowIndex = menuActionCount;
                 addButton(new MenuOverflowButton(deco, m_overflowIndex, this));
 
                 if (deco->searchEnabled()) {
-                    m_searchIndex = m_appMenuModel->rowCount() + 1;
+                    m_searchIndex = menuActionCount + 1;
                     addButton(new SearchButton(deco, m_searchIndex, this));
                 }
             }
@@ -481,10 +484,6 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 
 void AppMenuButtonGroup::trigger(int buttonIndex)
 {
-    if (buttonIndex > m_appMenuModel->rowCount() + 1) {
-        return; // out of bounds
-    }
-
     KDecoration3::DecorationButton *button = buttons().value(buttonIndex);
     if (!button) {
         return;
@@ -494,10 +493,7 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
 
     if (buttonIndex == m_searchIndex) {
         if (m_currentIndex == m_searchIndex) {
-            // Clicked on the already-open search button, so close it.
-            if (m_searchMenu) {
-                m_searchMenu->hide();
-            }
+            if (m_searchMenu) m_searchMenu->hide();
             return;
         }
         if (!m_searchMenu) {
@@ -505,35 +501,31 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
         }
         actionMenu = m_searchMenu;
     } else if (buttonIndex == m_overflowIndex) {
-        // Overflow Menu
         actionMenu = new QMenu();
         actionMenu->setAttribute(Qt::WA_DeleteOnClose);
 
-        int overflowStartsAt = 0;
-        for (KDecoration3::DecorationButton *b : buttons()) {
-            TextButton *textButton = qobject_cast<TextButton *>(b);
-            if (textButton && textButton->isEnabled() && !textButton->isVisible()) {
-                overflowStartsAt = textButton->buttonIndex();
-                break;
+        if (m_appMenuModel && m_appMenuModel->menu()) {
+            int overflowStartsAt = 0;
+            // Find the first non-visible button to determine where the overflow starts
+            for (KDecoration3::DecorationButton *b : buttons()) {
+                TextButton *textButton = qobject_cast<TextButton *>(b);
+                if (textButton && textButton->isEnabled() && !textButton->isVisible()) {
+                    overflowStartsAt = textButton->buttonIndex();
+                    break;
+                }
             }
-        }
 
-        QAction *action = nullptr;
-        for (int i = overflowStartsAt; i < m_appMenuModel->rowCount(); i++) {
-            const QModelIndex index = m_appMenuModel->index(i, 0);
-            const QVariant data = m_appMenuModel->data(index, AppMenuModel::ActionRole);
-            action = (QAction *)data.value<void *>();
-            actionMenu->addAction(action);
+            const auto actions = m_appMenuModel->menu()->actions();
+            for (int i = overflowStartsAt; i < actions.count(); ++i) {
+                actionMenu->addAction(actions.at(i));
+            }
         }
     } else {
         // Regular menu button
-        if (!m_appMenuModel) {
-            return;
+        if (!m_appMenuModel || !m_appMenuModel->menu() || buttonIndex >= m_appMenuModel->menu()->actions().count()) {
+            return; // Index out of bounds for regular actions
         }
-        const QModelIndex modelIndex = m_appMenuModel->index(buttonIndex, 0);
-        const QVariant data = m_appMenuModel->data(modelIndex, AppMenuModel::ActionRole);
-        QAction *itemAction = (QAction *)data.value<void *>();
-
+        QAction *itemAction = m_appMenuModel->menu()->actions().at(buttonIndex);
         if (itemAction) {
             actionMenu = itemAction->menu();
         }
@@ -769,17 +761,10 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
     // Find results
     QList<QAction *> results;
-    for (int row = 0; row < m_appMenuModel->rowCount(); ++row) {
-        const QModelIndex menuIndex = m_appMenuModel->index(row, 0);
-        QAction *action = (QAction *)m_appMenuModel->data(menuIndex, AppMenuModel::ActionRole).value<void *>();
-        if (action) {
-            if (action->menu()) {
-                searchMenu(action->menu(), text, results);
-            } else {
-                if (getActionPath(action).path.contains(text, Qt::CaseInsensitive)) {
-                    results.append(action);
-                }
-            }
+    if (m_appMenuModel) {
+        QMenu *rootMenu = m_appMenuModel->menu();
+        if (rootMenu) {
+            searchMenu(rootMenu, text, results);
         }
     }
 

@@ -215,6 +215,11 @@ void AppMenuModel::setWinId(const QVariant &id)
     emit winIdChanged();
 }
 
+QMenu *AppMenuModel::menu() const
+{
+    return m_menu;
+}
+
 int AppMenuModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);

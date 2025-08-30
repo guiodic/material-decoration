@@ -73,6 +73,8 @@ public:
     QVariant winId() const;
     void setWinId(const QVariant &id);
 
+    QMenu *menu() const;
+
 signals:
     void requestActivateIndex(int index);
 
