@@ -294,6 +294,15 @@ void AppMenuModel::onWinIdChanged()
     }
 }
 
+//TODO This could be removed using new KDecoration3 APIs:
+// 
+// applicationMenuActive
+// applicationMenuObjectPath
+// applicationMenuServiceName
+// hasApplicationMenu
+//
+// Also the position could be get from Positioner and the related popup() method
+
 QByteArray AppMenuModel::x11GetWindowProperty(WId id, const QByteArray &name)
 {
     QByteArray value;

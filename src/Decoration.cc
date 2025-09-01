@@ -1078,10 +1078,8 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     painter->save();
     painter->setFont(settings()->font());
 
-    // OPTIMIZATION: The previous implementation used a complex QLinearGradient to create a QPen
+    // The previous implementation used a complex QLinearGradient to create a QPen
     // to draw the text, which is inefficient. The new implementation draws the text with a solid color
-    // and then, if necessary, draws a simple gradient-filled rectangle on top to create the fade effect.
-    // Drawing a gradient rectangle is generally faster than drawing gradient-filled text glyphs.
 
     // Step 1: Draw the text with the correct base color and opacity.
     qreal textOpacity = 1.0;
