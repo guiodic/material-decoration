@@ -21,6 +21,7 @@ ones, see the other branches
 
 Material-ish window decoration theme for KWin.
 
+
 ### Locally Integrated Menus
 
 This hides the AppMenu icon button and draws the menu in the titlebar.
@@ -28,9 +29,19 @@ This hides the AppMenu icon button and draws the menu in the titlebar.
 Make sure you add the AppMenu button in System Settings > Application Style >
 Window Decorations > Buttons Tab.
 
+The menu is set to be “always shown” by default. If you want it to be shown only when the mouse hovers over it, edit `~/.config/kdecoration_materialrc`
+
+```
+[Windeco]
+MenuAlwaysShow=false
+
+```
+then restart kwin: `systemctl --user restart plasma-kwin_x11.service`
+
+
 ### Search Button
 
-To hide SearchButton (the lens), edit ~/.config/kdecoration_materialrc
+To hide SearchButton (the lens), edit `~/.config/kdecoration_materialrc` 
 
 ```
 [Windeco]
@@ -45,6 +56,7 @@ If you wish to activate them:
 [Windeco]
 ShowDisabledActions=true
 ```
+
 
 ....
 
