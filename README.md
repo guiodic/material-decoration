@@ -14,7 +14,7 @@ sudo make install
 for Arch and derivatives, please install the AUR package 
 [material-kwin-decoration-git](https://aur.archlinux.org/packages/material-kwin-decoration-git)
 
-NOTE: the master branch is aligned with the latest Plasma versions. For earlier
+NOTE: the master branch is aligned with the latest Plasma version. For earlier
 ones, see the other branches
 
 ## material-decoration
@@ -34,7 +34,6 @@ The menu is set to be “always shown” by default. If you want it to be shown 
 ```
 [Windeco]
 MenuAlwaysShow=false
-
 ```
 then restart kwin: `systemctl --user restart plasma-kwin_x11.service`
 
