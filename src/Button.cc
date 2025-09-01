@@ -532,11 +532,13 @@ void Button::setHorzPadding(int value)
     padding().setRight(value);
 }
 
+/*
 void Button::setVertPadding(int value)
 {
     padding().setTop(value);
     padding().setBottom(value);
 }
+*/
 
 void Button::updateAnimationState(bool hovered)
 {

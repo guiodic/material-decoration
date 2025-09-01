@@ -121,6 +121,16 @@ AppMenuModel::AppMenuModel(QObject *parent)
             emit modelNeedsUpdate();
         }
     });
+
+    m_updateTimer = new QTimer(this);
+    m_updateTimer->setSingleShot(true);
+    m_updateTimer->setInterval(200); // 200ms debounce interval
+    connect(m_updateTimer, &QTimer::timeout, this, &AppMenuModel::performMenuUpdate);
+
+    m_deepCacheTimer = new QTimer(this);
+    m_deepCacheTimer->setSingleShot(true);
+    m_deepCacheTimer->setInterval(600);
+    connect(m_deepCacheTimer, &QTimer::timeout, this, &AppMenuModel::doDeepCaching);
 }
 
 AppMenuModel::~AppMenuModel() = default;
@@ -205,6 +215,11 @@ void AppMenuModel::setWinId(const QVariant &id)
     emit winIdChanged();
 }
 
+QMenu *AppMenuModel::menu() const
+{
+    return m_menu;
+}
+
 int AppMenuModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
@@ -227,77 +242,31 @@ void AppMenuModel::update()
 
 void AppMenuModel::onWinIdChanged()
 {
-
     if (KWindowSystem::isPlatformX11()) {
 #if HAVE_X11
-
         qApp->removeNativeEventFilter(this);
 
         const WId id = m_winId.toUInt();
-
         if (!id) {
             setMenuAvailable(false);
             emit modelNeedsUpdate();
             return;
         }
 
-        auto *c = QX11Info::connection();
-
-        auto getWindowPropertyString = [c](WId id, const QByteArray &name) -> QByteArray {
-            QByteArray value;
-
-            if (!s_atoms.contains(name))
-            {
-                const xcb_intern_atom_cookie_t atomCookie = xcb_intern_atom(c, false, name.length(), name.constData());
-                QScopedPointer<xcb_intern_atom_reply_t, QScopedPointerPodDeleter> atomReply(xcb_intern_atom_reply(c, atomCookie, nullptr));
-
-                if (atomReply.isNull()) {
-                    return value;
-                }
-
-                s_atoms[name] = atomReply->atom;
-
-                if (s_atoms[name] == XCB_ATOM_NONE) {
-                    return value;
-                }
-            }
-
-            static const long MAX_PROP_SIZE = 10000;
-            auto propertyCookie = xcb_get_property(c, false, id, s_atoms[name], XCB_ATOM_STRING, 0, MAX_PROP_SIZE);
-            QScopedPointer<xcb_get_property_reply_t, QScopedPointerPodDeleter> propertyReply(xcb_get_property_reply(c, propertyCookie, nullptr));
-
-            if (propertyReply.isNull())
-            {
-                return value;
-            }
-
-            if (propertyReply->type == XCB_ATOM_STRING && propertyReply->format == 8 && propertyReply->value_len > 0)
-            {
-                const char *data = (const char *) xcb_get_property_value(propertyReply.data());
-                int len = propertyReply->value_len;
-
-                if (data) {
-                    value = QByteArray(data, data[len - 1] ? len : len - 1);
-                }
-            }
-
-            return value;
-        };
-
-        auto updateMenuFromWindowIfHasMenu = [this, &getWindowPropertyString](WId id) {
-            const QString serviceName = QString::fromUtf8(getWindowPropertyString(id, s_x11AppMenuServiceNamePropertyName));
-            const QString menuObjectPath = QString::fromUtf8(getWindowPropertyString(id, s_x11AppMenuObjectPathPropertyName));
-            const QString winClass = QString::fromUtf8(getWindowPropertyString(id, "WM_CLASS"));
+        auto updateMenuFromWindowIfHasMenu = [this](WId id) {
+            const QString serviceName = QString::fromUtf8(x11GetWindowProperty(id, s_x11AppMenuServiceNamePropertyName));
+            const QString menuObjectPath = QString::fromUtf8(x11GetWindowProperty(id, s_x11AppMenuObjectPathPropertyName));
 
             if (!serviceName.isEmpty() && !menuObjectPath.isEmpty()) {
                 updateApplicationMenu(serviceName, menuObjectPath);
-                // if it is libreoffice we need to monitor it 
+
+                // ALWAYS monitor LibreOffice for menu changes, as the object path can change
+                // when a new document is opened from the startcenter.
+                const QString winClass = QString::fromUtf8(x11GetWindowProperty(id, "WM_CLASS"));
                 if ((winClass.contains ("soffice.bin")) || (winClass.contains ("libreoffice")))   {
-                       // qCDebug(category) << winClass << " Great Scott! it's LibreOffice, we need to monitor it!";
-                       qApp->removeNativeEventFilter(this);
                        qApp->installNativeEventFilter(this);
                        m_delayedMenuWindowId = id;
-                };  
+                }
                 return true;
             }
 
@@ -323,6 +292,61 @@ void AppMenuModel::onWinIdChanged()
         // TODO
 #endif
     }
+}
+
+//TODO This could be removed using new KDecoration3 APIs:
+// 
+// applicationMenuActive
+// applicationMenuObjectPath
+// applicationMenuServiceName
+// hasApplicationMenu
+//
+// Also the position could be get from Positioner and the related popup() method
+
+QByteArray AppMenuModel::x11GetWindowProperty(WId id, const QByteArray &name)
+{
+    QByteArray value;
+
+#if HAVE_X11
+    auto *c = QX11Info::connection();
+
+    if (!s_atoms.contains(name))
+    {
+        const xcb_intern_atom_cookie_t atomCookie = xcb_intern_atom(c, false, name.length(), name.constData());
+        QScopedPointer<xcb_intern_atom_reply_t, QScopedPointerPodDeleter> atomReply(xcb_intern_atom_reply(c, atomCookie, nullptr));
+
+        if (atomReply.isNull()) {
+            return value;
+        }
+
+        s_atoms[name] = atomReply->atom;
+
+        if (s_atoms[name] == XCB_ATOM_NONE) {
+            return value;
+        }
+    }
+
+    static const long MAX_PROP_SIZE = 10000;
+    auto propertyCookie = xcb_get_property(c, false, id, s_atoms[name], XCB_ATOM_STRING, 0, MAX_PROP_SIZE);
+    QScopedPointer<xcb_get_property_reply_t, QScopedPointerPodDeleter> propertyReply(xcb_get_property_reply(c, propertyCookie, nullptr));
+
+    if (propertyReply.isNull())
+    {
+        return value;
+    }
+
+    if (propertyReply->type == XCB_ATOM_STRING && propertyReply->format == 8 && propertyReply->value_len > 0)
+    {
+        const char *data = (const char *) xcb_get_property_value(propertyReply.data());
+        int len = propertyReply->value_len;
+
+        if (data) {
+            value = QByteArray(data, data[len - 1] ? len : len - 1);
+        }
+    }
+#endif
+
+    return value;
 }
 
 /* UNUSED, remove
@@ -393,36 +417,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     m_importer = new KDBusMenuImporter(serviceName, menuObjectPath, this);
     QMetaObject::invokeMethod(m_importer, "updateMenu", Qt::QueuedConnection);
 
-    connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, [this](QMenu *menu) {
-        m_menu = m_importer->menu();
-        if (m_menu.isNull() || menu != m_menu) {
-            return;
-        }
-
-        // cache first layer of sub menus, which we'll be popping up
-        const auto actions = m_menu->actions();
-        for (QAction *a : actions) {
-            // signal dataChanged when the action changes
-            connect(a, &QAction::changed, this, [this, a] {
-                if (m_menuAvailable && m_menu) {
-                    const int actionIdx = m_menu->actions().indexOf(a);
-                    if (actionIdx > -1) {
-                        const QModelIndex modelIdx = index(actionIdx, 0);
-                        emit dataChanged(modelIdx, modelIdx);
-                    }
-                }
-            });
-
-            connect(a, &QAction::destroyed, this, &AppMenuModel::modelNeedsUpdate);
-
-            if (a->menu()) {
-                m_importer->updateMenu(a->menu());
-            }
-        }
-
-        setMenuAvailable(true);
-        emit modelNeedsUpdate();
-    });
+    connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, &AppMenuModel::onMenuUpdated);
 
     connect(m_importer.data(), &DBusMenuImporter::actionActivationRequested, this, [this](QAction *action) {
         // TODO submenus
@@ -436,6 +431,96 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
             emit requestActivateIndex(it - actions.begin());
         }
     });
+}
+
+void AppMenuModel::onMenuUpdated(QMenu *menu)
+{
+    if (m_menu.isNull()) { // First time update, this is the main menu
+        m_menu = menu;
+        if (m_menu.isNull()) {
+            return;
+        }
+
+        // Connect signals for top-level actions
+        const auto actions = m_menu->actions();
+        for (QAction *a : actions) {
+            connect(a, &QAction::changed, this, [this, a] {
+                if (m_menuAvailable && m_menu) {
+                    const int actionIdx = m_menu->actions().indexOf(a);
+                    if (actionIdx > -1) {
+                        const QModelIndex modelIdx = index(actionIdx, 0);
+                        emit dataChanged(modelIdx, modelIdx);
+                    }
+                }
+            });
+            connect(a, &QAction::destroyed, this, &AppMenuModel::modelNeedsUpdate);
+        }
+
+        setMenuAvailable(true);
+        emit modelNeedsUpdate();
+
+        // --- Two-stage caching ---
+        // 1. Fetch the first level of submenus immediately for UI responsiveness.
+        fetchImmediateSubmenus(m_menu);
+        // 2. Start a timer to fetch all deeper submenus later, to avoid startup jank.
+        m_deepCacheTimer->start();
+
+    } else { // This is a submenu update.
+        if (m_deepCachingAllowed) {
+            // If the delay has passed, continue caching recursively.
+            cacheSubMenus(menu);
+        }
+        // Still need to track pending updates for the `menuReadyForSearch` signal.
+        if (m_pendingMenuUpdates > 0) {
+            m_pendingMenuUpdates--;
+            if (m_pendingMenuUpdates == 0) {
+                emit menuReadyForSearch();
+            }
+        }
+    }
+}
+
+void AppMenuModel::fetchImmediateSubmenus(QMenu *menu)
+{
+    if (!menu) {
+        return;
+    }
+
+    const auto actions = menu->actions();
+    for (QAction *a : actions) {
+        if (auto subMenu = a->menu()) {
+            // This just fetches the immediate children, it does not recurse.
+            m_importer->updateMenu(subMenu);
+        }
+    }
+}
+
+void AppMenuModel::doDeepCaching()
+{
+    // The timer has fired, now we can do the expensive recursive caching.
+    m_deepCachingAllowed = true;
+    // Kick off the deep scan from the root. This will find L1 menus that have already
+    // arrived and process their children.
+    cacheSubMenus(m_menu);
+}
+
+void AppMenuModel::cacheSubMenus(QMenu *menu)
+{
+    // This function is now the recursive part of the cache engine.
+    // It is only called on a menu when its contents are available.
+    // It finds all children of `menu` and triggers an update for them.
+    // The recursion continues when `onMenuUpdated` is called for those children.
+    if (!menu) {
+        return;
+    }
+
+    const auto actions = menu->actions();
+    for (QAction *a : actions) {
+        if (auto subMenu = a->menu()) {
+            m_pendingMenuUpdates++;
+            m_importer->updateMenu(subMenu);
+        }
+    }
 }
 
 bool AppMenuModel::nativeEventFilter(const QByteArray &eventType, void *message, qintptr *result)
@@ -460,8 +545,9 @@ bool AppMenuModel::nativeEventFilter(const QByteArray &eventType, void *message,
 
             if (serviceNameAtom != XCB_ATOM_NONE && objectPathAtom != XCB_ATOM_NONE) { // shouldn't happen
                 if (event->atom == serviceNameAtom || event->atom == objectPathAtom) {
-                    // see if we now have a menu
-                    onWinIdChanged();
+                    // A property has changed, which could be part of a storm of events.
+                    // Start (or restart) a timer to handle the update once the storm subsides.
+                    m_updateTimer->start();
                 }
             }
         }
@@ -472,6 +558,17 @@ bool AppMenuModel::nativeEventFilter(const QByteArray &eventType, void *message,
 #endif
 
     return false;
+}
+
+void AppMenuModel::performMenuUpdate()
+{
+    // This check is important to avoid doing work if the window is no longer valid
+    if (m_delayedMenuWindowId == 0) {
+        return;
+    }
+    const QString serviceName = QString::fromUtf8(x11GetWindowProperty(m_delayedMenuWindowId, s_x11AppMenuServiceNamePropertyName));
+    const QString menuObjectPath = QString::fromUtf8(x11GetWindowProperty(m_delayedMenuWindowId, s_x11AppMenuObjectPathPropertyName));
+    updateApplicationMenu(serviceName, menuObjectPath);
 }
 
 } // namespace Material

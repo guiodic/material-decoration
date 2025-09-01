@@ -27,8 +27,9 @@
 
 // Qt
 #include <QMenu>
+#include <QTimer>
 #include <QVariantAnimation>
-// #include <QWidget>
+#include <QLineEdit>
 
 namespace Material
 {
@@ -52,7 +53,7 @@ public:
     Q_PROPERTY(int animationDuration READ animationDuration WRITE setAnimationDuration NOTIFY animationDurationChanged)
     Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity NOTIFY opacityChanged)
 
- 
+
     int currentIndex() const;
     void setCurrentIndex(int set);
 
@@ -84,6 +85,7 @@ public:
     void unPressAllButtons();
 
 public slots:
+    void onMenuReadyForSearch();
     void initAppMenuModel();
     void updateAppMenuModel();
     void updateOverflow(QRectF availableRect);
@@ -94,6 +96,9 @@ public slots:
 
 private slots:
     void onShowingChanged(bool hovered);
+    void filterMenu(const QString &text);
+    void onSearchReturnPressed();
+    void onSearchTimerTimeout();
 
 signals:
     void menuUpdated();
@@ -113,11 +118,21 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
+    struct ActionInfo {
+        QString path;
+        bool isEffectivelyEnabled;
+    };
+
+    void setupSearchMenu();
     void resetButtons();
+    void searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results);
+    ActionInfo getActionPath(QAction *action) const;
+    void clampToScreen(QMenu* menu);
 
     AppMenuModel *m_appMenuModel;
     int m_currentIndex;
     int m_overflowIndex;
+    int m_searchIndex;
     bool m_overflowing;
     bool m_hovered;
     bool m_showing;
@@ -126,6 +141,15 @@ private:
     QVariantAnimation *m_animation;
     qreal m_opacity;
     QPointer<QMenu> m_currentMenu;
+
+    QPointer<QMenu> m_searchMenu;
+    QPointer<QLineEdit> m_searchLineEdit;
+    QTimer *m_searchDebounceTimer;
+    bool m_searchUiVisible = false;
+
+    bool m_menuReadyForSearch = false;
+    QString m_lastSearchQuery;
+    QList<QAction *> m_lastResults;
 };
 
 } // namespace Material

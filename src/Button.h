@@ -83,7 +83,7 @@ public:
 
     QMargins &padding();
     void setHorzPadding(int value);
-    void setVertPadding(int value);
+   // void setVertPadding(int value);
 
 private Q_SLOTS:
     void updateAnimationState(bool hovered);
@@ -95,7 +95,7 @@ signals:
     void transitionValueChanged(qreal);
     void paddingChanged();
 
-private:
+protected:
     bool m_animationEnabled;
     QVariantAnimation *m_animation;
     qreal m_opacity;

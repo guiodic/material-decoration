@@ -94,6 +94,7 @@ set (decoration_SRCS
     Button.cc
     Decoration.cc
     MenuOverflowButton.cc
+    SearchButton.cc
     TextButton.cc
     plugin.cc
 )

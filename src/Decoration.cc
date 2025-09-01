@@ -49,6 +49,7 @@
 #include <QRegion>
 #include <QSharedPointer>
 #include <QWheelEvent>
+//#include <QMutex>
 
 // X11
 #if HAVE_X11
@@ -203,14 +204,13 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
     }
 
     paintTitleBarBackground(painter, repaintRegion);
-    paintButtons(painter, repaintRegion);
     paintCaption(painter, repaintRegion);
+    paintButtons(painter, repaintRegion);
 
     // Don't paint outline for NoBorder, NoSideBorder, or Tiny borders.
     if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
         paintOutline(painter, repaintRegion);
     }
-    updateBlur();
 }
 
 bool Decoration::init()
@@ -476,6 +476,7 @@ void Decoration::setButtonGroupHorzPadding(KDecoration3::DecorationButtonGroup *
     }
 }
 
+/*
 void Decoration::setButtonGroupVertPadding(KDecoration3::DecorationButtonGroup *buttonGroup, int value)
 {
     for (int i = 0; i < buttonGroup->buttons().length(); i++) {
@@ -486,6 +487,7 @@ void Decoration::setButtonGroupVertPadding(KDecoration3::DecorationButtonGroup *
         }
     }
 }
+*/
 
 void Decoration::updateButtonHeight()
 {
@@ -537,6 +539,7 @@ void Decoration::updateButtonsGeometry()
         m_menuButtons->updateOverflow(availableRect);
     }
 
+    updateBlur();
     update();
 }
 
@@ -564,6 +567,9 @@ void Decoration::updateButtonAnimation()
 
 void Decoration::updateShadow()
 {
+    //static QMutex s_shadowMutex; //TODO check if it is ok
+    //QMutexLocker locker(&s_shadowMutex);
+
     const QColor shadowColor = m_internalSettings->shadowColor();
     const int shadowStrengthInt = m_internalSettings->shadowStrength();
     const int shadowSizePreset = m_internalSettings->shadowSize();
@@ -652,6 +658,16 @@ void Decoration::updateShadow()
 bool Decoration::menuAlwaysShow() const
 {
     return m_internalSettings->menuAlwaysShow();
+}
+
+bool Decoration::searchEnabled() const
+{
+    return m_internalSettings->searchEnabled();
+}
+
+bool Decoration::showDisabledActions() const
+{
+    return m_internalSettings->showDisabledActions();
 }
 
 bool Decoration::animationsEnabled() const
@@ -1062,40 +1078,39 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     painter->save();
     painter->setFont(settings()->font());
 
-    if (m_menuButtons->buttons().isEmpty()) {
-        painter->setPen(titleBarForegroundColor());
-    } else { // menuButtons is visible
+    // The previous implementation used a complex QLinearGradient to create a QPen
+    // to draw the text, which is inefficient. The new implementation draws the text with a solid color
+
+    // Step 1: Draw the text with the correct base color and opacity.
+    qreal textOpacity = 1.0;
+    if (!m_menuButtons->buttons().isEmpty() && !m_menuButtons->alwaysShow()) {
+        // This handles the case where the entire caption fades out.
+        textOpacity = 1.0 - m_menuButtons->opacity();
+    }
+
+    painter->setOpacity(textOpacity);
+    painter->setPen(titleBarForegroundColor());
+    painter->drawText(captionRect, alignment, caption);
+    painter->setOpacity(1.0); // Reset for subsequent operations
+
+    // Step 2: If the menu buttons are visible and might be obscuring the text, draw on top of it.
+    if (!m_menuButtons->buttons().isEmpty()) {
         const int menuRight = m_menuButtons->geometry().right();
         const int textLeft = textRect.left();
         const int textRight = textRect.right();
-        // qCDebug(category) << "textLeft" << textLeft << "menuRight" << menuRight;
 
-        if (!m_menuButtons->alwaysShow()) { // caption fades away revealing menu
-            painter->setOpacity(1.0 - m_menuButtons->opacity());
-            painter->setPen(titleBarForegroundColor());
-        } else if (m_menuButtons->overflowing()) { // hide caption leaving "whitespace" to easily grab.
-            painter->setPen(Qt::transparent);
-        } else if (textRight < menuRight) { // menuButtons completely coveres caption
-            painter->setPen(Qt::transparent);
-        } else if (textLeft < menuRight) { // menuButtons covers caption
-            const int fadeWidth = 10; // TODO: scale by dpi
-            const int x1 = menuRight;
-            const int x2 = qMin(x1+fadeWidth, textRight);
-            const float x1Ratio = (float)(x1-textLeft) / (float)textWidth;
-            const float x2Ratio = (float)(x2-textLeft) / (float)textWidth;
-            // qCDebug(category) << "    " << "x2" << x2 << "x1R" << x1Ratio << "x2R" << x2Ratio;
-            QLinearGradient gradient(textRect.topLeft(), textRect.bottomRight());
-            gradient.setColorAt(x1Ratio, Qt::transparent);
-            gradient.setColorAt(x2Ratio, titleBarForegroundColor());
-            QBrush brush(gradient);
-            QPen pen(brush, 1);
-            painter->setPen(pen);
-        } else { // caption is not covered by menuButtons
-            painter->setPen(titleBarForegroundColor());
+        if (m_menuButtons->overflowing() || textRight < menuRight) {
+            // Case: Menu is overflowing or completely covers the caption.
+            // Hide the caption entirely by painting over it with the background color.
+            painter->fillRect(captionRect, titleBarBackgroundColor());
+        } else if (m_menuButtons->alwaysShow() && textLeft < menuRight) {
+            // Case: Menu partially covers the caption.
+            // Obscure the text that is underneath the menu buttons with a solid rectangle.
+            QRect solidRect(textLeft, captionRect.top(), menuRight - textLeft, captionRect.height());
+            painter->fillRect(solidRect, titleBarBackgroundColor());
         }
     }
 
-    painter->drawText(captionRect, alignment, caption);
     painter->restore();
 }
 

@@ -25,7 +25,7 @@
                 <choice name="AlignRight" />
                 <choice name="TitleHidden" />
             </choices>
-            <default>AlignCenterFullWidth</default>
+            <default>AlignCenter</default>
         </entry>
 
         <!-- opacity -->
@@ -39,6 +39,12 @@
         <!-- menu -->
         <entry name="MenuAlwaysShow" type="Bool">
             <default>true</default>
+        </entry>
+        <entry name="SearchEnabled" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="ShowDisabledActions" type="Bool">
+            <default>false</default>
         </entry>
         <entry name="MenuButtonHorzPadding" type="Int">
             <default>4</default>

@@ -31,6 +31,7 @@
 #include <QPointer>
 #include <QRect>
 #include <QStringList>
+#include <QTimer>
 
 
 namespace Material
@@ -72,6 +73,8 @@ public:
     QVariant winId() const;
     void setWinId(const QVariant &id);
 
+    QMenu *menu() const;
+
 signals:
     void requestActivateIndex(int index);
 
@@ -89,9 +92,19 @@ signals:
     void menuAvailableChanged();
     void modelNeedsUpdate();
     void winIdChanged();
+    void menuReadyForSearch();
+
+private Q_SLOTS:
+    void onMenuUpdated(QMenu *menu);
+    void performMenuUpdate();
+    void doDeepCaching();
 
 private:
+    QTimer *m_updateTimer;
+    QTimer *m_deepCacheTimer;
     bool m_menuAvailable;
+    bool m_deepCachingAllowed = false;
+    int m_pendingMenuUpdates = 0;
     bool m_updatePending = false;
 
     QVariant m_winId{-1};
@@ -106,6 +119,10 @@ private:
     QString m_menuObjectPath;
 
     QPointer<KDBusMenuImporter> m_importer;
+
+    void fetchImmediateSubmenus(QMenu *menu);
+    void cacheSubMenus(QMenu *menu);
+    QByteArray x11GetWindowProperty(WId id, const QByteArray &name);
 };
 
 } // namespace Material
