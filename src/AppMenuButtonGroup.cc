@@ -698,10 +698,12 @@ void AppMenuButtonGroup::updateShowing()
 
 void AppMenuButtonGroup::onMenuAboutToHide()
 {
-    if (m_currentIndex == m_searchIndex) {
+    qCDebug(category) << "[onMenuAboutToHide] started";
+    if (m_searchLineEdit) {
         m_searchLineEdit->clear();
         m_searchUiVisible = false;
         m_lastResults.clear();
+        qCDebug(category) << "[onMenuAboutToHide] search cleared";
     }
 
     if (0 <= m_currentIndex && m_currentIndex < buttons().length()) {
