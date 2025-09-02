@@ -551,6 +551,7 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
 
         actionMenu->installEventFilter(this);
         actionMenu->popup(rootPosition);
+        clampToScreen(actionMenu);
 
         if (buttonIndex == m_searchIndex) {
             m_searchLineEdit->activateWindow();
@@ -670,11 +671,6 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         }
     }
     
-    if (event->type() == QEvent::Show) {
-        clampToScreen(menu);
-        return false;
-    }
-
     return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
 }
 
