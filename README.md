@@ -24,7 +24,7 @@ Material-ish window decoration theme for KWin.
 
 ### Locally Integrated Menus
 
-This hides the AppMenu icon button and draws the menu in the titlebar.
+This hides the AppMenu icon button and draws the menu in the titlebar. It works on X11 only.
 
 Make sure you add the AppMenu button in System Settings > Application Style >
 Window Decorations > Buttons Tab.
