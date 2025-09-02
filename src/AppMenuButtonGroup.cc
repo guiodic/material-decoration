@@ -296,7 +296,7 @@ void AppMenuButtonGroup::resetButtons()
 void AppMenuButtonGroup::onMenuReadyForSearch()
 {
     m_menuReadyForSearch = true;
-    if (!m_lastSearchQuery.isEmpty()) {
+    if (!m_lastSearchQuery.isEmpty() && m_searchUiVisible) {
         filterMenu(m_lastSearchQuery);
     }
 }
@@ -565,7 +565,12 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
         // 4. Clean up the old menu and button state.
         if (oldMenu && oldMenu != actionMenu) {
             disconnect(oldMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onMenuAboutToHide);
-            oldMenu->hide();
+            if (m_searchMenu && oldMenu == m_searchMenu) {
+                m_searchUiVisible = false;
+                oldMenu->hide();
+            } else {
+                oldMenu->hide();
+            }
         }
         if (oldButton && oldButton != button) {
             oldButton->setChecked(false);
