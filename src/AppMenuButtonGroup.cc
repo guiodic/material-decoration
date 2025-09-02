@@ -28,7 +28,6 @@
 #include "TextButton.h"
 #include "MenuOverflowButton.h"
 #include "SearchButton.h"
-//#include "InternalSettings.h"
 
 // KDecoration
 #include <KDecoration3/DecoratedWindow>
@@ -567,10 +566,8 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
             disconnect(oldMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onMenuAboutToHide);
             if (m_searchMenu && oldMenu == m_searchMenu) {
                 m_searchUiVisible = false;
-                oldMenu->hide();
-            } else {
-                oldMenu->hide();
             }
+            oldMenu->hide();
         }
         if (oldButton && oldButton != button) {
             oldButton->setChecked(false);
@@ -824,7 +821,6 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         const QPoint pos = m_searchMenu->pos();
         m_searchMenu->popup(pos);
         clampToScreen(m_searchMenu);
-        //m_searchLineEdit->setFocus();
     }
     m_searchMenu->setUpdatesEnabled(true);
 }
@@ -876,12 +872,7 @@ void AppMenuButtonGroup::clampToScreen(QMenu* menu)
         return;
     }
 
-    KDecoration3::DecorationButton* anchorButton = nullptr;
-  //  if (menu == m_searchMenu) {
-  //      anchorButton = buttons().value(m_searchIndex);
-  //  } else if (m_currentIndex >= 0 && m_currentIndex < buttons().length()) {
-    anchorButton = buttons().value(m_currentIndex);
-  //  }
+    KDecoration3::DecorationButton* anchorButton = buttons().value(m_currentIndex);
 
     QPoint idealPos;
     if (anchorButton) {
