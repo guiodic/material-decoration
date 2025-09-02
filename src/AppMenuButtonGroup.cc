@@ -733,20 +733,29 @@ void AppMenuButtonGroup::onShowingChanged(bool showing)
 
 void AppMenuButtonGroup::filterMenu(const QString &text)
 {
+    qCDebug(category) << "[filtermenu]";
     m_lastSearchQuery = text;
 
     // Clear results if search text is too short
     if (text.length() < 3) {
         const auto actions = m_searchMenu->actions();
         if (actions.count() > 2) {
-             for (int i = actions.count() - 1; i >= 2; --i) {
-                actions.at(i)->deleteLater();
+            for (int i = actions.count() - 1; i >= 2; --i) {
+                m_searchMenu->removeAction(actions.at(i));
             }
         }
         m_lastResults.clear();
+        //HACK To get the scrollbars to disapper, we force the popup again 
+        if (m_searchMenu->isVisible()) {
+            const QPoint pos = m_searchMenu->pos();
+            m_searchMenu->popup(pos);
+            qCDebug(category) << "popup()";
+            //m_searchLineEdit->setFocus();
+        }        
         if (text.isEmpty()) {
             m_searchLineEdit->setClearButtonEnabled(false);
             m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu", "Search") + QStringLiteral("…"));
+            return;
         }
         m_searchLineEdit->setClearButtonEnabled(true);
         return;
@@ -780,13 +789,12 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     // Clear previous results
     const auto actions = m_searchMenu->actions();
     for (int i = actions.count() - 1; i >= 2; --i) {
-        actions.at(i)->deleteLater();
+        m_searchMenu->removeAction(actions.at(i));
     }
 
     // Add new results
     const auto *deco = qobject_cast<const Decoration *>(decoration());
     if (!deco) {
-        //m_searchMenu->adjustSize();
         m_searchMenu->setUpdatesEnabled(true);
         return;
     }
@@ -807,9 +815,13 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         m_searchMenu->addAction(newAction);
     }
       
-      //m_searchMenu->adjustSize();
-      m_searchMenu->setUpdatesEnabled(true);
-    //
+    //HACK To get the scrollbars to appear, we force the popup again 
+    if (m_searchMenu->isVisible()) {
+        const QPoint pos = m_searchMenu->pos();
+        m_searchMenu->popup(pos);
+        //m_searchLineEdit->setFocus();
+    }
+    m_searchMenu->setUpdatesEnabled(true);
 }
 
 void AppMenuButtonGroup::onSearchTimerTimeout()
@@ -848,10 +860,10 @@ void AppMenuButtonGroup::onSearchReturnPressed()
 void AppMenuButtonGroup::clampToScreen(QMenu* menu)
 {
     qCDebug(category) << "[clampToScreen]";
-    qCDebug(category) << " m_currentIndex  =" << m_currentIndex;
-    qCDebug(category) << " m_overflowIndex =" << m_overflowIndex;
-    qCDebug(category) << " m_searchIndex   =" << m_searchIndex;
-    qCDebug(category) << " buttons length  =" << buttons().length();
+    //qCDebug(category) << " m_currentIndex  =" << m_currentIndex;
+    //qCDebug(category) << " m_overflowIndex =" << m_overflowIndex;
+    //qCDebug(category) << " m_searchIndex   =" << m_searchIndex;
+    //qCDebug(category) << " buttons length  =" << buttons().length();
     
     
     const auto *deco = qobject_cast<Decoration *>(decoration());
