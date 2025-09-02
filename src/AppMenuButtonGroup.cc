@@ -670,7 +670,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         }
     }
     
-    if (event->type() == QEvent::Resize || event->type() == QEvent::Show) { 
+    if (event->type() == QEvent::Show) {
         clampToScreen(menu);
         return false;
     }
@@ -749,6 +749,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         if (m_searchMenu->isVisible()) {
             const QPoint pos = m_searchMenu->pos();
             m_searchMenu->popup(pos);
+            clampToScreen(m_searchMenu);
             qCDebug(category) << "popup()";
             //m_searchLineEdit->setFocus();
         }        
@@ -814,11 +815,12 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         });
         m_searchMenu->addAction(newAction);
     }
-      
-    //HACK To get the scrollbars to appear, we force the popup again 
+
+    //HACK To get the scrollbars to appear, we force the popup again
     if (m_searchMenu->isVisible()) {
         const QPoint pos = m_searchMenu->pos();
         m_searchMenu->popup(pos);
+        clampToScreen(m_searchMenu);
         //m_searchLineEdit->setFocus();
     }
     m_searchMenu->setUpdatesEnabled(true);
