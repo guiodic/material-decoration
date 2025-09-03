@@ -500,6 +500,8 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
         }
         actionMenu = m_searchMenu;
     } else if (buttonIndex == m_overflowIndex) {
+        // A latent bug would cause this to show a menu with all items if triggered
+        // while the overflow button is invisible. This guard prevents that.
         if (!overflowing()) {
             return;
         }
@@ -587,11 +589,12 @@ void AppMenuButtonGroup::triggerOverflow()
 // FIXME TODO doesn't work on submenu
 bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
 {
-    
-    //Jump to the first valid action when the user press Key_Down in searchLineEdit
+    // Event handling for the search bar's QLineEdit
     if (watched == m_searchLineEdit) {
         if (event->type() == QEvent::KeyPress) {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
+
+            // On Key_Down, jump from the search bar to the first result in the menu
             if (keyEvent->key() == Qt::Key_Down) {
                 const auto actions = m_searchMenu->actions();
                 for (int i = 2; i < actions.count(); ++i) {
@@ -603,6 +606,9 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
                 }
                 return true; // Consume the event even if no action is enabled
             }
+
+            // On Key_Up, move focus from the search bar to the parent menu, allowing
+            // for left/right navigation between the main menu buttons.
             if (keyEvent->key() == Qt::Key_Up) {
                 m_searchMenu->setFocus();
                 if (auto *button = buttons().value(m_searchIndex)) {
@@ -610,6 +616,8 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
                 }
                 return true;
             }
+
+            // On Key_Left at the beginning of the line, navigate to the previous visible menu button.
             if (keyEvent->key() == Qt::Key_Left) {
                 if (m_searchLineEdit->cursorPosition() == 0) {
                     const int desiredIndex = findNextVisibleButtonIndex(m_searchIndex, false);
@@ -622,14 +630,16 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         }
     }
 
-    //Jump to searchLineEdit when the user press Key_Up in menu
+    // Special Key_Up handling for the search menu
     if (watched == m_searchMenu && event->type() == QEvent::KeyPress) {
         auto *keyEvent = static_cast<QKeyEvent *>(event);
         if (keyEvent->key() == Qt::Key_Up) {
             QAction *activeAction = m_searchMenu->activeAction();
+            // If there is no active action, we are "on the button", so let the generic handler below take care of it.
             if (!activeAction) {
-                 // Already on button, fall through
+                 // Fall through
             } else {
+                 // Otherwise, if we are on the first search result, jump back to the search bar.
                  const auto actions = m_searchMenu->actions();
                  if (actions.count() > 2 && activeAction == actions.at(2)) {
                     m_searchLineEdit->setFocus();
@@ -654,6 +664,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
     if (event->type() == QEvent::KeyPress) {
         auto *e = static_cast<QKeyEvent *>(event);
 
+        // Generic Key_Up handler for all menus
         if (e->key() == Qt::Key_Up) {
             if (menu != m_currentMenu) {
                 return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
