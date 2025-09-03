@@ -607,6 +607,14 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
                 }
                 return true;
             }
+            if (keyEvent->key() == Qt::Key_Left) {
+                if (m_searchLineEdit->cursorPosition() == 0) {
+                    if (m_searchIndex > 0) {
+                        trigger(m_searchIndex - 1);
+                        return true;
+                    }
+                }
+            }
         }
     }
 
