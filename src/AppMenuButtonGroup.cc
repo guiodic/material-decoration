@@ -500,6 +500,9 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
         }
         actionMenu = m_searchMenu;
     } else if (buttonIndex == m_overflowIndex) {
+        if (!overflowing()) {
+            return;
+        }
         actionMenu = new QMenu();
         actionMenu->setAttribute(Qt::WA_DeleteOnClose);
 
