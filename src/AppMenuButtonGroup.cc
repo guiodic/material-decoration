@@ -609,10 +609,11 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
             }
             if (keyEvent->key() == Qt::Key_Left) {
                 if (m_searchLineEdit->cursorPosition() == 0) {
-                    if (m_searchIndex > 0) {
-                        trigger(m_searchIndex - 1);
-                        return true;
+                    const int desiredIndex = findNextVisibleButtonIndex(m_searchIndex, false);
+                    if (desiredIndex != m_searchIndex) {
+                        trigger(desiredIndex);
                     }
+                    return true;
                 }
             }
         }
@@ -676,7 +677,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
 
         // TODO right to left languages
         if (e->key() == Qt::Key_Left) {
-            int desiredIndex = m_currentIndex - 1;
+            int desiredIndex = findNextVisibleButtonIndex(m_currentIndex, false);
             emit requestActivateIndex(desiredIndex);
             return true;
         } else if (e->key() == Qt::Key_Right) {
@@ -684,7 +685,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
                 return false;
             }
 
-            int desiredIndex = m_currentIndex + 1;
+            int desiredIndex = findNextVisibleButtonIndex(m_currentIndex, true);
             emit requestActivateIndex(desiredIndex);
             return true;
         }
@@ -958,6 +959,36 @@ void AppMenuButtonGroup::clampToScreen(QMenu* menu)
         menu->move(idealPos);
     }
     
+}
+
+int AppMenuButtonGroup::findNextVisibleButtonIndex(int currentIndex, bool forward) const
+{
+    const auto buttonList = buttons();
+    if (buttonList.isEmpty()) {
+        return -1;
+    }
+
+    int step = forward ? 1 : -1;
+    // Start from the next button, not the current one
+    int newIndex = currentIndex + step;
+
+    for (int i = 0; i < buttonList.length(); ++i) {
+        // Wrap around logic
+        if (newIndex < 0) {
+            newIndex = buttonList.length() - 1;
+        } else if (newIndex >= buttonList.length()) {
+            newIndex = 0;
+        }
+
+        const auto *button = buttonList.value(newIndex);
+        if (button && button->isVisible() && button->isEnabled()) {
+            return newIndex;
+        }
+
+        newIndex += step;
+    }
+
+    return currentIndex; // Fallback to current index if no other visible button is found
 }
 
 } // namespace Material
