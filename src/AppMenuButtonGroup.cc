@@ -594,26 +594,14 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         if (event->type() == QEvent::KeyPress) {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
 
-            // On Key_Down, jump from the search bar to the first result in the menu
-            if (keyEvent->key() == Qt::Key_Down) {
-                const auto actions = m_searchMenu->actions();
-                for (int i = 2; i < actions.count(); ++i) {
-                    if (actions.at(i)->isEnabled()) {
-                        m_searchMenu->setFocus();
-                        m_searchMenu->setActiveAction(actions.at(i));
-                        return true; // Event handled
-                    }
-                }
-                return true; // Consume the event even if no action is enabled
-            }
-
-            // On Key_Up, let's QT manage the menu (default: go to the last active action)
-            if (keyEvent->key() == Qt::Key_Up) {
-                if (m_searchMenu->actions().count() > 2) {
+            // On Key_Up or Down, clear the focus on m_searchLineEdit 
+            // and let's QT manage the menu (default: go to the first/last active action)
+            if (keyEvent->key() == Qt::Key_Up || keyEvent->key() == Qt::Key_Down) {
+                if (m_searchMenu->actions().count() > 2) { // do this only if there are results, otherwise do nothing
                     m_searchLineEdit->clearFocus();
-                    m_searchMenu->setFocus();
                     return false;
                 }
+                return true;
             }
 
             // On Key_Left at the beginning of the line, navigate to the previous visible menu button.
