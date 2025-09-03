@@ -500,6 +500,11 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
         }
         actionMenu = m_searchMenu;
     } else if (buttonIndex == m_overflowIndex) {
+        // A latent bug would cause this to show a menu with all items if triggered
+        // while the overflow button is invisible. This guard prevents that.
+        if (!overflowing()) {
+            return;
+        }
         actionMenu = new QMenu();
         actionMenu->setAttribute(Qt::WA_DeleteOnClose);
 
@@ -584,26 +589,35 @@ void AppMenuButtonGroup::triggerOverflow()
 // FIXME TODO doesn't work on submenu
 bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
 {
-    
-    //Jump to the first valid action when the user press Key_Down in searchLineEdit
+    // Event handling for the search bar's QLineEdit
     if (watched == m_searchLineEdit) {
         if (event->type() == QEvent::KeyPress) {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
-            if (keyEvent->key() == Qt::Key_Down) {
-                const auto actions = m_searchMenu->actions();
-                for (int i = 2; i < actions.count(); ++i) {
-                    if (actions.at(i)->isEnabled()) {
-                        m_searchMenu->setFocus();
-                        m_searchMenu->setActiveAction(actions.at(i));
-                        return true; // Event handled
-                    }
+
+            // On Key_Up or Down, clear the focus on m_searchLineEdit 
+            // and let's QT manage the menu (default: go to the first/last active action)
+            if (keyEvent->key() == Qt::Key_Up || keyEvent->key() == Qt::Key_Down) {
+                if (m_searchMenu->actions().count() > 2) { // do this only if there are results, otherwise do nothing
+                    m_searchLineEdit->clearFocus();
+                    return false;
                 }
-                return true; // Consume the event even if no action is enabled
+                return true;
+            }
+
+            // On Key_Left at the beginning of the line, navigate to the previous visible menu button.
+            if (keyEvent->key() == Qt::Key_Left) {
+                if (m_searchLineEdit->cursorPosition() == 0) {
+                    const int desiredIndex = findNextVisibleButtonIndex(m_searchIndex, false);
+                    if (desiredIndex != m_searchIndex) {
+                        trigger(desiredIndex);
+                    }
+                    return true;
+                }
             }
         }
     }
 
-    //Jump to searchLineEdit when the user press Key_Up in menu
+    // Jump to searchLineEdit when the user press Key_Up in menu
     if (watched == m_searchMenu && event->type() == QEvent::KeyPress) {
         auto *keyEvent = static_cast<QKeyEvent *>(event);
         if (keyEvent->key() == Qt::Key_Up) {
@@ -630,7 +644,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
 
         // TODO right to left languages
         if (e->key() == Qt::Key_Left) {
-            int desiredIndex = m_currentIndex - 1;
+            int desiredIndex = findNextVisibleButtonIndex(m_currentIndex, false);
             emit requestActivateIndex(desiredIndex);
             return true;
         } else if (e->key() == Qt::Key_Right) {
@@ -638,7 +652,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
                 return false;
             }
 
-            int desiredIndex = m_currentIndex + 1;
+            int desiredIndex = findNextVisibleButtonIndex(m_currentIndex, true);
             emit requestActivateIndex(desiredIndex);
             return true;
         }
@@ -912,6 +926,36 @@ void AppMenuButtonGroup::clampToScreen(QMenu* menu)
         menu->move(idealPos);
     }
     
+}
+
+int AppMenuButtonGroup::findNextVisibleButtonIndex(int currentIndex, bool forward) const
+{
+    const auto buttonList = buttons();
+    if (buttonList.isEmpty()) {
+        return -1;
+    }
+
+    int step = forward ? 1 : -1;
+    // Start from the next button, not the current one
+    int newIndex = currentIndex + step;
+
+    for (int i = 0; i < buttonList.length(); ++i) {
+        // Wrap around logic
+        if (newIndex < 0) {
+            newIndex = buttonList.length() - 1;
+        } else if (newIndex >= buttonList.length()) {
+            newIndex = 0;
+        }
+
+        const auto *button = buttonList.value(newIndex);
+        if (button && button->isVisible() && button->isEnabled()) {
+            return newIndex;
+        }
+
+        newIndex += step;
+    }
+
+    return currentIndex; // Fallback to current index if no other visible button is found
 }
 
 } // namespace Material
