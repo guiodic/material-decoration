@@ -28,7 +28,6 @@
 #include "TextButton.h"
 #include "MenuOverflowButton.h"
 #include "SearchButton.h"
-//#include "InternalSettings.h"
 
 // KDecoration
 #include <KDecoration3/DecoratedWindow>
@@ -296,7 +295,7 @@ void AppMenuButtonGroup::resetButtons()
 void AppMenuButtonGroup::onMenuReadyForSearch()
 {
     m_menuReadyForSearch = true;
-    if (!m_lastSearchQuery.isEmpty()) {
+    if (!m_lastSearchQuery.isEmpty() && m_searchUiVisible) {
         filterMenu(m_lastSearchQuery);
     }
 }
@@ -551,6 +550,7 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
 
         actionMenu->installEventFilter(this);
         actionMenu->popup(rootPosition);
+        clampToScreen(actionMenu);
 
         if (buttonIndex == m_searchIndex) {
             m_searchLineEdit->activateWindow();
@@ -564,6 +564,9 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
         // 4. Clean up the old menu and button state.
         if (oldMenu && oldMenu != actionMenu) {
             disconnect(oldMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onMenuAboutToHide);
+            if (m_searchMenu && oldMenu == m_searchMenu) {
+                m_searchUiVisible = false;
+            }
             oldMenu->hide();
         }
         if (oldButton && oldButton != button) {
@@ -670,11 +673,6 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         }
     }
     
-    if (event->type() == QEvent::Resize || event->type() == QEvent::Show) { 
-        clampToScreen(menu);
-        return false;
-    }
-
     return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
 }
 
@@ -702,10 +700,12 @@ void AppMenuButtonGroup::updateShowing()
 
 void AppMenuButtonGroup::onMenuAboutToHide()
 {
-    if (m_currentIndex == m_searchIndex) {
+    qCDebug(category) << "[onMenuAboutToHide] started";
+    if (m_searchLineEdit) {
         m_searchLineEdit->clear();
         m_searchUiVisible = false;
         m_lastResults.clear();
+        qCDebug(category) << "[onMenuAboutToHide] search cleared";
     }
 
     if (0 <= m_currentIndex && m_currentIndex < buttons().length()) {
@@ -733,20 +733,30 @@ void AppMenuButtonGroup::onShowingChanged(bool showing)
 
 void AppMenuButtonGroup::filterMenu(const QString &text)
 {
+    qCDebug(category) << "[filtermenu]";
     m_lastSearchQuery = text;
 
     // Clear results if search text is too short
     if (text.length() < 3) {
         const auto actions = m_searchMenu->actions();
         if (actions.count() > 2) {
-             for (int i = actions.count() - 1; i >= 2; --i) {
-                actions.at(i)->deleteLater();
+            for (int i = actions.count() - 1; i >= 2; --i) {
+                m_searchMenu->removeAction(actions.at(i));
             }
         }
         m_lastResults.clear();
+        //HACK To get the scrollbars to disapper, we force the popup again 
+        if (m_searchMenu->isVisible()) {
+            const QPoint pos = m_searchMenu->pos();
+            m_searchMenu->popup(pos);
+            clampToScreen(m_searchMenu);
+            qCDebug(category) << "popup()";
+            //m_searchLineEdit->setFocus();
+        }        
         if (text.isEmpty()) {
             m_searchLineEdit->setClearButtonEnabled(false);
             m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu", "Search") + QStringLiteral("…"));
+            return;
         }
         m_searchLineEdit->setClearButtonEnabled(true);
         return;
@@ -780,13 +790,12 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     // Clear previous results
     const auto actions = m_searchMenu->actions();
     for (int i = actions.count() - 1; i >= 2; --i) {
-        actions.at(i)->deleteLater();
+        m_searchMenu->removeAction(actions.at(i));
     }
 
     // Add new results
     const auto *deco = qobject_cast<const Decoration *>(decoration());
     if (!deco) {
-        //m_searchMenu->adjustSize();
         m_searchMenu->setUpdatesEnabled(true);
         return;
     }
@@ -806,10 +815,14 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         });
         m_searchMenu->addAction(newAction);
     }
-      
-      //m_searchMenu->adjustSize();
-      m_searchMenu->setUpdatesEnabled(true);
-    //
+
+    //HACK To get the scrollbars to appear, we force the popup again
+    if (m_searchMenu->isVisible()) {
+        const QPoint pos = m_searchMenu->pos();
+        m_searchMenu->popup(pos);
+        clampToScreen(m_searchMenu);
+    }
+    m_searchMenu->setUpdatesEnabled(true);
 }
 
 void AppMenuButtonGroup::onSearchTimerTimeout()
@@ -848,10 +861,10 @@ void AppMenuButtonGroup::onSearchReturnPressed()
 void AppMenuButtonGroup::clampToScreen(QMenu* menu)
 {
     qCDebug(category) << "[clampToScreen]";
-    qCDebug(category) << " m_currentIndex  =" << m_currentIndex;
-    qCDebug(category) << " m_overflowIndex =" << m_overflowIndex;
-    qCDebug(category) << " m_searchIndex   =" << m_searchIndex;
-    qCDebug(category) << " buttons length  =" << buttons().length();
+    //qCDebug(category) << " m_currentIndex  =" << m_currentIndex;
+    //qCDebug(category) << " m_overflowIndex =" << m_overflowIndex;
+    //qCDebug(category) << " m_searchIndex   =" << m_searchIndex;
+    //qCDebug(category) << " buttons length  =" << buttons().length();
     
     
     const auto *deco = qobject_cast<Decoration *>(decoration());
@@ -859,12 +872,7 @@ void AppMenuButtonGroup::clampToScreen(QMenu* menu)
         return;
     }
 
-    KDecoration3::DecorationButton* anchorButton = nullptr;
-  //  if (menu == m_searchMenu) {
-  //      anchorButton = buttons().value(m_searchIndex);
-  //  } else if (m_currentIndex >= 0 && m_currentIndex < buttons().length()) {
-    anchorButton = buttons().value(m_currentIndex);
-  //  }
+    KDecoration3::DecorationButton* anchorButton = buttons().value(m_currentIndex);
 
     QPoint idealPos;
     if (anchorButton) {
