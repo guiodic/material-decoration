@@ -600,6 +600,13 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
                 }
                 return true; // Consume the event even if no action is enabled
             }
+            if (keyEvent->key() == Qt::Key_Up) {
+                m_searchMenu->setFocus();
+                if (auto *button = buttons().value(m_searchIndex)) {
+                    button->setChecked(true);
+                }
+                return true;
+            }
         }
     }
 
@@ -607,12 +614,19 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
     if (watched == m_searchMenu && event->type() == QEvent::KeyPress) {
         auto *keyEvent = static_cast<QKeyEvent *>(event);
         if (keyEvent->key() == Qt::Key_Up) {
-            const auto actions = m_searchMenu->actions();
             QAction *activeAction = m_searchMenu->activeAction();
-            if (actions.count() > 2 && activeAction == actions.at(2)) {
-                m_searchLineEdit->setFocus();
-                m_searchMenu->setActiveAction(nullptr);
-                return true; // Event handled
+            if (!activeAction) {
+                 // Already on button, fall through
+            } else {
+                 const auto actions = m_searchMenu->actions();
+                 if (actions.count() > 2 && activeAction == actions.at(2)) {
+                    m_searchLineEdit->setFocus();
+                    m_searchMenu->setActiveAction(nullptr);
+                    if (auto *button = buttons().value(m_searchIndex)) {
+                       button->setChecked(false);
+                    }
+                    return true; // Event handled
+                }
             }
         }
     }
@@ -627,6 +641,30 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
 
     if (event->type() == QEvent::KeyPress) {
         auto *e = static_cast<QKeyEvent *>(event);
+
+        if (e->key() == Qt::Key_Up) {
+            if (menu != m_currentMenu) {
+                return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
+            }
+
+            QAction *firstAction = nullptr;
+            for (auto *action : menu->actions()) {
+                if (action->isSeparator() || !action->isEnabled() || !action->isVisible()) {
+                    continue;
+                }
+                firstAction = action;
+                break;
+            }
+
+            if (firstAction && menu->activeAction() == firstAction) {
+                menu->setActiveAction(nullptr);
+                menu->setFocus();
+                if (auto* button = buttons().value(m_currentIndex)) {
+                    button->setChecked(true);
+                }
+                return true;
+            }
+        }
 
         // TODO right to left languages
         if (e->key() == Qt::Key_Left) {
