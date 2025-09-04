@@ -57,6 +57,7 @@
 #include <QWidgetAction>
 
 
+
 namespace Material
 {
 
@@ -590,53 +591,28 @@ void AppMenuButtonGroup::triggerOverflow()
 bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
 {
     // Event handling for the search bar's QLineEdit
-    if (watched == m_searchLineEdit) {
+     if (watched == m_searchLineEdit) {
         if (event->type() == QEvent::KeyPress) {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
 
-            // On Key_Up or Down, clear the focus on m_searchLineEdit 
-            // and let's QT manage the menu (default: go to the first/last active action)
-            if (keyEvent->key() == Qt::Key_Up || keyEvent->key() == Qt::Key_Down) {
-                if (m_searchMenu->actions().count() > 2) { // do this only if there are results, otherwise do nothing
-                    m_searchLineEdit->clearFocus();
-                    return false;
-                }
-                return true;
-            }
-
-            // On Key_Left at the beginning of the line, navigate to the previous visible menu button.
+            // On Key_Left at the beginning of the line, send the event to m_searchMenu, 
+            // so we can navigate to the previous visible menu button.
             if (keyEvent->key() == Qt::Key_Left) {
                 if (m_searchLineEdit->cursorPosition() == 0) {
-                    const int desiredIndex = findNextVisibleButtonIndex(m_searchIndex, false);
-                    if (desiredIndex != m_searchIndex) {
-                        trigger(desiredIndex);
-                    }
+                    QApplication::sendEvent(m_searchMenu, keyEvent);
                     return true;
                 }
+                return false;
             }
         }
+        return false;
     }
-
-    // Jump to searchLineEdit when the user press Key_Up in menu
-    if (watched == m_searchMenu && event->type() == QEvent::KeyPress) {
-        auto *keyEvent = static_cast<QKeyEvent *>(event);
-        if (keyEvent->key() == Qt::Key_Up) {
-            const auto actions = m_searchMenu->actions();
-            QAction *activeAction = m_searchMenu->activeAction();
-            if (actions.count() > 2 && activeAction == actions.at(2)) {
-                m_searchLineEdit->setFocus();
-                m_searchMenu->setActiveAction(nullptr);
-                return true; // Event handled
-            }
-        }
-    }
-
+    
     auto *menu = qobject_cast<QMenu *>(watched);
 
     if (!menu) {
         return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
     }
-    
     
 
     if (event->type() == QEvent::KeyPress) {
