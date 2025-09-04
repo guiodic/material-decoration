@@ -129,6 +129,7 @@ private:
     ActionInfo getActionPath(QAction *action) const;
     void clampToScreen(QMenu* menu);
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
+    //void styleMenu(QMenu *menu);
 
     AppMenuModel *m_appMenuModel;
     int m_currentIndex;

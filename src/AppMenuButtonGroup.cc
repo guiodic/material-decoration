@@ -37,6 +37,7 @@
 // KF
 #include <KWindowSystem>
 #include <KLocalizedString>
+//#include <KColorUtils>
 
 // KWIN
 #include <kwin-x11/x11window.h>
@@ -124,6 +125,7 @@ AppMenuButtonGroup::~AppMenuButtonGroup() = default;
 void AppMenuButtonGroup::setupSearchMenu()
 {
     m_searchMenu = new QMenu(nullptr);
+    //styleMenu(m_searchMenu); // set the colors for the menu
     m_searchLineEdit = new QLineEdit(m_searchMenu);
     m_searchLineEdit->setMinimumWidth(200);
 
@@ -555,6 +557,7 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
         rootPosition += deco->windowPos();
 
         actionMenu->installEventFilter(this);
+        //styleMenu(actionMenu);
         actionMenu->popup(rootPosition);
         clampToScreen(actionMenu);
 
@@ -933,5 +936,53 @@ int AppMenuButtonGroup::findNextVisibleButtonIndex(int currentIndex, bool forwar
 
     return currentIndex; // Fallback to current index if no other visible button is found
 }
+
+/* Do not remove: Need more refinements
+void AppMenuButtonGroup::styleMenu(QMenu *menu)
+{
+    const auto *deco = qobject_cast<Decoration *>(decoration());
+    if (!deco || !menu) {
+        return;
+    }
+
+    QPalette palette = menu->palette();
+
+    const QColor backgroundColor = deco->titleBarBackgroundColor();
+    const QColor foregroundColor = deco->titleBarForegroundColor();
+    //const QColor highlightColor = KColorUtils::mix(backgroundColor, foregroundColor, 0.2);
+
+    // Set the colors for the active state
+    palette.setColor(QPalette::Active, QPalette::Window, backgroundColor);
+    palette.setColor(QPalette::Active, QPalette::WindowText, foregroundColor);
+    palette.setColor(QPalette::Active, QPalette::Base, backgroundColor);
+    palette.setColor(QPalette::Active, QPalette::Text, foregroundColor);
+    //palette.setColor(QPalette::Active, QPalette::Highlight, highlightColor);
+    palette.setColor(QPalette::Active, QPalette::HighlightedText, foregroundColor);
+    palette.setColor(QPalette::Active, QPalette::Button, backgroundColor);
+    //palette.setColor(QPalette::Active, QPalette::ButtonText, foregroundColor);
+    //palette.setColor(QPalette::Active, QPalette::BrightText, foregroundColor);
+
+    // Set the colors for the inactive state
+    palette.setColor(QPalette::Inactive, QPalette::Window, backgroundColor);
+    palette.setColor(QPalette::Inactive, QPalette::WindowText, foregroundColor);
+    palette.setColor(QPalette::Inactive, QPalette::Base, backgroundColor);
+    palette.setColor(QPalette::Inactive, QPalette::Text, foregroundColor);
+    //palette.setColor(QPalette::Inactive, QPalette::Highlight, highlightColor);
+    palette.setColor(QPalette::Inactive, QPalette::HighlightedText, foregroundColor);
+    palette.setColor(QPalette::Inactive, QPalette::Button, backgroundColor);
+    //palette.setColor(QPalette::Inactive, QPalette::ButtonText, foregroundColor);
+    //palette.setColor(QPalette::Inactive, QPalette::BrightText, foregroundColor);
+
+    menu->setPalette(palette);
+
+    // Recursively apply to all submenus
+    for (QAction *action : menu->actions()) {
+        if (action->menu()) {
+            styleMenu(action->menu());
+        }
+    }
+}
+*/
+
 
 } // namespace Material
