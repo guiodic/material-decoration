@@ -68,6 +68,7 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     , m_currentIndex(-1)
     , m_overflowIndex(-1)
     , m_searchIndex(-1)
+    , m_hamburgerMenu(false)
     , m_hovered(false)
     , m_showing(true)
     , m_alwaysShow(true)
@@ -461,22 +462,26 @@ AppMenuButtonGroup::ActionInfo AppMenuButtonGroup::getActionPath(QAction *action
     return { path.join(QStringLiteral(" » ")), isEffectivelyEnabled };
 }
 
+void AppMenuButtonGroup::setHamburgerMenu(bool value)
+{
+    if (m_hamburgerMenu != value) {
+        m_hamburgerMenu = value;
+    }
+}
+
 void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 {
-    // qCDebug(category) << "updateOverflow" << availableRect;
-    bool showOverflow = false;
+    bool showOverflow = m_hamburgerMenu;
     for (KDecoration3::DecorationButton *button : buttons()) {
-        // qCDebug(category) << "    " << button->geometry() << button;
         if (qobject_cast<MenuOverflowButton *>(button)) {
             button->setVisible(showOverflow);
-            // qCDebug(category) << "    showOverflow" << showOverflow;
         } else if (qobject_cast<TextButton *>(button)) {
             if (button->isEnabled()) {
-                if (availableRect.contains(button->geometry())) {
-                    button->setVisible(true);
-                } else {
+                if (m_hamburgerMenu || !availableRect.contains(button->geometry())) {
                     button->setVisible(false);
                     showOverflow = true;
+                } else {
+                    button->setVisible(true);
                 }
             }
         }

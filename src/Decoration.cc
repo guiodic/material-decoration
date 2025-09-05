@@ -241,6 +241,7 @@ bool Decoration::init()
     connect(m_menuButtons, &AppMenuButtonGroup::alwaysShowChanged,
             this, repaintTitleBar);
     m_menuButtons->updateAppMenuModel();
+    m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
 
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged,
@@ -301,6 +302,7 @@ void Decoration::reconfigure()
     updateBorders();
     updateTitleBar();
     m_menuButtons->setAlwaysShow(m_internalSettings->menuAlwaysShow());
+    m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
     updateButtonsGeometry();
     updateButtonAnimation();
     updateShadow();

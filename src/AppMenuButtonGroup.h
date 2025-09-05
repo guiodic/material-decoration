@@ -85,6 +85,7 @@ public:
     void unPressAllButtons();
 
 public slots:
+    void setHamburgerMenu(bool value);
     void onMenuReadyForSearch();
     void initAppMenuModel();
     void updateAppMenuModel();
@@ -136,6 +137,7 @@ private:
     int m_overflowIndex;
     int m_searchIndex;
     bool m_overflowing;
+    bool m_hamburgerMenu;
     bool m_hovered;
     bool m_showing;
     bool m_alwaysShow;
