@@ -75,6 +75,7 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     , m_animationEnabled(false)
     , m_animation(new QVariantAnimation(this))
     , m_opacity(1)
+    , m_visibleWidth(0)
     , m_searchMenu(nullptr)
     , m_searchLineEdit(nullptr)
     , m_searchDebounceTimer(nullptr)
@@ -487,6 +488,24 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
         }
     }
     setOverflowing(showOverflow);
+
+    // calculate visible width
+    int currentVisibleWidth = 0;
+    for (KDecoration3::DecorationButton *button : buttons()) {
+        if (button->isVisible()) {
+            currentVisibleWidth += button->geometry().width();
+        }
+    }
+
+    if (m_visibleWidth != currentVisibleWidth) {
+        m_visibleWidth = currentVisibleWidth;
+        emit menuUpdated();
+    }
+}
+
+int AppMenuButtonGroup::visibleWidth() const
+{
+    return m_visibleWidth;
 }
 
 void AppMenuButtonGroup::trigger(int buttonIndex)

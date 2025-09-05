@@ -78,6 +78,8 @@ public:
     qreal opacity() const;
     void setOpacity(qreal value);
 
+    int visibleWidth() const;
+
     bool isMenuOpen() const;
 
     KDecoration3::DecorationButton* buttonAt(int x, int y) const;
@@ -144,6 +146,7 @@ private:
     bool m_animationEnabled;
     QVariantAnimation *m_animation;
     qreal m_opacity;
+    int m_visibleWidth;
     QPointer<QMenu> m_currentMenu;
 
     QPointer<QMenu> m_searchMenu;

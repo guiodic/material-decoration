@@ -662,6 +662,11 @@ bool Decoration::menuAlwaysShow() const
     return m_internalSettings->menuAlwaysShow();
 }
 
+bool Decoration::hamburgerMenu() const
+{
+    return m_internalSettings->hamburgerMenu();
+}
+
 bool Decoration::searchEnabled() const
 {
     return m_internalSettings->searchEnabled();
@@ -1030,7 +1035,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     const QRect textRect((size().width() - textWidth) / 2, 0, textWidth, titleBarHeight());
 
     const bool appMenuVisible = !m_menuButtons->buttons().isEmpty();
-    const int menuButtonsWidth = m_menuButtons->geometry().width()
+    const int menuButtonsWidth = m_menuButtons->visibleWidth()
         + (appMenuVisible ? appMenuCaptionSpacing() : 0);
 
     const QRect availableRect = centerRect().adjusted(
@@ -1101,7 +1106,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
         const int textLeft = textRect.left();
         const int textRight = textRect.right();
 
-        if (m_menuButtons->overflowing() || textRight < menuRight) {
+        if ((m_menuButtons->overflowing() && !hamburgerMenu()) || textRight < menuRight) {
             // Case: Menu is overflowing or completely covers the caption.
             // Hide the caption entirely by painting over it with the background color.
             painter->fillRect(captionRect, titleBarBackgroundColor());
