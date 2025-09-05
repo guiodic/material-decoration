@@ -37,6 +37,7 @@
 // KF
 #include <KWindowSystem>
 #include <KLocalizedString>
+//#include <KColorUtils>
 
 // KWIN
 #include <kwin-x11/x11window.h>
@@ -55,6 +56,7 @@
 #include <QTimer>
 #include <QVariantAnimation>
 #include <QWidgetAction>
+
 
 
 namespace Material
@@ -123,6 +125,7 @@ AppMenuButtonGroup::~AppMenuButtonGroup() = default;
 void AppMenuButtonGroup::setupSearchMenu()
 {
     m_searchMenu = new QMenu(nullptr);
+    //styleMenu(m_searchMenu); // set the colors for the menu
     m_searchLineEdit = new QLineEdit(m_searchMenu);
     m_searchLineEdit->setMinimumWidth(200);
 
@@ -554,6 +557,7 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
         rootPosition += deco->windowPos();
 
         actionMenu->installEventFilter(this);
+        //styleMenu(actionMenu);
         actionMenu->popup(rootPosition);
         clampToScreen(actionMenu);
 
@@ -590,53 +594,28 @@ void AppMenuButtonGroup::triggerOverflow()
 bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
 {
     // Event handling for the search bar's QLineEdit
-    if (watched == m_searchLineEdit) {
+     if (watched == m_searchLineEdit) {
         if (event->type() == QEvent::KeyPress) {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
 
-            // On Key_Up or Down, clear the focus on m_searchLineEdit 
-            // and let's QT manage the menu (default: go to the first/last active action)
-            if (keyEvent->key() == Qt::Key_Up || keyEvent->key() == Qt::Key_Down) {
-                if (m_searchMenu->actions().count() > 2) { // do this only if there are results, otherwise do nothing
-                    m_searchLineEdit->clearFocus();
-                    return false;
-                }
-                return true;
-            }
-
-            // On Key_Left at the beginning of the line, navigate to the previous visible menu button.
+            // On Key_Left at the beginning of the line, send the event to m_searchMenu, 
+            // so we can navigate to the previous visible menu button.
             if (keyEvent->key() == Qt::Key_Left) {
                 if (m_searchLineEdit->cursorPosition() == 0) {
-                    const int desiredIndex = findNextVisibleButtonIndex(m_searchIndex, false);
-                    if (desiredIndex != m_searchIndex) {
-                        trigger(desiredIndex);
-                    }
+                    QApplication::sendEvent(m_searchMenu, keyEvent);
                     return true;
                 }
+                return false;
             }
         }
+        return false;
     }
-
-    // Jump to searchLineEdit when the user press Key_Up in menu
-    if (watched == m_searchMenu && event->type() == QEvent::KeyPress) {
-        auto *keyEvent = static_cast<QKeyEvent *>(event);
-        if (keyEvent->key() == Qt::Key_Up) {
-            const auto actions = m_searchMenu->actions();
-            QAction *activeAction = m_searchMenu->activeAction();
-            if (actions.count() > 2 && activeAction == actions.at(2)) {
-                m_searchLineEdit->setFocus();
-                m_searchMenu->setActiveAction(nullptr);
-                return true; // Event handled
-            }
-        }
-    }
-
+    
     auto *menu = qobject_cast<QMenu *>(watched);
 
     if (!menu) {
         return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
     }
-    
     
 
     if (event->type() == QEvent::KeyPress) {
@@ -957,5 +936,53 @@ int AppMenuButtonGroup::findNextVisibleButtonIndex(int currentIndex, bool forwar
 
     return currentIndex; // Fallback to current index if no other visible button is found
 }
+
+/* Do not remove: Need more refinements
+void AppMenuButtonGroup::styleMenu(QMenu *menu)
+{
+    const auto *deco = qobject_cast<Decoration *>(decoration());
+    if (!deco || !menu) {
+        return;
+    }
+
+    QPalette palette = menu->palette();
+
+    const QColor backgroundColor = deco->titleBarBackgroundColor();
+    const QColor foregroundColor = deco->titleBarForegroundColor();
+    //const QColor highlightColor = KColorUtils::mix(backgroundColor, foregroundColor, 0.2);
+
+    // Set the colors for the active state
+    palette.setColor(QPalette::Active, QPalette::Window, backgroundColor);
+    palette.setColor(QPalette::Active, QPalette::WindowText, foregroundColor);
+    palette.setColor(QPalette::Active, QPalette::Base, backgroundColor);
+    palette.setColor(QPalette::Active, QPalette::Text, foregroundColor);
+    //palette.setColor(QPalette::Active, QPalette::Highlight, highlightColor);
+    palette.setColor(QPalette::Active, QPalette::HighlightedText, foregroundColor);
+    palette.setColor(QPalette::Active, QPalette::Button, backgroundColor);
+    //palette.setColor(QPalette::Active, QPalette::ButtonText, foregroundColor);
+    //palette.setColor(QPalette::Active, QPalette::BrightText, foregroundColor);
+
+    // Set the colors for the inactive state
+    palette.setColor(QPalette::Inactive, QPalette::Window, backgroundColor);
+    palette.setColor(QPalette::Inactive, QPalette::WindowText, foregroundColor);
+    palette.setColor(QPalette::Inactive, QPalette::Base, backgroundColor);
+    palette.setColor(QPalette::Inactive, QPalette::Text, foregroundColor);
+    //palette.setColor(QPalette::Inactive, QPalette::Highlight, highlightColor);
+    palette.setColor(QPalette::Inactive, QPalette::HighlightedText, foregroundColor);
+    palette.setColor(QPalette::Inactive, QPalette::Button, backgroundColor);
+    //palette.setColor(QPalette::Inactive, QPalette::ButtonText, foregroundColor);
+    //palette.setColor(QPalette::Inactive, QPalette::BrightText, foregroundColor);
+
+    menu->setPalette(palette);
+
+    // Recursively apply to all submenus
+    for (QAction *action : menu->actions()) {
+        if (action->menu()) {
+            styleMenu(action->menu());
+        }
+    }
+}
+*/
+
 
 } // namespace Material
