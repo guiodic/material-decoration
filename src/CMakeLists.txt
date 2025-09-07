@@ -86,6 +86,17 @@ message(STATUS "HAVE_KDecoration3_5_25: ${HAVE_KDecoration3_5_25} (${KDecoration
 
 configure_file(BuildConfig.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/BuildConfig.h)
 
+# Core library with shared code (e.g., settings)
+set(core_SRCS)
+kconfig_add_kcfg_files(core_SRCS InternalSettings.kcfgc)
+add_library(materialdecoration_core STATIC ${core_SRCS})
+target_link_libraries(materialdecoration_core PUBLIC
+    KF6::ConfigCore
+    KF6::ConfigGui
+    KF6::ConfigWidgets
+)
+
+# Main decoration plugin
 set (decoration_SRCS
     AppMenuModel.cc
     AppMenuButton.cc
@@ -99,15 +110,13 @@ set (decoration_SRCS
     plugin.cc
 )
 
-kconfig_add_kcfg_files(decoration_SRCS
-    InternalSettings.kcfgc
-)
-
 add_library (materialdecoration MODULE
     ${decoration_SRCS}
 )
 
 target_link_libraries (materialdecoration
+    PUBLIC
+        materialdecoration_core
     PUBLIC
         dbusmenuqt
         Qt${QT_VERSION_MAJOR}::Core
@@ -149,3 +158,5 @@ install(TARGETS materialdecoration
 
 #install (TARGETS materialdecoration
 #         DESTINATION ${PLUGIN_INSTALL_DIR}/org.kde.kdecoration3)
+
+add_subdirectory(kcm)

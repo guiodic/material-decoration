@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+NoDisplay=true
+X-KDE-AliasFor=systemsettings
+Exec=kcmshell6 materialdecoration_kcm
+Icon=preferences-system-windows
+Name=Material Window Decoration
