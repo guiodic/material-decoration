@@ -1099,6 +1099,26 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     painter->setPen(titleBarForegroundColor());
     painter->drawText(captionRect, alignment, caption);
     painter->setOpacity(1.0); // Reset for subsequent operations
+    
+    // Step 2: If the menu buttons are visible and might be obscuring the text, draw on top of it.
+    if (m_menuButtons->alwaysShow()) {
+        if (!m_menuButtons->buttons().isEmpty()) {
+            const int menuRight = m_menuButtons->geometry().right();
+            const int textLeft = textRect.left();
+            const int textRight = textRect.right();
+            
+            if (m_menuButtons->overflowing() || textRight < menuRight) {
+                // Case: Menu is overflowing or completely covers the caption.
+                // Hide the caption entirely by painting over it with the background color.
+                painter->fillRect(captionRect, titleBarBackgroundColor());
+            } else if (m_menuButtons->alwaysShow() && textLeft < menuRight) {
+                // Case: Menu partially covers the caption.
+                // Obscure the text that is underneath the menu buttons with a solid rectangle.
+                QRect solidRect(textLeft, captionRect.top(), menuRight - textLeft, captionRect.height());
+                painter->fillRect(solidRect, titleBarBackgroundColor());
+            }
+        }
+    }
 
     painter->restore();
 }
