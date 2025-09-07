@@ -241,6 +241,7 @@ bool Decoration::init()
     connect(m_menuButtons, &AppMenuButtonGroup::alwaysShowChanged,
             this, repaintTitleBar);
     m_menuButtons->updateAppMenuModel();
+    m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
 
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged,
@@ -301,6 +302,7 @@ void Decoration::reconfigure()
     updateBorders();
     updateTitleBar();
     m_menuButtons->setAlwaysShow(m_internalSettings->menuAlwaysShow());
+    m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
     updateButtonsGeometry();
     updateButtonAnimation();
     updateShadow();
@@ -658,6 +660,11 @@ void Decoration::updateShadow()
 bool Decoration::menuAlwaysShow() const
 {
     return m_internalSettings->menuAlwaysShow();
+}
+
+bool Decoration::hamburgerMenu() const
+{
+    return m_internalSettings->hamburgerMenu();
 }
 
 bool Decoration::searchEnabled() const
@@ -1028,7 +1035,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     const QRect textRect((size().width() - textWidth) / 2, 0, textWidth, titleBarHeight());
 
     const bool appMenuVisible = !m_menuButtons->buttons().isEmpty();
-    const int menuButtonsWidth = m_menuButtons->geometry().width()
+    const int menuButtonsWidth = m_menuButtons->visibleWidth()
         + (appMenuVisible ? appMenuCaptionSpacing() : 0);
 
     const QRect availableRect = centerRect().adjusted(
@@ -1092,22 +1099,24 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     painter->setPen(titleBarForegroundColor());
     painter->drawText(captionRect, alignment, caption);
     painter->setOpacity(1.0); // Reset for subsequent operations
-
+    
     // Step 2: If the menu buttons are visible and might be obscuring the text, draw on top of it.
-    if (!m_menuButtons->buttons().isEmpty()) {
-        const int menuRight = m_menuButtons->geometry().right();
-        const int textLeft = textRect.left();
-        const int textRight = textRect.right();
-
-        if (m_menuButtons->overflowing() || textRight < menuRight) {
-            // Case: Menu is overflowing or completely covers the caption.
-            // Hide the caption entirely by painting over it with the background color.
-            painter->fillRect(captionRect, titleBarBackgroundColor());
-        } else if (m_menuButtons->alwaysShow() && textLeft < menuRight) {
-            // Case: Menu partially covers the caption.
-            // Obscure the text that is underneath the menu buttons with a solid rectangle.
-            QRect solidRect(textLeft, captionRect.top(), menuRight - textLeft, captionRect.height());
-            painter->fillRect(solidRect, titleBarBackgroundColor());
+    if (m_menuButtons->alwaysShow()) {
+        if (!m_menuButtons->buttons().isEmpty()) {
+            const int menuRight = m_menuButtons->geometry().left() + m_menuButtons->visibleWidth();
+            const int textLeft = textRect.left();
+            const int textRight = textRect.right();
+            
+            if (m_menuButtons->overflowing() || textRight < menuRight) {
+                // Case: Menu is overflowing or completely covers the caption.
+                // Hide the caption entirely by painting over it with the background color.
+                painter->fillRect(captionRect, titleBarBackgroundColor());
+            } else if (textLeft < menuRight) {
+                // Case: Menu partially covers the caption.
+                // Obscure the text that is underneath the menu buttons with a solid rectangle.
+                QRect solidRect(textLeft, captionRect.top(), menuRight - textLeft, captionRect.height());
+                painter->fillRect(solidRect, titleBarBackgroundColor());
+            }
         }
     }
 

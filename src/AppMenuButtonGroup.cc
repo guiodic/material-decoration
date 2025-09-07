@@ -68,12 +68,14 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     , m_currentIndex(-1)
     , m_overflowIndex(-1)
     , m_searchIndex(-1)
+    , m_hamburgerMenu(false)
     , m_hovered(false)
     , m_showing(true)
     , m_alwaysShow(true)
     , m_animationEnabled(false)
     , m_animation(new QVariantAnimation(this))
     , m_opacity(1)
+    , m_visibleWidth(0)
     , m_searchMenu(nullptr)
     , m_searchLineEdit(nullptr)
     , m_searchDebounceTimer(nullptr)
@@ -461,27 +463,49 @@ AppMenuButtonGroup::ActionInfo AppMenuButtonGroup::getActionPath(QAction *action
     return { path.join(QStringLiteral(" » ")), isEffectivelyEnabled };
 }
 
+void AppMenuButtonGroup::setHamburgerMenu(bool value)
+{
+    if (m_hamburgerMenu != value) {
+        m_hamburgerMenu = value;
+    }
+}
+
 void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 {
-    // qCDebug(category) << "updateOverflow" << availableRect;
-    bool showOverflow = false;
+    bool showOverflow = m_hamburgerMenu;
     for (KDecoration3::DecorationButton *button : buttons()) {
-        // qCDebug(category) << "    " << button->geometry() << button;
         if (qobject_cast<MenuOverflowButton *>(button)) {
             button->setVisible(showOverflow);
-            // qCDebug(category) << "    showOverflow" << showOverflow;
         } else if (qobject_cast<TextButton *>(button)) {
             if (button->isEnabled()) {
-                if (availableRect.contains(button->geometry())) {
-                    button->setVisible(true);
-                } else {
+                if (m_hamburgerMenu || !availableRect.contains(button->geometry())) {
                     button->setVisible(false);
                     showOverflow = true;
+                } else {
+                    button->setVisible(true);
                 }
             }
         }
     }
     setOverflowing(showOverflow);
+
+    // calculate visible width
+    int currentVisibleWidth = 0;
+    for (KDecoration3::DecorationButton *button : buttons()) {
+        if (button->isVisible()) {
+            currentVisibleWidth += button->geometry().width();
+        }
+    }
+
+    if (m_visibleWidth != currentVisibleWidth) {
+        m_visibleWidth = currentVisibleWidth;
+        emit menuUpdated();
+    }
+}
+
+int AppMenuButtonGroup::visibleWidth() const
+{
+    return m_visibleWidth;
 }
 
 void AppMenuButtonGroup::trigger(int buttonIndex)

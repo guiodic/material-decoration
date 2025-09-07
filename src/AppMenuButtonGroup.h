@@ -78,6 +78,8 @@ public:
     qreal opacity() const;
     void setOpacity(qreal value);
 
+    int visibleWidth() const;
+
     bool isMenuOpen() const;
 
     KDecoration3::DecorationButton* buttonAt(int x, int y) const;
@@ -85,6 +87,7 @@ public:
     void unPressAllButtons();
 
 public slots:
+    void setHamburgerMenu(bool value);
     void onMenuReadyForSearch();
     void initAppMenuModel();
     void updateAppMenuModel();
@@ -136,12 +139,14 @@ private:
     int m_overflowIndex;
     int m_searchIndex;
     bool m_overflowing;
+    bool m_hamburgerMenu;
     bool m_hovered;
     bool m_showing;
     bool m_alwaysShow;
     bool m_animationEnabled;
     QVariantAnimation *m_animation;
     qreal m_opacity;
+    int m_visibleWidth;
     QPointer<QMenu> m_currentMenu;
 
     QPointer<QMenu> m_searchMenu;

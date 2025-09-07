@@ -94,6 +94,7 @@ private:
     void updateShadow();
 
     bool menuAlwaysShow() const;
+    bool hamburgerMenu() const;
     bool searchEnabled() const;
     bool showDisabledActions() const;
     bool animationsEnabled() const;
