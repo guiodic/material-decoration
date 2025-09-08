@@ -99,6 +99,7 @@ public slots:
 private slots:
     void onHasApplicationMenuChanged(bool hasMenu);
     void onApplicationMenuChanged();
+    void performDebouncedMenuUpdate();
     void onShowingChanged(bool hovered);
     void filterMenu(const QString &text);
     void onSearchReturnPressed();
@@ -153,6 +154,7 @@ private:
     QPointer<QMenu> m_searchMenu;
     QPointer<QLineEdit> m_searchLineEdit;
     QTimer *m_searchDebounceTimer;
+    QTimer *m_menuUpdateDebounceTimer;
     bool m_searchUiVisible = false;
 
     bool m_menuReadyForSearch = false;

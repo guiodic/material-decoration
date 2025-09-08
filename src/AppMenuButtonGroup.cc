@@ -81,6 +81,11 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     m_searchDebounceTimer->setInterval(200);
     m_searchDebounceTimer->setSingleShot(true);
     connect(m_searchDebounceTimer, &QTimer::timeout, this, &AppMenuButtonGroup::onSearchTimerTimeout);
+
+    m_menuUpdateDebounceTimer = new QTimer(this);
+    m_menuUpdateDebounceTimer->setInterval(200);
+    m_menuUpdateDebounceTimer->setSingleShot(true);
+    connect(m_menuUpdateDebounceTimer, &QTimer::timeout, this, &AppMenuButtonGroup::performDebouncedMenuUpdate);
     // Assign showing and opacity before we bind the onShowingChanged animation
     // so that new windows do not animate.
     setAlwaysShow(decoration->menuAlwaysShow());
@@ -316,13 +321,19 @@ void AppMenuButtonGroup::onMenuReadyForSearch()
 void AppMenuButtonGroup::onHasApplicationMenuChanged(bool hasMenu)
 {
     if (hasMenu) {
-        onApplicationMenuChanged();
+        m_menuUpdateDebounceTimer->start();
     } else {
+        m_menuUpdateDebounceTimer->stop();
         resetButtons();
     }
 }
 
 void AppMenuButtonGroup::onApplicationMenuChanged()
+{
+    m_menuUpdateDebounceTimer->start();
+}
+
+void AppMenuButtonGroup::performDebouncedMenuUpdate()
 {
     auto *deco = qobject_cast<Decoration *>(decoration());
     if (!deco) {
