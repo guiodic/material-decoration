@@ -85,6 +85,7 @@ public:
     KDecoration3::DecorationButton* buttonAt(int x, int y) const;
 
     void unPressAllButtons();
+    void handleHoverMove(const QPointF &pos);
 
 public slots:
     void setHamburgerMenu(bool value);
@@ -107,7 +108,6 @@ private slots:
 
 signals:
     void menuUpdated();
-    void requestActivateIndex(int index);
     void requestActivateOverflow();
 
     void currentIndexChanged();

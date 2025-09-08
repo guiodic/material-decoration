@@ -348,18 +348,12 @@ void Decoration::hoverMoveEvent(QHoverEvent *event)
         m_menuButtons->unPressAllButtons();
     }
 
-    // const bool wasHovered = m_menuButtons->hovered();
-    // const bool contains = m_menuButtons->geometry().contains(event->posF());
-    // if (!wasHovered && contains) {
-    //     // HoverEnter
-    //     m_menuButtons->setHovered(true);
-    // } else if (wasHovered && !contains) {
-    //     // HoverLeave
-    //     m_menuButtons->setHovered(false);
-    // } else if (wasHovered && contains) {
-    //     // HoverMove
-    // }
-    // updateBlur();
+    if (!KWindowSystem::isPlatformX11()) {
+        if (m_menuButtons->geometry().contains(event->position())) {
+            QPointF localPos = event->position() - m_menuButtons->geometry().topLeft();
+            m_menuButtons->handleHoverMove(localPos);
+        }
+    }
 }
 
 void Decoration::mouseReleaseEvent(QMouseEvent *event)

@@ -24,15 +24,12 @@
 #include "BuildConfig.h"
 #include "AppMenuModel.h"
 #include "Decoration.h"
-#include "AppMenuButton.h"
 #include "TextButton.h"
 #include "MenuOverflowButton.h"
 #include "SearchButton.h"
 
 // KDecoration
 #include <KDecoration3/DecoratedWindow>
-#include <KDecoration3/DecorationButton>
-#include <KDecoration3/DecorationButtonGroup>
 
 // KF
 #include <KWindowSystem>
@@ -79,12 +76,12 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     , m_searchUiVisible(false)
 {
     m_searchDebounceTimer = new QTimer(this);
-    m_searchDebounceTimer->setInterval(200);
+    m_searchDebounceTimer->setInterval(150);
     m_searchDebounceTimer->setSingleShot(true);
     connect(m_searchDebounceTimer, &QTimer::timeout, this, &AppMenuButtonGroup::onSearchTimerTimeout);
 
     m_menuUpdateDebounceTimer = new QTimer(this);
-    m_menuUpdateDebounceTimer->setInterval(200);
+    m_menuUpdateDebounceTimer->setInterval(100);
     m_menuUpdateDebounceTimer->setSingleShot(true);
     connect(m_menuUpdateDebounceTimer, &QTimer::timeout, this, &AppMenuButtonGroup::performDebouncedMenuUpdate);
     // Assign showing and opacity before we bind the onShowingChanged animation
@@ -120,8 +117,6 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     connect(decoratedClient, &KDecoration3::DecoratedWindow::applicationMenuChanged,
             this, &AppMenuButtonGroup::onApplicationMenuChanged);
 
-    connect(this, &AppMenuButtonGroup::requestActivateIndex,
-            this, &AppMenuButtonGroup::trigger);
     connect(this, &AppMenuButtonGroup::requestActivateOverflow,
             this, &AppMenuButtonGroup::triggerOverflow);
 
@@ -136,7 +131,12 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     }
 }
 
-AppMenuButtonGroup::~AppMenuButtonGroup() = default;
+AppMenuButtonGroup::~AppMenuButtonGroup()
+{
+    if (m_searchMenu) {
+        delete m_searchMenu;
+    }
+}
 
 void AppMenuButtonGroup::setupSearchMenu()
 {
@@ -376,6 +376,8 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
         QMenu *menu = m_appMenuModel->menu();
         if (!menu) {
+            resetButtons();
+            emit menuUpdated();
             return;
         }
 
@@ -669,7 +671,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         // TODO right to left languages
         if (e->key() == Qt::Key_Left) {
             int desiredIndex = findNextVisibleButtonIndex(m_currentIndex, false);
-            emit requestActivateIndex(desiredIndex);
+            trigger(desiredIndex);
             return true;
         } else if (e->key() == Qt::Key_Right) {
             if (menu->activeAction() && menu->activeAction()->menu()) {
@@ -677,22 +679,19 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
             }
 
             int desiredIndex = findNextVisibleButtonIndex(m_currentIndex, true);
-            emit requestActivateIndex(desiredIndex);
+            trigger(desiredIndex);
             return true;
         }
-
     } else if (event->type() == QEvent::MouseMove) {
         auto *e = static_cast<QMouseEvent *>(event);
-
         const auto *deco = qobject_cast<Decoration *>(decoration());
+        if (!deco) {
+            return false;
+        }
 
         QPoint decoPos(e->globalPosition().toPoint());
         decoPos -= deco->windowPos();
         decoPos.ry() += deco->titleBarHeight();
-        // qCDebug(category) << "MouseMove";
-        // qCDebug(category) << "       globalPos" << e->globalPos();
-        // qCDebug(category) << "       windowPos" << deco->windowPos();
-        // qCDebug(category) << "  titleBarHeight" << deco->titleBarHeight();
 
         KDecoration3::DecorationButton* item = buttonAt(decoPos.x(), decoPos.y());
         if (!item) {
@@ -705,7 +704,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
                 && appMenuButton->isVisible()
                 && appMenuButton->isEnabled()
             ) {
-                emit requestActivateIndex(appMenuButton->buttonIndex());
+                trigger(appMenuButton->buttonIndex());
             }
             return false;
         }
@@ -971,5 +970,27 @@ void AppMenuButtonGroup::styleMenu(QMenu *menu)
 }
 */
 
+
+void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
+{
+    if (!isMenuOpen()) {
+        return;
+    }
+
+    KDecoration3::DecorationButton* item = buttonAt(pos.x(), pos.y());
+    if (!item) {
+        return;
+    }
+
+    AppMenuButton* appMenuButton = qobject_cast<AppMenuButton *>(item);
+    if (appMenuButton) {
+        if (m_currentIndex != appMenuButton->buttonIndex()
+            && appMenuButton->isVisible()
+            && appMenuButton->isEnabled()
+        ) {
+            trigger(appMenuButton->buttonIndex());
+        }
+    }
+}
 
 } // namespace Material
