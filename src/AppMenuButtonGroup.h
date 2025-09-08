@@ -132,7 +132,6 @@ private:
     void resetButtons();
     void searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results);
     ActionInfo getActionPath(QAction *action) const;
-    void clampToScreen(QMenu* menu);
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
     //void styleMenu(QMenu *menu);
 

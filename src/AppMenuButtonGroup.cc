@@ -35,6 +35,7 @@
 #include <KDecoration3/DecorationButtonGroup>
 
 // KF
+#include <KWindowSystem>
 #include <KLocalizedString>
 //#include <KColorUtils>
 
@@ -578,7 +579,7 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
         }
     }
 
-    const auto *deco = qobject_cast<Decoration *>(decoration());
+    auto *deco = qobject_cast<Decoration *>(decoration());
 
     if (actionMenu && deco) {
        
@@ -591,15 +592,19 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
         m_currentMenu = actionMenu;
 
         // 2. Calculate position and show the new menu. This must happen before hiding the old one to prevent flicker.
-        const QRectF buttonRect = button->geometry();
-        const QPoint position = buttonRect.topLeft().toPoint();
-        QPoint rootPosition(position);
-        rootPosition += deco->windowPos();
-
         actionMenu->installEventFilter(this);
         //styleMenu(actionMenu);
-        actionMenu->popup(rootPosition);
-        clampToScreen(actionMenu);
+        if (KWindowSystem::isPlatformX11()) {
+            const QRectF buttonRect = button->geometry();
+            const QPoint position = buttonRect.topLeft().toPoint();
+            QPoint rootPosition(position);
+            rootPosition += deco->windowPos();
+            actionMenu->popup(rootPosition);
+        } else {
+            KDecoration3::Positioner positioner;
+            positioner.setAnchorRect(button->geometry());
+            deco->popup(positioner, actionMenu);
+        }
 
         if (buttonIndex == m_searchIndex) {
             m_searchLineEdit->activateWindow();
@@ -782,7 +787,6 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         if (m_searchMenu->isVisible()) {
             const QPoint pos = m_searchMenu->pos();
             m_searchMenu->popup(pos);
-            clampToScreen(m_searchMenu);
             qCDebug(category) << "popup()";
             //m_searchLineEdit->setFocus();
         }        
@@ -853,7 +857,6 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     if (m_searchMenu->isVisible()) {
         const QPoint pos = m_searchMenu->pos();
         m_searchMenu->popup(pos);
-        clampToScreen(m_searchMenu);
     }
     m_searchMenu->setUpdatesEnabled(true);
 }
@@ -889,62 +892,6 @@ void AppMenuButtonGroup::onSearchReturnPressed()
     if (actions.count() > 2) { // 0 is search bar, 1 is separator
         actions.at(2)->trigger();
     }
-}
-
-void AppMenuButtonGroup::clampToScreen(QMenu* menu)
-{
-    qCDebug(category) << "[clampToScreen]";
-    //qCDebug(category) << " m_currentIndex  =" << m_currentIndex;
-    //qCDebug(category) << " m_overflowIndex =" << m_overflowIndex;
-    //qCDebug(category) << " m_searchIndex   =" << m_searchIndex;
-    //qCDebug(category) << " buttons length  =" << buttons().length();
-    
-    
-    const auto *deco = qobject_cast<Decoration *>(decoration());
-    if (!deco) {
-        return;
-    }
-
-    KDecoration3::DecorationButton* anchorButton = buttons().value(m_currentIndex);
-
-    QPoint idealPos;
-    if (anchorButton) {
-        const QRectF buttonGeometry = anchorButton->geometry();
-        idealPos = buttonGeometry.topLeft().toPoint();
-        idealPos += deco->windowPos();
-    } else {
-        idealPos = menu->pos();
-    }
-
-    QScreen *screen = QGuiApplication::screenAt(idealPos);
-    if (!screen) screen = QGuiApplication::primaryScreen();
-    if (!screen) return;
-
-    const QRect bounds = screen->availableGeometry();
-
-    // Set max size 
-    menu->setMaximumHeight(bounds.height());
-    menu->setMaximumWidth(static_cast<int>(bounds.width() * 0.8));
-
-    int w = menu->width();
-    int h = menu->height();
-
-    int minX = bounds.left();
-    int maxX = bounds.left() + bounds.width()  - w;
-    int minY = bounds.top();
-    int maxY =
-        bounds.top()  + bounds.height() - h;
-
-    if (w > bounds.width())  { minX = maxX = bounds.left(); }
-    if (h > bounds.height()) { minY = maxY = bounds.top();  }
-
-    idealPos.setX(qBound(minX, idealPos.x(), maxX));
-    idealPos.setY(qBound(minY, idealPos.y(), maxY));
-
-    if (menu->pos() != idealPos) {
-        menu->move(idealPos);
-    }
-    
 }
 
 int AppMenuButtonGroup::findNextVisibleButtonIndex(int currentIndex, bool forward) const
