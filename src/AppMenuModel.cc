@@ -120,7 +120,6 @@ int AppMenuModel::rowCount(const QModelIndex &parent) const
 
 void AppMenuModel::update()
 {
-    // qCDebug(category) << "AppMenuModel::update (" << m_winId << ")";
     beginResetModel();
     endResetModel();
     m_updatePending = false;
@@ -196,13 +195,14 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
 
 void AppMenuModel::onMenuUpdated(QMenu *menu)
 {
-    if (m_menu.isNull()) { // First time update, this is the main menu
+    // This slot is called by the DBusMenuImporter whenever a menu's contents are ready.
+    if (m_menu.isNull()) { // First time update, this is the root application menu.
         m_menu = menu;
         if (m_menu.isNull()) {
             return;
         }
 
-        // Connect signals for top-level actions
+        // Connect signals for top-level actions to update the model when they change.
         const auto actions = m_menu->actions();
         for (QAction *a : actions) {
             connect(a, &QAction::changed, this, [this, a] {
@@ -221,17 +221,20 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         emit modelNeedsUpdate();
 
         // --- Two-stage caching ---
+        // To avoid UI freezes on startup, we don't fetch the entire menu tree at once.
         // 1. Fetch the first level of submenus immediately for UI responsiveness.
         fetchImmediateSubmenus(m_menu);
         // 2. Start a timer to fetch all deeper submenus later, to avoid startup jank.
         m_deepCacheTimer->start();
 
-    } else { // This is a submenu update.
+    } else { // This is an update for a submenu that was previously requested.
         if (m_deepCachingAllowed) {
-            // If the delay has passed, continue caching recursively.
+            // The deep caching phase has begun. Recursively fetch the children of this submenu.
             cacheSubMenus(menu);
         }
-        // Still need to track pending updates for the `menuReadyForSearch` signal.
+
+        // Track the number of pending submenu updates. When it reaches zero,
+        // the entire menu tree has been fetched and is ready for searching.
         if (m_pendingMenuUpdates > 0) {
             m_pendingMenuUpdates--;
             if (m_pendingMenuUpdates == 0) {
@@ -243,6 +246,8 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
 
 void AppMenuModel::fetchImmediateSubmenus(QMenu *menu)
 {
+    // Stage 1 of caching: Fetch only the direct children of the root menu.
+    // This is a non-recursive call to quickly populate the top-level menus.
     if (!menu) {
         return;
     }
@@ -250,7 +255,6 @@ void AppMenuModel::fetchImmediateSubmenus(QMenu *menu)
     const auto actions = menu->actions();
     for (QAction *a : actions) {
         if (auto subMenu = a->menu()) {
-            // This just fetches the immediate children, it does not recurse.
             m_importer->updateMenu(subMenu);
         }
     }
@@ -258,18 +262,20 @@ void AppMenuModel::fetchImmediateSubmenus(QMenu *menu)
 
 void AppMenuModel::doDeepCaching()
 {
-    // The timer has fired, now we can do the expensive recursive caching.
+    // Stage 2 of caching begins now that the initial delay has passed.
+    // This allows expensive, recursive fetching of the entire menu tree.
     m_deepCachingAllowed = true;
-    // Kick off the deep scan from the root. This will find L1 menus that have already
-    // arrived and process their children.
+
+    // Kick off the deep scan from the root menu. `onMenuUpdated` will handle the recursion
+    // for submenus that have already been fetched and are waiting.
     cacheSubMenus(m_menu);
 }
 
 void AppMenuModel::cacheSubMenus(QMenu *menu)
 {
-    // This function is now the recursive part of the cache engine.
-    // It is only called on a menu when its contents are available.
-    // It finds all children of `menu` and triggers an update for them.
+    // This function is the recursive part of the cache engine.
+    // It is only called on a menu when its own contents are available.
+    // It finds all children of `menu` and triggers a DBus update for them.
     // The recursion continues when `onMenuUpdated` is called for those children.
     if (!menu) {
         return;

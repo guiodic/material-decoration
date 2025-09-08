@@ -20,12 +20,12 @@
 
 // own
 #include "Decoration.h"
-#include "Material.h"
-#include "BuildConfig.h"
 #include "AppMenuButtonGroup.h"
 #include "BoxShadowHelper.h"
+#include "BuildConfig.h"
 #include "Button.h"
 #include "InternalSettings.h"
+#include "Material.h"
 
 // KDecoration
 #include <KDecoration3/DecoratedWindow>
@@ -49,7 +49,6 @@
 #include <QRegion>
 #include <QSharedPointer>
 #include <QWheelEvent>
-//#include <QMutex>
 
 // X11
 #if HAVE_X11
@@ -312,7 +311,6 @@ void Decoration::reconfigure()
 void Decoration::mousePressEvent(QMouseEvent *event)
 {
     KDecoration3::Decoration::mousePressEvent(event);
-    // qCDebug(category) << "Decoration::mousePressEvent" << event;
 
     if (m_menuButtons->geometry().contains(event->pos())) {
         if (event->button() == Qt::LeftButton) {
@@ -333,19 +331,14 @@ void Decoration::mousePressEvent(QMouseEvent *event)
 void Decoration::hoverEnterEvent(QHoverEvent *event)
 {
     KDecoration3::Decoration::hoverEnterEvent(event);
-    // qCDebug(category) << "Decoration::hoverEnterEvent" << event;
-    //updateBlur();
-    // m_menuButtons->setHovered(true);
 }
 
 
 void Decoration::hoverMoveEvent(QHoverEvent *event)
 {
     KDecoration3::Decoration::hoverMoveEvent(event);
-    // qCDebug(category) << "Decoration::hoverMoveEvent" << event;
 
     const bool dragStarted = dragMoveTick(event->position().toPoint());
-    // qCDebug(category) << "    " << "dragStarted" << dragStarted;
     if (dragStarted) {
         m_menuButtons->unPressAllButtons();
     }
@@ -360,20 +353,15 @@ void Decoration::hoverMoveEvent(QHoverEvent *event)
 void Decoration::mouseReleaseEvent(QMouseEvent *event)
 {
     KDecoration3::Decoration::mouseReleaseEvent(event);
-    // qCDebug(category) << "Decoration::mouseReleaseEvent" << event;
 
     resetDragMove();
-    //updateBlur();
 }
 
 void Decoration::hoverLeaveEvent(QHoverEvent *event)
 {
     KDecoration3::Decoration::hoverLeaveEvent(event);
-    // qCDebug(category) << "Decoration::hoverLeaveEvent" << event;
 
     resetDragMove();
-    //updateBlur();
-    // m_menuButtons->setHovered(false);
 }
 
 void Decoration::wheelEvent(QWheelEvent *event)
@@ -394,7 +382,6 @@ void Decoration::wheelEvent(QWheelEvent *event)
 void Decoration::onSectionUnderMouseChanged(const Qt::WindowFrameSection value)
 {
     Q_UNUSED(value);
-    // qCDebug(category) << "onSectionUnderMouseChanged" << value;
     updateTitleBarHoverState();
 }
 
@@ -451,40 +438,21 @@ void Decoration::updateTitleBarHoverState()
 
 void Decoration::setButtonGroupHeight(KDecoration3::DecorationButtonGroup *buttonGroup, int buttonHeight)
 {
-    // int vertPadding = buttonPadding();
-    for (int i = 0; i < buttonGroup->buttons().length(); i++) {
-        KDecoration3::DecorationButton* decoButton = buttonGroup->buttons().value(i);
-        auto *button = qobject_cast<Button *>(decoButton);
-        if (button) {
+    for (auto *decoButton : buttonGroup->buttons()) {
+        if (auto *button = qobject_cast<Button *>(decoButton)) {
             button->setHeight(buttonHeight);
-            // button->setVertPadding(vertPadding);
         }
     }
 }
 
 void Decoration::setButtonGroupHorzPadding(KDecoration3::DecorationButtonGroup *buttonGroup, int value)
 {
-    for (int i = 0; i < buttonGroup->buttons().length(); i++) {
-        KDecoration3::DecorationButton* decoButton = buttonGroup->buttons().value(i);
-        auto *button = qobject_cast<Button *>(decoButton);
-        if (button) {
+    for (auto *decoButton : buttonGroup->buttons()) {
+        if (auto *button = qobject_cast<Button *>(decoButton)) {
             button->setHorzPadding(value);
         }
     }
 }
-
-/*
-void Decoration::setButtonGroupVertPadding(KDecoration3::DecorationButtonGroup *buttonGroup, int value)
-{
-    for (int i = 0; i < buttonGroup->buttons().length(); i++) {
-        KDecoration3::DecorationButton* decoButton = buttonGroup->buttons().value(i);
-        auto *button = qobject_cast<Button *>(decoButton);
-        if (button) {
-            button->setVertPadding(value);
-        }
-    }
-}
-*/
 
 void Decoration::updateButtonHeight()
 {
@@ -505,10 +473,6 @@ void Decoration::updateButtonsGeometry()
     // Left
     m_leftButtons->setPos(QPointF(leftOffset, 0));
     m_leftButtons->setSpacing(0);
-    // if (!m_leftButtons->buttons().isEmpty()) {
-    //     auto *firstButon = qobject_cast<Button *>(m_leftButtons->buttons().front());
-    //     firstButon->padding()->setLeft(leftOffset);
-    // }
 
     // Right
     m_rightButtons->setPos(QPointF(
@@ -516,10 +480,6 @@ void Decoration::updateButtonsGeometry()
         0
     ));
     m_rightButtons->setSpacing(0);
-    // if (!m_rightButtons->buttons().isEmpty()) {
-    //     auto *lastButton = qobject_cast<Button *>(m_rightButtons->buttons().last());
-    //     lastButton->padding()->setRight(rightOffset);
-    // }
 
     // Menu
     if (!m_menuButtons->buttons().isEmpty()) {
@@ -542,10 +502,11 @@ void Decoration::updateButtonsGeometry()
 
 void Decoration::setButtonGroupAnimation(KDecoration3::DecorationButtonGroup *buttonGroup, bool enabled, int duration)
 {
-    for (int i = 0; i < buttonGroup->buttons().length(); i++) {
-        auto *button = qobject_cast<Button *>(buttonGroup->buttons().value(i));
-        button->setAnimationEnabled(enabled);
-        button->setAnimationDuration(duration);
+    for (auto *decoButton : buttonGroup->buttons()) {
+        if (auto *button = qobject_cast<Button *>(decoButton)) {
+            button->setAnimationEnabled(enabled);
+            button->setAnimationDuration(duration);
+        }
     }
 }
 
@@ -564,9 +525,6 @@ void Decoration::updateButtonAnimation()
 
 void Decoration::updateShadow()
 {
-    //static QMutex s_shadowMutex; //TODO check if it is ok
-    //QMutexLocker locker(&s_shadowMutex);
-
     const QColor shadowColor = m_internalSettings->shadowColor();
     const int shadowStrengthInt = m_internalSettings->shadowStrength();
     const int shadowSizePreset = m_internalSettings->shadowSize();
@@ -755,7 +713,7 @@ int Decoration::sideBorderSize() const {
     }
 }
 
-bool Decoration::Decoration::leftBorderVisible() const {
+bool Decoration::leftBorderVisible() const {
     const auto *decoratedClient = window();
     return !decoratedClient->isMaximizedHorizontally()
         && !decoratedClient->adjacentScreenEdges().testFlag(Qt::LeftEdge);
@@ -889,8 +847,7 @@ void Decoration::sendMoveEvent(const QPoint pos)
         }
 
         // button release event
-        xcb_button_release_event_t releaseEvent;
-        memset(&releaseEvent, 0, sizeof(releaseEvent));
+        xcb_button_release_event_t releaseEvent{};
 
         releaseEvent.response_type = XCB_BUTTON_RELEASE;
         releaseEvent.event =  windowId;
@@ -915,8 +872,7 @@ void Decoration::sendMoveEvent(const QPoint pos)
         xcb_ungrab_pointer(connection, XCB_TIME_CURRENT_TIME);
 
         // move resize event
-        xcb_client_message_event_t clientMessageEvent;
-        memset(&clientMessageEvent, 0, sizeof(clientMessageEvent));
+        xcb_client_message_event_t clientMessageEvent{};
 
         clientMessageEvent.response_type = XCB_CLIENT_MESSAGE;
         clientMessageEvent.type = m_moveResizeAtom;
@@ -1025,95 +981,74 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     const auto *decoratedClient = window();
-
-    const int textWidth = settings()->fontMetrics().boundingRect(decoratedClient->caption()).width();
-    const QRect textRect((size().width() - textWidth) / 2, 0, textWidth, titleBarHeight());
-
+    const QFontMetricsF fontMetrics = settings()->fontMetrics();
     const bool appMenuVisible = !m_menuButtons->buttons().isEmpty();
-    const int menuButtonsWidth = m_menuButtons->visibleWidth()
-        + (appMenuVisible ? appMenuCaptionSpacing() : 0);
 
-    const QRect availableRect = centerRect().adjusted(
-        (m_menuButtons->alwaysShow() ? menuButtonsWidth : 0),
-        0,
-        0,
-        0
-    );
-
-    QRect captionRect;
-    Qt::Alignment alignment;
-
-    switch (m_internalSettings->titleAlignment()) {
-        case InternalSettings::AlignLeft:
-            captionRect = availableRect;
-            alignment = Qt::AlignLeft | Qt::AlignVCenter;
-            break;
-
-        case InternalSettings::AlignRight:
-            captionRect = availableRect;
-            alignment = Qt::AlignRight | Qt::AlignVCenter;
-            break;
-
-        case InternalSettings::AlignCenter:
-            captionRect = availableRect;
-            alignment = Qt::AlignCenter;
-            break;
-
-        default:
-        case InternalSettings::AlignCenterFullWidth:
-            if (textRect.left() < availableRect.left()) {
-                captionRect = availableRect;
-                alignment = Qt::AlignLeft | Qt::AlignVCenter;
-            } else if (availableRect.right() < textRect.right()) {
-                captionRect = availableRect;
-                alignment = Qt::AlignRight | Qt::AlignVCenter;
-            } else {
-                captionRect = titleBarRect();
-                alignment = Qt::AlignCenter;
-            }
-            break;
+    // --- Calculate available geometry for the caption ---
+    QRect availableRect = centerRect();
+    if (appMenuVisible && m_menuButtons->alwaysShow()) {
+        const int menuButtonsWidth = m_menuButtons->visibleWidth() + appMenuCaptionSpacing();
+        availableRect.setLeft(availableRect.left() + menuButtonsWidth);
     }
 
-    const QString caption = painter->fontMetrics().elidedText(
+    // --- Determine alignment and final drawing rectangle ---
+    QRect captionRect;
+    Qt::Alignment alignment;
+    const int textWidth = fontMetrics.boundingRect(decoratedClient->caption()).width();
+    const QRect idealTextRect((size().width() - textWidth) / 2, 0, textWidth, titleBarHeight());
+
+    switch (m_internalSettings->titleAlignment()) {
+    case InternalSettings::AlignLeft:
+        captionRect = availableRect;
+        alignment = Qt::AlignLeft | Qt::AlignVCenter;
+        break;
+
+    case InternalSettings::AlignRight:
+        captionRect = availableRect;
+        alignment = Qt::AlignRight | Qt::AlignVCenter;
+        break;
+
+    case InternalSettings::AlignCenter:
+        captionRect = availableRect;
+        alignment = Qt::AlignCenter;
+        break;
+
+    default:
+    case InternalSettings::AlignCenterFullWidth:
+        if (idealTextRect.left() < availableRect.left()) {
+            captionRect = availableRect;
+            alignment = Qt::AlignLeft | Qt::AlignVCenter;
+        } else if (availableRect.right() < idealTextRect.right()) {
+            captionRect = availableRect;
+            alignment = Qt::AlignRight | Qt::AlignVCenter;
+        } else {
+            captionRect = titleBarRect();
+            alignment = Qt::AlignCenter;
+        }
+        break;
+    }
+
+    if (captionRect.width() <= 0) {
+        return;
+    }
+
+    // --- Elide text and set up painter ---
+    const QString caption = fontMetrics.elidedText(
         decoratedClient->caption(), Qt::ElideMiddle, captionRect.width());
 
     painter->save();
     painter->setFont(settings()->font());
-
-    // The previous implementation used a complex QLinearGradient to create a QPen
-    // to draw the text, which is inefficient. The new implementation draws the text with a solid color
-
-    // Step 1: Draw the text with the correct base color and opacity.
-    qreal textOpacity = 1.0;
-    if (!m_menuButtons->buttons().isEmpty() && !m_menuButtons->alwaysShow()) {
-        // This handles the case where the entire caption fades out.
-        textOpacity = 1.0 - m_menuButtons->opacity();
-    }
-
-    painter->setOpacity(textOpacity);
     painter->setPen(titleBarForegroundColor());
-    painter->drawText(captionRect, alignment, caption);
-    painter->setOpacity(1.0); // Reset for subsequent operations
-    
-    // Step 2: If the menu buttons are visible and might be obscuring the text, draw on top of it.
-    if (m_menuButtons->alwaysShow()) {
-        if (!m_menuButtons->buttons().isEmpty()) {
-            const int menuRight = m_menuButtons->geometry().left() + m_menuButtons->visibleWidth();
-            const int textLeft = textRect.left();
-            const int textRight = textRect.right();
-            
-            if (m_menuButtons->overflowing() || textRight < menuRight) {
-                // Case: Menu is overflowing or completely covers the caption.
-                // Hide the caption entirely by painting over it with the background color.
-                painter->fillRect(captionRect, titleBarBackgroundColor());
-            } else if (textLeft < menuRight) {
-                // Case: Menu partially covers the caption.
-                // Obscure the text that is underneath the menu buttons with a solid rectangle.
-                QRect solidRect(textLeft, captionRect.top(), menuRight - textLeft, captionRect.height());
-                painter->fillRect(solidRect, titleBarBackgroundColor());
-            }
-        }
+
+    // --- Handle fading when menu is not always shown and is hovered ---
+    if (appMenuVisible && !m_menuButtons->alwaysShow()) {
+        // This handles the case where the entire caption fades out when the menu appears on hover.
+        const qreal textOpacity = 1.0 - m_menuButtons->opacity();
+        painter->setOpacity(textOpacity);
     }
+
+    // --- Draw text ---
+    painter->drawText(captionRect, alignment, caption);
 
     painter->restore();
 }

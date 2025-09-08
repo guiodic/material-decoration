@@ -61,6 +61,8 @@ public:
     virtual void updateSize(int contentWidth, int contentHeight);
     virtual void setHeight(int buttonHeight);
 
+    void forceUnpress();
+
     virtual qreal iconLineWidth(const qreal gridUnit) const;
     void setPenWidth(QPainter *painter, const qreal gridUnit, const qreal scale);
 

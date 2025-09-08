@@ -34,7 +34,6 @@
 // KF
 #include <KWindowSystem>
 #include <KLocalizedString>
-//#include <KColorUtils>
 
 // Qt
 #include <QAction>
@@ -107,9 +106,6 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     connect(m_animation, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
         setOpacity(value.toReal());
     });
-    connect(this, &AppMenuButtonGroup::opacityChanged, this, [this]() {
-        // update();
-    });
 
     auto decoratedClient = decoration->window();
     connect(decoratedClient, &KDecoration3::DecoratedWindow::hasApplicationMenuChanged,
@@ -141,7 +137,6 @@ AppMenuButtonGroup::~AppMenuButtonGroup()
 void AppMenuButtonGroup::setupSearchMenu()
 {
     m_searchMenu = new QMenu(nullptr);
-    //styleMenu(m_searchMenu); // set the colors for the menu
     m_searchLineEdit = new QLineEdit(m_searchMenu);
     m_searchLineEdit->setMinimumWidth(200);
 
@@ -153,7 +148,6 @@ void AppMenuButtonGroup::setupSearchMenu()
     m_searchMenu->installEventFilter(this);
 
     connect(m_searchLineEdit, &QLineEdit::textChanged, m_searchDebounceTimer, qOverload<>(&QTimer::start));
-    //connect(m_searchLineEdit, &QLineEdit::returnPressed, this, &AppMenuButtonGroup::onSearchReturnPressed);
 
     m_searchLineEdit->installEventFilter(this);
     m_searchLineEdit->setFocusPolicy(Qt::StrongFocus);
@@ -170,7 +164,6 @@ void AppMenuButtonGroup::setCurrentIndex(int set)
 {
     if (m_currentIndex != set) {
         m_currentIndex = set;
-        // qCDebug(category) << this << "setCurrentIndex" << m_currentIndex;
         emit currentIndexChanged();
     }
 }
@@ -184,7 +177,6 @@ void AppMenuButtonGroup::setOverflowing(bool set)
 {
     if (m_overflowing != set) {
         m_overflowing = set;
-        // qCDebug(category) << this << "setOverflowing" << m_overflowing;
         emit overflowingChanged();
     }
 }
@@ -198,7 +190,6 @@ void AppMenuButtonGroup::setHovered(bool value)
 {
     if (m_hovered != value) {
         m_hovered = value;
-        // qCDebug(category) << this << "setHovered" << m_hovered;
         emit hoveredChanged(value);
     }
 }
@@ -212,7 +203,6 @@ void AppMenuButtonGroup::setShowing(bool value)
 {
     if (m_showing != value) {
         m_showing = value;
-        // qCDebug(category) << this << "setShowing" << m_showing << "alwaysShow" << m_alwaysShow << "currentIndex" << m_currentIndex << "opacity" << m_opacity;
         emit showingChanged(value);
     }
 }
@@ -226,7 +216,6 @@ void AppMenuButtonGroup::setAlwaysShow(bool value)
 {
     if (m_alwaysShow != value) {
         m_alwaysShow = value;
-        // qCDebug(category) << this << "setAlwaysShow" << m_alwaysShow;
         emit alwaysShowChanged(value);
     }
 }
@@ -267,10 +256,8 @@ void AppMenuButtonGroup::setOpacity(qreal value)
     if (m_opacity != value) {
         m_opacity = value;
 
-        for (int i = 0; i < buttons().length(); i++) {
-            KDecoration3::DecorationButton* decoButton = buttons().value(i);
-            auto *button = qobject_cast<Button *>(decoButton);
-            if (button) {
+        for (auto *decoButton : buttons()) {
+            if (auto *button = qobject_cast<Button *>(decoButton)) {
                 button->setOpacity(m_opacity);
             }
         }
@@ -281,12 +268,8 @@ void AppMenuButtonGroup::setOpacity(qreal value)
 
 KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(int x, int y) const
 {
-    for (int i = 0; i < buttons().length(); i++) {
-        KDecoration3::DecorationButton* button = buttons().value(i);
-        if (!button->isVisible()) {
-            continue;
-        }
-        if (button->geometry().contains(x, y)) {
+    for (auto *button : buttons()) {
+        if (button->isVisible() && button->geometry().contains(x, y)) {
             return button;
         }
     }
@@ -295,18 +278,15 @@ KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(int x, int y) const
 
 void AppMenuButtonGroup::resetButtons()
 {
-    // qCDebug(category) << "    resetButtons";
-    const auto currentButtons = buttons();
-    if (currentButtons.isEmpty()) {
+    if (buttons().isEmpty()) {
         return;
     }
 
     // This removes all buttons with the "Custom" type from the group's list,
-    // but does not delete the button widgets themselves.
+    // but does not delete the button widgets themselves. The buttons are parented
+    // to this widget, so their deletion is handled by the QObject ownership system.
+    // Manually calling qDeleteAll would lead to a double-free.
     removeButton(KDecoration3::DecorationButtonType::Custom);
-
-    // Now we can safely delete the buttons we took ownership of.
-    qDeleteAll(currentButtons);
 
     emit menuUpdated();
 }
@@ -618,7 +598,6 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
 
         // 2. Calculate position and show the new menu. This must happen before hiding the old one to prevent flicker.
         actionMenu->installEventFilter(this);
-        //styleMenu(actionMenu);
         if (KWindowSystem::isPlatformX11()) {
             const QRectF buttonRect = button->geometry();
             const QPoint position = buttonRect.topLeft().toPoint();
@@ -656,7 +635,6 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
 
 void AppMenuButtonGroup::triggerOverflow()
 {
-    // qCDebug(category) << "AppMenuButtonGroup::triggerOverflow" << m_overflowIndex;
     trigger(m_overflowIndex);
 }
 
@@ -731,13 +709,10 @@ bool AppMenuButtonGroup::isMenuOpen() const
 
 void AppMenuButtonGroup::unPressAllButtons()
 {
-    // qCDebug(category) << "AppMenuButtonGroup::unPressAllButtons";
-    for (int i = 0; i < buttons().length(); i++) {
-        KDecoration3::DecorationButton* button = buttons().value(i);
-
-        // Hack to setPressed(false)
-        button->setEnabled(!button->isEnabled());
-        button->setEnabled(!button->isEnabled());
+    for (auto *decoButton : buttons()) {
+        if (auto *button = qobject_cast<Button *>(decoButton)) {
+            button->forceUnpress();
+        }
     }
 }
 
@@ -748,12 +723,10 @@ void AppMenuButtonGroup::updateShowing()
 
 void AppMenuButtonGroup::onMenuAboutToHide()
 {
-    qCDebug(category) << "[onMenuAboutToHide] started";
     if (m_searchLineEdit) {
         m_searchLineEdit->clear();
         m_searchUiVisible = false;
         m_lastResults.clear();
-        qCDebug(category) << "[onMenuAboutToHide] search cleared";
     }
 
     if (0 <= m_currentIndex && m_currentIndex < buttons().length()) {
@@ -782,7 +755,6 @@ void AppMenuButtonGroup::onShowingChanged(bool showing)
 
 void AppMenuButtonGroup::filterMenu(const QString &text)
 {
-    qCDebug(category) << "[filtermenu]";
     m_lastSearchQuery = text;
 
     // Clear results if search text is too short
@@ -798,8 +770,6 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         if (m_searchMenu->isVisible()) {
             const QPoint pos = m_searchMenu->pos();
             m_searchMenu->popup(pos);
-            qCDebug(category) << "popup()";
-            //m_searchLineEdit->setFocus();
         }        
         if (text.isEmpty()) {
             m_searchLineEdit->setClearButtonEnabled(false);
@@ -925,54 +895,6 @@ int AppMenuButtonGroup::findNextVisibleButtonIndex(int currentIndex, bool forwar
 
     return currentIndex; // Fallback to current index if no other visible button is found
 }
-
-/* Do not remove: Need more refinements
-void AppMenuButtonGroup::styleMenu(QMenu *menu)
-{
-    const auto *deco = qobject_cast<Decoration *>(decoration());
-    if (!deco || !menu) {
-        return;
-    }
-
-    QPalette palette = menu->palette();
-
-    const QColor backgroundColor = deco->titleBarBackgroundColor();
-    const QColor foregroundColor = deco->titleBarForegroundColor();
-    //const QColor highlightColor = KColorUtils::mix(backgroundColor, foregroundColor, 0.2);
-
-    // Set the colors for the active state
-    palette.setColor(QPalette::Active, QPalette::Window, backgroundColor);
-    palette.setColor(QPalette::Active, QPalette::WindowText, foregroundColor);
-    palette.setColor(QPalette::Active, QPalette::Base, backgroundColor);
-    palette.setColor(QPalette::Active, QPalette::Text, foregroundColor);
-    //palette.setColor(QPalette::Active, QPalette::Highlight, highlightColor);
-    palette.setColor(QPalette::Active, QPalette::HighlightedText, foregroundColor);
-    palette.setColor(QPalette::Active, QPalette::Button, backgroundColor);
-    //palette.setColor(QPalette::Active, QPalette::ButtonText, foregroundColor);
-    //palette.setColor(QPalette::Active, QPalette::BrightText, foregroundColor);
-
-    // Set the colors for the inactive state
-    palette.setColor(QPalette::Inactive, QPalette::Window, backgroundColor);
-    palette.setColor(QPalette::Inactive, QPalette::WindowText, foregroundColor);
-    palette.setColor(QPalette::Inactive, QPalette::Base, backgroundColor);
-    palette.setColor(QPalette::Inactive, QPalette::Text, foregroundColor);
-    //palette.setColor(QPalette::Inactive, QPalette::Highlight, highlightColor);
-    palette.setColor(QPalette::Inactive, QPalette::HighlightedText, foregroundColor);
-    palette.setColor(QPalette::Inactive, QPalette::Button, backgroundColor);
-    //palette.setColor(QPalette::Inactive, QPalette::ButtonText, foregroundColor);
-    //palette.setColor(QPalette::Inactive, QPalette::BrightText, foregroundColor);
-
-    menu->setPalette(palette);
-
-    // Recursively apply to all submenus
-    for (QAction *action : menu->actions()) {
-        if (action->menu()) {
-            styleMenu(action->menu());
-        }
-    }
-}
-*/
-
 
 void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
 {

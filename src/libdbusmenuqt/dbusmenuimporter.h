@@ -73,8 +73,6 @@ protected:
      * Default implementation returns a null icon.
      */
     virtual QIcon iconForName(const QString &);
-    
-  //  bool eventFilter(QObject *watched, QEvent *event) override; // submenu-opening-onhover
 
 private Q_SLOTS:
     void sendClickedEvent(int);

@@ -24,7 +24,9 @@ Material-ish window decoration theme for KWin.
 
 ### Locally Integrated Menus
 
-This hides the AppMenu icon button and draws the menu in the titlebar. It works on X11 only.
+This hides the AppMenu icon button and draws the menu in the titlebar. 
+It works on X11 and Wayland.
+On Wayland, GTK apps don't export the menu. You need to start them with `GDK_BACKEND=x11` environmental variable
 
 Make sure you add the AppMenu button in System Settings > Application Style >
 Window Decorations > Buttons Tab.
