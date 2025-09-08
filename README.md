@@ -56,6 +56,13 @@ If you wish to activate them:
 ShowDisabledActions=true
 ```
 
+If you frefer an Hamburger Menu:
+
+```
+[Windeco]
+HamburgerMenu=true
+```
+
 
 ....
 

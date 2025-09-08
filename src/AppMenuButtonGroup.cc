@@ -76,7 +76,7 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     , m_searchUiVisible(false)
 {
     m_searchDebounceTimer = new QTimer(this);
-    m_searchDebounceTimer->setInterval(150);
+    m_searchDebounceTimer->setInterval(125);
     m_searchDebounceTimer->setSingleShot(true);
     connect(m_searchDebounceTimer, &QTimer::timeout, this, &AppMenuButtonGroup::onSearchTimerTimeout);
 
