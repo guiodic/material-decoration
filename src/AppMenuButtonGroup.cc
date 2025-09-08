@@ -723,12 +723,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
 
         AppMenuButton* appMenuButton = qobject_cast<AppMenuButton *>(item);
         if (appMenuButton) {
-            if (m_currentIndex != appMenuButton->buttonIndex()
-                && appMenuButton->isVisible()
-                && appMenuButton->isEnabled()
-            ) {
-                trigger(appMenuButton->buttonIndex());
-            }
+            handleHoverMove(decoPos);
             return false;
         }
     }
