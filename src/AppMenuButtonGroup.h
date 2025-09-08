@@ -101,6 +101,7 @@ private slots:
     void onHasApplicationMenuChanged(bool hasMenu);
     void onApplicationMenuChanged();
     void performDebouncedMenuUpdate();
+    void onMenuUpdateThrottleTimeout();
     void onShowingChanged(bool hovered);
     void filterMenu(const QString &text);
     void onSearchReturnPressed();
@@ -156,6 +157,8 @@ private:
     QTimer *m_menuUpdateDebounceTimer;
     bool m_searchUiVisible = false;
 
+    bool m_isMenuUpdateThrottled = false;
+    bool m_pendingMenuUpdate = false;
     bool m_menuReadyForSearch = false;
     QString m_lastSearchQuery;
     QList<QAction *> m_lastResults;

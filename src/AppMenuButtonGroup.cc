@@ -76,14 +76,14 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     , m_searchUiVisible(false)
 {
     m_searchDebounceTimer = new QTimer(this);
-    m_searchDebounceTimer->setInterval(100);
+    m_searchDebounceTimer->setInterval(150);
     m_searchDebounceTimer->setSingleShot(true);
     connect(m_searchDebounceTimer, &QTimer::timeout, this, &AppMenuButtonGroup::onSearchTimerTimeout);
 
     m_menuUpdateDebounceTimer = new QTimer(this);
     m_menuUpdateDebounceTimer->setInterval(150);
     m_menuUpdateDebounceTimer->setSingleShot(true);
-    connect(m_menuUpdateDebounceTimer, &QTimer::timeout, this, &AppMenuButtonGroup::performDebouncedMenuUpdate);
+    connect(m_menuUpdateDebounceTimer, &QTimer::timeout, this, &AppMenuButtonGroup::onMenuUpdateThrottleTimeout);
     // Assign showing and opacity before we bind the onShowingChanged animation
     // so that new windows do not animate.
     setAlwaysShow(decoration->menuAlwaysShow());
@@ -322,16 +322,39 @@ void AppMenuButtonGroup::onMenuReadyForSearch()
 void AppMenuButtonGroup::onHasApplicationMenuChanged(bool hasMenu)
 {
     if (hasMenu) {
+        if (m_isMenuUpdateThrottled) {
+            m_pendingMenuUpdate = true;
+            return;
+        }
+        performDebouncedMenuUpdate();
+        m_isMenuUpdateThrottled = true;
         m_menuUpdateDebounceTimer->start();
     } else {
         m_menuUpdateDebounceTimer->stop();
+        m_isMenuUpdateThrottled = false;
+        m_pendingMenuUpdate = false;
         resetButtons();
     }
 }
 
 void AppMenuButtonGroup::onApplicationMenuChanged()
 {
+    if (m_isMenuUpdateThrottled) {
+        m_pendingMenuUpdate = true;
+        return;
+    }
+    performDebouncedMenuUpdate();
+    m_isMenuUpdateThrottled = true;
     m_menuUpdateDebounceTimer->start();
+}
+
+void AppMenuButtonGroup::onMenuUpdateThrottleTimeout()
+{
+    m_isMenuUpdateThrottled = false;
+    if (m_pendingMenuUpdate) {
+        m_pendingMenuUpdate = false;
+        onApplicationMenuChanged();
+    }
 }
 
 void AppMenuButtonGroup::performDebouncedMenuUpdate()
