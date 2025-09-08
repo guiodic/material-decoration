@@ -329,13 +329,15 @@ void Decoration::mousePressEvent(QMouseEvent *event)
     }
 }
 
+
 void Decoration::hoverEnterEvent(QHoverEvent *event)
 {
     KDecoration3::Decoration::hoverEnterEvent(event);
     // qCDebug(category) << "Decoration::hoverEnterEvent" << event;
-    updateBlur();
+    //updateBlur();
     // m_menuButtons->setHovered(true);
 }
+
 
 void Decoration::hoverMoveEvent(QHoverEvent *event)
 {
@@ -348,11 +350,10 @@ void Decoration::hoverMoveEvent(QHoverEvent *event)
         m_menuButtons->unPressAllButtons();
     }
 
-    if (!KWindowSystem::isPlatformX11()) {
-        if (m_menuButtons->geometry().contains(event->position())) {
-            QPointF localPos = event->position(); 
-            m_menuButtons->handleHoverMove(localPos);
-        }
+    // The platform check has been removed, and the logic is now unified.
+    // The event is forwarded from AppMenuButtonGroup::eventFilter on X11.
+    if (m_menuButtons->geometry().contains(event->position())) {
+        m_menuButtons->handleHoverMove(event->position());
     }
 }
 
@@ -362,7 +363,7 @@ void Decoration::mouseReleaseEvent(QMouseEvent *event)
     // qCDebug(category) << "Decoration::mouseReleaseEvent" << event;
 
     resetDragMove();
-    updateBlur();
+    //updateBlur();
 }
 
 void Decoration::hoverLeaveEvent(QHoverEvent *event)
@@ -371,7 +372,7 @@ void Decoration::hoverLeaveEvent(QHoverEvent *event)
     // qCDebug(category) << "Decoration::hoverLeaveEvent" << event;
 
     resetDragMove();
-    updateBlur();
+    //updateBlur();
     // m_menuButtons->setHovered(false);
 }
 

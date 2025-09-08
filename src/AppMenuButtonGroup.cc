@@ -707,25 +707,18 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         }
     }  else if (event->type() == QEvent::MouseMove) {
         auto *e = static_cast<QMouseEvent *>(event);
-        const auto *deco = qobject_cast<Decoration *>(decoration());
-        if (!deco) {
-            return false;
-        }
+        auto *deco = const_cast<Decoration*>(qobject_cast<const Decoration *>(decoration()));
+        if (deco) {
+            // Forward a constructed HoverEvent to the decoration to handle.
+            // This is a workaround for X11 where the decoration does not receive
+            // hover events while a menu is open.
+            QPointF localPos = e->globalPosition() - deco->windowPos();
+            localPos.setY(localPos.y() + deco->titleBarHeight());
 
-        QPoint decoPos(e->globalPosition().toPoint());
-        decoPos -= deco->windowPos();
-        decoPos.ry() += deco->titleBarHeight();
-
-        KDecoration3::DecorationButton* item = buttonAt(decoPos.x(), decoPos.y());
-        if (!item) {
-            return false;
+            QHoverEvent hoverEvent(QEvent::HoverMove, localPos, e->globalPosition(), localPos, e->modifiers(), static_cast<const QPointingDevice *>(e->device()));
+            QApplication::sendEvent(deco, &hoverEvent);
         }
-
-        AppMenuButton* appMenuButton = qobject_cast<AppMenuButton *>(item);
-        if (appMenuButton) {
-            handleHoverMove(decoPos);
-            return false;
-        }
+        return false;
     }
     
     return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
