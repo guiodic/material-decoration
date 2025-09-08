@@ -705,7 +705,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
             trigger(desiredIndex);
             return true;
         }
-    } else if (event->type() == QEvent::MouseMove) {
+    }  else if (event->type() == QEvent::MouseMove) {
         auto *e = static_cast<QMouseEvent *>(event);
         const auto *deco = qobject_cast<Decoration *>(decoration());
         if (!deco) {
@@ -1011,7 +1011,7 @@ void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
 
         // Force a repaint to ensure hover highlights are updated correctly,
         // mimicking the behavior of the Breeze decoration.
-        decoration()->update();
+        //decoration()->update();
     }
 }
 

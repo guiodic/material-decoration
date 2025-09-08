@@ -350,7 +350,7 @@ void Decoration::hoverMoveEvent(QHoverEvent *event)
 
     if (!KWindowSystem::isPlatformX11()) {
         if (m_menuButtons->geometry().contains(event->position())) {
-            QPointF localPos = event->position() - m_menuButtons->geometry().topLeft();
+            QPointF localPos = event->position(); 
             m_menuButtons->handleHoverMove(localPos);
         }
     }
