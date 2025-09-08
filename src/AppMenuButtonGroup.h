@@ -104,7 +104,7 @@ private slots:
     void onMenuUpdateThrottleTimeout();
     void onShowingChanged(bool hovered);
     void filterMenu(const QString &text);
-    void onSearchReturnPressed();
+    //void onSearchReturnPressed();
     void onSearchTimerTimeout();
 
 signals:
@@ -162,6 +162,8 @@ private:
     bool m_menuReadyForSearch = false;
     QString m_lastSearchQuery;
     QList<QAction *> m_lastResults;
+
+    KDecoration3::DecorationButton *m_hoveredButton = nullptr;
 };
 
 } // namespace Material

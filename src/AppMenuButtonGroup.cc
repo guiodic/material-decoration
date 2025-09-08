@@ -153,7 +153,7 @@ void AppMenuButtonGroup::setupSearchMenu()
     m_searchMenu->installEventFilter(this);
 
     connect(m_searchLineEdit, &QLineEdit::textChanged, m_searchDebounceTimer, qOverload<>(&QTimer::start));
-    connect(m_searchLineEdit, &QLineEdit::returnPressed, this, &AppMenuButtonGroup::onSearchReturnPressed);
+    //connect(m_searchLineEdit, &QLineEdit::returnPressed, this, &AppMenuButtonGroup::onSearchReturnPressed);
 
     m_searchLineEdit->installEventFilter(this);
     m_searchLineEdit->setFocusPolicy(Qt::StrongFocus);
@@ -773,6 +773,7 @@ void AppMenuButtonGroup::onMenuAboutToHide()
     }
     setCurrentIndex(-1);
     m_currentMenu = nullptr;
+    m_hoveredButton = nullptr;
 }
 
 void AppMenuButtonGroup::onShowingChanged(bool showing)
@@ -907,15 +908,6 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAct
     }
 }
 
-void AppMenuButtonGroup::onSearchReturnPressed()
-{
-    // Trigger the first "real" action in the menu
-    const auto actions = m_searchMenu->actions();
-    if (actions.count() > 2) { // 0 is search bar, 1 is separator
-        actions.at(2)->trigger();
-    }
-}
-
 int AppMenuButtonGroup::findNextVisibleButtonIndex(int currentIndex, bool forward) const
 {
     const auto buttonList = buttons();
@@ -1000,19 +992,26 @@ void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
         return;
     }
 
-    KDecoration3::DecorationButton* item = buttonAt(pos.x(), pos.y());
-    if (!item) {
-        return;
-    }
+    KDecoration3::DecorationButton *newHoveredButton = buttonAt(pos.x(), pos.y());
 
-    AppMenuButton* appMenuButton = qobject_cast<AppMenuButton *>(item);
-    if (appMenuButton) {
-        if (m_currentIndex != appMenuButton->buttonIndex()
-            && appMenuButton->isVisible()
-            && appMenuButton->isEnabled()
-        ) {
-            trigger(appMenuButton->buttonIndex());
+    if (m_hoveredButton != newHoveredButton) {
+        m_hoveredButton = newHoveredButton;
+
+        if (m_hoveredButton) {
+            auto *appMenuButton = qobject_cast<AppMenuButton *>(m_hoveredButton);
+            if (appMenuButton) {
+                if (m_currentIndex != appMenuButton->buttonIndex()
+                    && appMenuButton->isVisible()
+                    && appMenuButton->isEnabled()
+                ) {
+                    trigger(appMenuButton->buttonIndex());
+                }
+            }
         }
+
+        // Force a repaint to ensure hover highlights are updated correctly,
+        // mimicking the behavior of the Breeze decoration.
+        decoration()->update();
     }
 }
 
