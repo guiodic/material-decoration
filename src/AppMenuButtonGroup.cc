@@ -35,12 +35,8 @@
 #include <KDecoration3/DecorationButtonGroup>
 
 // KF
-#include <KWindowSystem>
 #include <KLocalizedString>
 //#include <KColorUtils>
-
-// KWIN
-#include <kwin-x11/x11window.h>
 
 // Qt
 #include <QAction>
@@ -64,7 +60,7 @@ namespace Material
 
 AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     : KDecoration3::DecorationButtonGroup(decoration)
-    , m_appMenuModel(nullptr)
+    , m_appMenuModel(new AppMenuModel(this))
     , m_currentIndex(-1)
     , m_overflowIndex(-1)
     , m_searchIndex(-1)
@@ -114,12 +110,24 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
 
     auto decoratedClient = decoration->window();
     connect(decoratedClient, &KDecoration3::DecoratedWindow::hasApplicationMenuChanged,
-            this, &AppMenuButtonGroup::updateAppMenuModel);
+            this, &AppMenuButtonGroup::onHasApplicationMenuChanged);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::applicationMenuChanged,
+            this, &AppMenuButtonGroup::onApplicationMenuChanged);
+
     connect(this, &AppMenuButtonGroup::requestActivateIndex,
             this, &AppMenuButtonGroup::trigger);
     connect(this, &AppMenuButtonGroup::requestActivateOverflow,
             this, &AppMenuButtonGroup::triggerOverflow);
 
+
+    connect(m_appMenuModel, &AppMenuModel::modelReset,
+        this, &AppMenuButtonGroup::updateAppMenuModel);
+    connect(m_appMenuModel, &AppMenuModel::menuReadyForSearch,
+        this, &AppMenuButtonGroup::onMenuReadyForSearch);
+
+    if (decoratedClient->hasApplicationMenu()) {
+        onHasApplicationMenuChanged(true);
+    }
 }
 
 AppMenuButtonGroup::~AppMenuButtonGroup() = default;
@@ -305,14 +313,31 @@ void AppMenuButtonGroup::onMenuReadyForSearch()
     }
 }
 
-void AppMenuButtonGroup::initAppMenuModel()
+void AppMenuButtonGroup::onHasApplicationMenuChanged(bool hasMenu)
 {
-    m_appMenuModel = new AppMenuModel(this);
-    connect(m_appMenuModel, &AppMenuModel::modelReset,
-        this, &AppMenuButtonGroup::updateAppMenuModel);
-    connect(m_appMenuModel, &AppMenuModel::menuReadyForSearch,
-        this, &AppMenuButtonGroup::onMenuReadyForSearch);
-    // qCDebug(category) << "AppMenuModel" << m_appMenuModel;
+    if (hasMenu) {
+        onApplicationMenuChanged();
+    } else {
+        resetButtons();
+    }
+}
+
+void AppMenuButtonGroup::onApplicationMenuChanged()
+{
+    auto *deco = qobject_cast<Decoration *>(decoration());
+    if (!deco) {
+        return;
+    }
+    auto decoratedClient = deco->window();
+    if (m_appMenuModel && decoratedClient->hasApplicationMenu()) {
+        const QString serviceName = decoratedClient->applicationMenuServiceName();
+        const QString menuObjectPath = decoratedClient->applicationMenuObjectPath();
+        if (!serviceName.isEmpty() && !menuObjectPath.isEmpty()) {
+            m_appMenuModel->updateApplicationMenu(serviceName, menuObjectPath);
+        } else {
+            resetButtons();
+        }
+    }
 }
 
 void AppMenuButtonGroup::updateAppMenuModel()
@@ -339,8 +364,6 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
         QMenu *menu = m_appMenuModel->menu();
         if (!menu) {
-            resetButtons();
-            emit menuUpdated();
             return;
         }
 
@@ -402,24 +425,6 @@ void AppMenuButtonGroup::updateAppMenuModel()
         }
 
         emit menuUpdated();
-
-    } else {
-        // Init AppMenuModel
-        // qCDebug(category) << "windowId" << decoratedClient->windowId();
-        if (KWindowSystem::isPlatformX11()) {
-#if HAVE_X11
-            const WId windowId = deco->safeWindowId();
-            if (windowId != 0) {
-                initAppMenuModel();
-                m_appMenuModel->setWinId(windowId);
-                // qCDebug(category) << "AppMenuModel" << m_appMenuModel;
-            }
-#endif
-        } else if (KWindowSystem::isPlatformWayland()) {
-#if HAVE_Wayland
-            // TODO
-#endif
-        }
     }
 }
 

@@ -89,7 +89,6 @@ public:
 public slots:
     void setHamburgerMenu(bool value);
     void onMenuReadyForSearch();
-    void initAppMenuModel();
     void updateAppMenuModel();
     void updateOverflow(QRectF availableRect);
     void trigger(int index);
@@ -98,6 +97,8 @@ public slots:
     void onMenuAboutToHide();
 
 private slots:
+    void onHasApplicationMenuChanged(bool hasMenu);
+    void onApplicationMenuChanged();
     void onShowingChanged(bool hovered);
     void filterMenu(const QString &text);
     void onSearchReturnPressed();

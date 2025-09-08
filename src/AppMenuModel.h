@@ -23,7 +23,6 @@
 
 // Qt
 #include <QAbstractListModel>
-#include <QAbstractNativeEventFilter>
 #include <QAction>
 #include <QDBusServiceWatcher>
 #include <QMenu>
@@ -33,30 +32,23 @@
 #include <QStringList>
 #include <QTimer>
 
-
 namespace Material
 {
 
 class KDBusMenuImporter;
 
-class AppMenuModel : public QAbstractListModel, public QAbstractNativeEventFilter
+class AppMenuModel : public QAbstractListModel
 {
     Q_OBJECT
 
     Q_PROPERTY(bool menuAvailable READ menuAvailable WRITE setMenuAvailable NOTIFY menuAvailableChanged)
-    Q_PROPERTY(QVariant winId READ winId WRITE setWinId NOTIFY winIdChanged)
 
 public:
     explicit AppMenuModel(QObject *parent = nullptr);
     ~AppMenuModel() override;
 
-private:
-    void x11Init();
-    void waylandInit();
-
 public:
-    enum AppMenuRole
-    {
+    enum AppMenuRole {
         MenuRole = Qt::UserRole + 1, // TODO this should be Qt::DisplayRole
         ActionRole
     };
@@ -70,47 +62,29 @@ public:
     bool menuAvailable() const;
     void setMenuAvailable(bool set);
 
-    QVariant winId() const;
-    void setWinId(const QVariant &id);
-
     QMenu *menu() const;
 
 signals:
     void requestActivateIndex(int index);
 
-protected:
-    bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *result) override;
-
 private Q_SLOTS:
-    void onWinIdChanged();
-    // void onX11WindowChanged(WId id); // UNUSED, remove 
-    void onX11WindowRemoved(WId id);
-
     void update();
 
 signals:
     void menuAvailableChanged();
     void modelNeedsUpdate();
-    void winIdChanged();
     void menuReadyForSearch();
 
 private Q_SLOTS:
     void onMenuUpdated(QMenu *menu);
-    void performMenuUpdate();
     void doDeepCaching();
 
 private:
-    QTimer *m_updateTimer;
     QTimer *m_deepCacheTimer;
     bool m_menuAvailable;
     bool m_deepCachingAllowed = false;
     int m_pendingMenuUpdates = 0;
     bool m_updatePending = false;
-
-    QVariant m_winId{-1};
-
-    //! window that its menu initialization may be delayed
-    WId m_delayedMenuWindowId = 0;
 
     QPointer<QMenu> m_menu;
 
@@ -122,7 +96,6 @@ private:
 
     void fetchImmediateSubmenus(QMenu *menu);
     void cacheSubMenus(QMenu *menu);
-    QByteArray x11GetWindowProperty(WId id, const QByteArray &name);
 };
 
 } // namespace Material
