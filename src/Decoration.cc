@@ -991,6 +991,11 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
         availableRect.setLeft(availableRect.left() + menuButtonsWidth);
     }
 
+    // Hide caption if there is not enough space
+    if (availableRect.width() < 250) {
+        return;
+    }
+
     // --- Determine alignment and final drawing rectangle ---
     QRect captionRect;
     Qt::Alignment alignment;
