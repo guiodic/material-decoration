@@ -94,7 +94,6 @@ private:
 
     QPointer<KDBusMenuImporter> m_importer;
 
-    void fetchImmediateSubmenus(QMenu *menu);
     void cacheSubMenus(QMenu *menu);
 };
 

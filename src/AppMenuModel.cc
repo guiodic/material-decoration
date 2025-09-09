@@ -220,11 +220,9 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         setMenuAvailable(true);
         emit modelNeedsUpdate();
 
-        // --- Two-stage caching ---
         // To avoid UI freezes on startup, we don't fetch the entire menu tree at once.
-        // 1. Fetch the first level of submenus immediately for UI responsiveness.
-        // fetchImmediateSubmenus(m_menu); // FIXME: This causes a CPU spike on startup.
-        // 2. Start a timer to fetch all deeper submenus later, to avoid startup jank.
+        // Instead, we start a timer to fetch all submenus asynchronously after the
+        // main window has been drawn. This avoids startup jank.
         m_deepCacheTimer->start();
 
     } else { // This is an update for a submenu that was previously requested.
@@ -244,21 +242,6 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
     }
 }
 
-void AppMenuModel::fetchImmediateSubmenus(QMenu *menu)
-{
-    // Stage 1 of caching: Fetch only the direct children of the root menu.
-    // This is a non-recursive call to quickly populate the top-level menus.
-    if (!menu) {
-        return;
-    }
-
-    const auto actions = menu->actions();
-    for (QAction *a : actions) {
-        if (auto subMenu = a->menu()) {
-            m_importer->updateMenu(subMenu);
-        }
-    }
-}
 
 void AppMenuModel::doDeepCaching()
 {
