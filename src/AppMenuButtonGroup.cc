@@ -130,7 +130,7 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
 AppMenuButtonGroup::~AppMenuButtonGroup()
 {
     if (m_searchMenu) {
-        delete m_searchMenu;
+        delete m_searchMenu.data();
     }
 }
 
@@ -908,7 +908,7 @@ void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
         m_hoveredButton = newHoveredButton;
 
         if (m_hoveredButton) {
-            auto *appMenuButton = qobject_cast<AppMenuButton *>(m_hoveredButton);
+            auto *appMenuButton = qobject_cast<AppMenuButton *>(m_hoveredButton.data());
             if (appMenuButton) {
                 if (m_currentIndex != appMenuButton->buttonIndex()
                     && appMenuButton->isVisible()

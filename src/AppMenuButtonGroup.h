@@ -163,7 +163,7 @@ private:
     QString m_lastSearchQuery;
     QList<QAction *> m_lastResults;
 
-    KDecoration3::DecorationButton *m_hoveredButton = nullptr;
+    QPointer<KDecoration3::DecorationButton> m_hoveredButton = nullptr;
 };
 
 } // namespace Material

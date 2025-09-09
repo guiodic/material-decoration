@@ -22,6 +22,7 @@
 
 // Qt
 #include <QAction>
+#include <QPointer>
 
 namespace Material
 {
@@ -57,7 +58,7 @@ signals:
     void textChanged();
 
 private:
-    QAction *m_action;
+    QPointer<QAction> m_action;
     QString m_text;
 };
 
