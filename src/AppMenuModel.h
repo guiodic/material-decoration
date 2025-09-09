@@ -27,6 +27,7 @@
 #include <QDBusServiceWatcher>
 #include <QMenu>
 #include <QModelIndex>
+#include <QList>
 #include <QPointer>
 #include <QRect>
 #include <QStringList>
@@ -78,9 +79,12 @@ signals:
 private Q_SLOTS:
     void onMenuUpdated(QMenu *menu);
     void doDeepCaching();
+    void processNextSubMenuInQueue();
 
 private:
     QTimer *m_deepCacheTimer;
+    QTimer *m_staggerTimer;
+    QList<QMenu*> m_pendingSubMenuQueue;
     bool m_menuAvailable;
     bool m_deepCachingAllowed = false;
     int m_pendingMenuUpdates = 0;
@@ -93,8 +97,6 @@ private:
     QString m_menuObjectPath;
 
     QPointer<KDBusMenuImporter> m_importer;
-
-    void cacheSubMenus(QMenu *menu);
 };
 
 } // namespace Material

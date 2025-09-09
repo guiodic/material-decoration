@@ -85,6 +85,11 @@ AppMenuModel::AppMenuModel(QObject *parent)
     m_deepCacheTimer->setSingleShot(true);
     m_deepCacheTimer->setInterval(600);
     connect(m_deepCacheTimer, &QTimer::timeout, this, &AppMenuModel::doDeepCaching);
+
+    m_staggerTimer = new QTimer(this);
+    m_staggerTimer->setSingleShot(true);
+    m_staggerTimer->setInterval(50);
+    connect(m_staggerTimer, &QTimer::timeout, this, &AppMenuModel::processNextSubMenuInQueue);
 }
 
 AppMenuModel::~AppMenuModel() = default;
@@ -226,9 +231,22 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         m_deepCacheTimer->start();
 
     } else { // This is an update for a submenu that was previously requested.
+        const bool wasQueueEmpty = m_pendingSubMenuQueue.isEmpty();
         if (m_deepCachingAllowed) {
-            // The deep caching phase has begun. Recursively fetch the children of this submenu.
-            cacheSubMenus(menu);
+            // The deep caching phase has begun. Add the children of the newly-loaded
+            // submenu to the processing queue.
+            const auto actions = menu->actions();
+            for (QAction *a : actions) {
+                if (auto subMenu = a->menu()) {
+                    m_pendingSubMenuQueue.append(subMenu);
+                }
+            }
+        }
+
+        // If the processing chain was idle and we've just added new items,
+        // we need to kick-start it again.
+        if (wasQueueEmpty && !m_pendingSubMenuQueue.isEmpty()) {
+            processNextSubMenuInQueue();
         }
 
         // Track the number of pending submenu updates. When it reaches zero,
@@ -246,31 +264,45 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
 void AppMenuModel::doDeepCaching()
 {
     // Stage 2 of caching begins now that the initial delay has passed.
-    // This allows expensive, recursive fetching of the entire menu tree.
     m_deepCachingAllowed = true;
+    m_pendingSubMenuQueue.clear();
 
-    // Kick off the deep scan from the root menu. `onMenuUpdated` will handle the recursion
-    // for submenus that have already been fetched and are waiting.
-    cacheSubMenus(m_menu);
-}
-
-void AppMenuModel::cacheSubMenus(QMenu *menu)
-{
-    // This function is the recursive part of the cache engine.
-    // It is only called on a menu when its own contents are available.
-    // It finds all children of `menu` and triggers a DBus update for them.
-    // The recursion continues when `onMenuUpdated` is called for those children.
-    if (!menu) {
+    if (!m_menu) {
         return;
     }
 
-    const auto actions = menu->actions();
+    // Populate the queue with the first level of submenus.
+    // The recursive loading will happen as each menu is processed.
+    const auto actions = m_menu->actions();
     for (QAction *a : actions) {
         if (auto subMenu = a->menu()) {
-            m_pendingMenuUpdates++;
-            m_importer->updateMenu(subMenu);
+            m_pendingSubMenuQueue.append(subMenu);
         }
     }
+
+    // Start processing the queue.
+    processNextSubMenuInQueue();
 }
+
+void AppMenuModel::processNextSubMenuInQueue()
+{
+    if (m_pendingSubMenuQueue.isEmpty()) {
+        // We are done processing all submenus.
+        // Note: m_pendingMenuUpdates might still be > 0 here if the last
+        // few DBus calls are still in flight. The menuReadyForSearch signal
+        // will be emitted correctly in onMenuUpdated when the last reply arrives.
+        return;
+    }
+
+    QMenu *menuToProcess = m_pendingSubMenuQueue.takeFirst();
+
+    m_pendingMenuUpdates++;
+    m_importer->updateMenu(menuToProcess);
+
+    // Schedule the next item to be processed. The 0ms delay yields to the
+    // event loop, preventing the UI from freezing.
+    m_staggerTimer->start();
+}
+
 
 } // namespace Material
