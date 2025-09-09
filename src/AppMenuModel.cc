@@ -238,7 +238,7 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
             const auto actions = menu->actions();
             for (QAction *a : actions) {
                 if (auto subMenu = a->menu()) {
-                    m_pendingSubMenuQueue.append(subMenu);
+                    m_pendingSubMenuQueue.append(QPointer(subMenu));
                 }
             }
         }
@@ -276,7 +276,7 @@ void AppMenuModel::doDeepCaching()
     const auto actions = m_menu->actions();
     for (QAction *a : actions) {
         if (auto subMenu = a->menu()) {
-            m_pendingSubMenuQueue.append(subMenu);
+            m_pendingSubMenuQueue.append(QPointer(subMenu));
         }
     }
 
@@ -294,10 +294,13 @@ void AppMenuModel::processNextSubMenuInQueue()
         return;
     }
 
-    QMenu *menuToProcess = m_pendingSubMenuQueue.takeFirst();
+    QPointer<QMenu> menuToProcessPtr = m_pendingSubMenuQueue.takeFirst();
+    QMenu *menuToProcess = menuToProcessPtr.data();
 
-    m_pendingMenuUpdates++;
-    m_importer->updateMenu(menuToProcess);
+    if (menuToProcess) {
+        m_pendingMenuUpdates++;
+        m_importer->updateMenu(menuToProcess);
+    }
 
     // Schedule the next item to be processed. The 0ms delay yields to the
     // event loop, preventing the UI from freezing.
