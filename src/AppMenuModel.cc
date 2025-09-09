@@ -223,7 +223,7 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         // --- Two-stage caching ---
         // To avoid UI freezes on startup, we don't fetch the entire menu tree at once.
         // 1. Fetch the first level of submenus immediately for UI responsiveness.
-        fetchImmediateSubmenus(m_menu);
+        // fetchImmediateSubmenus(m_menu); // FIXME: This causes a CPU spike on startup.
         // 2. Start a timer to fetch all deeper submenus later, to avoid startup jank.
         m_deepCacheTimer->start();
 
