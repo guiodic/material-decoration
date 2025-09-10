@@ -83,12 +83,12 @@ AppMenuModel::AppMenuModel(QObject *parent)
 
     m_deepCacheTimer = new QTimer(this);
     m_deepCacheTimer->setSingleShot(true);
-    m_deepCacheTimer->setInterval(600);
+    m_deepCacheTimer->setInterval(0);
     connect(m_deepCacheTimer, &QTimer::timeout, this, &AppMenuModel::doDeepCaching);
 
     m_staggerTimer = new QTimer(this);
     m_staggerTimer->setSingleShot(true);
-    m_staggerTimer->setInterval(50);
+    m_staggerTimer->setInterval(0);
     connect(m_staggerTimer, &QTimer::timeout, this, &AppMenuModel::processNextSubMenuInQueue);
 }
 
