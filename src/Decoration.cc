@@ -976,11 +976,15 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
 {
     Q_UNUSED(repaintRegion)
 
+    const auto *decoratedClient = window();
+    if (decoratedClient->hasApplicationMenu() && m_menuButtons->buttons().isEmpty()) {
+        return;
+    }
+
     if (m_internalSettings->titleAlignment() == InternalSettings::TitleHidden) {
         return;
     }
 
-    const auto *decoratedClient = window();
     const QFontMetricsF fontMetrics = settings()->fontMetrics();
     const bool appMenuVisible = !m_menuButtons->buttons().isEmpty();
 
