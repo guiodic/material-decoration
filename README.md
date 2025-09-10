@@ -66,7 +66,6 @@ HamburgerMenu=true
 ```
 
 
-
 ....
 
 TODO/Bugs ([Issue #1](https://github.com/Zren/material-decoration/issues/1)):
