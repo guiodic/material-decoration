@@ -766,10 +766,24 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
             }
         }
         m_lastResults.clear();
-        //HACK To get the scrollbars to disapper, we force the popup again 
+        // Reposition the menu to its original spot after clearing search results.
         if (m_searchMenu->isVisible()) {
-            const QPoint pos = m_searchMenu->pos();
-            m_searchMenu->popup(pos);
+            auto *deco = qobject_cast<Decoration *>(decoration());
+            KDecoration3::DecorationButton *button = buttons().value(m_searchIndex);
+            if (deco && button) {
+                if (KWindowSystem::isPlatformX11()) { // X11
+                    const QRectF buttonRect = button->geometry();
+                    QPoint rootPosition = buttonRect.topLeft().toPoint();
+                    rootPosition += deco->windowPos();
+                    // Re-popping up at the original position
+                    m_searchMenu->popup(rootPosition);
+                } else { // Wayland
+                    KDecoration3::Positioner positioner;
+                    positioner.setAnchorRect(button->geometry());
+                    deco->popup(positioner, m_searchMenu);
+                    m_searchMenu->popup(m_searchMenu->pos()); //HACK without this the scrollbar remain even if not necessary
+                }
+            }
         }        
         if (text.isEmpty()) {
             m_searchLineEdit->setClearButtonEnabled(false);
@@ -834,11 +848,25 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         m_searchMenu->addAction(newAction);
     }
 
-    //HACK To get the scrollbars to appear, we force the popup again
+    //Pop again at correct position
     if (m_searchMenu->isVisible()) {
-        const QPoint pos = m_searchMenu->pos();
-        m_searchMenu->popup(pos);
-    }
+            auto *deco = qobject_cast<Decoration *>(decoration());
+            KDecoration3::DecorationButton *button = buttons().value(m_searchIndex);
+            if (deco && button) {
+                if (KWindowSystem::isPlatformX11()) { // X11
+                    const QRectF buttonRect = button->geometry();
+                    QPoint rootPosition = buttonRect.topLeft().toPoint();
+                    rootPosition += deco->windowPos();
+                    // Re-popping up at the original position
+                    m_searchMenu->popup(rootPosition);
+                } else { // Wayland
+                    KDecoration3::Positioner positioner;
+                    positioner.setAnchorRect(button->geometry());
+                    deco->popup(positioner, m_searchMenu);
+                    m_searchMenu->popup(m_searchMenu->pos()); //HACK without this the scrollbar remain even if not necessary
+                }
+            }
+    }        
     m_searchMenu->setUpdatesEnabled(true);
 }
 
