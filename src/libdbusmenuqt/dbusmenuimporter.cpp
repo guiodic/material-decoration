@@ -392,6 +392,8 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         return;
     }
 
+    menu->setUpdatesEnabled(false);
+
     // remove outdated actions
     QSet<int> newDBusMenuItemIds;
     newDBusMenuItemIds.reserve(rootItem.children.count());
@@ -448,6 +450,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         }
     }
 
+    menu->setUpdatesEnabled(true);
     Q_EMIT menuUpdated(menu);
 }
 
