@@ -532,6 +532,15 @@ int AppMenuButtonGroup::visibleWidth() const
 
 void AppMenuButtonGroup::trigger(int buttonIndex)
 {
+    auto *deco = qobject_cast<Decoration *>(decoration());
+
+    if (KWindowSystem::isPlatformWayland()) {
+        auto decoratedClient = deco->window();
+        if (!decoratedClient || !decoratedClient->isActive()) {
+            return;
+        }
+    }
+
     KDecoration3::DecorationButton *button = buttons().value(buttonIndex);
     if (!button) {
         return;
@@ -583,8 +592,6 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
             actionMenu = itemAction->menu();
         }
     }
-
-    auto *deco = qobject_cast<Decoration *>(decoration());
 
     if (actionMenu && deco) {
        
