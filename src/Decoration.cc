@@ -52,11 +52,7 @@
 
 // X11
 #if HAVE_X11
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <private/qtx11extras_p.h>
-#else
-#include <QX11Info>
-#endif
 #include <xcb/xcb.h>
 #endif
 
@@ -366,11 +362,7 @@ void Decoration::hoverLeaveEvent(QHoverEvent *event)
 
 void Decoration::wheelEvent(QWheelEvent *event)
 {
-    #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     const QPointF pos = event->position();
-    #else
-    const QPointF pos = event->posF();
-    #endif
 
     if (m_menuButtons->geometry().contains(pos)) {
         // Skip
@@ -387,9 +379,7 @@ void Decoration::onSectionUnderMouseChanged(const Qt::WindowFrameSection value)
 
 void Decoration::updateBlur()
 {
-#if HAVE_KDecoration3_5_25
     setBlurRegion(QRegion(0, 0, size().width(), size().height()));
-#endif
 }
 
 void Decoration::updateBorders()
