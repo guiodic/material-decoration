@@ -80,7 +80,7 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     connect(m_searchDebounceTimer, &QTimer::timeout, this, &AppMenuButtonGroup::onSearchTimerTimeout);
 
     m_menuUpdateDebounceTimer = new QTimer(this);
-    m_menuUpdateDebounceTimer->setInterval(50);
+    m_menuUpdateDebounceTimer->setInterval(150);
     m_menuUpdateDebounceTimer->setSingleShot(true);
     connect(m_menuUpdateDebounceTimer, &QTimer::timeout, this, &AppMenuButtonGroup::onMenuUpdateThrottleTimeout);
     // Assign showing and opacity before we bind the onShowingChanged animation
