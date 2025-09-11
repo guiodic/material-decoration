@@ -29,6 +29,7 @@
 #include <QModelIndex>
 #include <QList>
 #include <QPointer>
+#include <QSet>
 #include <QRect>
 #include <QStringList>
 #include <QTimer>
@@ -78,13 +79,14 @@ signals:
 
 private Q_SLOTS:
     void onMenuUpdated(QMenu *menu);
-    void doDeepCaching();
-    void processNextSubMenuInQueue();
+    void startDeepCaching();
+    void processNext();
 
 private:
     QTimer *m_deepCacheTimer;
     QTimer *m_staggerTimer;
-    QList<QPointer<QMenu>> m_pendingSubMenuQueue;
+    QList<QPointer<QMenu>> m_menusToDeepCache;
+    QSet<QMenu *> m_menusInQueue;
     bool m_menuAvailable;
     bool m_deepCachingAllowed = false;
     int m_pendingMenuUpdates = 0;

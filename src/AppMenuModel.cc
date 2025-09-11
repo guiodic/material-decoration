@@ -32,7 +32,9 @@
 // Qt
 #include <QAction>
 #include <QDebug>
+#include <QLoggingCategory>
 #include <QMenu>
+
 #include <QDBusConnection>
 #include <QDBusConnectionInterface>
 #include <QDBusServiceWatcher>
@@ -83,13 +85,13 @@ AppMenuModel::AppMenuModel(QObject *parent)
 
     m_deepCacheTimer = new QTimer(this);
     m_deepCacheTimer->setSingleShot(true);
-    m_deepCacheTimer->setInterval(500);
-    connect(m_deepCacheTimer, &QTimer::timeout, this, &AppMenuModel::doDeepCaching);
+    m_deepCacheTimer->setInterval(400);
+    connect(m_deepCacheTimer, &QTimer::timeout, this, &AppMenuModel::startDeepCaching);
 
     m_staggerTimer = new QTimer(this);
     m_staggerTimer->setSingleShot(true);
     m_staggerTimer->setInterval(10);
-    connect(m_staggerTimer, &QTimer::timeout, this, &AppMenuModel::processNextSubMenuInQueue);
+    connect(m_staggerTimer, &QTimer::timeout, this, &AppMenuModel::processNext);
 }
 
 AppMenuModel::~AppMenuModel() = default;
@@ -231,22 +233,26 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         m_deepCacheTimer->start();
 
     } else { // This is an update for a submenu that was previously requested.
-        const bool wasQueueEmpty = m_pendingSubMenuQueue.isEmpty();
+        const bool wasQueueEmpty = m_menusToDeepCache.isEmpty();
         if (m_deepCachingAllowed) {
             // The deep caching phase has begun. Add the children of the newly-loaded
             // submenu to the processing queue.
             const auto actions = menu->actions();
-            for (QAction *a : actions) {
-                if (auto subMenu = a->menu()) {
-                    m_pendingSubMenuQueue.append(QPointer(subMenu));
-                }
-            }
+             for (QAction *a : actions) {
+                 if (auto subMenu = a->menu()) {
+                     if (m_menusInQueue.contains(subMenu)) {
+                         continue;
+                     }
+                     m_menusInQueue.insert(subMenu);
+                     m_menusToDeepCache.append(QPointer(subMenu));
+                 }
+             }
         }
 
         // If the processing chain was idle and we've just added new items,
         // we need to kick-start it again.
-        if (wasQueueEmpty && !m_pendingSubMenuQueue.isEmpty()) {
-            processNextSubMenuInQueue();
+        if (wasQueueEmpty && !m_menusToDeepCache.isEmpty()) {
+            processNext();
         }
 
         // Track the number of pending submenu updates. When it reaches zero,
@@ -261,11 +267,12 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
 }
 
 
-void AppMenuModel::doDeepCaching()
+void AppMenuModel::startDeepCaching()
 {
     // Stage 2 of caching begins now that the initial delay has passed.
     m_deepCachingAllowed = true;
-    m_pendingSubMenuQueue.clear();
+    m_menusToDeepCache.clear();
+    m_menusInQueue.clear();
 
     if (!m_menu) {
         return;
@@ -276,17 +283,21 @@ void AppMenuModel::doDeepCaching()
     const auto actions = m_menu->actions();
     for (QAction *a : actions) {
         if (auto subMenu = a->menu()) {
-            m_pendingSubMenuQueue.append(QPointer(subMenu));
+             if (m_menusInQueue.contains(subMenu)) {
+                 continue;
+             }
+            m_menusInQueue.insert(subMenu);
+            m_menusToDeepCache.append(QPointer(subMenu));
         }
     }
 
     // Start processing the queue.
-    processNextSubMenuInQueue();
+    processNext();
 }
 
-void AppMenuModel::processNextSubMenuInQueue()
+void AppMenuModel::processNext()
 {
-    if (m_pendingSubMenuQueue.isEmpty()) {
+    if (m_menusToDeepCache.isEmpty()) {
         // We are done processing all submenus.
         // Note: m_pendingMenuUpdates might still be > 0 here if the last
         // few DBus calls are still in flight. The menuReadyForSearch signal
@@ -294,7 +305,8 @@ void AppMenuModel::processNextSubMenuInQueue()
         return;
     }
 
-    QPointer<QMenu> menuToProcessPtr = m_pendingSubMenuQueue.takeFirst();
+    QPointer<QMenu> menuToProcessPtr = m_menusToDeepCache.takeFirst();
+    m_menusInQueue.remove(menuToProcessPtr.data());
     QMenu *menuToProcess = menuToProcessPtr.data();
 
     if (menuToProcess) {
