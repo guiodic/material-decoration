@@ -76,19 +76,27 @@ signals:
     void menuAvailableChanged();
     void modelNeedsUpdate();
     void menuReadyForSearch();
+    void subMenuReady(QMenu *menu);
+
+public Q_SLOTS:
+    void loadSubMenu(QMenu *menu);
+    void cacheSubtree(QMenu *menu);
+
+public Q_SLOTS:
+    void startDeepCaching();
 
 private Q_SLOTS:
     void onMenuUpdated(QMenu *menu);
-    void startDeepCaching();
     void processNext();
 
 private:
-    QTimer *m_deepCacheTimer;
     QTimer *m_staggerTimer;
     QList<QPointer<QMenu>> m_menusToDeepCache;
     QSet<QMenu *> m_menusInQueue;
     bool m_menuAvailable;
-    bool m_deepCachingAllowed = false;
+    bool m_isCachingSubtree = false;
+    bool m_isCachingEverything = false;
+    bool m_deepCacheStarted = false;
     int m_pendingMenuUpdates = 0;
     bool m_updatePending = false;
 

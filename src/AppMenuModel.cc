@@ -83,11 +83,6 @@ AppMenuModel::AppMenuModel(QObject *parent)
         }
     });
 
-    m_deepCacheTimer = new QTimer(this);
-    m_deepCacheTimer->setSingleShot(true);
-    m_deepCacheTimer->setInterval(400);
-    connect(m_deepCacheTimer, &QTimer::timeout, this, &AppMenuModel::startDeepCaching);
-
     m_staggerTimer = new QTimer(this);
     m_staggerTimer->setSingleShot(true);
     m_staggerTimer->setInterval(10);
@@ -172,6 +167,14 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
         return;
     }
 
+    // A menu change means any in-progress caching is now invalid.
+    m_menusToDeepCache.clear();
+    m_menusInQueue.clear();
+    m_isCachingSubtree = false;
+    m_isCachingEverything = false;
+    m_deepCacheStarted = false;
+    m_pendingMenuUpdates = 0;
+
     m_serviceName = serviceName;
     m_serviceWatcher->setWatchedServices(QStringList({m_serviceName}));
 
@@ -227,14 +230,11 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         setMenuAvailable(true);
         emit modelNeedsUpdate();
 
-        // To avoid UI freezes on startup, we don't fetch the entire menu tree at once.
-        // Instead, we start a timer to fetch all submenus asynchronously after the
-        // main window has been drawn. This avoids startup jank.
-        m_deepCacheTimer->start();
-
+        // Pre-fetching and deep caching are now handled on-demand.
     } else { // This is an update for a submenu that was previously requested.
+        emit subMenuReady(menu);
         const bool wasQueueEmpty = m_menusToDeepCache.isEmpty();
-        if (m_deepCachingAllowed) {
+        if (m_isCachingSubtree || m_isCachingEverything) {
             // The deep caching phase has begun. Add the children of the newly-loaded
             // submenu to the processing queue.
             const auto actions = menu->actions();
@@ -266,11 +266,48 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
     }
 }
 
+void AppMenuModel::loadSubMenu(QMenu *menu)
+{
+    if (m_importer && menu) {
+        m_importer->updateMenu(menu);
+    }
+}
+
+void AppMenuModel::cacheSubtree(QMenu *menu)
+{
+    if (!menu) {
+        return;
+    }
+
+    m_isCachingSubtree = true;
+
+    const bool wasQueueEmpty = m_menusToDeepCache.isEmpty();
+    const auto actions = menu->actions();
+    for (QAction *action : actions) {
+        if (auto subMenu = action->menu()) {
+            if (subMenu->actions().isEmpty()) {
+                if (!m_menusInQueue.contains(subMenu)) {
+                    m_menusInQueue.insert(subMenu);
+                    m_menusToDeepCache.append(QPointer(subMenu));
+                }
+            }
+        }
+    }
+
+    if (wasQueueEmpty && !m_menusToDeepCache.isEmpty()) {
+        processNext();
+    }
+}
+
 
 void AppMenuModel::startDeepCaching()
 {
-    // Stage 2 of caching begins now that the initial delay has passed.
-    m_deepCachingAllowed = true;
+    if (m_deepCacheStarted) {
+        return;
+    }
+    m_deepCacheStarted = true;
+
+    m_isCachingEverything = true;
     m_menusToDeepCache.clear();
     m_menusInQueue.clear();
 
@@ -299,6 +336,8 @@ void AppMenuModel::processNext()
 {
     if (m_menusToDeepCache.isEmpty()) {
         // We are done processing all submenus.
+        m_isCachingSubtree = false;
+        m_isCachingEverything = false;
         // Note: m_pendingMenuUpdates might still be > 0 here if the last
         // few DBus calls are still in flight. The menuReadyForSearch signal
         // will be emitted correctly in onMenuUpdated when the last reply arrives.

@@ -106,6 +106,7 @@ private slots:
     void filterMenu(const QString &text);
     //void onSearchReturnPressed();
     void onSearchTimerTimeout();
+    void onSubMenuReady(QMenu *menu);
 
 signals:
     void menuUpdated();
@@ -136,6 +137,11 @@ private:
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
     //void styleMenu(QMenu *menu);
 
+    void popupMenu(QMenu *menu, int buttonIndex);
+    void handleSearchTrigger();
+    void handleOverflowTrigger();
+    void handleMenuButtonTrigger(int buttonIndex);
+
     AppMenuModel *m_appMenuModel;
     int m_currentIndex;
     int m_overflowIndex;
@@ -150,6 +156,7 @@ private:
     qreal m_opacity;
     int m_visibleWidth;
     QPointer<QMenu> m_currentMenu;
+    int m_buttonIndexWaitingForPopup = -1;
 
     QPointer<QMenu> m_searchMenu;
     QPointer<QLineEdit> m_searchLineEdit;

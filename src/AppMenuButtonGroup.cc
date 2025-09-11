@@ -121,6 +121,8 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
         this, &AppMenuButtonGroup::updateAppMenuModel);
     connect(m_appMenuModel, &AppMenuModel::menuReadyForSearch,
         this, &AppMenuButtonGroup::onMenuReadyForSearch);
+    connect(m_appMenuModel, &AppMenuModel::subMenuReady,
+        this, &AppMenuButtonGroup::onSubMenuReady);
 
     if (decoratedClient->hasApplicationMenu()) {
         onHasApplicationMenuChanged(true);
@@ -530,10 +532,139 @@ int AppMenuButtonGroup::visibleWidth() const
     return m_visibleWidth;
 }
 
+void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
+{
+    auto *deco = qobject_cast<Decoration *>(decoration());
+    KDecoration3::DecorationButton *button = buttons().value(buttonIndex);
+    if (!menu || !deco || !button) {
+        return;
+    }
+
+    QMenu *oldMenu = m_currentMenu;
+    KDecoration3::DecorationButton *oldButton = (0 <= m_currentIndex && m_currentIndex < buttons().length()) ? buttons().value(m_currentIndex) : nullptr;
+
+    // 1. Set the new internal state. This must happen before popup for positioning.
+    setCurrentIndex(buttonIndex);
+    button->setChecked(true);
+    m_currentMenu = menu;
+
+    // 2. Calculate position and show the new menu. This must happen before hiding the old one to prevent flicker.
+    menu->installEventFilter(this);
+    if (KWindowSystem::isPlatformWayland()) {
+        KDecoration3::Positioner positioner;
+        positioner.setAnchorRect(button->geometry());
+        deco->popup(positioner, menu);
+    } else {
+        const QRectF buttonRect = button->geometry();
+        const QPoint position = buttonRect.topLeft().toPoint();
+        QPoint rootPosition(position);
+        rootPosition += deco->windowPos();
+        menu->popup(rootPosition);
+    }
+
+    if (buttonIndex == m_searchIndex) {
+        m_searchLineEdit->activateWindow();
+        m_searchLineEdit->setFocus();
+        m_searchUiVisible = true;
+    }
+
+    // 3. Connect the hide signal for the new menu.
+    connect(menu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onMenuAboutToHide, Qt::UniqueConnection);
+
+    // 4. Clean up the old menu and button state.
+    if (oldMenu && oldMenu != menu) {
+        disconnect(oldMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onMenuAboutToHide);
+        if (m_searchMenu && oldMenu == m_searchMenu) {
+            m_searchUiVisible = false;
+        }
+        oldMenu->hide();
+    }
+    if (oldButton && oldButton != button) {
+        oldButton->setChecked(false);
+    }
+
+    // After successfully showing a menu, predictively pre-fetch its children.
+    m_appMenuModel->cacheSubtree(menu);
+}
+
+void AppMenuButtonGroup::handleMenuButtonTrigger(int buttonIndex)
+{
+    if (!m_appMenuModel || !m_appMenuModel->menu() || buttonIndex >= m_appMenuModel->menu()->actions().count()) {
+        return; // Index out of bounds
+    }
+
+    QAction *itemAction = m_appMenuModel->menu()->actions().at(buttonIndex);
+    if (itemAction && itemAction->menu()) {
+        QMenu *actionMenu = itemAction->menu();
+        // If the menu is empty, we need to load it just-in-time.
+        if (actionMenu->actions().isEmpty()) {
+            // If we are already waiting for a different menu, cancel the old one.
+            if (m_buttonIndexWaitingForPopup != -1 && m_buttonIndexWaitingForPopup != buttonIndex) {
+                m_buttonIndexWaitingForPopup = -1;
+            }
+
+            // If we are already waiting for this menu, do nothing.
+            if (m_buttonIndexWaitingForPopup == buttonIndex) {
+                return;
+            }
+
+            m_buttonIndexWaitingForPopup = buttonIndex;
+            m_appMenuModel->loadSubMenu(actionMenu);
+            return; // Abort the trigger; the onSubMenuReady slot will re-trigger later.
+        } else {
+            // Menu is already loaded, show it.
+            popupMenu(actionMenu, buttonIndex);
+        }
+    }
+}
+
+void AppMenuButtonGroup::handleSearchTrigger()
+{
+    if (m_currentIndex == m_searchIndex) {
+        if (m_searchMenu) m_searchMenu->hide();
+        return;
+    }
+    if (!m_searchMenu) {
+        setupSearchMenu();
+        // Start the full, recursive deep cache for the search feature.
+        m_appMenuModel->startDeepCaching();
+    }
+    popupMenu(m_searchMenu, m_searchIndex);
+}
+
+void AppMenuButtonGroup::handleOverflowTrigger()
+{
+    // A latent bug would cause this to show a menu with all items if triggered
+    // while the overflow button is invisible. This guard prevents that.
+    if (!overflowing()) {
+        return;
+    }
+    auto *actionMenu = new QMenu();
+    actionMenu->setAttribute(Qt::WA_DeleteOnClose);
+
+    if (m_appMenuModel && m_appMenuModel->menu()) {
+        int overflowStartsAt = 0;
+        // Find the first non-visible button to determine where the overflow starts
+        for (KDecoration3::DecorationButton *b : buttons()) {
+            auto *textButton = qobject_cast<TextButton *>(b);
+            if (textButton && textButton->isEnabled() && !textButton->isVisible()) {
+                overflowStartsAt = textButton->buttonIndex();
+                break;
+            }
+        }
+
+        const auto actions = m_appMenuModel->menu()->actions();
+        for (int i = overflowStartsAt; i < actions.count(); ++i) {
+            actionMenu->addAction(actions.at(i));
+        }
+    }
+
+    popupMenu(actionMenu, m_overflowIndex);
+}
+
 void AppMenuButtonGroup::trigger(int buttonIndex)
 {
     auto *deco = qobject_cast<Decoration *>(decoration());
-
     if (KWindowSystem::isPlatformWayland()) {
         auto decoratedClient = deco->window();
         if (!decoratedClient || !decoratedClient->isActive()) {
@@ -541,102 +672,19 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
         }
     }
 
+    // The button is checked in popupMenu, but we need to check it here
+    // for the case where the menu is not yet loaded.
     KDecoration3::DecorationButton *button = buttons().value(buttonIndex);
     if (!button) {
         return;
     }
 
-    QMenu *actionMenu = nullptr;
-
     if (buttonIndex == m_searchIndex) {
-        if (m_currentIndex == m_searchIndex) {
-            if (m_searchMenu) m_searchMenu->hide();
-            return;
-        }
-        if (!m_searchMenu) {
-            setupSearchMenu();
-        }
-        actionMenu = m_searchMenu;
+        handleSearchTrigger();
     } else if (buttonIndex == m_overflowIndex) {
-        // A latent bug would cause this to show a menu with all items if triggered
-        // while the overflow button is invisible. This guard prevents that.
-        if (!overflowing()) {
-            return;
-        }
-        actionMenu = new QMenu();
-        actionMenu->setAttribute(Qt::WA_DeleteOnClose);
-
-        if (m_appMenuModel && m_appMenuModel->menu()) {
-            int overflowStartsAt = 0;
-            // Find the first non-visible button to determine where the overflow starts
-            for (KDecoration3::DecorationButton *b : buttons()) {
-                TextButton *textButton = qobject_cast<TextButton *>(b);
-                if (textButton && textButton->isEnabled() && !textButton->isVisible()) {
-                    overflowStartsAt = textButton->buttonIndex();
-                    break;
-                }
-            }
-
-            const auto actions = m_appMenuModel->menu()->actions();
-            for (int i = overflowStartsAt; i < actions.count(); ++i) {
-                actionMenu->addAction(actions.at(i));
-            }
-        }
+        handleOverflowTrigger();
     } else {
-        // Regular menu button
-        if (!m_appMenuModel || !m_appMenuModel->menu() || buttonIndex >= m_appMenuModel->menu()->actions().count()) {
-            return; // Index out of bounds for regular actions
-        }
-        QAction *itemAction = m_appMenuModel->menu()->actions().at(buttonIndex);
-        if (itemAction) {
-            actionMenu = itemAction->menu();
-        }
-    }
-
-    if (actionMenu && deco) {
-       
-        QMenu *oldMenu = m_currentMenu;
-        KDecoration3::DecorationButton *oldButton = (0 <= m_currentIndex && m_currentIndex < buttons().length()) ? buttons().value(m_currentIndex) : nullptr;
-
-        // 1. Set the new internal state. This must happen before popup for positioning.
-        setCurrentIndex(buttonIndex);
-        button->setChecked(true);
-        m_currentMenu = actionMenu;
-
-        // 2. Calculate position and show the new menu. This must happen before hiding the old one to prevent flicker.
-        actionMenu->installEventFilter(this);
-        if (KWindowSystem::isPlatformX11()) {
-            const QRectF buttonRect = button->geometry();
-            const QPoint position = buttonRect.topLeft().toPoint();
-            QPoint rootPosition(position);
-            rootPosition += deco->windowPos();
-            actionMenu->popup(rootPosition);
-        } else {
-            KDecoration3::Positioner positioner;
-            positioner.setAnchorRect(button->geometry());
-            deco->popup(positioner, actionMenu);
-        }
-
-        if (buttonIndex == m_searchIndex) {
-            m_searchLineEdit->activateWindow();
-            m_searchLineEdit->setFocus();
-            m_searchUiVisible = true;
-        }
-
-        // 3. Connect the hide signal for the new menu.
-        connect(actionMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onMenuAboutToHide, Qt::UniqueConnection);
-
-        // 4. Clean up the old menu and button state.
-        if (oldMenu && oldMenu != actionMenu) {
-            disconnect(oldMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onMenuAboutToHide);
-            if (m_searchMenu && oldMenu == m_searchMenu) {
-                m_searchUiVisible = false;
-            }
-            oldMenu->hide();
-        }
-        if (oldButton && oldButton != button) {
-            oldButton->setChecked(false);
-        }
+        handleMenuButtonTrigger(buttonIndex);
     }
 }
 
@@ -875,6 +923,30 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
             }
     }        
     m_searchMenu->setUpdatesEnabled(true);
+}
+
+void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
+{
+    if (m_buttonIndexWaitingForPopup == -1 || !m_appMenuModel || !m_appMenuModel->menu()) {
+        return;
+    }
+
+    const auto actions = m_appMenuModel->menu()->actions();
+    if (m_buttonIndexWaitingForPopup >= actions.count()) {
+        m_buttonIndexWaitingForPopup = -1;
+        return;
+    }
+
+    QAction *action = actions.at(m_buttonIndexWaitingForPopup);
+    if (action && action->menu() == menu) {
+        // The menu we were waiting for is now ready.
+        // We can now trigger the button again to pop it up.
+        // It is crucial to reset the waiting index *before* calling trigger
+        // to prevent an infinite loop.
+        const int buttonIndex = m_buttonIndexWaitingForPopup;
+        m_buttonIndexWaitingForPopup = -1;
+        trigger(buttonIndex);
+    }
 }
 
 void AppMenuButtonGroup::onSearchTimerTimeout()
