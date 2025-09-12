@@ -1,4 +1,5 @@
 /******************************************************************
+ * Copyright 2025 Guido Iodice <guido.iodice@gmail.com>
  * Copyright 2016 Kai Uwe Broulik <kde@privat.broulik.de>
  * Copyright 2016 Chinmoy Ranjan Pradhan <chinmoyrp65@gmail.com>
  *

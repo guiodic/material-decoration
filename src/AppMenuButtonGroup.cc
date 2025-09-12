@@ -554,7 +554,7 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
         KDecoration3::Positioner positioner;
         positioner.setAnchorRect(button->geometry());
         deco->popup(positioner, menu);
-    } else {
+    } else { //X11
         const QRectF buttonRect = button->geometry();
         const QPoint position = buttonRect.topLeft().toPoint();
         QPoint rootPosition(position);
@@ -663,15 +663,7 @@ void AppMenuButtonGroup::handleOverflowTrigger()
 }
 
 void AppMenuButtonGroup::trigger(int buttonIndex)
-{
-    auto *deco = qobject_cast<Decoration *>(decoration());
-    if (KWindowSystem::isPlatformWayland()) {
-        auto decoratedClient = deco->window();
-        if (!decoratedClient || !decoratedClient->isActive()) {
-            return;
-        }
-    }
-
+{    
     // The button is checked in popupMenu, but we need to check it here
     // for the case where the menu is not yet loaded.
     KDecoration3::DecorationButton *button = buttons().value(buttonIndex);
