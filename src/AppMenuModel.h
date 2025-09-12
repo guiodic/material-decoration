@@ -81,8 +81,6 @@ signals:
 public Q_SLOTS:
     void loadSubMenu(QMenu *menu);
     void cacheSubtree(QMenu *menu);
-    void menuWillShow(QMenu *menu);
-    void menuDidHide(QMenu *menu);
 
 public Q_SLOTS:
     void startDeepCaching();

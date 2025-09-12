@@ -359,19 +359,5 @@ void AppMenuModel::processNext()
     m_staggerTimer->start();
 }
 
-void AppMenuModel::menuWillShow(QMenu *menu)
-{
-    if (m_importer) {
-        m_importer->menuShown(menu);
-    }
-}
-
-void AppMenuModel::menuDidHide(QMenu *menu)
-{
-    if (m_importer) {
-        m_importer->menuHidden(menu);
-    }
-}
-
 
 } // namespace Material
