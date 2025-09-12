@@ -32,4 +32,4 @@ target_link_libraries(dbusmenuqt
 
 set_property(TARGET dbusmenuqt PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-add_subdirectory(test)
+
