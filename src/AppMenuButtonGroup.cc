@@ -83,6 +83,11 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     m_menuUpdateDebounceTimer->setInterval(100);
     m_menuUpdateDebounceTimer->setSingleShot(true);
     connect(m_menuUpdateDebounceTimer, &QTimer::timeout, this, &AppMenuButtonGroup::onMenuUpdateThrottleTimeout);
+
+    m_delayedCacheTimer = new QTimer(this);
+    m_delayedCacheTimer->setInterval(200);
+    m_delayedCacheTimer->setSingleShot(true);
+    connect(m_delayedCacheTimer, &QTimer::timeout, this, &AppMenuButtonGroup::onDelayedCacheTimerTimeout);
     // Assign showing and opacity before we bind the onShowingChanged animation
     // so that new windows do not animate.
     setAlwaysShow(decoration->menuAlwaysShow());
@@ -339,6 +344,13 @@ void AppMenuButtonGroup::onMenuUpdateThrottleTimeout()
     }
 }
 
+void AppMenuButtonGroup::onDelayedCacheTimerTimeout()
+{
+    if (m_appMenuModel && m_menuToCache) {
+        m_appMenuModel->cacheSubtree(m_menuToCache.data());
+    }
+}
+
 void AppMenuButtonGroup::performDebouncedMenuUpdate()
 {
     auto *deco = qobject_cast<Decoration *>(decoration());
@@ -534,6 +546,12 @@ int AppMenuButtonGroup::visibleWidth() const
 
 void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
 {
+    // Stop any caching that may be in progress from a previously opened menu,
+    // but NOT if we are opening the search menu, as that has its own caching logic.
+    if (buttonIndex != m_searchIndex) {
+        m_appMenuModel->stopCaching();
+    }
+
     auto *deco = qobject_cast<Decoration *>(decoration());
     KDecoration3::DecorationButton *button = buttons().value(buttonIndex);
     if (!menu || !deco || !button) {
@@ -583,13 +601,11 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
         oldButton->setChecked(false);
     }
 
-    // After successfully showing a menu, predictively pre-fetch its children after a fraction of second to avoid glitches.
-    QPointer<QMenu> safeMenu(menu);
-    QTimer::singleShot(250, this, [this, safeMenu]() {
-        if (safeMenu) { // if the QMenu is still there
-            m_appMenuModel->cacheSubtree(safeMenu);
-        }
-    });
+    // After successfully showing a menu, predictively pre-fetch its children
+    // after a short delay to keep the UI smooth.
+    m_delayedCacheTimer->stop();
+    m_menuToCache = menu;
+    m_delayedCacheTimer->start();
 }
 
 void AppMenuButtonGroup::handleMenuButtonTrigger(int buttonIndex)

@@ -102,6 +102,7 @@ private slots:
     void onApplicationMenuChanged();
     void performDebouncedMenuUpdate();
     void onMenuUpdateThrottleTimeout();
+    void onDelayedCacheTimerTimeout();
     void onShowingChanged(bool hovered);
     void filterMenu(const QString &text);
     //void onSearchReturnPressed();
@@ -162,6 +163,10 @@ private:
     QPointer<QLineEdit> m_searchLineEdit;
     QTimer *m_searchDebounceTimer;
     QTimer *m_menuUpdateDebounceTimer;
+
+    QTimer *m_delayedCacheTimer;
+    QPointer<QMenu> m_menuToCache;
+
     bool m_searchUiVisible = false;
 
     bool m_isMenuUpdateThrottled = false;

@@ -300,6 +300,19 @@ void AppMenuModel::cacheSubtree(QMenu *menu)
     }
 }
 
+void AppMenuModel::stopCaching()
+{
+    if (!m_isCachingSubtree && !m_isCachingEverything) {
+        return;
+    }
+
+    m_menusToDeepCache.clear();
+    m_menusInQueue.clear();
+    m_staggerTimer->stop();
+    m_isCachingSubtree = false;
+    // Do not reset m_isCachingEverything, as that is a separate, intentional full-app cache.
+}
+
 
 void AppMenuModel::startDeepCaching()
 {
