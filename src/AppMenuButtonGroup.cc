@@ -583,8 +583,13 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
         oldButton->setChecked(false);
     }
 
-    // After successfully showing a menu, predictively pre-fetch its children.
-    m_appMenuModel->cacheSubtree(menu);
+    // After successfully showing a menu, predictively pre-fetch its children after a fraction of second to avoid glitches.
+    QPointer<QMenu> safeMenu(menu);
+    QTimer::singleShot(250, this, [this, safeMenu]() {
+        if (safeMenu) { // if the QMenu is still there
+            m_appMenuModel->cacheSubtree(safeMenu);
+        }
+    });
 }
 
 void AppMenuButtonGroup::handleMenuButtonTrigger(int buttonIndex)
