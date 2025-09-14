@@ -64,7 +64,7 @@ protected:
 };
 
 AppMenuModel::AppMenuModel(QObject *parent)
-    : QAbstractListModel(parent),
+    : QObject(parent),
       m_serviceWatcher(new QDBusServiceWatcher(this))
 {
     m_serviceWatcher->setConnection(QDBusConnection::sessionBus());
@@ -110,53 +110,10 @@ QMenu *AppMenuModel::menu() const
     return m_menu;
 }
 
-int AppMenuModel::rowCount(const QModelIndex &parent) const
-{
-    Q_UNUSED(parent);
-
-    if (!m_menuAvailable || !m_menu) {
-        return 0;
-    }
-
-    return m_menu->actions().count();
-}
-
 void AppMenuModel::update()
 {
-    beginResetModel();
-    endResetModel();
+    emit modelReset();
     m_updatePending = false;
-}
-
-QHash<int, QByteArray> AppMenuModel::roleNames() const
-{
-    QHash<int, QByteArray> roleNames;
-    roleNames[MenuRole] = QByteArrayLiteral("activeMenu");
-    roleNames[ActionRole] = QByteArrayLiteral("activeActions");
-    return roleNames;
-}
-
-QVariant AppMenuModel::data(const QModelIndex &index, int role) const
-{
-    const int row = index.row();
-
-    if (row < 0 || !m_menuAvailable || !m_menu) {
-        return QVariant();
-    }
-
-    const auto actions = m_menu->actions();
-
-    if (row >= actions.count()) {
-        return QVariant();
-    }
-
-    if (role == MenuRole) { // TODO this should be Qt::DisplayRole
-        return actions.at(row)->text();
-    } else if (role == ActionRole) {
-        return QVariant::fromValue((void *) actions.at(row));
-    }
-
-    return QVariant();
 }
 
 void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QString &menuObjectPath)
@@ -169,11 +126,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     }
 
     // A menu change means any in-progress caching is now invalid.
-    m_menusToDeepCache.clear();
-    m_menusInQueue.clear();
-    m_isCachingSubtree = false;
-    m_isCachingEverything = false;
-    m_deepCacheStarted = false;
+    stopCaching();
     m_pendingMenuUpdates = 0;
 
     m_serviceName = serviceName;
@@ -189,19 +142,6 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     QMetaObject::invokeMethod(m_importer, "updateMenu", Qt::QueuedConnection);
 
     connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, &AppMenuModel::onMenuUpdated);
-
-    // connect(m_importer.data(), &DBusMenuImporter::actionActivationRequested, this, [this](QAction *action) {
-    //     // TODO submenus
-    //     if (!m_menuAvailable || !m_menu) {
-    //         return;
-    //     }
-
-    //     const auto actions = m_menu->actions();
-    //     auto it = std::find(actions.begin(), actions.end(), action);
-    //     if (it != actions.end()) {
-    //         emit requestActivateIndex(it - actions.begin());
-    //     }
-    // });
 }
 
 void AppMenuModel::onMenuUpdated(QMenu *menu)
@@ -216,15 +156,6 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         // Connect signals for top-level actions to update the model when they change.
         const auto actions = m_menu->actions();
         for (QAction *a : actions) {
-            connect(a, &QAction::changed, this, [this, a] {
-                if (m_menuAvailable && m_menu) {
-                    const int actionIdx = m_menu->actions().indexOf(a);
-                    if (actionIdx > -1) {
-                        const QModelIndex modelIdx = index(actionIdx, 0);
-                        emit dataChanged(modelIdx, modelIdx);
-                    }
-                }
-            });
             connect(a, &QAction::destroyed, this, &AppMenuModel::modelNeedsUpdate);
         }
 
@@ -313,7 +244,6 @@ void AppMenuModel::stopCaching()
     m_isCachingEverything = false;
     m_deepCacheStarted = false;
 }
-
 
 void AppMenuModel::startDeepCaching()
 {

@@ -578,6 +578,9 @@ int AppMenuButtonGroup::visibleWidth() const
 
 void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
 {
+    // Stop any caching that may be in progress from a previously opened menu.
+    m_appMenuModel->stopCaching();
+
     auto *deco = qobject_cast<Decoration *>(decoration());
     KDecoration3::DecorationButton *button = buttons().value(buttonIndex);
     if (!menu || !deco || !button) {
@@ -626,9 +629,6 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
     if (oldButton && oldButton != button) {
         oldButton->setChecked(false);
     }
-
-    // Stop any caching that may be in progress from a previously opened menu.
-    m_appMenuModel->stopCaching();
 
     // After successfully showing a menu, predictively pre-fetch its children
     // after a short delay to keep the UI smooth.
@@ -712,7 +712,7 @@ void AppMenuButtonGroup::handleOverflowTrigger()
 }
 
 void AppMenuButtonGroup::trigger(int buttonIndex)
-{    
+{
     // The button is checked in popupMenu, but we need to check it here
     // for the case where the menu is not yet loaded.
     KDecoration3::DecorationButton *button = buttons().value(buttonIndex);
@@ -742,7 +742,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         if (event->type() == QEvent::KeyPress) {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
 
-            // On Key_Left at the beginning of the line, send the event to m_searchMenu, 
+            // On Key_Left at the beginning of the line, send the event to m_searchMenu,
             // so we can navigate to the previous visible menu button.
             if (keyEvent->key() == Qt::Key_Left) {
                 if (m_searchLineEdit->cursorPosition() == 0) {
@@ -754,13 +754,13 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         }
         return false;
     }
-    
+
     auto *menu = qobject_cast<QMenu *>(watched);
 
     if (!menu) {
         return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
     }
-    
+
 
     if (event->type() == QEvent::KeyPress) {
         auto *e = static_cast<QKeyEvent *>(event);
@@ -794,7 +794,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         }
         return false;
     }
-    
+
     return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
 }
 
@@ -1031,9 +1031,6 @@ void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
                 }
             }
         }
-
-        // Force a repaint to ensure hover highlights are updated correctly,
-        // mimicking the behavior of the Breeze decoration.
     }
 }
 

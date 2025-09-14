@@ -22,11 +22,10 @@
 #pragma once
 
 // Qt
-#include <QAbstractListModel>
+#include <QObject>
 #include <QAction>
 #include <QDBusServiceWatcher>
 #include <QMenu>
-#include <QModelIndex>
 #include <QList>
 #include <QPointer>
 #include <QSet>
@@ -38,26 +37,15 @@ namespace Material
 
 class KDBusMenuImporter;
 
-class AppMenuModel : public QAbstractListModel
+class AppMenuModel : public QObject
 {
     Q_OBJECT
-
-    Q_PROPERTY(bool menuAvailable READ menuAvailable WRITE setMenuAvailable NOTIFY menuAvailableChanged)
 
 public:
     explicit AppMenuModel(QObject *parent = nullptr);
     ~AppMenuModel() override;
 
 public:
-    enum AppMenuRole {
-        MenuRole = Qt::UserRole + 1, // TODO this should be Qt::DisplayRole
-        ActionRole
-    };
-
-    QVariant data(const QModelIndex &index, int role) const override;
-    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-    QHash<int, QByteArray> roleNames() const override;
-
     void updateApplicationMenu(const QString &serviceName, const QString &menuObjectPath);
 
     bool menuAvailable() const;
@@ -65,15 +53,13 @@ public:
 
     QMenu *menu() const;
 
-signals:
-    // void requestActivateIndex(int index);
-
 private Q_SLOTS:
     void update();
 
 signals:
     void menuAvailableChanged();
     void modelNeedsUpdate();
+    void modelReset();
     void menuReadyForSearch();
     void subMenuReady(QMenu *menu);
 
