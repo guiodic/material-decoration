@@ -30,7 +30,6 @@
 #include <QList>
 #include <QPointer>
 #include <QSet>
-#include <QRect>
 #include <QStringList>
 #include <QTimer>
 
@@ -67,7 +66,7 @@ public:
     QMenu *menu() const;
 
 signals:
-    void requestActivateIndex(int index);
+    // void requestActivateIndex(int index);
 
 private Q_SLOTS:
     void update();

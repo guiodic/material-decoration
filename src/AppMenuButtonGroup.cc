@@ -162,6 +162,32 @@ void AppMenuButtonGroup::setupSearchMenu()
     m_searchLineEdit->setClearButtonEnabled(false);
 }
 
+void AppMenuButtonGroup::repositionSearchMenu()
+{
+    if (!m_searchMenu || !m_searchMenu->isVisible()) {
+        return;
+    }
+
+    auto *deco = qobject_cast<Decoration *>(decoration());
+    KDecoration3::DecorationButton *button = buttons().value(m_searchIndex);
+    if (!deco || !button) {
+        return;
+    }
+
+    if (KWindowSystem::isPlatformX11()) { // X11
+        const QRectF buttonRect = button->geometry();
+        QPoint rootPosition = buttonRect.topLeft().toPoint();
+        rootPosition += deco->windowPos();
+        // Re-popping up at the original position
+        m_searchMenu->popup(rootPosition);
+    } else { // Wayland
+        KDecoration3::Positioner positioner;
+        positioner.setAnchorRect(button->geometry());
+        deco->popup(positioner, m_searchMenu);
+        m_searchMenu->popup(m_searchMenu->pos()); //HACK without this the scrollbar remain even if not necessary
+    }
+}
+
 int AppMenuButtonGroup::currentIndex() const
 {
     return m_currentIndex;
@@ -836,25 +862,8 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
             }
         }
         m_lastResults.clear();
-        // Reposition the menu to its original spot after clearing search results.
-        if (m_searchMenu->isVisible()) {
-            auto *deco = qobject_cast<Decoration *>(decoration());
-            KDecoration3::DecorationButton *button = buttons().value(m_searchIndex);
-            if (deco && button) {
-                if (KWindowSystem::isPlatformX11()) { // X11
-                    const QRectF buttonRect = button->geometry();
-                    QPoint rootPosition = buttonRect.topLeft().toPoint();
-                    rootPosition += deco->windowPos();
-                    // Re-popping up at the original position
-                    m_searchMenu->popup(rootPosition);
-                } else { // Wayland
-                    KDecoration3::Positioner positioner;
-                    positioner.setAnchorRect(button->geometry());
-                    deco->popup(positioner, m_searchMenu);
-                    m_searchMenu->popup(m_searchMenu->pos()); //HACK without this the scrollbar remain even if not necessary
-                }
-            }
-        }        
+        repositionSearchMenu();
+
         if (text.isEmpty()) {
             m_searchLineEdit->setClearButtonEnabled(false);
             m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu", "Search") + QStringLiteral("…"));
@@ -864,7 +873,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         return;
     } else {
         m_searchLineEdit->setClearButtonEnabled(true);
-    }    
+    }
 
     if (!m_appMenuModel || !m_menuReadyForSearch) {
         // Menu is not ready yet, search will be re-triggered later
@@ -918,25 +927,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         m_searchMenu->addAction(newAction);
     }
 
-    //Pop again at correct position
-    if (m_searchMenu->isVisible()) {
-            auto *deco = qobject_cast<Decoration *>(decoration());
-            KDecoration3::DecorationButton *button = buttons().value(m_searchIndex);
-            if (deco && button) {
-                if (KWindowSystem::isPlatformX11()) { // X11
-                    const QRectF buttonRect = button->geometry();
-                    QPoint rootPosition = buttonRect.topLeft().toPoint();
-                    rootPosition += deco->windowPos();
-                    // Re-popping up at the original position
-                    m_searchMenu->popup(rootPosition);
-                } else { // Wayland
-                    KDecoration3::Positioner positioner;
-                    positioner.setAnchorRect(button->geometry());
-                    deco->popup(positioner, m_searchMenu);
-                    m_searchMenu->popup(m_searchMenu->pos()); //HACK without this the scrollbar remain even if not necessary
-                }
-            }
-    }        
+    repositionSearchMenu();
     m_searchMenu->setUpdatesEnabled(true);
 }
 
@@ -1043,7 +1034,6 @@ void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
 
         // Force a repaint to ensure hover highlights are updated correctly,
         // mimicking the behavior of the Breeze decoration.
-        //decoration()->update();
     }
 }
 

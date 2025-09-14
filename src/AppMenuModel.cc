@@ -190,18 +190,18 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
 
     connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, &AppMenuModel::onMenuUpdated);
 
-    connect(m_importer.data(), &DBusMenuImporter::actionActivationRequested, this, [this](QAction *action) {
-        // TODO submenus
-        if (!m_menuAvailable || !m_menu) {
-            return;
-        }
+    // connect(m_importer.data(), &DBusMenuImporter::actionActivationRequested, this, [this](QAction *action) {
+    //     // TODO submenus
+    //     if (!m_menuAvailable || !m_menu) {
+    //         return;
+    //     }
 
-        const auto actions = m_menu->actions();
-        auto it = std::find(actions.begin(), actions.end(), action);
-        if (it != actions.end()) {
-            emit requestActivateIndex(it - actions.begin());
-        }
-    });
+    //     const auto actions = m_menu->actions();
+    //     auto it = std::find(actions.begin(), actions.end(), action);
+    //     if (it != actions.end()) {
+    //         emit requestActivateIndex(it - actions.begin());
+    //     }
+    // });
 }
 
 void AppMenuModel::onMenuUpdated(QMenu *menu)

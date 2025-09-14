@@ -105,7 +105,6 @@ private slots:
     void onDelayedCacheTimerTimeout();
     void onShowingChanged(bool hovered);
     void filterMenu(const QString &text);
-    //void onSearchReturnPressed();
     void onSearchTimerTimeout();
     void onSubMenuReady(QMenu *menu);
 
@@ -132,11 +131,11 @@ private:
     };
 
     void setupSearchMenu();
+    void repositionSearchMenu();
     void resetButtons();
     void searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results);
     ActionInfo getActionPath(QAction *action) const;
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
-    //void styleMenu(QMenu *menu);
 
     void popupMenu(QMenu *menu, int buttonIndex);
     void handleSearchTrigger();
