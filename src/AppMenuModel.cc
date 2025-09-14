@@ -310,7 +310,8 @@ void AppMenuModel::stopCaching()
     m_menusInQueue.clear();
     m_staggerTimer->stop();
     m_isCachingSubtree = false;
-    // Do not reset m_isCachingEverything, as that is a separate, intentional full-app cache.
+    m_isCachingEverything = false;
+    m_deepCacheStarted = false;
 }
 
 
@@ -352,6 +353,7 @@ void AppMenuModel::processNext()
         // We are done processing all submenus.
         m_isCachingSubtree = false;
         m_isCachingEverything = false;
+        m_deepCacheStarted = false;
         // Note: m_pendingMenuUpdates might still be > 0 here if the last
         // few DBus calls are still in flight. The menuReadyForSearch signal
         // will be emitted correctly in onMenuUpdated when the last reply arrives.

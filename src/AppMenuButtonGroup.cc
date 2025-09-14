@@ -346,7 +346,13 @@ void AppMenuButtonGroup::onMenuUpdateThrottleTimeout()
 
 void AppMenuButtonGroup::onDelayedCacheTimerTimeout()
 {
-    if (m_appMenuModel && m_menuToCache) {
+    if (!m_appMenuModel || !m_menuToCache) {
+        return;
+    }
+
+    if (m_buttonIndexOfMenuToCache == m_searchIndex) {
+        m_appMenuModel->startDeepCaching();
+    } else {
         m_appMenuModel->cacheSubtree(m_menuToCache.data());
     }
 }
@@ -546,12 +552,6 @@ int AppMenuButtonGroup::visibleWidth() const
 
 void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
 {
-    // Stop any caching that may be in progress from a previously opened menu,
-    // but NOT if we are opening the search menu, as that has its own caching logic.
-    if (buttonIndex != m_searchIndex) {
-        m_appMenuModel->stopCaching();
-    }
-
     auto *deco = qobject_cast<Decoration *>(decoration());
     KDecoration3::DecorationButton *button = buttons().value(buttonIndex);
     if (!menu || !deco || !button) {
@@ -601,10 +601,14 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
         oldButton->setChecked(false);
     }
 
+    // Stop any caching that may be in progress from a previously opened menu.
+    m_appMenuModel->stopCaching();
+
     // After successfully showing a menu, predictively pre-fetch its children
     // after a short delay to keep the UI smooth.
     m_delayedCacheTimer->stop();
     m_menuToCache = menu;
+    m_buttonIndexOfMenuToCache = buttonIndex;
     m_delayedCacheTimer->start();
 }
 
@@ -647,8 +651,6 @@ void AppMenuButtonGroup::handleSearchTrigger()
     }
     if (!m_searchMenu) {
         setupSearchMenu();
-        // Start the full, recursive deep cache for the search feature.
-        m_appMenuModel->startDeepCaching();
     }
     popupMenu(m_searchMenu, m_searchIndex);
 }
