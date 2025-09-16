@@ -596,7 +596,7 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
     m_currentMenu = menu;
 
     // 2. Calculate position and show the new menu. This must happen before hiding the old one to prevent flicker.
-    menu->installEventFilter(this);
+    //menu->installEventFilter(this);
     if (KWindowSystem::isPlatformWayland()) {
         KDecoration3::Positioner positioner;
         positioner.setAnchorRect(button->geometry());
@@ -779,21 +779,23 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
             trigger(desiredIndex);
             return true;
         }
-    }  else if (event->type() == QEvent::MouseMove) {
-        auto *e = static_cast<QMouseEvent *>(event);
-        auto *deco = const_cast<Decoration*>(qobject_cast<const Decoration *>(decoration()));
-        if (deco) {
-            // Forward a constructed HoverEvent to the decoration to handle.
-            // This is a workaround for X11 where the decoration does not receive
-            // hover events while a menu is open.
-            QPointF localPos = e->globalPosition() - deco->windowPos();
-            localPos.setY(localPos.y() + deco->titleBarHeight());
-
-            QHoverEvent hoverEvent(QEvent::HoverMove, localPos, e->globalPosition(), localPos, e->modifiers(), static_cast<const QPointingDevice *>(e->device()));
-            QApplication::sendEvent(deco, &hoverEvent);
+    } else if (event->type() == QEvent::MouseMove) {
+        if (KWindowSystem::isPlatformX11()) {
+            auto *e = static_cast<QMouseEvent *>(event);
+            auto *deco = const_cast<Decoration*>(qobject_cast<const Decoration *>(decoration()));
+            if (deco) {
+                // Forward a constructed HoverEvent to the decoration to handle.
+                // This is a workaround for X11 where the decoration does not receive
+                // hover events while a menu is open.
+                QPointF localPos = e->globalPosition() - deco->windowPos();
+                localPos.setY(localPos.y() + deco->titleBarHeight());
+                
+                QHoverEvent hoverEvent(QEvent::HoverMove, localPos, e->globalPosition(), localPos, e->modifiers(), static_cast<const QPointingDevice *>(e->device()));
+                QApplication::sendEvent(deco, &hoverEvent);
+            }
         }
         return false;
-    }
+    } 
 
     return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
 }
