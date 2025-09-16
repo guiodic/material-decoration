@@ -596,7 +596,7 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
     m_currentMenu = menu;
 
     // 2. Calculate position and show the new menu. This must happen before hiding the old one to prevent flicker.
-    //menu->installEventFilter(this);
+    menu->installEventFilter(this);
     if (KWindowSystem::isPlatformWayland()) {
         KDecoration3::Positioner positioner;
         positioner.setAnchorRect(button->geometry());
