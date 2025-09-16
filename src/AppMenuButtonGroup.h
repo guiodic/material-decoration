@@ -85,11 +85,11 @@ public:
     KDecoration3::DecorationButton* buttonAt(int x, int y) const;
 
     void unPressAllButtons();
+    void handleHoverMove(const QPointF &pos);
 
 public slots:
     void setHamburgerMenu(bool value);
     void onMenuReadyForSearch();
-    void initAppMenuModel();
     void updateAppMenuModel();
     void updateOverflow(QRectF availableRect);
     void trigger(int index);
@@ -98,14 +98,18 @@ public slots:
     void onMenuAboutToHide();
 
 private slots:
+    void onHasApplicationMenuChanged(bool hasMenu);
+    void onApplicationMenuChanged();
+    void performDebouncedMenuUpdate();
+    void onMenuUpdateThrottleTimeout();
+    void onDelayedCacheTimerTimeout();
     void onShowingChanged(bool hovered);
     void filterMenu(const QString &text);
-    void onSearchReturnPressed();
     void onSearchTimerTimeout();
+    void onSubMenuReady(QMenu *menu);
 
 signals:
     void menuUpdated();
-    void requestActivateIndex(int index);
     void requestActivateOverflow();
 
     void currentIndexChanged();
@@ -127,12 +131,16 @@ private:
     };
 
     void setupSearchMenu();
+    void repositionSearchMenu();
     void resetButtons();
     void searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results);
     ActionInfo getActionPath(QAction *action) const;
-    void clampToScreen(QMenu* menu);
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
-    //void styleMenu(QMenu *menu);
+
+    void popupMenu(QMenu *menu, int buttonIndex);
+    void handleSearchTrigger();
+    void handleOverflowTrigger();
+    void handleMenuButtonTrigger(int buttonIndex);
 
     AppMenuModel *m_appMenuModel;
     int m_currentIndex;
@@ -148,15 +156,26 @@ private:
     qreal m_opacity;
     int m_visibleWidth;
     QPointer<QMenu> m_currentMenu;
+    int m_buttonIndexWaitingForPopup = -1;
+    int m_buttonIndexOfMenuToCache = -1;
 
     QPointer<QMenu> m_searchMenu;
     QPointer<QLineEdit> m_searchLineEdit;
     QTimer *m_searchDebounceTimer;
+    QTimer *m_menuUpdateDebounceTimer;
+
+    QTimer *m_delayedCacheTimer;
+    QPointer<QMenu> m_menuToCache;
+
     bool m_searchUiVisible = false;
 
+    bool m_isMenuUpdateThrottled = false;
+    bool m_pendingMenuUpdate = false;
     bool m_menuReadyForSearch = false;
     QString m_lastSearchQuery;
     QList<QAction *> m_lastResults;
+
+    QPointer<KDecoration3::DecorationButton> m_hoveredButton = nullptr;
 };
 
 } // namespace Material

@@ -87,7 +87,7 @@ QSize TextButton::getTextSize()
 
 QAction* TextButton::action() const
 {
-    return m_action;
+    return m_action.data();
 }
 
 void TextButton::setAction(QAction *set)

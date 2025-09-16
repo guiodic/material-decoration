@@ -48,6 +48,7 @@ static QTime sChrono;
 static const char *DBUSMENU_PROPERTY_ID = "_dbusmenu_id";
 static const char *DBUSMENU_PROPERTY_ICON_NAME = "_dbusmenu_icon_name";
 static const char *DBUSMENU_PROPERTY_ICON_DATA_HASH = "_dbusmenu_icon_data_hash";
+static const QLoggingCategory category("kdecoration.material");
 
 static QAction *createKdeTitle(QAction *action, QWidget *parent)
 {
@@ -392,6 +393,8 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         return;
     }
 
+    menu->setUpdatesEnabled(false);
+
     // remove outdated actions
     QSet<int> newDBusMenuItemIds;
     newDBusMenuItemIds.reserve(rootItem.children.count());
@@ -448,6 +451,8 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         }
     }
 
+    menu->setUpdatesEnabled(true);
+    qCDebug(category) << "Menu updated";
     Q_EMIT menuUpdated(menu);
 }
 
@@ -523,6 +528,15 @@ void DBusMenuImporter::slotMenuAboutToShow()
 {
     QMenu *menu = qobject_cast<QMenu *>(sender());
     Q_ASSERT(menu);
+
+    QAction *action = menu->menuAction();
+    if (!action) {
+        return;
+    }
+    int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
+    if (d->m_idsRefreshedByAboutToShow.contains(id)) {
+        return; // Update already in progress, ignore re-entrant call.
+    }
 
     updateMenu(menu);
 }

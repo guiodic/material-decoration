@@ -1,13 +1,9 @@
-
-set(DKDE_INSTALL_USE_QT_SYS_PATHS=ON)
-set(DQT_MAJOR_VERSION=6)
-set(DQT_VERSION_MAJOR=6)
-
 find_package (KDecoration3 REQUIRED)
 
-find_package (Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS
+find_package (Qt6 REQUIRED COMPONENTS
     Core
     Gui
+    GuiTools
 )
 
 find_package (KF6 REQUIRED COMPONENTS
@@ -39,49 +35,12 @@ find_package(XCB MODULE REQUIRED COMPONENTS
 )
 set_package_properties(XCB PROPERTIES TYPE REQUIRED)
 
-#if (Qt6_FOUND)
-    # The QX11Info class has been removed.
-    # Clients that still rely on the functionality can include the private header <QtGui/private/qtx11extras_p.h> as a stopgap solution.
-    # To enable private headers use QT += gui-private with qmake, or add a project dependency to Qt::GuiPrivate with CMake.
-    # https://doc.qt.io/qt-6/extras-changes-qt6.html#changes-to-qt-x11-extras
-    find_package(Qt${QT_VERSION_MAJOR} ${QT_MIN_VERSION} CONFIG REQUIRED COMPONENTS GuiTools)
-#elseif(Qt5_FOUND)
-#    find_package(Qt${QT_VERSION_MAJOR} ${QT_MIN_VERSION} CONFIG REQUIRED COMPONENTS X11Extras)
-#endif()
-
-
 if(X11_FOUND AND XCB_XCB_FOUND)
     set(HAVE_X11 ON)
     set(X11_LIBRARIES XCB::XCB)
 endif()
 
-
-# Wayland
-#find_package (KF6 COMPONENTS
-#    Wayland
-#)
-
-#if(KF5Wayland_FOUND)
-    set(HAVE_Wayland OFF)
-#    set(Wayland_LIBRARIES KF5::WaylandClient)
-#endif()
-
-
-# KDecoration3/Plasma Version
-if(${KDecoration3_VERSION} VERSION_GREATER_EQUAL "5.25.0")
-    set(HAVE_KDecoration3_5_25 ON)
-else()
-    set(HAVE_KDecoration3_5_25 OFF)
-endif()
-message(STATUS "HAVE_KDecoration3_5_25: ${HAVE_KDecoration3_5_25} (${KDecoration3_VERSION})")
-
-# KF5 Version
-#if(${KF5_VERSION} VERSION_GREATER_EQUAL "5.101.0")
-    set(HAVE_KF5_101 ON)
-#else()
-#    set(HAVE_KF5_101 OFF)
-#endif()
-#message(STATUS "HAVE_KF5_101: ${HAVE_KF5_101} (${KF5_VERSION})")
+set(HAVE_KDecoration3_5_25 ON)
 
 
 configure_file(BuildConfig.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/BuildConfig.h)
@@ -110,8 +69,8 @@ add_library (materialdecoration MODULE
 target_link_libraries (materialdecoration
     PUBLIC
         dbusmenuqt
-        Qt${QT_VERSION_MAJOR}::Core
-        Qt${QT_VERSION_MAJOR}::Gui
+        Qt6::Core
+        Qt6::Gui
         # Qt${QT_VERSION_MAJOR}::X11Extras
         KF6::ConfigCore
         KF6::ConfigGui
@@ -130,18 +89,11 @@ target_link_libraries (materialdecoration
         KDecoration3::KDecoration
         kwin
 )
-if (Qt6_FOUND)
-    # The QX11Info class has been removed.
-    target_link_libraries (materialdecoration
-        PUBLIC
-            Qt${QT_VERSION_MAJOR}::GuiPrivate
-    )
-elseif(Qt5_FOUND)
-    target_link_libraries (materialdecoration
-        PUBLIC
-            Qt${QT_VERSION_MAJOR}::X11Extras
-    )
-endif()
+# The QX11Info class has been removed.
+target_link_libraries (materialdecoration
+    PUBLIC
+        Qt6::GuiPrivate
+)
 
 include(KDEInstallDirs)
 install(TARGETS materialdecoration
