@@ -21,49 +21,55 @@ ones, see the other branches
 
 Material-ish window decoration theme for KWin.
 
-
 ### Locally Integrated Menus
 
-This hides the AppMenu icon button and draws the menu in the titlebar. 
-It works on X11 and Wayland.
-On Wayland, GTK apps don't export the menu. You need to start them with `GDK_BACKEND=x11` environmental variable
+This hides the AppMenu icon button and draws the menu in the titlebar. It works
+on both X11 and Wayland. On Wayland, GTK apps don't export the menu. You need
+to start them with `GDK_BACKEND=x11` environmental variable.
+
+Please note that Wayland is not my primary platform. So do not expect I fix a
+Wayland-specific bug in a day. 
 
 Make sure you add the AppMenu button in System Settings > Application Style >
 Window Decorations > Buttons Tab.
 
-The menu is set to be “always shown” by default. If you want it to be shown only when the mouse hovers over it, edit `~/.config/kdecoration_materialrc`
+The menu is set to be “always shown” by default. If you want it to be shown
+only when the mouse hovers over it, edit `~/.config/kdecoration_materialrc`
 
 ```
 [Windeco]
 MenuAlwaysShow=false
 ```
-then restart kwin: `systemctl --user restart plasma-kwin_x11.service`
+then restart kwin: `qdbus6 org.kde.KWin /KWin org.kde.KWin.replace`
 
 
 ### Search Button
 
-To hide SearchButton (the lens), edit `~/.config/kdecoration_materialrc` 
+To hide SearchButton (the lens), edit `~/.config/kdecoration_materialrc`
 
 ```
 [Windeco]
 SearchEnabled=false
 ```
-then restart kwin: `systemctl --user restart plasma-kwin_x11.service`
+then restart kwin.
 
-Disabled menu actions (the gray ones) are not displayed in the search by default.
-If you wish to activate them:
+Disabled menu actions (the gray ones) are not displayed in the search by
+default. If you wish to activate them:
 
 ```
 [Windeco]
 ShowDisabledActions=true
 ```
+then restart kwin.
 
-If you frefer an Hamburger Menu:
+If you prefer an Hamburger Menu:
 
 ```
 [Windeco]
 HamburgerMenu=true
 ```
+then restart kwin.
+
 
 ....
 
