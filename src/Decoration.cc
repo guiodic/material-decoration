@@ -38,7 +38,9 @@
 #include <KWindowSystem>
 
 // KWIN
+#if HAVE_X11
 #include <kwin-x11/x11window.h>
+#endif
 
 // Qt
 #include <QApplication>
@@ -744,10 +746,13 @@ template <typename T> using ScopedPointer = QScopedPointer<T, QScopedPointerPodD
 
 QPoint Decoration::windowPos() const
 {
-    const WId windowId = safeWindowId();
-
-    if (KWindowSystem::isPlatformX11()) {
 #if HAVE_X11
+    if (KWindowSystem::isPlatformX11()) {
+        const WId windowId = safeWindowId();
+        if (!windowId) {
+            return QPoint(0, 0);
+        }
+
         //--- From: BreezeSizeGrip.cpp
         /*
         get root position matching position
@@ -770,15 +775,14 @@ QPoint Decoration::windowPos() const
                 return QPoint(coordReply.data()->dst_x, coordReply.data()->dst_y);
             }
         }
-#else
-        Q_UNUSED(windowId)
+    }
 #endif
 
-    } else if (KWindowSystem::isPlatformWayland()) {
 #if HAVE_Wayland
+    if (KWindowSystem::isPlatformWayland()) {
         // TODO
-#endif
     }
+#endif
 
     return QPoint(0, 0);
 }
@@ -812,14 +816,17 @@ bool Decoration::dragMoveTick(const QPoint pos)
 
 void Decoration::sendMoveEvent(const QPoint pos)
 {
-    const WId windowId = safeWindowId();
-
-    QPoint globalPos = windowPos()
-        - QPoint(0, titleBarHeight())
-        + pos;
-
-    if (KWindowSystem::isPlatformX11()) {
 #if HAVE_X11
+    if (KWindowSystem::isPlatformX11()) {
+        const WId windowId = safeWindowId();
+        if (!windowId) {
+            return;
+        }
+
+        QPoint globalPos = windowPos()
+            - QPoint(0, titleBarHeight())
+            + pos;
+
         //--- From: BreezeSizeGrip.cpp
         auto connection(QX11Info::connection());
 
@@ -883,19 +890,16 @@ void Decoration::sendMoveEvent(const QPoint pos)
         );
 
         xcb_flush(connection);
-#else
-        Q_UNUSED(windowId)
-        Q_UNUSED(globalPos)
-#endif
-
-    } else if (KWindowSystem::isPlatformWayland()) {
-#if HAVE_Wayland
-        // TODO
-#endif
-
-    } else {
-        // Not X11
     }
+#else
+    Q_UNUSED(pos)
+#endif
+
+#if HAVE_Wayland
+    if (KWindowSystem::isPlatformWayland()) {
+        // TODO
+    }
+#endif
 }
 
 void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRegion) const
@@ -1081,9 +1085,11 @@ WId Decoration::safeWindowId() const
         return 0;
     }
 
+#if HAVE_X11
     if (const auto *kwinWindow = qobject_cast<const KWin::X11Window *>(decoratedClient->decoration()->parent())) {
         return kwinWindow->window();
     }
+#endif
 
     return 0;
 }

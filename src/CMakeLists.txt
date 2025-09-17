@@ -17,27 +17,23 @@ find_package (KF6 REQUIRED COMPONENTS
     KCMUtils
 )
 
-find_package(KWinX11 REQUIRED)
-
-include_directories(/usr/include/kwin-x11)
+find_package(KWinX11 QUIET)
 
 # X11
-find_package(X11 REQUIRED)
-set_package_properties(X11 PROPERTIES DESCRIPTION "X11 libraries"
-    URL "http://www.x.org"
-    TYPE REQUIRED
-    PURPOSE "Required for building the X11 based workspace"
-)
-
-find_package(XCB MODULE REQUIRED COMPONENTS
+find_package(X11 QUIET)
+find_package(XCB MODULE QUIET COMPONENTS
     XCB
     RANDR
 )
-set_package_properties(XCB PROPERTIES TYPE REQUIRED)
 
-if(X11_FOUND AND XCB_XCB_FOUND)
+if(KWinX11_FOUND AND X11_FOUND AND XCB_FOUND)
     set(HAVE_X11 ON)
+    include_directories(/usr/include/kwin-x11)
     set(X11_LIBRARIES XCB::XCB)
+    message(STATUS "Building with X11 support")
+else()
+    set(HAVE_X11 OFF)
+    message(STATUS "Building without X11 support")
 endif()
 
 set(HAVE_KDecoration3_5_25 ON)
