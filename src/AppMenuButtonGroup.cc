@@ -879,8 +879,14 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         m_searchLineEdit->setClearButtonEnabled(true);
     }
 
-    if (!m_appMenuModel || !m_menuReadyForSearch) {
-        // Menu is not ready yet, search will be re-triggered later
+    if (!m_appMenuModel) {
+        return;
+    }
+
+    if (!m_menuReadyForSearch) {
+        // Menu is not ready for search yet. Let's start loading it.
+        // The search will be re-triggered by onMenuReadyForSearch.
+        m_appMenuModel->startDeepCaching();
         return;
     }
 
