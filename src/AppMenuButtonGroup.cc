@@ -428,7 +428,6 @@ void AppMenuButtonGroup::updateAppMenuModel()
         QMenu *menu = m_appMenuModel->menu();
         if (!menu) {
             resetButtons();
-            emit menuUpdated();
             return;
         }
 
