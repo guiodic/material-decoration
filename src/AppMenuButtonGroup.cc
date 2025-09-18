@@ -78,8 +78,6 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     m_searchDebounceTimer->setInterval(150);
     m_searchDebounceTimer->setSingleShot(true);
     connect(m_searchDebounceTimer, &QTimer::timeout, this, &AppMenuButtonGroup::onSearchTimerTimeout);
-    
-    m_menuReadyForSearch = false;
 
     m_menuUpdateDebounceTimer = new QTimer(this);
     m_menuUpdateDebounceTimer->setInterval(100);
@@ -908,13 +906,12 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     }
 
     // Add new results
-    
     const auto *deco = qobject_cast<const Decoration *>(decoration());
     if (!deco) {
         m_searchMenu->setUpdatesEnabled(true);
         return;
     }
-    
+
     for (QAction *action : results) {
         const ActionInfo info = getActionPath(action);
         if (!info.isEffectivelyEnabled && !deco->showDisabledActions()) {
