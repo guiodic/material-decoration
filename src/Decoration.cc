@@ -44,8 +44,6 @@
 
 // Qt
 #include <QApplication>
-#include <QDBusConnection>
-#include <QDBusConnectionInterface>
 #include <QDebug>
 #include <QHoverEvent>
 #include <QMouseEvent>
@@ -152,7 +150,6 @@ inline CompositeShadowParams lookupShadowParams(int size)
 } // anonymous namespace
 
 static int s_decoCount = 0;
-int Decoration::s_refs = 0;
 static int s_shadowSizePreset = InternalSettings::ShadowVeryLarge;
 static int s_shadowStrength = 255;
 static QColor s_shadowColor = QColor(33, 33, 33);
@@ -162,19 +159,11 @@ Decoration::Decoration(QObject *parent, const QVariantList &args)
     : KDecoration3::Decoration(parent, args)
     , m_internalSettings(nullptr)
 {
-    if (++s_refs == 1) {
-        QDBusConnection::sessionBus().interface()->registerService(QStringLiteral("org.kde.kappmenuview"),
-                                                                   QDBusConnectionInterface::QueueService,
-                                                                   QDBusConnectionInterface::DontAllowReplacement);
-    }
     ++s_decoCount;
 }
 
 Decoration::~Decoration()
 {
-    if (--s_refs == 0) {
-        QDBusConnection::sessionBus().interface()->unregisterService(QStringLiteral("org.kde.kappmenuview"));
-    }
     if (--s_decoCount == 0) {
         s_cachedShadow.reset();
     }

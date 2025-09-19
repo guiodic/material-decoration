@@ -143,8 +143,6 @@ private:
     xcb_atom_t m_moveResizeAtom = 0;
 #endif
 
-    static int s_refs;
-
     friend class AppMenuButtonGroup;
     friend class Button;
     friend class AppIconButton;
