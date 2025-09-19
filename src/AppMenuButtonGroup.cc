@@ -759,6 +759,21 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
                 }
                 return false;
             }
+            
+            // On Key_Right at the end of the line, send the event to m_searchMenu,
+            // so we can navigate to the next visible menu button 
+            // (it is the first one because we are always at the end).
+            if (keyEvent->key() == Qt::Key_Right) {
+                if (keyEvent->modifiers() == Qt::NoModifier  
+                    && m_searchLineEdit->cursorPosition() == m_searchLineEdit->text().length()) 
+                {
+                    QApplication::sendEvent(m_searchMenu, keyEvent);
+                    return true;
+                }
+                return false;
+            }
+            
+            
         }
         return false;
     }
