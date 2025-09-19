@@ -98,6 +98,8 @@ public slots:
     void onMenuAboutToHide();
 
 private slots:
+    void onHitLeft();
+    void onHitRight();
     void onHasApplicationMenuChanged(bool hasMenu);
     void onApplicationMenuChanged();
     void performDebouncedMenuUpdate();

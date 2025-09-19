@@ -43,6 +43,7 @@ configure_file(BuildConfig.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/BuildConfig.h)
 
 set (decoration_SRCS
     AppMenuModel.cc
+    NavigableMenu.cc
     AppMenuButton.cc
     AppMenuButtonGroup.cc
     BoxShadowHelper.cc
