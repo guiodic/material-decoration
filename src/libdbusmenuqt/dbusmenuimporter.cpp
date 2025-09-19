@@ -452,7 +452,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     }
 
     menu->setUpdatesEnabled(true);
-    qCDebug(category) << "Menu updated";
+    qCDebug(category) << "[DBUSMENUIMPORTER] Emitting menuUpdated(" << menu << ")";
     Q_EMIT menuUpdated(menu);
 }
 

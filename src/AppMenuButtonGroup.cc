@@ -426,7 +426,6 @@ void AppMenuButtonGroup::updateAppMenuModel()
         QMenu *menu = m_appMenuModel->menu();
         if (!menu) {
             resetButtons();
-            emit menuUpdated();
             return;
         }
 
@@ -931,6 +930,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
     repositionSearchMenu();
     m_searchMenu->setUpdatesEnabled(true);
+    qCDebug(category) << "[AppMenuButtonGroup] filterMenu(" << text << ") ended";
 }
 
 void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
