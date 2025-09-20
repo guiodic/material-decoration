@@ -46,19 +46,20 @@ void NavigableMenu::keyPressEvent(QKeyEvent *event)
         const Qt::Key leftKey = isRtl ? Qt::Key_Right : Qt::Key_Left;
         const Qt::Key rightKey = isRtl ? Qt::Key_Left : Qt::Key_Right;
 
-        if (event->key() == leftKey) {
+        const bool isLeft = (event->key() == leftKey);
+        const bool isRight = (event->key() == rightKey);
+
+        if (isLeft || isRight) {
             // Do not navigate away if a submenu is open
             if (activeAction() && activeAction()->menu() && activeAction()->menu()->isVisible()) {
                 return;
             }
-            emit hitLeft();
-            event->accept();
-        } else if (event->key() == rightKey) {
-            // Do not navigate away if a submenu is open
-            if (activeAction() && activeAction()->menu() && activeAction()->menu()->isVisible()) {
-                return;
+
+            if (isLeft) {
+                emit hitLeft();
+            } else {
+                emit hitRight();
             }
-            emit hitRight();
             event->accept();
         }
     }

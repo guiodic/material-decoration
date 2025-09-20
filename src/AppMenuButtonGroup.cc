@@ -750,30 +750,20 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         if (event->type() == QEvent::KeyPress) {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
 
-            // On Key_Left at the beginning of the line, send the event to m_searchMenu,
-            // so we can navigate to the previous visible menu button.
-            if (keyEvent->key() == Qt::Key_Left) {
-                if (keyEvent->modifiers() == Qt::NoModifier && m_searchLineEdit->cursorPosition() == 0) {
+            // Forward Left/Right key events to m_searchMenu when at the line boundaries
+            if ((keyEvent->key() == Qt::Key_Left || keyEvent->key() == Qt::Key_Right) &&
+                keyEvent->modifiers() == Qt::NoModifier)
+            {
+                bool atBoundary = (keyEvent->key() == Qt::Key_Left && m_searchLineEdit->cursorPosition() == 0)
+                || (keyEvent->key() == Qt::Key_Right && m_searchLineEdit->cursorPosition() == m_searchLineEdit->text().length());
+                
+                if (atBoundary) {
                     QApplication::sendEvent(m_searchMenu, keyEvent);
                     return true;
                 }
                 return false;
             }
-            
-            // On Key_Right at the end of the line, send the event to m_searchMenu,
-            // so we can navigate to the next visible menu button 
-            // (it is the first one because we are always at the end).
-            if (keyEvent->key() == Qt::Key_Right) {
-                if (keyEvent->modifiers() == Qt::NoModifier  
-                    && m_searchLineEdit->cursorPosition() == m_searchLineEdit->text().length()) 
-                {
-                    QApplication::sendEvent(m_searchMenu, keyEvent);
-                    return true;
-                }
-                return false;
-            }
-            
-            
+        
         }
         return false;
     }
