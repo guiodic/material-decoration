@@ -723,11 +723,6 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
 {
     // The button is checked in popupMenu, but we need to check it here
     // for the case where the menu is not yet loaded.
-    KDecoration3::DecorationButton *button = buttons().value(buttonIndex);
-    if (!button) {
-        return;
-    }
-
     if (buttonIndex == m_searchIndex) {
         handleSearchTrigger();
     } else if (buttonIndex == m_overflowIndex) {
@@ -825,6 +820,7 @@ void AppMenuButtonGroup::onMenuAboutToHide()
         m_searchLineEdit->clear();
         m_searchUiVisible = false;
         m_lastResults.clear();
+        m_lastSearchQuery.clear();
     }
 
     if (0 <= m_currentIndex && m_currentIndex < buttons().length()) {
@@ -943,7 +939,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
     repositionSearchMenu();
     m_searchMenu->setUpdatesEnabled(true);
-    qCDebug(category) << "[AppMenuButtonGroup] filterMenu(" << text << ") ended";
+    qCDebug(Material::category) << "[AppMenuButtonGroup] filterMenu(" << text << ") ended";
 }
 
 void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
