@@ -1,0 +1,15 @@
+{
+    "KPlugin": {
+        "Description": "Configuration module for the Material Decoration",
+        "Id": "org.kde.kdecoration.material.kcm",
+        "Name": "Material Decoration",
+        "Icon": "preferences-desktop-theme",
+        "Library": "materialdecoration_kcm"
+    },
+    "X-KDE-ParentApp": "systemsettings",
+    "X-KDE-ParentComponents": [
+        "kcm_kwin_decorations"
+    ],
+    "X-KDE-Keywords": "decoration,material,theme,window",
+    "X-KDE-System-Settings-Parent-Category": "appearance"
+}
