@@ -21,6 +21,7 @@ K_PLUGIN_CLASS_WITH_JSON(MaterialDecorationKCM, "materialdecoration_kcm.json")
 MaterialDecorationKCM::MaterialDecorationKCM(QObject *parent, const KPluginMetaData &data)
     : KCModule(qobject_cast<QWidget*>(parent), data)
 {
+    m_settings = new Material::InternalSettings();
     m_ui = new Ui::Config();
     m_ui->setupUi(widget());
 
@@ -51,6 +52,7 @@ MaterialDecorationKCM::MaterialDecorationKCM(QObject *parent, const KPluginMetaD
 
 MaterialDecorationKCM::~MaterialDecorationKCM()
 {
+    delete m_settings;
     delete m_ui;
 }
 
@@ -74,62 +76,59 @@ void MaterialDecorationKCM::setupConnections()
 
 void MaterialDecorationKCM::load()
 {
-    KCModule::load();
-    Material::InternalSettings settings;
-    m_ui->kcfg_TitleAlignment->setCurrentIndex(settings.titleAlignment());
-    m_ui->kcfg_ButtonSize->setCurrentIndex(settings.buttonSize());
-    m_ui->kcfg_ActiveOpacity->setValue(qRound(settings.activeOpacity() * 100));
-    m_ui->kcfg_InactiveOpacity->setValue(qRound(settings.inactiveOpacity() * 100));
-    m_ui->kcfg_MenuAlwaysShow->setChecked(settings.menuAlwaysShow());
-    m_ui->kcfg_SearchEnabled->setChecked(settings.searchEnabled());
-    m_ui->kcfg_HamburgerMenu->setChecked(settings.hamburgerMenu());
-    m_ui->kcfg_ShowDisabledActions->setChecked(settings.showDisabledActions());
-    m_ui->kcfg_MenuButtonHorzPadding->setValue(settings.menuButtonHorzPadding());
-    m_ui->kcfg_ShadowSize->setCurrentIndex(settings.shadowSize());
-    m_ui->kcfg_ShadowColor->setColor(settings.shadowColor());
-    m_ui->kcfg_ShadowStrength->setValue(settings.shadowStrength());
-    m_ui->kcfg_AnimationsEnabled->setChecked(settings.animationsEnabled());
-    m_ui->kcfg_AnimationsDuration->setValue(settings.animationsDuration());
+    m_ui->kcfg_TitleAlignment->setCurrentIndex(m_settings->titleAlignment());
+    m_ui->kcfg_ButtonSize->setCurrentIndex(m_settings->buttonSize());
+    m_ui->kcfg_ActiveOpacity->setValue(qRound(m_settings->activeOpacity() * 100));
+    m_ui->kcfg_InactiveOpacity->setValue(qRound(m_settings->inactiveOpacity() * 100));
+    m_ui->kcfg_MenuAlwaysShow->setChecked(m_settings->menuAlwaysShow());
+    m_ui->kcfg_SearchEnabled->setChecked(m_settings->searchEnabled());
+    m_ui->kcfg_HamburgerMenu->setChecked(m_settings->hamburgerMenu());
+    m_ui->kcfg_ShowDisabledActions->setChecked(m_settings->showDisabledActions());
+    m_ui->kcfg_MenuButtonHorzPadding->setValue(m_settings->menuButtonHorzPadding());
+    m_ui->kcfg_ShadowSize->setCurrentIndex(m_settings->shadowSize());
+    m_ui->kcfg_ShadowColor->setColor(m_settings->shadowColor());
+    m_ui->kcfg_ShadowStrength->setValue(m_settings->shadowStrength());
+    m_ui->kcfg_AnimationsEnabled->setChecked(m_settings->animationsEnabled());
+    m_ui->kcfg_AnimationsDuration->setValue(m_settings->animationsDuration());
 }
 
 void MaterialDecorationKCM::save()
 {
-    KCModule::save();
-    Material::InternalSettings settings;
-    settings.setTitleAlignment(m_ui->kcfg_TitleAlignment->currentIndex());
-    settings.setButtonSize(m_ui->kcfg_ButtonSize->currentIndex());
-    settings.setActiveOpacity(static_cast<double>(m_ui->kcfg_ActiveOpacity->value()) / 100.0);
-    settings.setInactiveOpacity(static_cast<double>(m_ui->kcfg_InactiveOpacity->value()) / 100.0);
-    settings.setMenuAlwaysShow(m_ui->kcfg_MenuAlwaysShow->isChecked());
-    settings.setSearchEnabled(m_ui->kcfg_SearchEnabled->isChecked());
-    settings.setHamburgerMenu(m_ui->kcfg_HamburgerMenu->isChecked());
-    settings.setShowDisabledActions(m_ui->kcfg_ShowDisabledActions->isChecked());
-    settings.setMenuButtonHorzPadding(m_ui->kcfg_MenuButtonHorzPadding->value());
-    settings.setShadowSize(m_ui->kcfg_ShadowSize->currentIndex());
-    settings.setShadowColor(m_ui->kcfg_ShadowColor->color());
-    settings.setShadowStrength(m_ui->kcfg_ShadowStrength->value());
-    settings.setAnimationsEnabled(m_ui->kcfg_AnimationsEnabled->isChecked());
-    settings.setAnimationsDuration(m_ui->kcfg_AnimationsDuration->value());
+    m_settings->setTitleAlignment(m_ui->kcfg_TitleAlignment->currentIndex());
+    m_settings->setButtonSize(m_ui->kcfg_ButtonSize->currentIndex());
+    m_settings->setActiveOpacity(static_cast<double>(m_ui->kcfg_ActiveOpacity->value()) / 100.0);
+    m_settings->setInactiveOpacity(static_cast<double>(m_ui->kcfg_InactiveOpacity->value()) / 100.0);
+    m_settings->setMenuAlwaysShow(m_ui->kcfg_MenuAlwaysShow->isChecked());
+    m_settings->setSearchEnabled(m_ui->kcfg_SearchEnabled->isChecked());
+    m_settings->setHamburgerMenu(m_ui->kcfg_HamburgerMenu->isChecked());
+    m_settings->setShowDisabledActions(m_ui->kcfg_ShowDisabledActions->isChecked());
+    m_settings->setMenuButtonHorzPadding(m_ui->kcfg_MenuButtonHorzPadding->value());
+    m_settings->setShadowSize(m_ui->kcfg_ShadowSize->currentIndex());
+    m_settings->setShadowColor(m_ui->kcfg_ShadowColor->color());
+    m_settings->setShadowStrength(m_ui->kcfg_ShadowStrength->value());
+    m_settings->setAnimationsEnabled(m_ui->kcfg_AnimationsEnabled->isChecked());
+    m_settings->setAnimationsDuration(m_ui->kcfg_AnimationsDuration->value());
+
+    m_settings->save();
 }
 
 void MaterialDecorationKCM::defaults()
 {
-    KCModule::defaults();
-    Material::InternalSettings s;
-    m_ui->kcfg_TitleAlignment->setCurrentIndex(s.titleAlignment());
-    m_ui->kcfg_ButtonSize->setCurrentIndex(s.buttonSize());
-    m_ui->kcfg_ActiveOpacity->setValue(qRound(s.activeOpacity() * 100));
-    m_ui->kcfg_InactiveOpacity->setValue(qRound(s.inactiveOpacity() * 100));
-    m_ui->kcfg_MenuAlwaysShow->setChecked(s.menuAlwaysShow());
-    m_ui->kcfg_SearchEnabled->setChecked(s.searchEnabled());
-    m_ui->kcfg_HamburgerMenu->setChecked(s.hamburgerMenu());
-    m_ui->kcfg_ShowDisabledActions->setChecked(s.showDisabledActions());
-    m_ui->kcfg_MenuButtonHorzPadding->setValue(s.menuButtonHorzPadding());
-    m_ui->kcfg_ShadowSize->setCurrentIndex(s.shadowSize());
-    m_ui->kcfg_ShadowColor->setColor(s.shadowColor());
-    m_ui->kcfg_ShadowStrength->setValue(s.shadowStrength());
-    m_ui->kcfg_AnimationsEnabled->setChecked(s.animationsEnabled());
-    m_ui->kcfg_AnimationsDuration->setValue(s.animationsDuration());
+    m_settings->setDefaults();
+    m_ui->kcfg_TitleAlignment->setCurrentIndex(m_settings->titleAlignment());
+    m_ui->kcfg_ButtonSize->setCurrentIndex(m_settings->buttonSize());
+    m_ui->kcfg_ActiveOpacity->setValue(qRound(m_settings->activeOpacity() * 100));
+    m_ui->kcfg_InactiveOpacity->setValue(qRound(m_settings->inactiveOpacity() * 100));
+    m_ui->kcfg_MenuAlwaysShow->setChecked(m_settings->menuAlwaysShow());
+    m_ui->kcfg_SearchEnabled->setChecked(m_settings->searchEnabled());
+    m_ui->kcfg_HamburgerMenu->setChecked(m_settings->hamburgerMenu());
+    m_ui->kcfg_ShowDisabledActions->setChecked(m_settings->showDisabledActions());
+    m_ui->kcfg_MenuButtonHorzPadding->setValue(m_settings->menuButtonHorzPadding());
+    m_ui->kcfg_ShadowSize->setCurrentIndex(m_settings->shadowSize());
+    m_ui->kcfg_ShadowColor->setColor(m_settings->shadowColor());
+    m_ui->kcfg_ShadowStrength->setValue(m_settings->shadowStrength());
+    m_ui->kcfg_AnimationsEnabled->setChecked(m_settings->animationsEnabled());
+    m_ui->kcfg_AnimationsDuration->setValue(m_settings->animationsDuration());
     markAsChanged();
 }
 

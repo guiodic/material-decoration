@@ -6,6 +6,7 @@
         "Icon": "preferences-desktop-theme",
         "Library": "materialdecoration_kcm"
     },
+    "X-KDE-KCM-ConfigFile": "kdecoration_materialrc",
     "X-KDE-ParentApp": "systemsettings",
     "X-KDE-ParentComponents": [
         "kcm_kwin_decorations"

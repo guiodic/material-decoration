@@ -12,6 +12,11 @@ namespace Ui
 class Config;
 }
 
+namespace Material
+{
+class InternalSettings;
+}
+
 class MaterialDecorationKCM : public KCModule
 {
     Q_OBJECT
@@ -28,6 +33,7 @@ private Q_SLOTS:
 
 private:
     Ui::Config *m_ui = nullptr;
+    Material::InternalSettings *m_settings = nullptr;
 
     void setupConnections();
 };
