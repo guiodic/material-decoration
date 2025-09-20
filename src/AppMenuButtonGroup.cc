@@ -939,7 +939,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
     repositionSearchMenu();
     m_searchMenu->setUpdatesEnabled(true);
-    qCDebug(Material::category) << "[AppMenuButtonGroup] filterMenu(" << text << ") ended";
+    qCDebug(category) << "[AppMenuButtonGroup] filterMenu(" << text << ") ended";
 }
 
 void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
