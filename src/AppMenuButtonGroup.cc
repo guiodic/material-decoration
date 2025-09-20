@@ -24,6 +24,7 @@
 #include "BuildConfig.h"
 #include "AppMenuModel.h"
 #include "Decoration.h"
+#include "NavigableMenu.h"
 #include "TextButton.h"
 #include "MenuOverflowButton.h"
 #include "SearchButton.h"
@@ -143,7 +144,7 @@ AppMenuButtonGroup::~AppMenuButtonGroup()
 
 void AppMenuButtonGroup::setupSearchMenu()
 {
-    m_searchMenu = new QMenu(nullptr);
+    m_searchMenu = new NavigableMenu(nullptr);
     m_searchLineEdit = new QLineEdit(m_searchMenu);
     m_searchLineEdit->setMinimumWidth(200);
 
@@ -595,6 +596,10 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
     m_currentMenu = menu;
 
     // 2. Calculate position and show the new menu. This must happen before hiding the old one to prevent flicker.
+    if (auto navMenu = qobject_cast<NavigableMenu *>(menu)) {
+        connect(navMenu, &NavigableMenu::hitLeft, this, &AppMenuButtonGroup::onHitLeft, Qt::UniqueConnection);
+        connect(navMenu, &NavigableMenu::hitRight, this, &AppMenuButtonGroup::onHitRight, Qt::UniqueConnection);
+    }
     menu->installEventFilter(this);
     if (KWindowSystem::isPlatformWayland()) {
         KDecoration3::Positioner positioner;
@@ -619,6 +624,10 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
 
     // 4. Clean up the old menu and button state.
     if (oldMenu && oldMenu != menu) {
+        if (auto oldNavMenu = qobject_cast<NavigableMenu *>(oldMenu)) {
+            disconnect(oldNavMenu, &NavigableMenu::hitLeft, this, &AppMenuButtonGroup::onHitLeft);
+            disconnect(oldNavMenu, &NavigableMenu::hitRight, this, &AppMenuButtonGroup::onHitRight);
+        }
         disconnect(oldMenu, &QMenu::aboutToHide, this, &AppMenuButtonGroup::onMenuAboutToHide);
         if (m_searchMenu && oldMenu == m_searchMenu) {
             m_searchUiVisible = false;
@@ -741,15 +750,20 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         if (event->type() == QEvent::KeyPress) {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
 
-            // On Key_Left at the beginning of the line, send the event to m_searchMenu,
-            // so we can navigate to the previous visible menu button.
-            if (keyEvent->key() == Qt::Key_Left) {
-                if (m_searchLineEdit->cursorPosition() == 0) {
+            // Forward Left/Right key events to m_searchMenu when at the line boundaries
+            if ((keyEvent->key() == Qt::Key_Left || keyEvent->key() == Qt::Key_Right) &&
+                keyEvent->modifiers() == Qt::NoModifier)
+            {
+                bool atBoundary = (keyEvent->key() == Qt::Key_Left && m_searchLineEdit->cursorPosition() == 0)
+                || (keyEvent->key() == Qt::Key_Right && m_searchLineEdit->cursorPosition() == m_searchLineEdit->text().length());
+                
+                if (atBoundary) {
                     QApplication::sendEvent(m_searchMenu, keyEvent);
                     return true;
                 }
                 return false;
             }
+        
         }
         return false;
     }
@@ -760,25 +774,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
         return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
     }
 
-
-    if (event->type() == QEvent::KeyPress) {
-        auto *e = static_cast<QKeyEvent *>(event);
-
-        // TODO right to left languages
-        if (e->key() == Qt::Key_Left) {
-            int desiredIndex = findNextVisibleButtonIndex(m_currentIndex, false);
-            trigger(desiredIndex);
-            return true;
-        } else if (e->key() == Qt::Key_Right) {
-            if (menu->activeAction() && menu->activeAction()->menu()) {
-                return false;
-            }
-
-            int desiredIndex = findNextVisibleButtonIndex(m_currentIndex, true);
-            trigger(desiredIndex);
-            return true;
-        }
-    } else if (event->type() == QEvent::MouseMove) {
+    if (event->type() == QEvent::MouseMove) {
         if (KWindowSystem::isPlatformX11()) {
             auto *e = static_cast<QMouseEvent *>(event);
             auto *deco = const_cast<Decoration*>(qobject_cast<const Decoration *>(decoration()));
@@ -820,10 +816,16 @@ void AppMenuButtonGroup::updateShowing()
 
 void AppMenuButtonGroup::onMenuAboutToHide()
 {
+    if (auto navMenu = qobject_cast<NavigableMenu *>(sender())) {
+        disconnect(navMenu, &NavigableMenu::hitLeft, this, &AppMenuButtonGroup::onHitLeft);
+        disconnect(navMenu, &NavigableMenu::hitRight, this, &AppMenuButtonGroup::onHitRight);
+    }
+
     if (m_searchLineEdit) {
         m_searchLineEdit->clear();
         m_searchUiVisible = false;
         m_lastResults.clear();
+        m_lastSearchQuery.clear();
     }
 
     if (0 <= m_currentIndex && m_currentIndex < buttons().length()) {
@@ -832,6 +834,18 @@ void AppMenuButtonGroup::onMenuAboutToHide()
     setCurrentIndex(-1);
     m_currentMenu = nullptr;
     m_hoveredButton = nullptr;
+}
+
+void AppMenuButtonGroup::onHitLeft()
+{
+    int desiredIndex = findNextVisibleButtonIndex(m_currentIndex, false);
+    trigger(desiredIndex);
+}
+
+void AppMenuButtonGroup::onHitRight()
+{
+    int desiredIndex = findNextVisibleButtonIndex(m_currentIndex, true);
+    trigger(desiredIndex);
 }
 
 void AppMenuButtonGroup::onShowingChanged(bool showing)

@@ -31,7 +31,7 @@ class AppMenuButton : public Button
 
 public:
     AppMenuButton(Decoration *decoration, const int buttonIndex, QObject *parent = nullptr);
-    ~AppMenuButton() override;
+    ~AppMenuButton() override = default;
 
     Q_PROPERTY(int buttonIndex READ buttonIndex NOTIFY buttonIndexChanged)
 

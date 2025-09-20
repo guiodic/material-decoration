@@ -29,6 +29,7 @@
 #include "AppMenuModel.h"
 #include "Material.h"
 #include "BuildConfig.h"
+#include "NavigableMenu.h"
 
 // Qt
 #include <QAction>
@@ -61,6 +62,9 @@ protected:
         return QIcon::fromTheme(name);
     }
 
+    QMenu *createMenu(QWidget *parent) override {
+        return new NavigableMenu(parent);
+    }
 };
 
 AppMenuModel::AppMenuModel(QObject *parent)
