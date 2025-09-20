@@ -1,3 +1,5 @@
+include(KDEInstallDirs)
+
 find_package(Qt${QT_MAJOR_VERSION} REQUIRED COMPONENTS
     Core
     Gui
@@ -44,6 +46,6 @@ target_include_directories(materialdecoration_kcm
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-install(TARGETS materialdecoration_kcm DESTINATION ${KDE_INSTALL_PLUGINDIR}/kcms/)
-install(FILES materialdecoration-kcm.json DESTINATION ${KDE_INSTALL_METAINFODIR})
-install(FILES materialdecoration_kcm.desktop DESTINATION ${KDE_INSTALL_APPDIR})
+install(TARGETS materialdecoration_kcm DESTINATION ${KDE_INSTALL_PLUGINDIR}/org.kde.kdecoration3.kcm/)
+install(FILES materialdecoration_kcm.json DESTINATION ${KDE_INSTALL_METAINFODIR})
+kcmutils_generate_desktop_file(materialdecoration_kcm)

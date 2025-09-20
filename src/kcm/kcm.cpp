@@ -16,7 +16,7 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
-K_PLUGIN_CLASS_WITH_JSON(MaterialDecorationKCM, "materialdecoration-kcm.json")
+K_PLUGIN_CLASS_WITH_JSON(MaterialDecorationKCM, "materialdecoration_kcm.json")
 
 MaterialDecorationKCM::MaterialDecorationKCM(QObject *parent, const KPluginMetaData &data)
     : KCModule(qobject_cast<QWidget*>(parent), data)
