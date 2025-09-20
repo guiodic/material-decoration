@@ -33,8 +33,6 @@ NavigableMenu::NavigableMenu(QWidget *parent)
 {
 }
 
-NavigableMenu::~NavigableMenu() = default;
-
 void NavigableMenu::keyPressEvent(QKeyEvent *event)
 {
     // First, let the base class handle standard key presses (like up, down, enter).
@@ -49,7 +47,7 @@ void NavigableMenu::keyPressEvent(QKeyEvent *event)
         const bool isLeft = (event->key() == leftKey);
         const bool isRight = (event->key() == rightKey);
 
-        if (isLeft || isRight) {
+        if ((isLeft || isRight) && event->modifiers() == Qt::NoModifier) {
             // Do not navigate away if a submenu is open
             if (activeAction() && activeAction()->menu() && activeAction()->menu()->isVisible()) {
                 return;

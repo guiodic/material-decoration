@@ -723,6 +723,11 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
 {
     // The button is checked in popupMenu, but we need to check it here
     // for the case where the menu is not yet loaded.
+    KDecoration3::DecorationButton *button = buttons().value(buttonIndex);
+    if (!button) {
+        return;
+    }
+
     if (buttonIndex == m_searchIndex) {
         handleSearchTrigger();
     } else if (buttonIndex == m_overflowIndex) {

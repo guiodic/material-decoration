@@ -33,7 +33,7 @@ class NavigableMenu : public QMenu
 
 public:
     explicit NavigableMenu(QWidget *parent = nullptr);
-    ~NavigableMenu() override;
+    ~NavigableMenu() override = default;
 
 Q_SIGNALS:
     void hitLeft();
