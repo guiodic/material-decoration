@@ -89,7 +89,6 @@ public:
 
 public slots:
     void setHamburgerMenu(bool value);
-    void resetButtons();
     void onMenuReadyForSearch();
     void updateAppMenuModel();
     void updateOverflow(QRectF availableRect);
@@ -99,6 +98,7 @@ public slots:
     void onMenuAboutToHide();
 
 private slots:
+    void resetButtons();
     void onHitLeft();
     void onHitRight();
     void onHasApplicationMenuChanged(bool hasMenu);
