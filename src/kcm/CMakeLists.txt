@@ -5,6 +5,7 @@ find_package(Qt${QT_MAJOR_VERSION} REQUIRED COMPONENTS
     Gui
     Widgets
     UiTools
+    DBus
 )
 
 find_package(KF6 REQUIRED COMPONENTS
@@ -33,6 +34,7 @@ target_link_libraries(materialdecoration_kcm
         Qt::Gui
         Qt::Widgets
         Qt::UiTools
+        Qt::DBus
         KF6::ConfigCore
         KF6::ConfigGui
         KF6::ConfigWidgets

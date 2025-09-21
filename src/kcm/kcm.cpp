@@ -11,6 +11,9 @@
 #include <KSharedConfig>
 #include <kconfiggroup.h>
 
+#include <QDBusConnection>
+#include <QDBusMessage>
+
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -110,6 +113,10 @@ void MaterialDecorationKCM::save()
     m_settings->setAnimationsDuration(m_ui->kcfg_AnimationsDuration->value());
 
     m_settings->save();
+    QDBusConnection::sessionBus().call(QDBusMessage::createMethodCall(QStringLiteral("org.kde.KWin"),
+                                                                     QStringLiteral("/KWin"),
+                                                                     QStringLiteral("org.kde.KWin"),
+                                                                     QStringLiteral("reconfigure")));
 }
 
 void MaterialDecorationKCM::defaults()
