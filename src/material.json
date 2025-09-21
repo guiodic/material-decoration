@@ -10,7 +10,7 @@
     },
     "X-KDE-ConfigModule": "materialdecoration_kcm",
     "org.kde.kdecoration3": {
-        "blur": false,
+        "blur": true,
         "recommendedBorderSize": "None"
     }
 }
