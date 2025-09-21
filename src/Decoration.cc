@@ -982,7 +982,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     Q_UNUSED(repaintRegion)
 
     const auto *decoratedClient = window();
-    if (decoratedClient->hasApplicationMenu() && m_menuButtons->buttons().isEmpty()) {
+    if (decoratedClient->hasApplicationMenu() && !m_menuButtons->menuLoadedOnce()) {
         return;
     }
 

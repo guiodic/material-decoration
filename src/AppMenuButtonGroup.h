@@ -81,6 +81,7 @@ public:
     int visibleWidth() const;
 
     bool isMenuOpen() const;
+    bool menuLoadedOnce() const;
 
     KDecoration3::DecorationButton* buttonAt(int x, int y) const;
 
@@ -174,6 +175,7 @@ private:
     bool m_isMenuUpdateThrottled = false;
     bool m_pendingMenuUpdate = false;
     bool m_menuReadyForSearch = false;
+    bool m_menuLoadedOnce = false;
     QString m_lastSearchQuery;
     QList<QAction *> m_lastResults;
 

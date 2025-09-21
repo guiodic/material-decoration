@@ -348,6 +348,7 @@ void AppMenuButtonGroup::onHasApplicationMenuChanged(bool hasMenu)
         m_isMenuUpdateThrottled = false;
         m_pendingMenuUpdate = false;
         resetButtons();
+        m_menuLoadedOnce = false;
     }
 }
 
@@ -404,6 +405,7 @@ void AppMenuButtonGroup::performDebouncedMenuUpdate()
 
 void AppMenuButtonGroup::updateAppMenuModel()
 {
+    m_menuLoadedOnce = true;
     auto *deco = qobject_cast<Decoration *>(decoration());
     if (!deco) {
         return;
@@ -574,6 +576,11 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 int AppMenuButtonGroup::visibleWidth() const
 {
     return m_visibleWidth;
+}
+
+bool AppMenuButtonGroup::menuLoadedOnce() const
+{
+    return m_menuLoadedOnce;
 }
 
 void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
