@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2025 Guido Iodice <guido[dot]iodice[at]gmail[dot]com>
  * Copyright (C) 2020 Chris Holland <zrenfire@gmail.com>
  * Copyright (C) 2018 Vlad Zagorodniy <vladzzag@gmail.com>
  * Copyright (C) 2014 Hugo Pereira Da Costa <hugo.pereira@free.fr>
@@ -297,6 +298,7 @@ bool Decoration::init()
         this, &Decoration::updateBorders);
     connect(settings().get(), &KDecoration3::DecorationSettings::spacingChanged,
         this, &Decoration::updateBorders);
+    
   return true;
 }
 

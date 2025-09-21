@@ -100,7 +100,6 @@ public slots:
     void onMenuAboutToHide();
 
 private slots:
-    void resetButtons();
     void onHitLeft();
     void onHitRight();
     void onHasApplicationMenuChanged(bool hasMenu);
@@ -135,6 +134,7 @@ private:
         bool isEffectivelyEnabled;
     };
 
+    void resetButtons();
     void setupSearchMenu();
     void repositionSearchMenu();
     void searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results);
