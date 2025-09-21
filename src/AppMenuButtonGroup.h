@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2025 Guido Iodice <guido[dot]iodice[at]gmail[dot]com>
  * Copyright (C) 2020 Chris Holland <zrenfire@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -81,6 +82,7 @@ public:
     int visibleWidth() const;
 
     bool isMenuOpen() const;
+    bool menuLoadedOnce() const;
 
     KDecoration3::DecorationButton* buttonAt(int x, int y) const;
 
@@ -132,9 +134,9 @@ private:
         bool isEffectivelyEnabled;
     };
 
+    void resetButtons();
     void setupSearchMenu();
     void repositionSearchMenu();
-    void resetButtons();
     void searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results);
     ActionInfo getActionPath(QAction *action) const;
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
@@ -174,6 +176,7 @@ private:
     bool m_isMenuUpdateThrottled = false;
     bool m_pendingMenuUpdate = false;
     bool m_menuReadyForSearch = false;
+    bool m_menuLoadedOnce = false;
     QString m_lastSearchQuery;
     QList<QAction *> m_lastResults;
 

@@ -66,8 +66,10 @@ add_library (materialdecoration MODULE
 target_link_libraries (materialdecoration
     PUBLIC
         dbusmenuqt
+        materialdecoration_core
         Qt6::Core
         Qt6::Gui
+        Qt6::GuiPrivate
         # Qt${QT_VERSION_MAJOR}::X11Extras
         KF6::ConfigCore
         KF6::ConfigGui
@@ -78,23 +80,27 @@ target_link_libraries (materialdecoration
         KF6::IconThemes
         KF6::WindowSystem
         KF6::KCMUtils
-        ${X11_LIBRARIES}
-
+        ${X11_LIBRARIES}     
 #        ${Wayland_LIBRARIES}
 
     PRIVATE
         KDecoration3::KDecoration
         kwin
 )
-# The QX11Info class has been removed.
-target_link_libraries (materialdecoration
-    PUBLIC
-        Qt6::GuiPrivate
+
+# Core library with shared code (e.g., settings)
+set(core_SRCS)
+kconfig_add_kcfg_files(core_SRCS InternalSettings.kcfgc)
+add_library(materialdecoration_core STATIC ${core_SRCS})
+target_link_libraries(materialdecoration_core PUBLIC
+    KF6::ConfigCore
+    KF6::ConfigGui
+    KF6::ConfigWidgets
 )
+
 
 include(KDEInstallDirs)
 install(TARGETS materialdecoration
         DESTINATION ${KDE_INSTALL_PLUGINDIR}/org.kde.kdecoration3)
-
-#install (TARGETS materialdecoration
-#         DESTINATION ${PLUGIN_INSTALL_DIR}/org.kde.kdecoration3)
+        
+add_subdirectory(kcm)
