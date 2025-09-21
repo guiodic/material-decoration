@@ -67,6 +67,7 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_InactiveOpacity, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_MenuAlwaysShow, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, m_ui->kcfg_ShowDisabledActions, &QCheckBox::setEnabled);
     connect(m_ui->kcfg_HamburgerMenu, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_ShowDisabledActions, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_MenuButtonHorzPadding, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
@@ -85,6 +86,7 @@ void MaterialDecorationKCM::load()
     m_ui->kcfg_InactiveOpacity->setValue(qRound(m_settings->inactiveOpacity() * 100));
     m_ui->kcfg_MenuAlwaysShow->setChecked(m_settings->menuAlwaysShow());
     m_ui->kcfg_SearchEnabled->setChecked(m_settings->searchEnabled());
+    m_ui->kcfg_ShowDisabledActions->setEnabled(m_settings->searchEnabled());
     m_ui->kcfg_HamburgerMenu->setChecked(m_settings->hamburgerMenu());
     m_ui->kcfg_ShowDisabledActions->setChecked(m_settings->showDisabledActions());
     m_ui->kcfg_MenuButtonHorzPadding->setValue(m_settings->menuButtonHorzPadding());
