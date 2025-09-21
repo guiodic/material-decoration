@@ -89,6 +89,7 @@ public:
 
 public slots:
     void setHamburgerMenu(bool value);
+    void resetButtons();
     void onMenuReadyForSearch();
     void updateAppMenuModel();
     void updateOverflow(QRectF availableRect);
@@ -134,7 +135,6 @@ private:
 
     void setupSearchMenu();
     void repositionSearchMenu();
-    void resetButtons();
     void searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results);
     ActionInfo getActionPath(QAction *action) const;
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;

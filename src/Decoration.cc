@@ -300,6 +300,8 @@ void Decoration::reconfigure()
     updateTitleBar();
     m_menuButtons->setAlwaysShow(m_internalSettings->menuAlwaysShow());
     m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
+    m_menuButtons->resetButtons();
+    m_menuButtons->updateAppMenuModel();
     updateButtonsGeometry();
     updateButtonAnimation();
     updateShadow();
