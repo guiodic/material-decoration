@@ -294,6 +294,8 @@ bool Decoration::init()
 
 void Decoration::reconfigure()
 {
+    resetDragMove();
+    m_menuButtons->unPressAllButtons();
     m_internalSettings->load();
 
     updateBorders();
