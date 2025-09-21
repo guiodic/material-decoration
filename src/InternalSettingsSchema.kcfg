@@ -13,7 +13,7 @@
                 <choice name="ButtonLarge" />
                 <choice name="ButtonVeryLarge" />
             </choices>
-            <default>ButtonDefault</default>
+            <default>ButtonLarge</default>
         </entry>
 
         <!-- title alignment -->
