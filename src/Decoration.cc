@@ -149,6 +149,23 @@ inline CompositeShadowParams lookupShadowParams(int size)
 
 } // anonymous namespace
 
+void Decoration::setupMenu()
+{
+    auto repaintTitleBar = [this] {
+        update(titleBar());
+    };
+
+    m_menuButtons = new AppMenuButtonGroup(this);
+    connect(m_menuButtons, &AppMenuButtonGroup::menuUpdated,
+            this, &Decoration::updateButtonsGeometry);
+    connect(m_menuButtons, &AppMenuButtonGroup::opacityChanged,
+            this, repaintTitleBar);
+    connect(m_menuButtons, &AppMenuButtonGroup::alwaysShowChanged,
+            this, repaintTitleBar);
+    m_menuButtons->updateAppMenuModel();
+    m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
+}
+
 static int s_decoCount = 0;
 static int s_shadowSizePreset = InternalSettings::ShadowVeryLarge;
 static int s_shadowStrength = 255;
@@ -230,16 +247,7 @@ bool Decoration::init()
         this,
         &Button::create);
 
-    m_menuButtons = new AppMenuButtonGroup(this);
-    connect(m_menuButtons, &AppMenuButtonGroup::menuUpdated,
-            this, &Decoration::updateButtonsGeometry);
-    connect(m_menuButtons, &AppMenuButtonGroup::opacityChanged,
-            this, repaintTitleBar);
-    connect(m_menuButtons, &AppMenuButtonGroup::alwaysShowChanged,
-            this, repaintTitleBar);
-    m_menuButtons->updateAppMenuModel();
-    m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
-
+    setupMenu();
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged,
             this, &Decoration::updateTitleBar);
@@ -295,15 +303,14 @@ bool Decoration::init()
 void Decoration::reconfigure()
 {
     resetDragMove();
-    m_menuButtons->unPressAllButtons();
     m_internalSettings->load();
 
     updateBorders();
     updateTitleBar();
-    m_menuButtons->setAlwaysShow(m_internalSettings->menuAlwaysShow());
-    m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
-    m_menuButtons->resetButtons();
-    m_menuButtons->updateAppMenuModel();
+
+    delete m_menuButtons;
+    setupMenu();
+
     updateButtonsGeometry();
     updateButtonAnimation();
     updateShadow();
