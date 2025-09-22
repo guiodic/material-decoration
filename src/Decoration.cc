@@ -405,21 +405,8 @@ void Decoration::updateBlur()
         radius = 0;
     }
 
-    QPainterPath path;
-    QRectF rect = this->rect();
-
-    if (radius > 0) {
-        path.moveTo(rect.bottomLeft());
-        path.lineTo(rect.topLeft() + QPointF(0, radius));
-        path.arcTo(QRectF(rect.topLeft(), QSizeF(radius*2, radius*2)), 180, -90);
-        path.lineTo(rect.topRight() - QPointF(radius, 0));
-        path.arcTo(QRectF(rect.topRight() - QPointF(radius*2, 0), QSizeF(radius*2, radius*2)), 90, -90);
-        path.lineTo(rect.bottomRight());
-        path.closeSubpath();
-        setBlurRegion(QRegion(path.toFillPolygon().toPolygon()));
-    } else {
-        setBlurRegion(QRegion(rect.toRect()));
-    }
+    const QPainterPath path = getRoundedPath(rect(), radius);
+    setBlurRegion(QRegion(path.toFillPolygon().toPolygon()));
 }
 
 void Decoration::updateBorders()
@@ -670,19 +657,7 @@ void Decoration::updateShadow()
         radius = 0;
     }
 
-    if (radius > 0) {
-        QPainterPath path;
-        path.moveTo(innerRect.bottomLeft());
-        path.lineTo(innerRect.topLeft() + QPointF(0, radius));
-        path.arcTo(QRectF(innerRect.topLeft(), QSizeF(radius*2, radius*2)), 180, -90);
-        path.lineTo(innerRect.topRight() - QPointF(radius, 0));
-        path.arcTo(QRectF(innerRect.topRight() - QPointF(radius*2, 0), QSizeF(radius*2, radius*2)), 90, -90);
-        path.lineTo(innerRect.bottomRight());
-        path.closeSubpath();
-        painter.drawPath(path);
-    } else {
-        painter.drawRect(innerRect);
-    }
+    painter.drawPath(getRoundedPath(innerRect, radius));
 
     painter.end();
 
@@ -999,6 +974,24 @@ qreal Decoration::cornerRadius() const
     return m_cornerRadius;
 }
 
+QPainterPath Decoration::getRoundedPath(const QRectF &rect, qreal radius) const
+{
+    QPainterPath path;
+    if (radius > 0) {
+        path.moveTo(rect.bottomLeft());
+        path.lineTo(rect.topLeft() + QPointF(0, radius));
+        path.arcTo(QRectF(rect.topLeft(), QSizeF(radius*2, radius*2)), 180, -90);
+        path.lineTo(rect.topRight() - QPointF(radius, 0));
+        path.arcTo(QRectF(rect.topRight() - QPointF(radius*2, 0), QSizeF(radius*2, radius*2)), 90, -90);
+        path.lineTo(rect.bottomRight());
+        path.closeSubpath();
+    } else {
+        path.addRect(rect);
+    }
+    return path;
+}
+
+
 void Decoration::paintWithRoundedCorners(QPainter *painter, const QRectF &rect, const QColor &color, qreal radius) const
 {
     painter->save();
@@ -1010,19 +1003,7 @@ void Decoration::paintWithRoundedCorners(QPainter *painter, const QRectF &rect, 
         radius = 0;
     }
 
-    if (radius > 0) {
-        QPainterPath path;
-        path.moveTo(rect.bottomLeft());
-        path.lineTo(rect.topLeft() + QPointF(0, radius));
-        path.arcTo(QRectF(rect.topLeft(), QSizeF(radius*2, radius*2)), 180, -90);
-        path.lineTo(rect.topRight() - QPointF(radius, 0));
-        path.arcTo(QRectF(rect.topRight() - QPointF(radius*2, 0), QSizeF(radius*2, radius*2)), 90, -90);
-        path.lineTo(rect.bottomRight());
-        path.closeSubpath();
-        painter->drawPath(path);
-    } else {
-        painter->drawRect(rect);
-    }
+    painter->drawPath(getRoundedPath(rect, radius));
 
     painter->restore();
 }
@@ -1201,20 +1182,8 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
         radius = 0;
     }
 
-    if (radius > 0) {
-        QPainterPath path;
-        QRectF rect = this->rect().adjusted(0, 0, -1, -1);
-        path.moveTo(rect.bottomLeft());
-        path.lineTo(rect.topLeft() + QPointF(0, radius));
-        path.arcTo(QRectF(rect.topLeft(), QSizeF(radius*2, radius*2)), 180, -90);
-        path.lineTo(rect.topRight() - QPointF(radius, 0));
-        path.arcTo(QRectF(rect.topRight() - QPointF(radius*2, 0), QSizeF(radius*2, radius*2)), 90, -90);
-        path.lineTo(rect.bottomRight());
-        path.lineTo(rect.bottomLeft());
-        painter->drawPath(path);
-    } else {
-        painter->drawRect( rect().adjusted( 0, 0, -1, -1 ) );
-    }
+    QRectF rect = this->rect().adjusted(0, 0, -1, -1);
+    painter->drawPath(getRoundedPath(rect, radius));
 
     painter->restore();
 }

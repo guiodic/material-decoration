@@ -51,6 +51,37 @@
 namespace Material
 {
 
+namespace {
+QPainterPath getButtonPath(bool isLeftmost, bool isRightmost, bool windowIsMaximized, const QRectF &rect, qreal radius) {
+    QPainterPath path;
+
+    if (radius > 0 && !windowIsMaximized) {
+        if (isLeftmost) {
+            path.moveTo(rect.bottomRight());
+            path.lineTo(rect.bottomLeft());
+            path.lineTo(rect.topLeft() + QPointF(0, radius));
+            path.arcTo(QRectF(rect.topLeft(), QSizeF(radius*2, radius*2)), 180, -90);
+            path.lineTo(rect.topRight());
+            path.lineTo(rect.bottomRight());
+            path.closeSubpath();
+            return path;
+        } else if (isRightmost) {
+            path.moveTo(rect.bottomLeft());
+            path.lineTo(rect.topLeft());
+            path.lineTo(rect.topRight() - QPointF(radius, 0));
+            path.arcTo(QRectF(rect.topRight() - QPointF(radius*2, 0), QSizeF(radius*2, radius*2)), 90, -90);
+            path.lineTo(rect.bottomRight());
+            path.lineTo(rect.bottomLeft());
+            path.closeSubpath();
+            return path;
+        }
+    }
+    
+    path.addRect(rect);
+    return path;
+}
+} // end anonymous namespace
+
 Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, QObject *parent)
     : DecorationButton(type, decoration, parent)
     , m_animationEnabled(true)
@@ -218,43 +249,17 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     // Background.
     painter->setPen(Qt::NoPen);
     painter->setBrush(backgroundColor());
-    if (isHovered() || isPressed()) {
-        painter->setRenderHint(QPainter::Antialiasing, true);
-        const auto *deco = qobject_cast<Decoration *>(decoration());
-        if (deco) {
-            qreal radius = deco->cornerRadius();
-            if (radius > 0) {
-                QPainterPath path;
-                if (m_isLeftmost && !windowIsMaximized()) {
-                    path.moveTo(buttonRect.bottomRight());
-                    path.lineTo(buttonRect.bottomLeft());
-                    path.lineTo(buttonRect.topLeft() + QPointF(0, radius));
-                    path.arcTo(QRectF(buttonRect.topLeft(), QSizeF(radius*2, radius*2)), 180, -90);
-                    path.lineTo(buttonRect.topRight());
-                    path.lineTo(buttonRect.bottomRight());
-                    path.closeSubpath();
-                } else if (m_isRightmost && !windowIsMaximized()) {
-                    path.moveTo(buttonRect.bottomLeft());
-                    path.lineTo(buttonRect.topLeft());
-                    path.lineTo(buttonRect.topRight() - QPointF(radius, 0));
-                    path.arcTo(QRectF(buttonRect.topRight() - QPointF(radius*2, 0), QSizeF(radius*2, radius*2)), 90, -90);
-                    path.lineTo(buttonRect.bottomRight());
-                    path.lineTo(buttonRect.bottomLeft());
-                    path.closeSubpath();
-                } else {
-                    path.addRect(buttonRect);
-                }
-                painter->drawPath(path);
-            } else {
-                painter->setRenderHint(QPainter::Antialiasing, false);
-                painter->drawRect(buttonRect);
-            }
-        } else {
-            painter->setRenderHint(QPainter::Antialiasing, false);
-            painter->drawRect(buttonRect);
-        }
+
+    const auto *deco = qobject_cast<Decoration *>(decoration());
+    bool do_round = deco && (isHovered() || isPressed()) && deco->cornerRadius() > 0;
+
+    painter->setRenderHint(QPainter::Antialiasing, do_round);
+
+    if (do_round) {
+        qreal radius = deco->cornerRadius();
+        QPainterPath path = getButtonPath(m_isLeftmost, m_isRightmost, windowIsMaximized(), buttonRect, radius);
+        painter->drawPath(path);
     } else {
-        painter->setRenderHint(QPainter::Antialiasing, false);
         painter->drawRect(buttonRect);
     }
     

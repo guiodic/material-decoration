@@ -132,6 +132,7 @@ private:
     void paintButtons(QPainter *painter, const QRectF &repaintRegion) const;
     void paintOutline(QPainter *painter, const QRectF &repaintRegion) const;
     void paintWithRoundedCorners(QPainter *painter, const QRectF &rect, const QColor &color, qreal radius) const;
+    QPainterPath getRoundedPath(const QRectF &rect, qreal radius) const;
 
     qreal cornerRadius() const;
 
