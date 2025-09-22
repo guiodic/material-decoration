@@ -263,7 +263,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         painter->drawRect(buttonRect);
     }
     
-    painter->setRenderHint(QPainter::Antialiasing, false);
+    //painter->setRenderHint(QPainter::Antialiasing, false);
     
     // Foreground.
     setPenWidth(painter, gridUnit, 1);

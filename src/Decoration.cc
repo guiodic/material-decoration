@@ -186,6 +186,10 @@ Decoration::~Decoration()
 {
     if (--s_decoCount == 0) {
         s_cachedShadow.reset();
+        s_shadowSizePreset = -1;
+        s_shadowStrength = -1;
+        s_shadowColor = QColor();
+        s_cornerRadius = -1;
     }
 }
 
