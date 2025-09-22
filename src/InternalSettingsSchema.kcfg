@@ -16,6 +16,13 @@
             <default>ButtonLarge</default>
         </entry>
 
+        <!-- corner radius -->
+        <entry name="CornerRadius" type="Int">
+            <default>6</default>
+            <min>0</min>
+            <max>24</max>
+        </entry>
+
         <!-- title alignment -->
         <entry name="TitleAlignment" type="Enum">
             <choices>

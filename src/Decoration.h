@@ -131,12 +131,16 @@ private:
     void paintCaption(QPainter *painter, const QRectF &repaintRegion) const;
     void paintButtons(QPainter *painter, const QRectF &repaintRegion) const;
     void paintOutline(QPainter *painter, const QRectF &repaintRegion) const;
+    void paintWithRoundedCorners(QPainter *painter, const QRectF &rect, const QColor &color, qreal radius) const;
+
+    qreal cornerRadius() const;
 
     KDecoration3::DecorationButtonGroup *m_leftButtons;
     KDecoration3::DecorationButtonGroup *m_rightButtons;
     AppMenuButtonGroup *m_menuButtons;
 
     QSharedPointer<InternalSettings> m_internalSettings;
+    qreal m_cornerRadius = 0;
 
     QPoint m_pressedPoint;
 

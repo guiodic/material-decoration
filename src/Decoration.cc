@@ -49,6 +49,7 @@
 #include <QHoverEvent>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPainterPath>
 #include <QRegion>
 #include <QSharedPointer>
 #include <QWheelEvent>
@@ -231,6 +232,7 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 bool Decoration::init()
 {
     m_internalSettings = QSharedPointer<InternalSettings>(new InternalSettings());
+    m_cornerRadius = m_internalSettings->cornerRadius();
 
     auto *decoratedClient = window();
 
@@ -309,6 +311,7 @@ void Decoration::reconfigure()
 {
     resetDragMove();
     m_internalSettings->load();
+    m_cornerRadius = m_internalSettings->cornerRadius();
 
     updateBorders();
     updateTitleBar();
@@ -606,7 +609,25 @@ void Decoration::updateShadow()
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
-    painter.drawRect(innerRect);
+
+    qreal radius = m_cornerRadius;
+    if (window()->isMaximized()) {
+        radius = 0;
+    }
+
+    if (radius > 0) {
+        QPainterPath path;
+        path.moveTo(innerRect.bottomLeft());
+        path.lineTo(innerRect.topLeft() + QPointF(0, radius));
+        path.arcTo(QRectF(innerRect.topLeft(), QSizeF(radius*2, radius*2)), 180, -90);
+        path.lineTo(innerRect.topRight() - QPointF(radius, 0));
+        path.arcTo(QRectF(innerRect.topRight() - QPointF(radius*2, 0), QSizeF(radius*2, radius*2)), 90, -90);
+        path.lineTo(innerRect.bottomRight());
+        path.closeSubpath();
+        painter.drawPath(path);
+    } else {
+        painter.drawRect(innerRect);
+    }
 
     painter.end();
 
@@ -918,6 +939,39 @@ void Decoration::sendMoveEvent(const QPoint pos)
 #endif
 }
 
+qreal Decoration::cornerRadius() const
+{
+    return m_cornerRadius;
+}
+
+void Decoration::paintWithRoundedCorners(QPainter *painter, const QRectF &rect, const QColor &color, qreal radius) const
+{
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(color);
+
+    if (window()->isMaximized()) {
+        radius = 0;
+    }
+
+    if (radius > 0) {
+        QPainterPath path;
+        path.moveTo(rect.bottomLeft());
+        path.lineTo(rect.topLeft() + QPointF(0, radius));
+        path.arcTo(QRectF(rect.topLeft(), QSizeF(radius*2, radius*2)), 180, -90);
+        path.lineTo(rect.topRight() - QPointF(radius, 0));
+        path.arcTo(QRectF(rect.topRight() - QPointF(radius*2, 0), QSizeF(radius*2, radius*2)), 90, -90);
+        path.lineTo(rect.bottomRight());
+        path.closeSubpath();
+        painter->drawPath(path);
+    } else {
+        painter->drawRect(rect);
+    }
+
+    painter->restore();
+}
+
 void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRegion) const
 {
     Q_UNUSED(repaintRegion)
@@ -975,11 +1029,7 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
 {
     Q_UNUSED(repaintRegion)
 
-    painter->save();
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(titleBarBackgroundColor());
-    painter->drawRect(QRect(0, 0, size().width(), titleBarHeight()));
-    painter->restore();
+    paintWithRoundedCorners(painter, QRect(0, 0, size().width(), titleBarHeight()), titleBarBackgroundColor(), m_cornerRadius);
 }
 
 void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) const
@@ -1090,7 +1140,27 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
     QColor outlineColor(titleBarForegroundColor());
     outlineColor.setAlphaF(0.25);
     painter->setPen(outlineColor);
-    painter->drawRect( rect().adjusted( 0, 0, -1, -1 ) );
+
+    qreal radius = m_cornerRadius;
+    if (window()->isMaximized()) {
+        radius = 0;
+    }
+
+    if (radius > 0) {
+        QPainterPath path;
+        QRectF rect = this->rect().adjusted(0, 0, -1, -1);
+        path.moveTo(rect.bottomLeft());
+        path.lineTo(rect.topLeft() + QPointF(0, radius));
+        path.arcTo(QRectF(rect.topLeft(), QSizeF(radius*2, radius*2)), 180, -90);
+        path.lineTo(rect.topRight() - QPointF(radius, 0));
+        path.arcTo(QRectF(rect.topRight() - QPointF(radius*2, 0), QSizeF(radius*2, radius*2)), 90, -90);
+        path.lineTo(rect.bottomRight());
+        path.lineTo(rect.bottomLeft());
+        painter->drawPath(path);
+    } else {
+        painter->drawRect( rect().adjusted( 0, 0, -1, -1 ) );
+    }
+
     painter->restore();
 }
 
