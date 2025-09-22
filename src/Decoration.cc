@@ -256,6 +256,9 @@ bool Decoration::init()
             this, &Decoration::updateButtonsGeometry);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
             this, &Decoration::updateButtonsGeometry);
+    
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
+            this, &Decoration::updateShadow);
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
             this, &Decoration::updateBorders);
@@ -288,7 +291,7 @@ bool Decoration::init()
         this, &Decoration::reconfigure);
     connect(m_internalSettings.data(), &InternalSettings::configChanged,
         this, &Decoration::reconfigure);
-
+    
     // Window Decoration KCM
     // The reconfigure signal will update active windows, but we need to hook
     // individual signals for the preview in the KCM.

@@ -17,6 +17,7 @@ find_package (KF6 REQUIRED COMPONENTS
     KCMUtils
 )
 
+find_package(KWin REQUIRED)
 find_package(KWinX11 QUIET)
 
 # X11
@@ -28,7 +29,10 @@ find_package(XCB MODULE QUIET COMPONENTS
 
 if(KWinX11_FOUND AND X11_FOUND AND XCB_FOUND)
     set(HAVE_X11 ON)
-    include_directories(/usr/include/kwin-x11)
+    #include_directories(/usr/include/kwin-x11)
+    include_directories(materialdecoration PRIVATE
+         $<TARGET_PROPERTY:KWinX11::kwin,INTERFACE_INCLUDE_DIRECTORIES>
+    )
     set(X11_LIBRARIES XCB::XCB)
     message(STATUS "Building with X11 support")
 else()
@@ -85,8 +89,12 @@ target_link_libraries (materialdecoration
 
     PRIVATE
         KDecoration3::KDecoration
-        kwin
+        KWin::kwin
 )
+
+if(KWinX11_FOUND)
+    target_link_libraries(materialdecoration PRIVATE KWinX11::kwin)
+endif()
 
 # Core library with shared code (e.g., settings)
 set(core_SRCS)
@@ -98,9 +106,11 @@ target_link_libraries(materialdecoration_core PUBLIC
     KF6::ConfigWidgets
 )
 
+set_property(TARGET materialdecoration_core PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 include(KDEInstallDirs)
 install(TARGETS materialdecoration
         DESTINATION ${KDE_INSTALL_PLUGINDIR}/org.kde.kdecoration3)
         
 add_subdirectory(kcm)
+
