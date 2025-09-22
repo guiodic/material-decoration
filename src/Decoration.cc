@@ -270,6 +270,8 @@ bool Decoration::init()
             this, &Decoration::updateBorders);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::shadedChanged,
             this, &Decoration::updateBorders);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::sizeChanged,
+            this, &Decoration::updateBlur);
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::captionChanged,
             this, repaintTitleBar);
@@ -400,7 +402,26 @@ void Decoration::onSectionUnderMouseChanged(const Qt::WindowFrameSection value)
 
 void Decoration::updateBlur()
 {
-    setBlurRegion(QRegion(0, 0, size().width(), size().height()));
+    qreal radius = m_cornerRadius;
+    if (window()->isMaximized()) {
+        radius = 0;
+    }
+
+    QPainterPath path;
+    QRectF rect = this->rect();
+
+    if (radius > 0) {
+        path.moveTo(rect.bottomLeft());
+        path.lineTo(rect.topLeft() + QPointF(0, radius));
+        path.arcTo(QRectF(rect.topLeft(), QSizeF(radius*2, radius*2)), 180, -90);
+        path.lineTo(rect.topRight() - QPointF(radius, 0));
+        path.arcTo(QRectF(rect.topRight() - QPointF(radius*2, 0), QSizeF(radius*2, radius*2)), 90, -90);
+        path.lineTo(rect.bottomRight());
+        path.closeSubpath();
+        setBlurRegion(QRegion(path.toFillPolygon().toPolygon()));
+    } else {
+        setBlurRegion(QRegion(rect.toRect()));
+    }
 }
 
 void Decoration::updateBorders()

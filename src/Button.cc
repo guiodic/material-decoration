@@ -211,7 +211,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     const qreal gridUnit = iconRect.height()/10;
 
     painter->save();
-
+    
     // Opacity
     painter->setOpacity(m_opacity);
 
@@ -246,16 +246,20 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
                 }
                 painter->drawPath(path);
             } else {
+                painter->setRenderHint(QPainter::Antialiasing, false);
                 painter->drawRect(buttonRect);
             }
         } else {
+            painter->setRenderHint(QPainter::Antialiasing, false);
             painter->drawRect(buttonRect);
         }
     } else {
         painter->setRenderHint(QPainter::Antialiasing, false);
         painter->drawRect(buttonRect);
     }
-
+    
+    painter->setRenderHint(QPainter::Antialiasing, false);
+    
     // Foreground.
     setPenWidth(painter, gridUnit, 1);
     painter->setBrush(Qt::NoBrush);
