@@ -258,10 +258,8 @@ bool Decoration::init()
             this, &Decoration::updateButtonsGeometry);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
             this, &Decoration::updateButtonsGeometry);
-    
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
             this, &Decoration::updateShadow);
-
     connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
             this, &Decoration::updateBorders);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedHorizontallyChanged,
