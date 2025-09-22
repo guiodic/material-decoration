@@ -172,6 +172,7 @@ static int s_decoCount = 0;
 static int s_shadowSizePreset = InternalSettings::ShadowVeryLarge;
 static int s_shadowStrength = 255;
 static QColor s_shadowColor = QColor(33, 33, 33);
+static qreal s_cornerRadius = -1;
 static std::shared_ptr<KDecoration3::DecorationShadow> s_cachedShadow;
 
 Decoration::Decoration(QObject *parent, const QVariantList &args)
@@ -581,11 +582,13 @@ void Decoration::updateShadow()
     const QColor shadowColor = m_internalSettings->shadowColor();
     const int shadowStrengthInt = m_internalSettings->shadowStrength();
     const int shadowSizePreset = m_internalSettings->shadowSize();
+    const qreal cornerRadius = m_cornerRadius;
 
     if (s_cachedShadow
         && s_shadowColor == shadowColor
         && s_shadowSizePreset == shadowSizePreset
         && s_shadowStrength == shadowStrengthInt
+        && s_cornerRadius == cornerRadius
     ) {
         setShadow(s_cachedShadow);
         return;
@@ -594,6 +597,7 @@ void Decoration::updateShadow()
     s_shadowColor = shadowColor;
     s_shadowStrength = shadowStrengthInt;
     s_shadowSizePreset = shadowSizePreset;
+    s_cornerRadius = cornerRadius;
 
     auto withOpacity = [] (const QColor &color, qreal opacity) -> QColor {
         QColor c(color);
