@@ -475,6 +475,42 @@ void Decoration::updateButtonHeight()
 
 void Decoration::updateButtonsGeometry()
 {
+    // Reset all buttons first
+    for (auto* decoButton : m_leftButtons->buttons()) {
+        if (auto* button = qobject_cast<Button*>(decoButton)) {
+            button->setIsLeftmost(false);
+            button->setIsRightmost(false);
+        }
+    }
+    for (auto* decoButton : m_rightButtons->buttons()) {
+        if (auto* button = qobject_cast<Button*>(decoButton)) {
+            button->setIsLeftmost(false);
+            button->setIsRightmost(false);
+        }
+    }
+
+    // Find leftmost button
+    for (auto* decoButton : m_leftButtons->buttons()) {
+        if (decoButton->isVisible()) {
+            if (auto* button = qobject_cast<Button*>(decoButton)) {
+                button->setIsLeftmost(true);
+            }
+            break; // Found the first visible one
+        }
+    }
+
+    // Find rightmost button
+    QList<KDecoration3::DecorationButton*> rightButtons = m_rightButtons->buttons();
+    for (int i = rightButtons.size() - 1; i >= 0; --i) {
+        auto* decoButton = rightButtons.at(i);
+        if (decoButton->isVisible()) {
+            if (auto* button = qobject_cast<Button*>(decoButton)) {
+                button->setIsRightmost(true);
+            }
+            break; // Found the last visible one
+        }
+    }
+
     const int sideSize = sideBorderSize();
     const int leftOffset = leftBorderVisible() ? sideSize : 0;
     const int rightOffset = rightBorderVisible() ? sideSize : 0;

@@ -212,15 +212,49 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 
     painter->save();
 
-    painter->setRenderHints(QPainter::Antialiasing, false);
-
     // Opacity
     painter->setOpacity(m_opacity);
 
     // Background.
     painter->setPen(Qt::NoPen);
     painter->setBrush(backgroundColor());
-    painter->drawRect(buttonRect);
+    if (isHovered() || isPressed()) {
+        painter->setRenderHint(QPainter::Antialiasing, true);
+        const auto *deco = qobject_cast<Decoration *>(decoration());
+        if (deco) {
+            qreal radius = deco->cornerRadius();
+            if (radius > 0) {
+                QPainterPath path;
+                if (m_isLeftmost) {
+                    path.moveTo(buttonRect.bottomRight());
+                    path.lineTo(buttonRect.bottomLeft());
+                    path.lineTo(buttonRect.topLeft() + QPointF(0, radius));
+                    path.arcTo(QRectF(buttonRect.topLeft(), QSizeF(radius*2, radius*2)), 180, -90);
+                    path.lineTo(buttonRect.topRight());
+                    path.lineTo(buttonRect.bottomRight());
+                    path.closeSubpath();
+                } else if (m_isRightmost) {
+                    path.moveTo(buttonRect.bottomLeft());
+                    path.lineTo(buttonRect.topLeft());
+                    path.lineTo(buttonRect.topRight() - QPointF(radius, 0));
+                    path.arcTo(QRectF(buttonRect.topRight() - QPointF(radius*2, 0), QSizeF(radius*2, radius*2)), 90, -90);
+                    path.lineTo(buttonRect.bottomRight());
+                    path.lineTo(buttonRect.bottomLeft());
+                    path.closeSubpath();
+                } else {
+                    path.addRect(buttonRect);
+                }
+                painter->drawPath(path);
+            } else {
+                painter->drawRect(buttonRect);
+            }
+        } else {
+            painter->drawRect(buttonRect);
+        }
+    } else {
+        painter->setRenderHint(QPainter::Antialiasing, false);
+        painter->drawRect(buttonRect);
+    }
 
     // Foreground.
     setPenWidth(painter, gridUnit, 1);
@@ -530,6 +564,16 @@ void Button::setHorzPadding(int value)
 {
     padding().setLeft(value);
     padding().setRight(value);
+}
+
+void Button::setIsLeftmost(bool isLeftmost)
+{
+    m_isLeftmost = isLeftmost;
+}
+
+void Button::setIsRightmost(bool isRightmost)
+{
+    m_isRightmost = isRightmost;
 }
 
 /*

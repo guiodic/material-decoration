@@ -87,6 +87,9 @@ public:
     void setHorzPadding(int value);
    // void setVertPadding(int value);
 
+    void setIsLeftmost(bool isLeftmost);
+    void setIsRightmost(bool isRightmost);
+
 private Q_SLOTS:
     void updateAnimationState(bool hovered);
 
@@ -104,6 +107,8 @@ protected:
     qreal m_transitionValue;
     QMargins m_padding;
     bool m_isGtkButton;
+    bool m_isLeftmost = false;
+    bool m_isRightmost = false;
 };
 
 } // namespace Material
