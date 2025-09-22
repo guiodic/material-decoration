@@ -225,7 +225,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
             qreal radius = deco->cornerRadius();
             if (radius > 0) {
                 QPainterPath path;
-                if (m_isLeftmost) {
+                if (m_isLeftmost && !windowIsMaximized()) {
                     path.moveTo(buttonRect.bottomRight());
                     path.lineTo(buttonRect.bottomLeft());
                     path.lineTo(buttonRect.topLeft() + QPointF(0, radius));
@@ -233,7 +233,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
                     path.lineTo(buttonRect.topRight());
                     path.lineTo(buttonRect.bottomRight());
                     path.closeSubpath();
-                } else if (m_isRightmost) {
+                } else if (m_isRightmost && !windowIsMaximized()) {
                     path.moveTo(buttonRect.bottomLeft());
                     path.lineTo(buttonRect.topLeft());
                     path.lineTo(buttonRect.topRight() - QPointF(radius, 0));
@@ -613,6 +613,19 @@ void Button::forceUnpress()
     const bool wasEnabled = isEnabled();
     setEnabled(!wasEnabled);
     setEnabled(wasEnabled);
+}
+
+
+bool Button::windowIsMaximized() 
+{
+    const auto *deco = qobject_cast<const Decoration *>(decoration());
+    if (deco) {
+        const auto *win = deco->window();
+        if (win) {
+            return win->isMaximized();
+        }
+    }
+    return false;
 }
 
 

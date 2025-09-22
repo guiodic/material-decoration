@@ -89,6 +89,8 @@ public:
 
     void setIsLeftmost(bool isLeftmost);
     void setIsRightmost(bool isRightmost);
+    
+    bool windowIsMaximized();
 
 private Q_SLOTS:
     void updateAnimationState(bool hovered);
