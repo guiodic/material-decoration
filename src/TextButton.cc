@@ -53,18 +53,16 @@ TextButton::~TextButton()
 {
 }
 
-void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal gridUnit)
+void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal)
 {
-    Q_UNUSED(iconRect)
-    Q_UNUSED(gridUnit)
-
     // Font
     painter->setFont(decoration()->settings()->font());
+    painter->setPen(foregroundColor());
 
     // TODO: Use Qt::TextShowMnemonic when Alt is pressed
     const bool isAltPressed = false;
     const Qt::TextFlag mnemonicFlag = isAltPressed ? Qt::TextShowMnemonic : Qt::TextHideMnemonic;
-    painter->drawText(geometry(), mnemonicFlag | Qt::AlignCenter, m_text);
+    painter->drawText(iconRect, mnemonicFlag | Qt::AlignCenter, m_text);
 }
 
 QSize TextButton::getTextSize()

@@ -56,15 +56,15 @@ public:
 
 
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
-    virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal gridUnit);
+    virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal);
 
     virtual void updateSize(int contentWidth, int contentHeight);
     virtual void setHeight(int buttonHeight);
 
     void forceUnpress();
 
-    virtual qreal iconLineWidth(const qreal gridUnit) const;
-    void setPenWidth(QPainter *painter, const qreal gridUnit, const qreal scale);
+    virtual qreal iconLineWidth(const qreal width) const;
+    void setPenWidth(QPainter *painter, const qreal scale);
 
     virtual QColor backgroundColor() const;
     virtual QColor foregroundColor() const;
