@@ -47,6 +47,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QHoverEvent>
+#include <QtMath>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
@@ -713,16 +714,16 @@ int Decoration::buttonPadding() const
     const int baseUnit = settings()->gridUnit();
     switch (m_internalSettings->buttonSize()) {
     case InternalSettings::ButtonTiny:
-        return qRound(baseUnit * 0.1);
+        return qCeil(baseUnit * 0.1);
     case InternalSettings::ButtonSmall:
-        return qRound(baseUnit * 0.2);
+        return qCeil(baseUnit * 0.2);
     default:
     case InternalSettings::ButtonDefault:
-        return qRound(baseUnit * 0.3);
+        return qCeil(baseUnit * 0.3);
     case InternalSettings::ButtonLarge:
-        return qRound(baseUnit * 0.5);
+        return qCeil(baseUnit * 0.5);
     case InternalSettings::ButtonVeryLarge:
-        return qRound(baseUnit * 0.8);
+        return qCeil(baseUnit * 0.8);
     }
 }
 
