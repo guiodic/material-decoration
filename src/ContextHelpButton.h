@@ -45,7 +45,7 @@ public:
         button->setVisible(decoratedClient->providesContextHelp());
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal gridUnit) {
-        button->setPenWidth(painter, gridUnit, 1.25);
+        button->setPenWidth(painter, gridUnit, 1.1);
 
         painter->setRenderHints(QPainter::Antialiasing, true);
         painter->translate( iconRect.topLeft() );

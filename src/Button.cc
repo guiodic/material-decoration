@@ -253,7 +253,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     const auto *deco = qobject_cast<Decoration *>(decoration());
     bool do_round = deco && (isHovered() || isPressed()) && deco->cornerRadius() > 0;
 
-    painter->setRenderHint(QPainter::Antialiasing, do_round);
+    painter->setRenderHint(QPainter::Antialiasing, do_round); //Antialiasing if rounded corner
 
     if (do_round) {
         qreal radius = deco->cornerRadius();
@@ -263,7 +263,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         painter->drawRect(buttonRect);
     }
     
-    //painter->setRenderHint(QPainter::Antialiasing, false);
+    painter->setRenderHint(QPainter::Antialiasing, false); // deactivate antialiasing for icons
     
     // Foreground.
     setPenWidth(painter, gridUnit, 1);
