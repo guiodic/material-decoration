@@ -13,7 +13,7 @@
                 <choice name="ButtonLarge" />
                 <choice name="ButtonVeryLarge" />
             </choices>
-            <default>ButtonLarge</default>
+            <default>ButtonDefault</default>
         </entry>
 
         <!-- corner radius -->
