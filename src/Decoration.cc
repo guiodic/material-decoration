@@ -53,6 +53,7 @@
 #include <QRegion>
 #include <QSharedPointer>
 #include <QWheelEvent>
+#include <QTimer>
 
 // X11
 #if HAVE_X11
@@ -284,7 +285,7 @@ bool Decoration::init()
     updateBorders();
     updateResizeBorders();
     updateTitleBar();
-    updateButtonsGeometry();
+    QTimer::singleShot(0, this, &Decoration::updateButtonsGeometry); // avoid wrong geometry (for example Spectacle)
 
     connect(this, &KDecoration3::Decoration::sectionUnderMouseChanged,
             this, &Decoration::onSectionUnderMouseChanged);
@@ -309,7 +310,7 @@ bool Decoration::init()
     connect(settings().get(), &KDecoration3::DecorationSettings::spacingChanged,
         this, &Decoration::updateBorders);
     
-  return true;
+    return true;
 }
 
 void Decoration::reconfigure()
