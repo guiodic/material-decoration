@@ -32,11 +32,12 @@ SearchButton::~SearchButton() = default;
 
 void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal)
 {
+    Q_UNUSED(iconRect)
     painter->setRenderHint(QPainter::Antialiasing, true);
     setPenWidth(painter, 1.25);
 
     const qreal circleRadius = 4.0;
-    const QPointF circleCenter(iconRect.x() + 8, iconRect.y() + 8);
+    const QPointF circleCenter(-2, -2);
     painter->drawEllipse(circleCenter, circleRadius, circleRadius);
 
     const qreal handleLength = 5.0;

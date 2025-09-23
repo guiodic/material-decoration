@@ -41,11 +41,9 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
         Q_UNUSED(button)
+        Q_UNUSED(iconRect)
 
-        const qreal y = iconRect.center().y();
-        const qreal x1 = iconRect.left() + 4;
-        const qreal x2 = iconRect.right() - 4;
-        painter->drawLine(QPointF(x1, y), QPointF(x2, y));
+        painter->drawLine(QPointF(-5, 0), QPointF(5, 0));
     }
 };
 

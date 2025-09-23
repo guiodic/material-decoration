@@ -39,7 +39,8 @@ public:
 
         button->setVisible(decoratedClient->isMaximizeable());
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &, qreal) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+        Q_UNUSED(iconRect)
         const QRectF innerRect(-5, -5, 10, 10);
         if (button->isChecked()) {
             const int offset = 2;

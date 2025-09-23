@@ -40,16 +40,16 @@ public:
         button->setVisible(true);
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+        Q_UNUSED(iconRect)
         painter->setRenderHints(QPainter::Antialiasing, true);
         button->setPenWidth(painter, 1.25);
 
-        int radius = qMin(iconRect.width(), iconRect.height()) / 2.5;
-        QPoint center(iconRect.center().toPoint());
+        const int radius = 6;
         painter->drawPolygon( QVector<QPointF> {
-            center + QPoint(-radius, 0),
-            center + QPoint(0, -radius),
-            center + QPoint(radius, 0),
-            center + QPoint(0, radius)
+            QPointF(-radius, 0),
+            QPointF(0, -radius),
+            QPointF(radius, 0),
+            QPointF(0, radius)
         });
     }
 };

@@ -41,7 +41,8 @@ public:
         button->setVisible(decoratedClient->isShadeable());
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
-        const QPointF offset(iconRect.x() + 4, iconRect.y() + 4);
+        Q_UNUSED(iconRect)
+        const QPointF offset(-5, -5);
 
         if (button->isChecked()) {
             button->setPenWidth(painter, 1.0);

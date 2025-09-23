@@ -46,15 +46,13 @@ public:
             }
         );
     }
-    
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
-        const QRectF contentRect = button->contentArea();
         const QSize appIconSize(
             qRound(iconRect.width() * 0.8),
             qRound(iconRect.height() * 0.8)
         );
         QRect appIconRect(QPoint(0,0), appIconSize);
-        appIconRect.moveCenter(contentRect.center().toPoint());
+        appIconRect.moveCenter(iconRect.center().toPoint());
 
         const auto *deco = qobject_cast<Decoration *>(button->decoration());
         auto *decoratedClient = deco->window();
@@ -63,11 +61,14 @@ public:
         QPalette palette = decoratedClient->palette();
         palette.setColor(QPalette::WindowText, deco->titleBarForegroundColor());
         KIconLoader::global()->setCustomPalette(palette);
-        decoratedClient->icon().paint(painter, appIconRect);
+        
+        const QPixmap pixmap = decoratedClient->icon().pixmap(32, 32); // Request a standard size
+        painter->drawPixmap(appIconRect, pixmap); // Draw scaled into the destination rect
+        
         if (activePalette == QPalette()) {
             KIconLoader::global()->resetPalette();
         } else {
-            KIconLoader::global()->setCustomPalette(palette);
+            KIconLoader::global()->setCustomPalette(activePalette);
         }
     }
 };

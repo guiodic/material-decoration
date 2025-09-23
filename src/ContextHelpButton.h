@@ -45,10 +45,12 @@ public:
         button->setVisible(decoratedClient->providesContextHelp());
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+        Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.1);
 
         painter->setRenderHints(QPainter::Antialiasing, true);
-        const QPointF offset(iconRect.x() + 4, iconRect.y() + 4);
+        
+        const QPointF offset(-5.5, -5.5);
 
         const QRectF topCurveRect = QRectF(
             QPointF( 1.5, 0.5 ) + offset,

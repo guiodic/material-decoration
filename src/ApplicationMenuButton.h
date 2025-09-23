@@ -38,13 +38,14 @@ public:
         button->setVisible(decoratedClient->hasApplicationMenu());
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+        Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.75);
 
         const int spacing = 4;
         for (int i = -1; i <= 1; ++i) {
-            const qreal y = iconRect.center().y() + i * spacing;
-            const QPointF left { iconRect.center().x() - 5.5, y };
-            const QPointF right { iconRect.center().x() + 5.5, y };
+            const qreal y = i * spacing;
+            const QPointF left { -5.5, y };
+            const QPointF right { 5.5, y };
 
             painter->drawLine(left, right);
         }

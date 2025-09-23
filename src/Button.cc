@@ -239,8 +239,6 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->setBrush(Qt::NoBrush);
 
     const QRectF contentRect = contentArea();
-    const qreal width = contentRect.width();
-    const qreal height = contentRect.height();
 
     // TextButton and AppIconButton are special, they don't have a vector icon, so we don't scale the painter
     if (auto textButton = qobject_cast<TextButton*>(this)) {
@@ -249,6 +247,8 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         AppIconButton::paintIcon(this, painter, contentRect, 0);
     } else {
         // All further rendering is performed inside a 20x20 square
+        const qreal width = contentRect.width();
+        const qreal height = contentRect.height();
         const qreal size = qMin(width, height);
         painter->translate(contentRect.center());
         painter->scale(size / 20.0, size / 20.0);
@@ -259,14 +259,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         // All icons are drawn inside a 18x18 square, centered in the 20x20 square
         const QRectF iconRect(-9, -9, 18, 18);
         switch (type()) {
-        case KDecoration3::DecorationButtonType::Menu:
-            AppIconButton::paintIcon(this, painter, iconRect, 0);
-            break;
-
-        case KDecoration3::DecorationButtonType::ApplicationMenu:
-            ApplicationMenuButton::paintIcon(this, painter, iconRect, 0);
-            break;
-
+        // NOTE: Menu and ApplicationMenu are handled above
         case KDecoration3::DecorationButtonType::OnAllDesktops:
             OnAllDesktopsButton::paintIcon(this, painter, iconRect, 0);
             break;

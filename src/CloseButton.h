@@ -47,7 +47,7 @@ public:
 
         button->setPenWidth(painter, 1.10);
 
-        const qreal s = 4;
+        const qreal s = 5;
         painter->drawLine(QPointF(-s, -s), QPointF(s, s));
         painter->drawLine(QPointF(s, -s), QPointF(-s, s));
     }
