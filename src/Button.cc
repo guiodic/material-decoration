@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2025 Guido Iodice <guido[dot]iodice[at]gmail[dot]com>
  * Copyright (C) 2020 Chris Holland <zrenfire@gmail.com>
  * Copyright (C) 2018 Vlad Zagorodniy <vladzzag@gmail.com>
  *
@@ -46,7 +47,6 @@
 #include <QMargins>
 #include <QPainter>
 #include <QVariantAnimation>
-#include <QtMath> // qFloor
 
 
 namespace Material
@@ -246,17 +246,17 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     } else if (type() == KDecoration3::DecorationButtonType::Menu) {
         AppIconButton::paintIcon(this, painter, contentRect, 0);
     } else {
-        // All further rendering is performed inside a 20x20 square
+        // All further rendering is performed inside a 18x18 square
         const qreal width = contentRect.width();
         const qreal height = contentRect.height();
-        const qreal size = (qMin(width, height))*0.7;
+        const qreal size = (qMin(width, height))*0.6;
         painter->translate(contentRect.center());
-        painter->scale(size / 20.0, size / 20.0);
+        painter->scale(size / 18.0, size / 18.0);
 
-        setPenWidth(painter, 1);
+        setPenWidth(painter, PenWidth::Symbol);
 
         // Icons
-        const QRectF iconRect(-10, -10, 20, 20);
+        const QRectF iconRect(-9, -9, 18, 18);
         switch (type()) {
         // NOTE: Menu and ApplicationMenu are handled above
         case KDecoration3::DecorationButtonType::OnAllDesktops:
@@ -317,14 +317,14 @@ void Button::updateSize(int contentWidth, int contentHeight)
 
 void Button::setHeight(int buttonHeight)
 {
-    // For simplicity, don't count the 1.33:1 scaling in the left/right padding.
+    // For simplicity, don't count the 1.x:1 scaling in the left/right padding.
     // The left/right padding is mainly for the border offset alignment.
-    updateSize(qRound(buttonHeight * 1.33), buttonHeight);
+    updateSize(qRound(buttonHeight * 1.2), buttonHeight);
 }
 
 qreal Button::iconLineWidth(const qreal size) const
 {
-    return PenWidth::Symbol * qMax((qreal)1.0, 20.0 / size);
+    return PenWidth::Symbol * qMax((qreal)1.0, 18.0 / size);
 }
 
 void Button::setPenWidth(QPainter *painter, const qreal scale)

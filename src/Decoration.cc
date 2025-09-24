@@ -25,6 +25,7 @@
 #include "BoxShadowHelper.h"
 #include "BuildConfig.h"
 #include "Button.h"
+#include "TextButton.h"
 #include "InternalSettings.h"
 #include "Material.h"
 
@@ -471,8 +472,9 @@ void Decoration::setButtonGroupHeight(KDecoration3::DecorationButtonGroup *butto
 void Decoration::setButtonGroupHorzPadding(KDecoration3::DecorationButtonGroup *buttonGroup, int value)
 {
     for (auto *decoButton : buttonGroup->buttons()) {
-        if (auto *button = qobject_cast<Button *>(decoButton)) {
-            button->setHorzPadding(value);
+        // Only apply horizontal padding to TextButton
+        if (auto *textButton = qobject_cast<TextButton *>(decoButton)) {
+            textButton->setHorzPadding(value);
         }
     }
 }
