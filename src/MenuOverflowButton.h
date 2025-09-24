@@ -34,7 +34,7 @@ public:
     MenuOverflowButton(Decoration *decoration, const int buttonIndex, QObject *parent = nullptr);
     ~MenuOverflowButton() override;
 
-    void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal gridUnit) override;
+    void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal) override;
 };
 
 } // namespace Material

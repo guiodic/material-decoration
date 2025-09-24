@@ -42,6 +42,7 @@ public:
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
         Q_UNUSED(iconRect)
         const QRectF innerRect(-5, -5, 10, 10);
+        button->setPenWidth(painter, 1.25);
         if (button->isChecked()) {
             const int offset = 2;
             // Outline of first square, "on top", aligned bottom left.

@@ -718,7 +718,7 @@ int Decoration::buttonPadding() const
         return qRound(baseUnit * 0.2);
     default:
     case InternalSettings::ButtonDefault:
-        return qRound(baseUnit * 0.35);
+        return qRound(baseUnit * 0.4);
     case InternalSettings::ButtonLarge:
         return qRound(baseUnit * 0.5);
     case InternalSettings::ButtonVeryLarge:
