@@ -713,16 +713,16 @@ int Decoration::buttonPadding() const
     const int baseUnit = settings()->gridUnit();
     switch (m_internalSettings->buttonSize()) {
     case InternalSettings::ButtonTiny:
-        return qRound(baseUnit * 0.1);
-    case InternalSettings::ButtonSmall:
         return qRound(baseUnit * 0.2);
+    case InternalSettings::ButtonSmall:
+        return qRound(baseUnit * 0.4);
     default:
     case InternalSettings::ButtonDefault:
-        return qRound(baseUnit * 0.4);
+        return qRound(baseUnit * 0.6);
     case InternalSettings::ButtonLarge:
-        return qRound(baseUnit * 0.5);
+        return qRound(baseUnit * 0.75);
     case InternalSettings::ButtonVeryLarge:
-        return qRound(baseUnit * 0.8);
+        return qRound(baseUnit * 0.9);
     }
 }
 

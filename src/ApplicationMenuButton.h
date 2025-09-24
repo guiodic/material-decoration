@@ -39,7 +39,7 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
         Q_UNUSED(iconRect)
-        button->setPenWidth(painter, 1.50);
+        button->setPenWidth(painter, 1.5);
 
         const int spacing = 4;
         for (int i = -1; i <= 1; ++i) {
