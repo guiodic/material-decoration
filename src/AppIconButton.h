@@ -49,12 +49,12 @@ public:
     
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
         //const QRectF contentRect = button->contentArea();
-        const QSize appIconSize(
-            qRound(iconRect.width() * 0.7),
-            qRound(iconRect.height() * 0.7)
+        const QSizeF appIconSize(
+            iconRect.width() * 0.7,
+            iconRect.height() * 0.7
         );
-        QRect appIconRect(QPoint(0,0), appIconSize);
-        appIconRect.moveCenter(iconRect.center().toPoint());
+        QRectF appIconRect(QPoint(0,0), appIconSize);
+        appIconRect.moveCenter(iconRect.center());
 
         const auto *deco = qobject_cast<Decoration *>(button->decoration());
         auto *decoratedClient = deco->window();
@@ -63,7 +63,7 @@ public:
         QPalette palette = decoratedClient->palette();
         palette.setColor(QPalette::WindowText, deco->titleBarForegroundColor());
         KIconLoader::global()->setCustomPalette(palette);
-        decoratedClient->icon().paint(painter, appIconRect);
+        decoratedClient->icon().paint(painter, appIconRect.toRect());
         if (activePalette == QPalette()) {
             KIconLoader::global()->resetPalette();
         } else {
