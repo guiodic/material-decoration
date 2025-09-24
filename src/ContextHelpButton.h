@@ -46,7 +46,7 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
         Q_UNUSED(iconRect)
-        button->setPenWidth(painter, 1.1);
+        button->setPenWidth(painter, 1.2);
 
         painter->setRenderHints(QPainter::Antialiasing, true);
         

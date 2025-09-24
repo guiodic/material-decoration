@@ -50,8 +50,8 @@ public:
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
         const QRectF contentRect = button->contentArea();
         const QSize appIconSize(
-            qRound(iconRect.width() * 0.8),
-            qRound(iconRect.height() * 0.8)
+            qRound(iconRect.width() * 0.7),
+            qRound(iconRect.height() * 0.7)
         );
         QRect appIconRect(QPoint(0,0), appIconSize);
         appIconRect.moveCenter(contentRect.center().toPoint());

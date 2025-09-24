@@ -247,9 +247,9 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         AppIconButton::paintIcon(this, painter, contentRect, 0);
     } else {
         // All further rendering is performed inside a 20x20 square, but we want the
-        // final icon to be 80% of the height, and our icons are drawn in an 18x18 box.
+        // final icon to be 70% of the height, and our icons are drawn in an 18x18 box.
         const qreal height = contentRect.height();
-        const qreal scale = (height * 0.8) / 18.0;
+        const qreal scale = (height * 0.7) / 18.0;
         painter->translate(contentRect.center());
         painter->scale(scale, scale);
 

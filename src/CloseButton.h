@@ -45,7 +45,7 @@ public:
 
         painter->setRenderHints(QPainter::Antialiasing, true);
 
-        button->setPenWidth(painter, 1.10);
+        button->setPenWidth(painter, 1.20);
 
         const qreal s = 5;
         painter->drawLine(QPointF(-s, -s), QPointF(s, s));
