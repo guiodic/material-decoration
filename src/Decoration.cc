@@ -151,6 +151,19 @@ inline CompositeShadowParams lookupShadowParams(int size)
     }
 }
 
+template <typename ButtonType, typename Func>
+void forEachButton(KDecoration3::DecorationButtonGroup *buttonGroup, Func f)
+{
+    if (!buttonGroup) {
+        return;
+    }
+    for (auto *decoButton : buttonGroup->buttons()) {
+        if (auto *button = qobject_cast<ButtonType *>(decoButton)) {
+            f(button);
+        }
+    }
+}
+
 } // anonymous namespace
 
 void Decoration::setupMenu()
@@ -464,21 +477,17 @@ void Decoration::updateTitleBarHoverState()
 
 void Decoration::setButtonGroupHeight(KDecoration3::DecorationButtonGroup *buttonGroup, int buttonHeight)
 {
-    for (auto *decoButton : buttonGroup->buttons()) {
-        if (auto *button = qobject_cast<Button *>(decoButton)) {
-            button->setHeight(buttonHeight);
-        }
-    }
+    forEachButton<Button>(buttonGroup, [buttonHeight](Button *button) {
+        button->setHeight(buttonHeight);
+    });
 }
 
 void Decoration::setButtonGroupHorzPadding(KDecoration3::DecorationButtonGroup *buttonGroup, int value)
 {
-    for (auto *decoButton : buttonGroup->buttons()) {
-        // Only apply horizontal padding to TextButton
-        if (auto *textButton = qobject_cast<TextButton *>(decoButton)) {
-            textButton->setHorzPadding(value);
-        }
-    }
+    // Only apply horizontal padding to TextButton
+    forEachButton<TextButton>(buttonGroup, [value](TextButton *button) {
+        button->setHorzPadding(value);
+    });
 }
 
 void Decoration::updateButtonHeight()
@@ -565,12 +574,10 @@ void Decoration::updateButtonsGeometry()
 
 void Decoration::setButtonGroupAnimation(KDecoration3::DecorationButtonGroup *buttonGroup, bool enabled, int duration)
 {
-    for (auto *decoButton : buttonGroup->buttons()) {
-        if (auto *button = qobject_cast<Button *>(decoButton)) {
-            button->setAnimationEnabled(enabled);
-            button->setAnimationDuration(duration);
-        }
-    }
+    forEachButton<Button>(buttonGroup, [enabled, duration](Button *button) {
+        button->setAnimationEnabled(enabled);
+        button->setAnimationDuration(duration);
+    });
 }
 
 void Decoration::updateButtonAnimation()
