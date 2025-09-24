@@ -240,7 +240,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 
     const QRectF contentRect = contentArea();
 
-    // TextButton and AppIconButton are special, they don't have a vector icon, so we don't scale the painter
+    // TextButton and AppIconButton are special, so we don't scale the painter
     if (auto textButton = qobject_cast<TextButton*>(this)) {
         textButton->paintIcon(painter, contentRect, 0);
     } else if (type() == KDecoration3::DecorationButtonType::Menu) {
@@ -249,10 +249,26 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         // All further rendering is performed inside a 18x18 square
         const qreal width = contentRect.width();
         const qreal height = contentRect.height();
-        const qreal size = (qMin(width, height))*0.6;
+        
+        //Calculate scale for button icons
+        qreal size=14.0;
+        if (m_isGtkButton) {
+            // See: https://github.com/Zren/material-decoration/issues/22
+            // kde-gtk-config has a kded5 module which renders the buttons to svgs for gtk.
+            
+            // The svgs are 50x50, located at ~/.config/gtk-3.0/assets/
+            // They are usually scaled down to just 18x18 when drawn in gtk headerbars.
+            // The Gtk theme already has a fairly large amount of padding, as
+            // the Breeze theme doesn't currently follow fitt's law. So use different
+            // scale so that the icon is not a very tiny 8px.
+            size = (qMin(width, height))*1.1; // 110% for GTK
+        } else {
+            size = (qMin(width, height))*0.6; // 60% of the Kwin Deco
+        };        
+        
         painter->translate(contentRect.center());
         painter->scale(size / 18.0, size / 18.0);
-
+        
         setPenWidth(painter, PenWidth::Symbol);
 
         // Icons
