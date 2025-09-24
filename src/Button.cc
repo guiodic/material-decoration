@@ -246,12 +246,12 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     } else if (type() == KDecoration3::DecorationButtonType::Menu) {
         AppIconButton::paintIcon(this, painter, contentRect, 0);
     } else {
-        // All further rendering is performed inside a 20x20 square
-        const qreal width = contentRect.width();
+        // All further rendering is performed inside a 20x20 square, but we want the
+        // final icon to be 80% of the height, and our icons are drawn in an 18x18 box.
         const qreal height = contentRect.height();
-        const qreal size = qMin(width, height);
+        const qreal scale = (height * 0.8) / 18.0;
         painter->translate(contentRect.center());
-        painter->scale(size / 20.0, size / 20.0);
+        painter->scale(scale, scale);
 
         setPenWidth(painter, 1);
 
@@ -323,20 +323,21 @@ void Button::setHeight(int buttonHeight)
     updateSize(qRound(buttonHeight * 1.33), buttonHeight);
 }
 
-qreal Button::iconLineWidth(const qreal size) const
+qreal Button::iconLineWidth(const qreal height) const
 {
-    return PenWidth::Symbol * qMax((qreal)1.0, 20.0 / size);
+    // The painter is scaled by (height * 0.8) / 18.0.
+    // We want a final pen width of about 1.01 pixels.
+    // So, the pen width in the scaled coordinate system should be 1.01 / scale.
+    return PenWidth::Symbol * 18.0 / (height * 0.8);
 }
 
 void Button::setPenWidth(QPainter *painter, const qreal scale)
 {
-    const qreal width = contentArea().width();
     const qreal height = contentArea().height();
-    const qreal size = qMin(width, height);
     QPen pen(foregroundColor());
     pen.setCapStyle(Qt::RoundCap);
     pen.setJoinStyle(Qt::MiterJoin);
-    pen.setWidthF(iconLineWidth(size) * scale);
+    pen.setWidthF(iconLineWidth(height) * scale);
     painter->setPen(pen);
 }
 
