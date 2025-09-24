@@ -52,37 +52,6 @@
 namespace Material
 {
 
-namespace {
-QPainterPath getButtonPath(bool isLeftmost, bool isRightmost, bool windowIsMaximized, const QRectF &rect, qreal radius) {
-    QPainterPath path;
-
-    if (radius > 0 && !windowIsMaximized) {
-        if (isLeftmost) {
-            path.moveTo(rect.bottomRight());
-            path.lineTo(rect.bottomLeft());
-            path.lineTo(rect.topLeft() + QPointF(0, radius));
-            path.arcTo(QRectF(rect.topLeft(), QSizeF(radius*2, radius*2)), 180, -90);
-            path.lineTo(rect.topRight());
-            path.lineTo(rect.bottomRight());
-            path.closeSubpath();
-            return path;
-        } else if (isRightmost) {
-            path.moveTo(rect.bottomLeft());
-            path.lineTo(rect.topLeft());
-            path.lineTo(rect.topRight() - QPointF(radius, 0));
-            path.arcTo(QRectF(rect.topRight() - QPointF(radius*2, 0), QSizeF(radius*2, radius*2)), 90, -90);
-            path.lineTo(rect.bottomRight());
-            path.lineTo(rect.bottomLeft());
-            path.closeSubpath();
-            return path;
-        }
-    }
-    
-    path.addRect(rect);
-    return path;
-}
-} // end anonymous namespace
-
 Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, QObject *parent)
     : DecorationButton(type, decoration, parent)
     , m_animationEnabled(true)
@@ -218,21 +187,10 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->setOpacity(m_opacity);
 
     // Background.
+    painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
     painter->setBrush(backgroundColor());
-
-    const auto *deco = qobject_cast<Decoration *>(decoration());
-    bool do_round = deco && (isHovered() || isPressed()) && deco->cornerRadius() > 0;
-
-    painter->setRenderHint(QPainter::Antialiasing, do_round); //Antialiasing if rounded corner
-
-    if (do_round) {
-        qreal radius = deco->cornerRadius();
-        QPainterPath path = getButtonPath(m_isLeftmost, m_isRightmost, windowIsMaximized(), geometry(), radius);
-        painter->drawPath(path);
-    } else {
-        painter->drawRect(geometry());
-    }
+    painter->drawRect(geometry());
 
     // Foreground.
     painter->setRenderHint(QPainter::Antialiasing);

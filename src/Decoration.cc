@@ -240,8 +240,18 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
     }
 
     paintTitleBarBackground(painter, repaintRegion);
+
+    painter->save();
+    qreal radius = cornerRadius();
+    if (window()->isMaximized()) {
+        radius = 0;
+    }
+    painter->setClipPath(getRoundedPath(titleBarRect(), radius));
+
     paintCaption(painter, repaintRegion);
     paintButtons(painter, repaintRegion);
+
+    painter->restore();
 
     // Don't paint outline for NoBorder, NoSideBorder, or Tiny borders.
     if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
