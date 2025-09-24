@@ -235,7 +235,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     }
 
     // Foreground.
-    painter->setRenderHint(QPainter::Antialiasing, true);
+    painter->setRenderHint(QPainter::Antialiasing);
     painter->setBrush(Qt::NoBrush);
 
     const QRectF contentRect = contentArea();
@@ -246,17 +246,17 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     } else if (type() == KDecoration3::DecorationButtonType::Menu) {
         AppIconButton::paintIcon(this, painter, contentRect, 0);
     } else {
-        // All further rendering is performed inside a 20x20 square, but we want the
-        // final icon to be 70% of the height, and our icons are drawn in an 18x18 box.
+        // All further rendering is performed inside a 18x18 square, but we want the
+        // final icon to be 70% of the height
         const qreal height = contentRect.height();
         const qreal scale = (height * 0.7) / 18.0;
         painter->translate(contentRect.center());
         painter->scale(scale, scale);
+        painter->translate(1, 1);
 
         setPenWidth(painter, 1);
 
-        // Icon
-        // All icons are drawn inside a 18x18 square, centered in the 20x20 square
+        // Icons
         const QRectF iconRect(-9, -9, 18, 18);
         switch (type()) {
         // NOTE: Menu and ApplicationMenu are handled above
@@ -325,10 +325,10 @@ void Button::setHeight(int buttonHeight)
 
 qreal Button::iconLineWidth(const qreal height) const
 {
-    // The painter is scaled by (height * 0.8) / 18.0.
+    // The painter is scaled by (height * 0.7) / 18.0.
     // We want a final pen width of about 1.01 pixels.
     // So, the pen width in the scaled coordinate system should be 1.01 / scale.
-    return PenWidth::Symbol * 18.0 / (height * 0.8);
+    return PenWidth::Symbol * 18.0 / (height * 0.7);
 }
 
 void Button::setPenWidth(QPainter *painter, const qreal scale)
