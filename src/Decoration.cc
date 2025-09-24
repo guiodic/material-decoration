@@ -336,9 +336,7 @@ void Decoration::reconfigure()
     updateBorders();
     updateTitleBar();
 
-    if (m_menuButtons) {
-        m_menuButtons->deleteLater();
-    }
+    delete m_menuButtons;
     setupMenu();
 
     updateButtonsGeometry();
@@ -595,10 +593,6 @@ void Decoration::updateButtonAnimation()
 
 void Decoration::updateShadow()
 {
-    if (window()->isMaximized()) {
-        setShadow(nullptr);
-        return;
-    }
     const QColor shadowColor = m_internalSettings->shadowColor();
     const int shadowStrengthInt = m_internalSettings->shadowStrength();
     const int shadowSizePreset = m_internalSettings->shadowSize();
