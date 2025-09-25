@@ -241,17 +241,8 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 
     paintTitleBarBackground(painter, repaintRegion);
 
-    painter->save();
-    qreal radius = cornerRadius();
-    if (window()->isMaximized()) {
-        radius = 0;
-    }
-    painter->setClipPath(getRoundedPath(titleBarRect(), radius));
-
     paintCaption(painter, repaintRegion);
     paintButtons(painter, repaintRegion);
-
-    painter->restore();
 
     // Don't paint outline for NoBorder, NoSideBorder, or Tiny borders.
     if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
@@ -435,7 +426,7 @@ void Decoration::updateBlur()
         radius = 0;
     }
 
-    const QPainterPath path = getRoundedPath(rect(), radius);
+    const QPainterPath path = getRoundedPath(rect(), radius, true, true, false, false);
     setBlurRegion(QRegion(path.toFillPolygon().toPolygon()));
 }
 
@@ -685,7 +676,7 @@ void Decoration::updateShadow()
         radius = 0;
     }
 
-    painter.drawPath(getRoundedPath(innerRect, radius));
+    painter.drawPath(getRoundedPath(innerRect, radius, true, true, false, false));
 
     painter.end();
 
@@ -1002,38 +993,49 @@ qreal Decoration::cornerRadius() const
     return m_cornerRadius;
 }
 
-QPainterPath Decoration::getRoundedPath(const QRectF &rect, qreal radius) const
+QPainterPath Decoration::getRoundedPath(const QRectF &rect, qreal radius, bool roundTopLeft, bool roundTopRight, bool roundBottomLeft, bool roundBottomRight) const
 {
     QPainterPath path;
-    if (radius > 0) {
-        path.moveTo(rect.bottomLeft());
-        path.lineTo(rect.topLeft() + QPointF(0, radius));
-        path.arcTo(QRectF(rect.topLeft(), QSizeF(radius*2, radius*2)), 180, -90);
-        path.lineTo(rect.topRight() - QPointF(radius, 0));
-        path.arcTo(QRectF(rect.topRight() - QPointF(radius*2, 0), QSizeF(radius*2, radius*2)), 90, -90);
-        path.lineTo(rect.bottomRight());
-        path.closeSubpath();
-    } else {
+    if (radius <= 0) {
         path.addRect(rect);
+        return path;
     }
+
+    path.moveTo(rect.topRight() - QPointF(radius, 0));
+
+    // Top-right corner
+    if (roundTopRight) {
+        path.arcTo(QRectF(rect.topRight() - QPointF(2 * radius, 0), QSizeF(2 * radius, 2 * radius)), 90, -90);
+    } else {
+        path.lineTo(rect.topRight());
+    }
+
+    // Bottom-right corner
+    if (roundBottomRight) {
+        path.lineTo(rect.bottomRight() - QPointF(0, radius));
+        path.arcTo(QRectF(rect.bottomRight() - QPointF(2 * radius, 2 * radius), QSizeF(2 * radius, 2 * radius)), 0, -90);
+    } else {
+        path.lineTo(rect.bottomRight());
+    }
+
+    // Bottom-left corner
+    if (roundBottomLeft) {
+        path.lineTo(rect.bottomLeft() + QPointF(radius, 0));
+        path.arcTo(QRectF(rect.bottomLeft() - QPointF(0, 2 * radius), QSizeF(2 * radius, 2 * radius)), 270, -90);
+    } else {
+        path.lineTo(rect.bottomLeft());
+    }
+
+    // Top-left corner
+    if (roundTopLeft) {
+        path.lineTo(rect.topLeft() + QPointF(0, radius));
+        path.arcTo(QRectF(rect.topLeft(), QSizeF(2 * radius, 2 * radius)), 180, -90);
+    } else {
+        path.lineTo(rect.topLeft());
+    }
+
+    path.closeSubpath();
     return path;
-}
-
-
-void Decoration::paintWithRoundedCorners(QPainter *painter, const QRectF &rect, const QColor &color, qreal radius) const
-{
-    painter->save();
-    painter->setRenderHint(QPainter::Antialiasing);
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(color);
-
-    if (window()->isMaximized()) {
-        radius = 0;
-    }
-
-    painter->drawPath(getRoundedPath(rect, radius));
-
-    painter->restore();
 }
 
 void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRegion) const
@@ -1093,7 +1095,19 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
 {
     Q_UNUSED(repaintRegion)
 
-    paintWithRoundedCorners(painter, QRectF(0, 0, size().width(), titleBarHeight()), titleBarBackgroundColor(), m_cornerRadius);
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(titleBarBackgroundColor());
+
+    qreal radius = cornerRadius();
+    if (window()->isMaximized()) {
+        radius = 0;
+    }
+
+    painter->drawPath(getRoundedPath(QRectF(0, 0, size().width(), titleBarHeight()), radius, true, true, false, false));
+
+    painter->restore();
 }
 
 void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) const
@@ -1211,7 +1225,7 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     QRectF rect = this->rect().adjusted(0, 0, -1, -1);
-    painter->drawPath(getRoundedPath(rect, radius));
+    painter->drawPath(getRoundedPath(rect, radius, true, true, false, false));
 
     painter->restore();
 }
