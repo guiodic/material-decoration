@@ -166,23 +166,6 @@ void forEachButton(KDecoration3::DecorationButtonGroup *buttonGroup, Func f)
 
 } // anonymous namespace
 
-void Decoration::setupMenu()
-{
-    auto repaintTitleBar = [this] {
-        update(titleBar());
-    };
-
-    m_menuButtons = new AppMenuButtonGroup(this);
-    connect(m_menuButtons, &AppMenuButtonGroup::menuUpdated,
-            this, &Decoration::updateButtonsGeometry);
-    connect(m_menuButtons, &AppMenuButtonGroup::opacityChanged,
-            this, repaintTitleBar);
-    connect(m_menuButtons, &AppMenuButtonGroup::alwaysShowChanged,
-            this, repaintTitleBar);
-    m_menuButtons->updateAppMenuModel();
-    m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
-}
-
 static int s_decoCount = 0;
 static int s_shadowSizePreset = InternalSettings::ShadowVeryLarge;
 static int s_shadowStrength = 255;
@@ -206,6 +189,23 @@ Decoration::~Decoration()
         s_shadowColor = QColor();
         s_cornerRadius = -1;
     }
+}
+
+void Decoration::setupMenu()
+{
+    auto repaintTitleBar = [this] {
+        update(titleBar());
+    };
+
+    m_menuButtons = new AppMenuButtonGroup(this);
+    connect(m_menuButtons, &AppMenuButtonGroup::menuUpdated,
+            this, &Decoration::updateButtonsGeometry);
+    connect(m_menuButtons, &AppMenuButtonGroup::opacityChanged,
+            this, repaintTitleBar);
+    connect(m_menuButtons, &AppMenuButtonGroup::alwaysShowChanged,
+            this, repaintTitleBar);
+    m_menuButtons->updateAppMenuModel();
+    m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
 }
 
 QRectF Decoration::titleBarRect() const
@@ -245,9 +245,9 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
     paintButtons(painter, repaintRegion);
 
     // Don't paint outline for NoBorder, NoSideBorder, or Tiny borders.
-    if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
-        paintOutline(painter, repaintRegion);
-    }
+    //if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
+    //    paintOutline(painter, repaintRegion);
+    //}
 }
 
 bool Decoration::init()
@@ -1207,6 +1207,7 @@ void Decoration::paintButtons(QPainter *painter, const QRectF &repaintRegion) co
     m_menuButtons->paint(painter, repaintRegion);
 }
 
+/*
 void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) const
 {
     Q_UNUSED(repaintRegion)
@@ -1229,6 +1230,7 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
 
     painter->restore();
 }
+*/
 
 WId Decoration::safeWindowId() const
 {
