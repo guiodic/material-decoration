@@ -244,10 +244,10 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
     paintCaption(painter, repaintRegion);
     paintButtons(painter, repaintRegion);
 
-    // Don't paint outline for NoBorder, NoSideBorder, or Tiny borders.
-    //if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
-    //    paintOutline(painter, repaintRegion);
-    //}
+    //Don't paint outline for NoBorder, NoSideBorder, or Tiny borders.
+    if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
+        paintOutline(painter, repaintRegion);
+    }
 }
 
 bool Decoration::init()
@@ -1207,30 +1207,32 @@ void Decoration::paintButtons(QPainter *painter, const QRectF &repaintRegion) co
     m_menuButtons->paint(painter, repaintRegion);
 }
 
-/*
+
 void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) const
 {
     Q_UNUSED(repaintRegion)
 
-    // Simple 1px border outline
+    // Simple 1.01px border outline
     painter->save();
-    painter->setRenderHint(QPainter::Antialiasing, false);
+    painter->setRenderHint(QPainter::Antialiasing);
     painter->setBrush(Qt::NoBrush);
     QColor outlineColor(titleBarForegroundColor());
     outlineColor.setAlphaF(0.25);
     painter->setPen(outlineColor);
+    QPen pen = painter->pen();
+    pen.setWidth(PenWidth::Symbol);
 
     qreal radius = m_cornerRadius;
     if (window()->isMaximized()) {
         radius = 0;
     }
 
-    QRectF rect = this->rect().adjusted(0, 0, -1, -1);
+    QRectF rect = this->rect();
     painter->drawPath(getRoundedPath(rect, radius, true, true, false, false));
 
     painter->restore();
 }
-*/
+
 
 WId Decoration::safeWindowId() const
 {

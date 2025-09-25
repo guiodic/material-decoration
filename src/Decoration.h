@@ -130,7 +130,7 @@ private:
     void paintTitleBarBackground(QPainter *painter, const QRectF &repaintRegion) const;
     void paintCaption(QPainter *painter, const QRectF &repaintRegion) const;
     void paintButtons(QPainter *painter, const QRectF &repaintRegion) const;
-    // void paintOutline(QPainter *painter, const QRectF &repaintRegion) const;
+    void paintOutline(QPainter *painter, const QRectF &repaintRegion) const;
     QPainterPath getRoundedPath(const QRectF &rect, qreal radius, bool roundTopLeft = true, bool roundTopRight = true, bool roundBottomLeft = false, bool roundBottomRight = false) const;
 
     qreal cornerRadius() const;
