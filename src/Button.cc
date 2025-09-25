@@ -219,7 +219,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
             // The Gtk theme already has a fairly large amount of padding, as
             // the Breeze theme doesn't currently follow fitt's law. So use different
             // scale so that the icon is not a very tiny 8px.
-            size = (qMin(width, height))*1.1; // 110% for GTK
+            size = (qMin(width, height))*1.2; // 120% for GTK
         } else {
             size = (qMin(width, height))*0.6; // 60% of the Kwin Deco
         };        
