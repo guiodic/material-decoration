@@ -1218,9 +1218,9 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
     painter->setBrush(Qt::NoBrush);
     QColor outlineColor(titleBarForegroundColor());
     outlineColor.setAlphaF(0.25);
-    painter->setPen(outlineColor);
-    QPen pen = painter->pen();
+    QPen pen(outlineColor);
     pen.setWidth(PenWidth::Symbol);
+    painter->setPen(pen);
 
     qreal radius = m_cornerRadius;
     if (window()->isMaximized()) {

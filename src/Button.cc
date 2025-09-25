@@ -231,7 +231,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
             size = (qMin(width, height))*1.2; // 120% for GTK
         } else {
             size = (qMin(width, height))*0.6; // 60% of the Kwin Deco
-        };        
+        }        
         
         painter->translate(contentRect.center());
         painter->scale(size / 18.0, size / 18.0);
@@ -581,12 +581,8 @@ void Button::forceUnpress()
 
 bool Button::windowIsMaximized() 
 {
-    const auto *deco = qobject_cast<const Decoration *>(decoration());
-    if (deco) {
-        const auto *win = deco->window();
-        if (win) {
-            return win->isMaximized();
-        }
+    if (const auto *win = decoration()->window()) {
+        return win->isMaximized();
     }
     return false;
 }
