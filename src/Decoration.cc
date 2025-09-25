@@ -442,7 +442,7 @@ void Decoration::updateBlur()
 void Decoration::updateBorders()
 {
     const int sideSize = sideBorderSize();
-    QMargins borders;
+    QMarginsF borders;
     borders.setTop(titleBarHeight());
     borders.setLeft(leftBorderVisible() ? sideSize : 0);
     borders.setRight(rightBorderVisible() ? sideSize : 0);
@@ -452,7 +452,7 @@ void Decoration::updateBorders()
 
 void Decoration::updateResizeBorders()
 {
-    QMargins borders;
+    QMarginsF borders;
 
     const int extender = settings()->largeSpacing();
     borders.setLeft(extender);

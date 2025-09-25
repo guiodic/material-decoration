@@ -28,8 +28,8 @@ namespace Material
 namespace BoxShadowHelper
 {
 
-void boxShadow(QPainter *p, const QRectF &box, const QPointF &offset,
-               qreal radius, const QColor &color);
+void boxShadow(QPainter *p, const QRect &box, const QPoint &offset,
+               int radius, const QColor &color);
 
 } // namespace BoxShadowHelper
 } // namespace Material
