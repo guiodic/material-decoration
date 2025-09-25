@@ -430,19 +430,12 @@ QColor Button::foregroundColor() const
                 KDecoration3::ColorGroup::Warning,
                 KDecoration3::ColorRole::Foreground
             );
-        } else if (m_isGtkButton && type() == KDecoration3::DecorationButtonType::Maximize) {
+        } else if (m_isGtkButton && (type() == KDecoration3::DecorationButtonType::Maximize || type() == KDecoration3::DecorationButtonType::Minimize)) {
             const int grayValue = qGray(deco->titleBarBackgroundColor().rgb());
             if (grayValue < 128) { // Dark Bg
-                hoveredColor = QColor(100, 196, 86); // from SierraBreeze
+                hoveredColor = KColorUtils::mix(deco->titleBarForegroundColor(), Qt::black, 0.5); 
             } else { // Light Bg
-                hoveredColor = QColor(40, 200, 64); // from SierraBreeze
-            }
-        } else if (m_isGtkButton && type() == KDecoration3::DecorationButtonType::Minimize) {
-            const int grayValue = qGray(deco->titleBarBackgroundColor().rgb());
-            if (grayValue < 128) {
-                hoveredColor = QColor(223, 192, 76); // from SierraBreeze
-            } else { // Light Bg
-                hoveredColor = QColor(255, 188, 48); // from SierraBreeze
+                hoveredColor = KColorUtils::mix(deco->titleBarForegroundColor(), Qt::white, 0.6); 
             }
         } else {
             hoveredColor = deco->titleBarForegroundColor();
