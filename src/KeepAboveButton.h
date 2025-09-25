@@ -39,20 +39,21 @@ public:
 
         button->setVisible(true);
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal gridUnit) {
-        button->setPenWidth(painter, gridUnit, 1.25);
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+        Q_UNUSED(iconRect)
+        button->setPenWidth(painter, 1.25);
 
-        painter->translate( iconRect.topLeft() );
+        const QPointF offset(-5, -5);
         painter->drawPolyline(  QVector<QPointF> {
-            QPointF( 0.5, 4.75 ) * gridUnit,
-            QPointF( 5.0, 0.25 ) * gridUnit,
-            QPointF( 9.5, 4.75 ) * gridUnit
+            QPointF( 0.5, 4.75 ) + offset,
+            QPointF( 5.0, 0.25 ) + offset,
+            QPointF( 9.5, 4.75 ) + offset
         });
 
         painter->drawPolyline(  QVector<QPointF> {
-            QPointF( 0.5, 9.75 ) * gridUnit,
-            QPointF( 5.0, 5.25 ) * gridUnit,
-            QPointF( 9.5, 9.75 ) * gridUnit
+            QPointF( 0.5, 9.75 ) + offset,
+            QPointF( 5.0, 5.25 ) + offset,
+            QPointF( 9.5, 9.75 ) + offset
         });
     }
 };

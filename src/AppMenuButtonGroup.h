@@ -79,7 +79,7 @@ public:
     qreal opacity() const;
     void setOpacity(qreal value);
 
-    int visibleWidth() const;
+    qreal visibleWidth() const;
 
     bool isMenuOpen() const;
     bool menuLoadedOnce() const;
@@ -158,7 +158,7 @@ private:
     bool m_animationEnabled;
     QVariantAnimation *m_animation;
     qreal m_opacity;
-    int m_visibleWidth;
+    qreal m_visibleWidth;
     QPointer<QMenu> m_currentMenu;
     int m_buttonIndexWaitingForPopup = -1;
     int m_buttonIndexOfMenuToCache = -1;

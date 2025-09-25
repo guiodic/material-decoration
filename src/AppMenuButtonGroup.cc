@@ -177,10 +177,10 @@ void AppMenuButtonGroup::repositionSearchMenu()
 
     if (KWindowSystem::isPlatformX11()) { // X11
         const QRectF buttonRect = button->geometry();
-        QPoint rootPosition = buttonRect.topLeft().toPoint();
+        QPointF rootPosition = buttonRect.topLeft().toPoint();
         rootPosition += deco->windowPos();
         // Re-popping up at the original position
-        m_searchMenu->popup(rootPosition);
+        m_searchMenu->popup(rootPosition.toPoint());
     } else { // Wayland
         KDecoration3::Positioner positioner;
         positioner.setAnchorRect(button->geometry());
@@ -560,7 +560,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
     setOverflowing(showOverflow);
 
     // calculate visible width
-    int currentVisibleWidth = 0;
+    qreal currentVisibleWidth = 0;
     for (KDecoration3::DecorationButton *button : buttons()) {
         if (button->isVisible()) {
             currentVisibleWidth += button->geometry().width();
@@ -573,7 +573,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
     }
 }
 
-int AppMenuButtonGroup::visibleWidth() const
+qreal AppMenuButtonGroup::visibleWidth() const
 {
     return m_visibleWidth;
 }
@@ -614,10 +614,10 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
         deco->popup(positioner, menu);
     } else { //X11
         const QRectF buttonRect = button->geometry();
-        const QPoint position = buttonRect.topLeft().toPoint();
-        QPoint rootPosition(position);
+        const QPointF position = buttonRect.topLeft().toPoint();
+        QPointF rootPosition(position);
         rootPosition += deco->windowPos();
-        menu->popup(rootPosition);
+        menu->popup(rootPosition.toPoint());
     }
 
     if (buttonIndex == m_searchIndex) {

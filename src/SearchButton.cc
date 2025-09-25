@@ -30,26 +30,18 @@ SearchButton::SearchButton(Decoration *decoration, const int buttonIndex, QObjec
 
 SearchButton::~SearchButton() = default;
 
-void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal gridUnit)
+void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal)
 {
+    Q_UNUSED(iconRect)
     painter->setRenderHint(QPainter::Antialiasing, true);
-    setPenWidth(painter, gridUnit, 1.25);
+    setPenWidth(painter, 1.25);
 
-    const qreal circleRadius = gridUnit * 3.5;
-    const qreal handleLength = gridUnit * 5;
-    const qreal sqrt2 = qSqrt(2);
-
-    // To center the whole icon, we need to find the bounding box of the final icon
-    // and then shift the drawing by an offset.
-    // The icon is a circle and a handle at 45 degrees.
-    // Let's just offset the center of the circle a bit to the top-left.
-    const qreal offset = handleLength / 2 / sqrt2;
-    const QPointF circleCenter = iconRect.center() - QPointF(offset, offset);
-
-    // Draw the circle
+    const qreal circleRadius = 4.0;
+    const QPointF circleCenter(-2, -2);
     painter->drawEllipse(circleCenter, circleRadius, circleRadius);
 
-    // Draw the handle
+    const qreal handleLength = 5.0;
+    const qreal sqrt2 = qSqrt(2);
     const qreal handleAttachOffset = circleRadius / sqrt2;
     const QPointF handleStart = circleCenter + QPointF(handleAttachOffset, handleAttachOffset);
     const qreal handleEndOffset = (circleRadius + handleLength) / sqrt2;

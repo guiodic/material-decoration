@@ -39,27 +39,30 @@ public:
 
         button->setVisible(decoratedClient->isMaximizeable());
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, qreal gridUnit) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+        Q_UNUSED(iconRect)
+        const QRectF innerRect(-5, -5, 10, 10);
+        button->setPenWidth(painter, 1.25);
         if (button->isChecked()) {
-            const int offset = qRound(gridUnit * 2);
+            const qreal offset = 2;
             // Outline of first square, "on top", aligned bottom left.
             painter->drawPolygon(QVector<QPointF> {
-                iconRect.bottomLeft(),
-                iconRect.topLeft() + QPointF(0, offset),
-                iconRect.topRight() + QPointF(-offset, offset),
-                iconRect.bottomRight() + QPointF(-offset, 0)
+                innerRect.bottomLeft(),
+                innerRect.topLeft() + QPointF(0, offset),
+                innerRect.topRight() + QPointF(-offset, offset),
+                innerRect.bottomRight() + QPointF(-offset, 0)
             });
 
             // Partially occluded square, "below" first square, aligned top right.
             painter->drawPolyline(QVector<QPointF> {
-                iconRect.topLeft() + QPointF(offset, offset),
-                iconRect.topLeft() + QPointF(offset, 0),
-                iconRect.topRight(),
-                iconRect.bottomRight() + QPointF(0, -offset),
-                iconRect.bottomRight() + QPointF(-offset, -offset)
+                innerRect.topLeft() + QPointF(offset, offset),
+                innerRect.topLeft() + QPointF(offset, 0),
+                innerRect.topRight(),
+                innerRect.bottomRight() + QPointF(0, -offset),
+                innerRect.bottomRight() + QPointF(-offset, -offset)
             });
         } else {
-            painter->drawRect(iconRect);
+            painter->drawRect(innerRect);
         }
     }
 };

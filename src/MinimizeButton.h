@@ -39,13 +39,12 @@ public:
 
         button->setVisible(decoratedClient->isMinimizeable());
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal gridUnit) {
-        Q_UNUSED(button)
-        Q_UNUSED(gridUnit)
-
-        painter->drawLine(
-            iconRect.left(), iconRect.center().y(),
-            iconRect.right(), iconRect.center().y());
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+        //Q_UNUSED(button)
+        Q_UNUSED(iconRect)
+        
+        button->setPenWidth(painter, 1.75);
+        painter->drawLine(QPointF(-5, 0), QPointF(5, 0));
     }
 };
 

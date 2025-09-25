@@ -37,13 +37,15 @@ public:
     static void init(Button *button, KDecoration3::DecoratedWindow *decoratedClient) {
         button->setVisible(decoratedClient->hasApplicationMenu());
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal gridUnit) {
-        button->setPenWidth(painter, gridUnit, 1.75);
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+        Q_UNUSED(iconRect)
+        button->setPenWidth(painter, 1.5);
 
-        int spacing = qRound(gridUnit * 4);
+        const int spacing = 4;
         for (int i = -1; i <= 1; ++i) {
-            const QPointF left { iconRect.left(), iconRect.center().y() + i * spacing };
-            const QPointF right { iconRect.right(), iconRect.center().y() + i * spacing };
+            const qreal y = i * spacing;
+            const QPointF left { -5.5, y };
+            const QPointF right { 5.5, y };
 
             painter->drawLine(left, right);
         }

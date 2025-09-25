@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2025 Guido Iodice <guido[dot]iodice[at]gmail[dot]com>
  * Copyright (C) 2020 Chris Holland <zrenfire@gmail.com>
  * Copyright (C) 2018 Vlad Zagorodniy <vladzzag@gmail.com>
  *
@@ -31,6 +32,7 @@
 #include "CloseButton.h"
 #include "MaximizeButton.h"
 #include "MinimizeButton.h"
+#include "TextButton.h"
 
 // KDecoration
 #include <KDecoration3/DecoratedWindow>
@@ -45,7 +47,6 @@
 #include <QMargins>
 #include <QPainter>
 #include <QVariantAnimation>
-#include <QtMath> // qFloor
 
 
 namespace Material
@@ -180,137 +181,144 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 {
     Q_UNUSED(repaintRegion)
 
-    // Buttons are coded assuming 24 units in size.
-    const QRectF buttonRect = geometry();
-    const QRectF contentRect = contentArea();
-
-    const qreal iconScale = contentRect.height()/24;
-    int iconSize;
-    if (m_isGtkButton) {
-        // See: https://github.com/Zren/material-decoration/issues/22
-        // kde-gtk-config has a kded5 module which renders the buttons to svgs for gtk.
-
-        // The svgs are 50x50, located at ~/.config/gtk-3.0/assets/
-        // They are usually scaled down to just 18x18 when drawn in gtk headerbars.
-        // The Gtk theme already has a fairly large amount of padding, as
-        // the Breeze theme doesn't currently follow fitt's law. So use less padding
-        // around the icon so that the icon is not a very tiny 8px.
-
-        // 15% top/bottom padding, 70% leftover for the icon.
-        // 24 = 3.5 topPadding + 17 icon + 3.5 bottomPadding
-        // 17/24 * 18 = 12.75
-        iconSize = qRound(iconScale * 17);
-    } else {
-        // 30% top/bottom padding, 40% leftover for the icon.
-        // 24 = 7 topPadding + 10 icon + 7 bottomPadding
-        iconSize = qRound(iconScale * 10);
-    }
-    QRectF iconRect = QRectF(0, 0, iconSize, iconSize);
-    iconRect.moveCenter(contentRect.center().toPoint());
-
-    const qreal gridUnit = iconRect.height()/10;
-
     painter->save();
-
-    painter->setRenderHints(QPainter::Antialiasing, false);
 
     // Opacity
     painter->setOpacity(m_opacity);
 
-    // Background.
+    // Background
+    const QColor bgColor = backgroundColor();
+    painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
-    painter->setBrush(backgroundColor());
-    painter->drawRect(buttonRect);
+    painter->setBrush(bgColor);
+
+    const auto *deco = qobject_cast<Decoration *>(decoration());
+    if (deco && !windowIsMaximized()) {
+        const qreal radius = deco->cornerRadius();
+        const qreal offset = 0.5 * (static_cast<int>(m_isRightmost) - static_cast<int>(m_isLeftmost));   // - 0.5 for left; +0.5 for right
+        painter->drawPath(deco->getRoundedPath(geometry().adjusted(0.0, -0.5, offset, 0.0), radius+0.5, m_isLeftmost, m_isRightmost, false, false)); 
+    } else {
+        painter->drawRect(geometry());
+    }
 
     // Foreground.
-    setPenWidth(painter, gridUnit, 1);
+    painter->setRenderHint(QPainter::Antialiasing);
     painter->setBrush(Qt::NoBrush);
 
+    const QRectF contentRect = contentArea();
 
-    // Icon
-    switch (type()) {
-    case KDecoration3::DecorationButtonType::Menu:
-        AppIconButton::paintIcon(this, painter, iconRect, gridUnit);
-        break;
+    // TextButton and AppIconButton are special, so we don't scale the painter
+    if (auto textButton = qobject_cast<TextButton*>(this)) {
+        textButton->paintIcon(painter, contentRect, 0);
+    } else if (type() == KDecoration3::DecorationButtonType::Menu) {
+        AppIconButton::paintIcon(this, painter, contentRect, 0);
+    } else {
+        // All further rendering is performed inside a 18x18 square
+        const qreal width = contentRect.width();
+        const qreal height = contentRect.height();
+        
+        //Calculate scale for button icons
+        qreal size=14.0;
+        if (m_isGtkButton) {
+            // See: https://github.com/Zren/material-decoration/issues/22
+            // kde-gtk-config has a kded5 module which renders the buttons to svgs for gtk.
+            
+            // The svgs are 50x50, located at ~/.config/gtk-3.0/assets/
+            // They are usually scaled down to just 18x18 when drawn in gtk headerbars.
+            // The Gtk theme already has a fairly large amount of padding, as
+            // the Breeze theme doesn't currently follow fitt's law. So use different
+            // scale so that the icon is not a very tiny 8px.
+            size = (qMin(width, height))*1.2; // 120% for GTK
+        } else {
+            size = (qMin(width, height))*0.6; // 60% of the Kwin Deco
+        }        
+        
+        painter->translate(contentRect.center());
+        painter->scale(size / 18.0, size / 18.0);
+        
+        setPenWidth(painter, PenWidth::Symbol);
 
-    case KDecoration3::DecorationButtonType::ApplicationMenu:
-        ApplicationMenuButton::paintIcon(this, painter, iconRect, gridUnit);
-        break;
+        // Icons
+        const QRectF iconRect(-9, -9, 18, 18);
+        switch (type()) {
+        // NOTE: Menu and ApplicationMenu are handled above
+        case KDecoration3::DecorationButtonType::OnAllDesktops:
+            OnAllDesktopsButton::paintIcon(this, painter, iconRect, 0);
+            break;
 
-    case KDecoration3::DecorationButtonType::OnAllDesktops:
-        OnAllDesktopsButton::paintIcon(this, painter, iconRect, gridUnit);
-        break;
+        case KDecoration3::DecorationButtonType::ContextHelp:
+            ContextHelpButton::paintIcon(this, painter, iconRect, 0);
+            break;
 
-    case KDecoration3::DecorationButtonType::ContextHelp:
-        ContextHelpButton::paintIcon(this, painter, iconRect, gridUnit);
-        break;
+        case KDecoration3::DecorationButtonType::Shade:
+            ShadeButton::paintIcon(this, painter, iconRect, 0);
+            break;
 
-    case KDecoration3::DecorationButtonType::Shade:
-        ShadeButton::paintIcon(this, painter, iconRect, gridUnit);
-        break;
+        case KDecoration3::DecorationButtonType::KeepAbove:
+            KeepAboveButton::paintIcon(this, painter, iconRect, 0);
+            break;
 
-    case KDecoration3::DecorationButtonType::KeepAbove:
-        KeepAboveButton::paintIcon(this, painter, iconRect, gridUnit);
-        break;
+        case KDecoration3::DecorationButtonType::KeepBelow:
+            KeepBelowButton::paintIcon(this, painter, iconRect, 0);
+            break;
 
-    case KDecoration3::DecorationButtonType::KeepBelow:
-        KeepBelowButton::paintIcon(this, painter, iconRect, gridUnit);
-        break;
+        case KDecoration3::DecorationButtonType::Close:
+            CloseButton::paintIcon(this, painter, iconRect, 0);
+            break;
 
-    case KDecoration3::DecorationButtonType::Close:
-        CloseButton::paintIcon(this, painter, iconRect, gridUnit);
-        break;
+        case KDecoration3::DecorationButtonType::Maximize:
+            MaximizeButton::paintIcon(this, painter, iconRect, 0);
+            break;
 
-    case KDecoration3::DecorationButtonType::Maximize:
-        MaximizeButton::paintIcon(this, painter, iconRect, gridUnit);
-        break;
+        case KDecoration3::DecorationButtonType::Minimize:
+            MinimizeButton::paintIcon(this, painter, iconRect, 0);
+            break;
 
-    case KDecoration3::DecorationButtonType::Minimize:
-        MinimizeButton::paintIcon(this, painter, iconRect, gridUnit);
-        break;
-
-    default:
-        paintIcon(painter, iconRect, gridUnit);
-        break;
+        default:
+            paintIcon(painter, iconRect, 0);
+            break;
+        }
     }
 
     painter->restore();
 }
 
-void Button::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal gridUnit)
+void Button::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal)
 {
     Q_UNUSED(painter)
     Q_UNUSED(iconRect)
-    Q_UNUSED(gridUnit)
 }
 
-void Button::updateSize(int contentWidth, int contentHeight)
+void Button::updateSize(qreal contentWidth, qreal contentHeight)
 {
-    const QSize size(
+    const QSizeF size(
         m_padding.left() + contentWidth + m_padding.right(),
         m_padding.top() + contentHeight + m_padding.bottom()
     );
-    setGeometry(QRect(geometry().topLeft().toPoint(), size));
+    setGeometry(QRectF(geometry().topLeft(), size));
 }
 
 void Button::setHeight(int buttonHeight)
 {
-    // For simplicity, don't count the 1.33:1 scaling in the left/right padding.
+    // For simplicity, don't count the 1.x:1 scaling in the left/right padding.
     // The left/right padding is mainly for the border offset alignment.
-    updateSize(qRound(buttonHeight * 1.33), buttonHeight);
+    updateSize(qRound(buttonHeight * 1.2), buttonHeight);
 }
 
-qreal Button::iconLineWidth(const qreal gridUnit) const
+qreal Button::iconLineWidth(const qreal size) const
 {
-    return PenWidth::Symbol * qMax(1.0, gridUnit);
+    return PenWidth::Symbol * qMax((qreal)1.0, 18.0 / size);
 }
 
-void Button::setPenWidth(QPainter *painter, const qreal gridUnit, const qreal scale)
+void Button::setPenWidth(QPainter *painter, const qreal scale)
 {
+    const qreal width = contentArea().width();
+    const qreal height = contentArea().height();
+    const qreal size = qMin(width, height);
     QPen pen(foregroundColor());
     pen.setCapStyle(Qt::RoundCap);
     pen.setJoinStyle(Qt::MiterJoin);
-    pen.setWidthF(iconLineWidth(gridUnit) * scale);
+    pen.setWidthF(iconLineWidth(size) * scale);
     painter->setPen(pen);
 }
 
@@ -431,19 +439,12 @@ QColor Button::foregroundColor() const
                 KDecoration3::ColorGroup::Warning,
                 KDecoration3::ColorRole::Foreground
             );
-        } else if (m_isGtkButton && type() == KDecoration3::DecorationButtonType::Maximize) {
+        } else if (m_isGtkButton && (type() == KDecoration3::DecorationButtonType::Maximize || type() == KDecoration3::DecorationButtonType::Minimize)) {
             const int grayValue = qGray(deco->titleBarBackgroundColor().rgb());
             if (grayValue < 128) { // Dark Bg
-                hoveredColor = QColor(100, 196, 86); // from SierraBreeze
+                hoveredColor = KColorUtils::mix(deco->titleBarForegroundColor(), Qt::black, 0.5); 
             } else { // Light Bg
-                hoveredColor = QColor(40, 200, 64); // from SierraBreeze
-            }
-        } else if (m_isGtkButton && type() == KDecoration3::DecorationButtonType::Minimize) {
-            const int grayValue = qGray(deco->titleBarBackgroundColor().rgb());
-            if (grayValue < 128) {
-                hoveredColor = QColor(223, 192, 76); // from SierraBreeze
-            } else { // Light Bg
-                hoveredColor = QColor(255, 188, 48); // from SierraBreeze
+                hoveredColor = KColorUtils::mix(deco->titleBarForegroundColor(), Qt::white, 0.6); 
             }
         } else {
             hoveredColor = deco->titleBarForegroundColor();
@@ -521,15 +522,25 @@ void Button::setTransitionValue(qreal value)
     }
 }
 
-QMargins &Button::padding()
+QMarginsF &Button::padding()
 {
     return m_padding;
 }
 
-void Button::setHorzPadding(int value)
+void Button::setHorzPadding(qreal value)
 {
     padding().setLeft(value);
     padding().setRight(value);
+}
+
+void Button::setIsLeftmost(bool isLeftmost)
+{
+    m_isLeftmost = isLeftmost;
+}
+
+void Button::setIsRightmost(bool isRightmost)
+{
+    m_isRightmost = isRightmost;
 }
 
 /*
@@ -565,6 +576,15 @@ void Button::forceUnpress()
     const bool wasEnabled = isEnabled();
     setEnabled(!wasEnabled);
     setEnabled(wasEnabled);
+}
+
+
+bool Button::windowIsMaximized() 
+{
+    if (const auto *win = decoration()->window()) {
+        return win->isMaximized();
+    }
+    return false;
 }
 
 

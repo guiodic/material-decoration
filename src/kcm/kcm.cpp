@@ -65,6 +65,7 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_ButtonSize, &QComboBox::currentIndexChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_ActiveOpacity, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_InactiveOpacity, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_CornerRadius, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_MenuAlwaysShow, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, m_ui->kcfg_ShowDisabledActions, &QCheckBox::setEnabled);
@@ -84,6 +85,7 @@ void MaterialDecorationKCM::load()
     m_ui->kcfg_ButtonSize->setCurrentIndex(m_settings->buttonSize());
     m_ui->kcfg_ActiveOpacity->setValue(qRound(m_settings->activeOpacity() * 100));
     m_ui->kcfg_InactiveOpacity->setValue(qRound(m_settings->inactiveOpacity() * 100));
+    m_ui->kcfg_CornerRadius->setValue(m_settings->cornerRadius());
     m_ui->kcfg_MenuAlwaysShow->setChecked(m_settings->menuAlwaysShow());
     m_ui->kcfg_SearchEnabled->setChecked(m_settings->searchEnabled());
     m_ui->kcfg_ShowDisabledActions->setEnabled(m_settings->searchEnabled());
@@ -103,6 +105,7 @@ void MaterialDecorationKCM::save()
     m_settings->setButtonSize(m_ui->kcfg_ButtonSize->currentIndex());
     m_settings->setActiveOpacity(static_cast<double>(m_ui->kcfg_ActiveOpacity->value()) / 100.0);
     m_settings->setInactiveOpacity(static_cast<double>(m_ui->kcfg_InactiveOpacity->value()) / 100.0);
+    m_settings->setCornerRadius(m_ui->kcfg_CornerRadius->value());
     m_settings->setMenuAlwaysShow(m_ui->kcfg_MenuAlwaysShow->isChecked());
     m_settings->setSearchEnabled(m_ui->kcfg_SearchEnabled->isChecked());
     m_settings->setHamburgerMenu(m_ui->kcfg_HamburgerMenu->isChecked());
@@ -128,6 +131,7 @@ void MaterialDecorationKCM::defaults()
     m_ui->kcfg_ButtonSize->setCurrentIndex(m_settings->buttonSize());
     m_ui->kcfg_ActiveOpacity->setValue(qRound(m_settings->activeOpacity() * 100));
     m_ui->kcfg_InactiveOpacity->setValue(qRound(m_settings->inactiveOpacity() * 100));
+    m_ui->kcfg_CornerRadius->setValue(m_settings->cornerRadius());
     m_ui->kcfg_MenuAlwaysShow->setChecked(m_settings->menuAlwaysShow());
     m_ui->kcfg_SearchEnabled->setChecked(m_settings->searchEnabled());
     m_ui->kcfg_HamburgerMenu->setChecked(m_settings->hamburgerMenu());

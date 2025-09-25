@@ -44,15 +44,17 @@ public:
 
         button->setVisible(decoratedClient->providesContextHelp());
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal gridUnit) {
-        button->setPenWidth(painter, gridUnit, 1.25);
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+        Q_UNUSED(iconRect)
+        button->setPenWidth(painter, 1.25);
 
         painter->setRenderHints(QPainter::Antialiasing, true);
-        painter->translate( iconRect.topLeft() );
+        
+        const QPointF offset(-5.5, -5.5);
 
         const QRectF topCurveRect = QRectF(
-            QPointF( 1.5, 0.5 ) * gridUnit,
-            QSizeF( 8, 6 ) * gridUnit
+            QPointF( 1.5, 0.5 ) + offset,
+            QSizeF( 8, 6 )
         );
         QPainterPath path;
         path.moveTo( topCurveRect.center() - QPointF(topCurveRect.width()/2, 0) );
@@ -62,16 +64,16 @@ public:
             -180
         );
         path.cubicTo(
-            QPointF( 7.8125, 5.9375 ) * gridUnit,
-            QPointF( 5.625, 4.6875 ) * gridUnit,
-            QPointF( 5, 8 ) * gridUnit
+            QPointF( 7.8125, 5.9375 ) + offset,
+            QPointF( 5.625, 4.6875 ) + offset,
+            QPointF( 5, 8 ) + offset
         );
         painter->drawPath(path);
 
         // Dot
         painter->drawRect( QRectF(
-            QPointF( 5, 10 ) * gridUnit,
-            QSizeF( 0.5, 0.5 ) * gridUnit
+            QPointF( 5, 10 ) + offset,
+            QSizeF( 0.5, 0.5 )
         ));
     }
 };

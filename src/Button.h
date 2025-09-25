@@ -23,7 +23,7 @@
 #include <KDecoration3/DecorationButton>
 
 // Qt
-#include <QMargins>
+#include <QMarginsF>
 #include <QRectF>
 #include <QVariantAnimation>
 
@@ -44,7 +44,7 @@ public:
     Q_PROPERTY(int animationDuration READ animationDuration WRITE setAnimationDuration NOTIFY animationDurationChanged)
     Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity NOTIFY opacityChanged)
     Q_PROPERTY(qreal transitionValue READ transitionValue WRITE setTransitionValue NOTIFY transitionValueChanged)
-    // Q_PROPERTY(QMargins* padding READ padding NOTIFY paddingChanged)
+    // Q_PROPERTY(QMarginsF* padding READ padding NOTIFY paddingChanged)
 
     // Passed to DecorationButtonGroup in Decoration
     static KDecoration3::DecorationButton *create(KDecoration3::DecorationButtonType type, KDecoration3::Decoration *decoration, QObject *parent = nullptr);
@@ -56,15 +56,15 @@ public:
 
 
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
-    virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal gridUnit);
+    virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal);
 
-    virtual void updateSize(int contentWidth, int contentHeight);
+    virtual void updateSize(qreal contentWidth, qreal contentHeight);
     virtual void setHeight(int buttonHeight);
 
     void forceUnpress();
 
-    virtual qreal iconLineWidth(const qreal gridUnit) const;
-    void setPenWidth(QPainter *painter, const qreal gridUnit, const qreal scale);
+    virtual qreal iconLineWidth(const qreal size) const;
+    void setPenWidth(QPainter *painter, const qreal scale);
 
     virtual QColor backgroundColor() const;
     virtual QColor foregroundColor() const;
@@ -83,9 +83,14 @@ public:
     qreal transitionValue() const;
     void setTransitionValue(qreal value);
 
-    QMargins &padding();
-    void setHorzPadding(int value);
+    QMarginsF &padding();
+    void setHorzPadding(qreal value);
    // void setVertPadding(int value);
+
+    void setIsLeftmost(bool isLeftmost);
+    void setIsRightmost(bool isRightmost);
+    
+    bool windowIsMaximized();
 
 private Q_SLOTS:
     void updateAnimationState(bool hovered);
@@ -102,8 +107,10 @@ protected:
     QVariantAnimation *m_animation;
     qreal m_opacity;
     qreal m_transitionValue;
-    QMargins m_padding;
+    QMarginsF m_padding;
     bool m_isGtkButton;
+    bool m_isLeftmost = false;
+    bool m_isRightmost = false;
 };
 
 } // namespace Material

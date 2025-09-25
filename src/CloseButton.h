@@ -39,16 +39,17 @@ public:
 
         button->setVisible(decoratedClient->isCloseable());
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal gridUnit) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
         Q_UNUSED(button)
-        Q_UNUSED(gridUnit)
+        Q_UNUSED(iconRect)
 
         painter->setRenderHints(QPainter::Antialiasing, true);
 
-        button->setPenWidth(painter, gridUnit, 1.10);
+        button->setPenWidth(painter, 1.25);
 
-        painter->drawLine(iconRect.topLeft(), iconRect.bottomRight());
-        painter->drawLine(iconRect.topRight(), iconRect.bottomLeft());
+        const qreal s = 5;
+        painter->drawLine(QPointF(-s, -s), QPointF(s, s));
+        painter->drawLine(QPointF(s, -s), QPointF(-s, s));
     }
 };
 
