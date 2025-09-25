@@ -138,32 +138,32 @@ void boxBlurAlpha(QImage &image, int radius, int numIterations)
     }
 }
 
-void boxShadow(QPainter *p, const QRect &box, const QPoint &offset, int radius, const QColor &color)
+void boxShadow(QPainter *p, const QRectF &box, const QPointF &offset, qreal radius, const QColor &color)
 {
-    const QSize size = box.size() + 2 * QSize(radius, radius);
+    const QSizeF size = box.size() + 2 * QSizeF(radius, radius);
     const qreal dpr = p->device()->devicePixelRatioF();
 
     QPainter painter;
 
-    QImage shadow(size * dpr, QImage::Format_ARGB32_Premultiplied);
+    QImage shadow((size * dpr).toSize(), QImage::Format_ARGB32_Premultiplied);
     shadow.setDevicePixelRatio(dpr);
     shadow.fill(Qt::transparent);
 
     painter.begin(&shadow);
-    painter.fillRect(QRect(QPoint(radius, radius), box.size()), Qt::black);
+    painter.fillRect(QRectF(QPointF(radius, radius), box.size()), Qt::black);
     painter.end();
 
     // There is no need to blur RGB channels. Blur the alpha
     // channel and then give the shadow a tint of the desired color.
     const int numIterations = 3;
-    boxBlurAlpha(shadow, radius, numIterations);
+    boxBlurAlpha(shadow, qRound(radius), numIterations);
 
     painter.begin(&shadow);
     painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
     painter.fillRect(shadow.rect(), color);
     painter.end();
 
-    QRect shadowRect = shadow.rect();
+    QRectF shadowRect = shadow.rect();
     shadowRect.setSize(shadowRect.size() / dpr);
     shadowRect.moveCenter(box.center() + offset);
     p->drawImage(shadowRect, shadow);

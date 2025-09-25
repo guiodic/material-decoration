@@ -208,19 +208,19 @@ Decoration::~Decoration()
     }
 }
 
-QRect Decoration::titleBarRect() const
+QRectF Decoration::titleBarRect() const
 {
-    return QRect(0, 0, size().width(), titleBarHeight());
+    return QRectF(0, 0, size().width(), titleBarHeight());
 }
 
-QRect Decoration::centerRect() const
+QRectF Decoration::centerRect() const
 {
     const bool leftButtonsVisible = !m_leftButtons->buttons().isEmpty();
-    const int leftOffset = m_leftButtons->geometry().right()
+    const qreal leftOffset = m_leftButtons->geometry().right()
         + (leftButtonsVisible ? settings()->smallSpacing() : 0);
 
     const bool rightButtonsVisible = !m_rightButtons->buttons().isEmpty();
-    const int rightOffset = m_rightButtons->geometry().width()
+    const qreal rightOffset = m_rightButtons->geometry().width()
         + (rightButtonsVisible ? settings()->smallSpacing() : 0);
 
     return titleBarRect().adjusted(
@@ -490,7 +490,7 @@ void Decoration::setButtonGroupHeight(KDecoration3::DecorationButtonGroup *butto
     });
 }
 
-void Decoration::setButtonGroupHorzPadding(KDecoration3::DecorationButtonGroup *buttonGroup, int value)
+void Decoration::setButtonGroupHorzPadding(KDecoration3::DecorationButtonGroup *buttonGroup, qreal value)
 {
     // Only apply horizontal padding to TextButton
     forEachButton<TextButton>(buttonGroup, [value](TextButton *button) {
@@ -544,9 +544,9 @@ void Decoration::updateButtonsGeometry()
         }
     }
 
-    const int sideSize = sideBorderSize();
-    const int leftOffset = leftBorderVisible() ? sideSize : 0;
-    const int rightOffset = rightBorderVisible() ? sideSize : 0;
+    const qreal sideSize = sideBorderSize();
+    const qreal leftOffset = leftBorderVisible() ? sideSize : 0;
+    const qreal rightOffset = rightBorderVisible() ? sideSize : 0;
 
     updateButtonHeight();
 
@@ -564,7 +564,7 @@ void Decoration::updateButtonsGeometry()
     // Menu
     if (!m_menuButtons->buttons().isEmpty()) {
         const int captionOffset = captionMinWidth() + settings()->smallSpacing();
-        const QRect availableRect = centerRect().adjusted(
+        const QRectF availableRect = centerRect().adjusted(
             0,
             0,
             -captionOffset,
@@ -830,22 +830,22 @@ bool Decoration::titleBarIsHovered() const
 int Decoration::getTextWidth(const QString text, bool showMnemonic) const
 {
     const QFontMetrics fontMetrics(settings()->font());
-    const QRect textRect(titleBarRect());
+    const QRectF textRect(titleBarRect());
     int flags = showMnemonic ? Qt::TextShowMnemonic : Qt::TextHideMnemonic;
-    const QRect boundingRect = fontMetrics.boundingRect(textRect, flags, text);
+    const QRectF boundingRect = fontMetrics.boundingRect(textRect.toRect(), flags, text);
     return boundingRect.width();
 }
 
 //* scoped pointer convenience typedef
 template <typename T> using ScopedPointer = QScopedPointer<T, QScopedPointerPodDeleter>;
 
-QPoint Decoration::windowPos() const
+QPointF Decoration::windowPos() const
 {
 #if HAVE_X11
     if (KWindowSystem::isPlatformX11()) {
         const WId windowId = safeWindowId();
         if (!windowId) {
-            return QPoint(0, 0);
+            return QPointF(0, 0);
         }
 
         //--- From: BreezeSizeGrip.cpp
@@ -867,7 +867,7 @@ QPoint Decoration::windowPos() const
             ScopedPointer< xcb_translate_coordinates_reply_t> coordReply( xcb_translate_coordinates_reply( connection, coordCookie, nullptr ) );
 
             if (coordReply) {
-                return QPoint(coordReply.data()->dst_x, coordReply.data()->dst_y);
+                return QPointF(coordReply.data()->dst_x, coordReply.data()->dst_y);
             }
         }
     }
@@ -879,27 +879,27 @@ QPoint Decoration::windowPos() const
     }
 #endif
 
-    return QPoint(0, 0);
+    return QPointF(0, 0);
 }
 
-void Decoration::initDragMove(const QPoint pos)
+void Decoration::initDragMove(const QPointF pos)
 {
     m_pressedPoint = pos;
 }
 
 void Decoration::resetDragMove()
 {
-    m_pressedPoint = QPoint();
+    m_pressedPoint = QPointF();
 }
 
 
-bool Decoration::dragMoveTick(const QPoint pos)
+bool Decoration::dragMoveTick(const QPointF pos)
 {
     if (m_pressedPoint.isNull()) {
         return false;
     }
 
-    QPoint diff = pos - m_pressedPoint;
+    QPointF diff = pos - m_pressedPoint;
     // qCDebug(category) << "    diff" << diff << "mL" << diff.manhattanLength() << "sDD" << QApplication::startDragDistance();
     if (diff.manhattanLength() >= QApplication::startDragDistance()) {
         sendMoveEvent(pos);
@@ -909,7 +909,7 @@ bool Decoration::dragMoveTick(const QPoint pos)
     return false;
 }
 
-void Decoration::sendMoveEvent(const QPoint pos)
+void Decoration::sendMoveEvent(const QPointF pos)
 {
 #if HAVE_X11
     if (KWindowSystem::isPlatformX11()) {
@@ -918,8 +918,8 @@ void Decoration::sendMoveEvent(const QPoint pos)
             return;
         }
 
-        QPoint globalPos = windowPos()
-            - QPoint(0, titleBarHeight())
+        QPointF globalPos = windowPos()
+            - QPointF(0, titleBarHeight())
             + pos;
 
         //--- From: BreezeSizeGrip.cpp
@@ -945,10 +945,10 @@ void Decoration::sendMoveEvent(const QPoint pos)
         releaseEvent.event =  windowId;
         releaseEvent.child = XCB_WINDOW_NONE;
         releaseEvent.root = QX11Info::appRootWindow();
-        releaseEvent.event_x = pos.x();
-        releaseEvent.event_y = pos.y();
-        releaseEvent.root_x = globalPos.x();
-        releaseEvent.root_y = globalPos.y();
+        releaseEvent.event_x = qRound(pos.x());
+        releaseEvent.event_y = qRound(pos.y());
+        releaseEvent.root_x = qRound(globalPos.x());
+        releaseEvent.root_y = qRound(globalPos.y());
         releaseEvent.detail = XCB_BUTTON_INDEX_1;
         releaseEvent.state = XCB_BUTTON_MASK_1;
         releaseEvent.time = XCB_CURRENT_TIME;
@@ -970,8 +970,8 @@ void Decoration::sendMoveEvent(const QPoint pos)
         clientMessageEvent.type = m_moveResizeAtom;
         clientMessageEvent.format = 32;
         clientMessageEvent.window = windowId;
-        clientMessageEvent.data.data32[0] = globalPos.x();
-        clientMessageEvent.data.data32[1] = globalPos.y();
+        clientMessageEvent.data.data32[0] = qRound(globalPos.x());
+        clientMessageEvent.data.data32[1] = qRound(globalPos.y());
         clientMessageEvent.data.data32[2] = 8; // _NET_WM_MOVERESIZE_MOVE
         clientMessageEvent.data.data32[3] = Qt::LeftButton;
         clientMessageEvent.data.data32[4] = 0;
@@ -1093,7 +1093,7 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
 {
     Q_UNUSED(repaintRegion)
 
-    paintWithRoundedCorners(painter, QRect(0, 0, size().width(), titleBarHeight()), titleBarBackgroundColor(), m_cornerRadius);
+    paintWithRoundedCorners(painter, QRectF(0, 0, size().width(), titleBarHeight()), titleBarBackgroundColor(), m_cornerRadius);
 }
 
 void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) const
@@ -1113,9 +1113,9 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     const bool appMenuVisible = !m_menuButtons->buttons().isEmpty();
 
     // --- Calculate available geometry for the caption ---
-    QRect availableRect = centerRect();
+    QRectF availableRect = centerRect();
     if (appMenuVisible && m_menuButtons->alwaysShow()) {
-        const int menuButtonsWidth = m_menuButtons->visibleWidth() + appMenuCaptionSpacing();
+        const qreal menuButtonsWidth = m_menuButtons->visibleWidth() + appMenuCaptionSpacing();
         availableRect.setLeft(availableRect.left() + menuButtonsWidth);
     }
 
@@ -1125,10 +1125,10 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     // --- Determine alignment and final drawing rectangle ---
-    QRect captionRect;
+    QRectF captionRect;
     Qt::Alignment alignment;
-    const int textWidth = fontMetrics.boundingRect(decoratedClient->caption()).width();
-    const QRect idealTextRect((size().width() - textWidth) / 2, 0, textWidth, titleBarHeight());
+    const qreal textWidth = fontMetrics.boundingRect(decoratedClient->caption()).width();
+    const QRectF idealTextRect((size().width() - textWidth) / 2, 0, textWidth, titleBarHeight());
 
     switch (m_internalSettings->titleAlignment()) {
     case InternalSettings::AlignLeft:

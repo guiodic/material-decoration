@@ -53,7 +53,7 @@ public:
             iconRect.width() * 0.7,
             iconRect.height() * 0.7
         );
-        QRectF appIconRect(QPoint(0,0), appIconSize);
+        QRectF appIconRect(QPointF(0,0), appIconSize);
         appIconRect.moveCenter(iconRect.center());
 
         const auto *deco = qobject_cast<Decoration *>(button->decoration());
