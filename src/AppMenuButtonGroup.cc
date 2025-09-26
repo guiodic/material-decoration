@@ -453,6 +453,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
                         button->setVisible(false);
                     } else {
                         button->setEnabled(true);
+                        button->setVisible(true);
                     }
                 }
             }
