@@ -41,7 +41,7 @@ public:
     Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
 
     void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal) override;
-    QSizeF getTextSize() const;
+    QSize getTextSize();
 
 
     QAction* action() const;

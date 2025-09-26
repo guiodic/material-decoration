@@ -293,13 +293,13 @@ void Button::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal)
     Q_UNUSED(iconRect)
 }
 
-void Button::updateSize(qreal contentWidth, qreal contentHeight)
+void Button::updateSize(int contentWidth, int contentHeight)
 {
-    const QSizeF size(
+    const QSize size(
         m_padding.left() + contentWidth + m_padding.right(),
         m_padding.top() + contentHeight + m_padding.bottom()
     );
-    setGeometry(QRectF(geometry().topLeft(), size));
+    setGeometry(QRect(geometry().topLeft().toPoint(), size));
 }
 
 void Button::setHeight(qreal buttonHeight)
@@ -526,12 +526,12 @@ void Button::setTransitionValue(qreal value)
     }
 }
 
-QMarginsF &Button::padding()
+QMargins &Button::padding()
 {
     return m_padding;
 }
 
-void Button::setHorzPadding(qreal value)
+void Button::setHorzPadding(int value)
 {
     padding().setLeft(value);
     padding().setRight(value);

@@ -23,7 +23,7 @@
 #include <KDecoration3/DecorationButton>
 
 // Qt
-#include <QMarginsF>
+#include <QMargins>
 #include <QRectF>
 #include <QVariantAnimation>
 
@@ -44,7 +44,7 @@ public:
     Q_PROPERTY(int animationDuration READ animationDuration WRITE setAnimationDuration NOTIFY animationDurationChanged)
     Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity NOTIFY opacityChanged)
     Q_PROPERTY(qreal transitionValue READ transitionValue WRITE setTransitionValue NOTIFY transitionValueChanged)
-    // Q_PROPERTY(QMarginsF* padding READ padding NOTIFY paddingChanged)
+    // Q_PROPERTY(QMargins* padding READ padding NOTIFY paddingChanged)
 
     // Passed to DecorationButtonGroup in Decoration
     static KDecoration3::DecorationButton *create(KDecoration3::DecorationButtonType type, KDecoration3::Decoration *decoration, QObject *parent = nullptr);
@@ -58,8 +58,10 @@ public:
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
     virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal);
 
-    virtual void updateSize(qreal contentWidth, qreal contentHeight);
-    virtual void setHeight(qreal buttonHeight);
+
+    virtual void updateSize(int contentWidth, int contentHeight);
+    virtual void setHeight(int buttonHeight);
+
 
     void forceUnpress();
 
@@ -83,8 +85,8 @@ public:
     qreal transitionValue() const;
     void setTransitionValue(qreal value);
 
-    QMarginsF &padding();
-    void setHorzPadding(qreal value);
+    QMargins &padding();
+    void setHorzPadding(int value);
    // void setVertPadding(int value);
 
     void setIsLeftmost(bool isLeftmost);
@@ -107,7 +109,7 @@ protected:
     QVariantAnimation *m_animation;
     qreal m_opacity;
     qreal m_transitionValue;
-    QMarginsF m_padding;
+    QMargins m_padding;
     bool m_isGtkButton;
     bool m_isLeftmost = false;
     bool m_isRightmost = false;

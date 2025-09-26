@@ -65,11 +65,11 @@ void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qrea
     painter->drawText(iconRect, mnemonicFlag | Qt::AlignCenter, m_text);
 }
 
-QSizeF TextButton::getTextSize() const
+QSize TextButton::getTextSize()
 {
-    const auto *deco = qobject_cast<const Decoration *>(decoration());
+    const auto *deco = qobject_cast<Decoration *>(decoration());
     if (!deco) {
-        return QSizeF(0, 0);
+        return QSize(0, 0);
     }
 
     // const QString elidedText = painter->fontMetrics().elidedText(
@@ -77,9 +77,9 @@ QSizeF TextButton::getTextSize() const
     //     Qt::ElideRight,
     //     100, // Max width TODO: scale by dpi
     // );
-    const qreal textWidth = deco->getTextWidth(m_text);
-    const qreal titleBarHeight = deco->titleBarHeight();
-    const QSizeF size(textWidth, titleBarHeight);
+    const int textWidth = deco->getTextWidth(m_text);
+    const int titleBarHeight = deco->titleBarHeight();
+    const QSize size(textWidth, titleBarHeight);
     return size;
 }
 
@@ -120,7 +120,7 @@ void TextButton::setHeight(qreal buttonHeight)
 
 void TextButton::updateGeometry()
 {
-    const QSizeF textSize = getTextSize();
+    const QSize textSize = getTextSize();
     updateSize(textSize.width(), textSize.height());
 }
 
