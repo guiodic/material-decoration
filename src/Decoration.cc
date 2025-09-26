@@ -191,7 +191,6 @@ Decoration::~Decoration()
     }
 }
 
-
 void Decoration::setupMenu()
 {
     auto repaintTitleBar = [this] {
@@ -492,7 +491,7 @@ void Decoration::setButtonGroupHorzPadding(KDecoration3::DecorationButtonGroup *
 
 void Decoration::updateButtonHeight()
 {
-    const qreal buttonHeight = titleBarHeight();
+    const int buttonHeight = titleBarHeight();
     setButtonGroupHeight(m_leftButtons, buttonHeight);
     setButtonGroupHeight(m_rightButtons, buttonHeight);
     setButtonGroupHeight(m_menuButtons, buttonHeight);
@@ -1100,7 +1099,7 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
         radius = 0;
     }
 
-    painter->drawPath(getRoundedPath(QRectF(0, 0, size().width(), titleBarHeight()), radius, true, true, false, false));
+    painter->drawPath(getRoundedPath(QRectF(0, 0, size().width(), titleBarHeight()+1), radius, true, true, false, false));
 
     painter->restore();
 }
