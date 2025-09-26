@@ -59,7 +59,7 @@ public:
     virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal);
 
     virtual void updateSize(qreal contentWidth, qreal contentHeight);
-    virtual void setHeight(int buttonHeight);
+    virtual void setHeight(qreal buttonHeight);
 
     void forceUnpress();
 

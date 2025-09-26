@@ -432,7 +432,7 @@ void Decoration::updateBlur()
 
 void Decoration::updateBorders()
 {
-    const int sideSize = sideBorderSize();
+    const qreal sideSize = sideBorderSize();
     QMarginsF borders;
     borders.setTop(titleBarHeight());
     borders.setLeft(leftBorderVisible() ? sideSize : 0);
@@ -445,7 +445,7 @@ void Decoration::updateResizeBorders()
 {
     QMarginsF borders;
 
-    const int extender = settings()->largeSpacing();
+    const qreal extender = settings()->largeSpacing();
     borders.setLeft(extender);
     borders.setTop(extender);
     borders.setRight(extender);
@@ -474,7 +474,7 @@ void Decoration::updateTitleBarHoverState()
     }
 }
 
-void Decoration::setButtonGroupHeight(KDecoration3::DecorationButtonGroup *buttonGroup, int buttonHeight)
+void Decoration::setButtonGroupHeight(KDecoration3::DecorationButtonGroup *buttonGroup, qreal buttonHeight)
 {
     forEachButton<Button>(buttonGroup, [buttonHeight](Button *button) {
         button->setHeight(buttonHeight);
@@ -491,7 +491,7 @@ void Decoration::setButtonGroupHorzPadding(KDecoration3::DecorationButtonGroup *
 
 void Decoration::updateButtonHeight()
 {
-    const int buttonHeight = titleBarHeight();
+    const qreal buttonHeight = titleBarHeight();
     setButtonGroupHeight(m_leftButtons, buttonHeight);
     setButtonGroupHeight(m_rightButtons, buttonHeight);
     setButtonGroupHeight(m_menuButtons, buttonHeight);
@@ -547,7 +547,7 @@ void Decoration::updateButtonsGeometry()
 
     // Menu
     if (!m_menuButtons->buttons().isEmpty()) {
-        const int captionOffset = captionMinWidth() + settings()->smallSpacing();
+        const qreal captionOffset = captionMinWidth() + settings()->smallSpacing();
         const QRectF availableRect = centerRect().adjusted(
             0,
             0,
@@ -711,49 +711,49 @@ int Decoration::animationsDuration() const
     return m_internalSettings->animationsDuration();
 }
 
-int Decoration::buttonPadding() const
+qreal Decoration::buttonPadding() const
 {
-    const int baseUnit = settings()->gridUnit();
+    const qreal baseUnit = settings()->gridUnit();
     switch (m_internalSettings->buttonSize()) {
     case InternalSettings::ButtonTiny:
-        return qRound(baseUnit * 0.2);
+        return (baseUnit * 0.2);
     case InternalSettings::ButtonSmall:
-        return qRound(baseUnit * 0.4);
+        return (baseUnit * 0.4);
     default:
     case InternalSettings::ButtonDefault:
-        return qRound(baseUnit * 0.6);
+        return (baseUnit * 0.6);
     case InternalSettings::ButtonLarge:
-        return qRound(baseUnit * 0.75);
+        return (baseUnit * 0.75);
     case InternalSettings::ButtonVeryLarge:
-        return qRound(baseUnit * 0.9);
+        return (baseUnit * 0.9);
     }
 }
 
-int Decoration::titleBarHeight() const
+qreal Decoration::titleBarHeight() const
 {
-    const QFontMetrics fontMetrics(settings()->font());
-    return buttonPadding()*2 + fontMetrics.height();
+    const QFontMetricsF QFontMetricsF(settings()->font());
+    return buttonPadding()*2 + QFontMetricsF.height();
 }
 
-int Decoration::appMenuButtonHorzPadding() const
+qreal Decoration::appMenuButtonHorzPadding() const
 {
     // smallSpacing is scaled by dpr with a min of 2px.
     // So we need to divide our "pixel units" by 2 before scaling by it.
     return settings()->smallSpacing() * m_internalSettings->menuButtonHorzPadding() / 2;
 }
 
-int Decoration::appMenuCaptionSpacing() const
+qreal Decoration::appMenuCaptionSpacing() const
 {
     return settings()->largeSpacing() * 4;
 }
 
-int Decoration::captionMinWidth() const
+qreal Decoration::captionMinWidth() const
 {
     return settings()->largeSpacing() * 8;
 }
 
-int Decoration::bottomBorderSize() const {
-    const int baseSize = settings()->smallSpacing();
+qreal Decoration::bottomBorderSize() const {
+    const qreal baseSize = settings()->smallSpacing();
     switch (settings()->borderSize()) {
         default:
         case KDecoration3::BorderSize::None:
@@ -775,7 +775,7 @@ int Decoration::bottomBorderSize() const {
             return baseSize*10; // Same as Breeze
     }
 }
-int Decoration::sideBorderSize() const {
+qreal Decoration::sideBorderSize() const {
     switch (settings()->borderSize()) {
         case KDecoration3::BorderSize::NoSides:
             return 0;
@@ -811,12 +811,12 @@ bool Decoration::titleBarIsHovered() const
     return sectionUnderMouse() == Qt::TitleBarArea;
 }
 
-int Decoration::getTextWidth(const QString text, bool showMnemonic) const
+qreal Decoration::getTextWidth(const QString text, bool showMnemonic) const
 {
-    const QFontMetrics fontMetrics(settings()->font());
+    const QFontMetricsF QFontMetricsF(settings()->font());
     const QRectF textRect(titleBarRect());
     int flags = showMnemonic ? Qt::TextShowMnemonic : Qt::TextHideMnemonic;
-    const QRectF boundingRect = fontMetrics.boundingRect(textRect.toRect(), flags, text);
+    const QRectF boundingRect = QFontMetricsF.boundingRect(textRect.toRect(), flags, text);
     return boundingRect.width();
 }
 
@@ -989,7 +989,7 @@ qreal Decoration::cornerRadius() const
 QPainterPath Decoration::getRoundedPath(const QRectF &rect, qreal radius, bool roundTopLeft, bool roundTopRight, bool roundBottomLeft, bool roundBottomRight) const
 {
     QPainterPath path;
-    if (radius <= 0) {
+    if (radius <= 0 || (roundTopLeft + roundTopRight + roundBottomLeft + roundBottomRight) == 0) {
         path.addRect(rect);
         return path;
     }

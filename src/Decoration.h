@@ -85,7 +85,7 @@ private:
     void updateResizeBorders();
     void updateTitleBar();
     void updateTitleBarHoverState();
-    void setButtonGroupHeight(KDecoration3::DecorationButtonGroup *buttonGroup, int buttonHeight);
+    void setButtonGroupHeight(KDecoration3::DecorationButtonGroup *buttonGroup, qreal buttonHeight);
     void setButtonGroupHorzPadding(KDecoration3::DecorationButtonGroup *buttonGroup, qreal value);
     void updateButtonHeight();
     void updateButtonsGeometry();
@@ -99,14 +99,14 @@ private:
     bool showDisabledActions() const;
     bool animationsEnabled() const;
     int animationsDuration() const;
-    int buttonPadding() const;
-    int titleBarHeight() const;
-    int appMenuButtonHorzPadding() const;
-    int appMenuCaptionSpacing() const;
-    int captionMinWidth() const;
+    qreal buttonPadding() const;
+    qreal titleBarHeight() const;
+    qreal appMenuButtonHorzPadding() const;
+    qreal appMenuCaptionSpacing() const;
+    qreal captionMinWidth() const;
 
-    int bottomBorderSize() const;
-    int sideBorderSize() const;
+    qreal bottomBorderSize() const;
+    qreal sideBorderSize() const;
 
     bool leftBorderVisible() const;
     bool rightBorderVisible() const;
@@ -114,7 +114,7 @@ private:
     bool bottomBorderVisible() const;
 
     bool titleBarIsHovered() const;
-    int getTextWidth(const QString text, bool showMnemonic = false) const;
+    qreal getTextWidth(const QString text, bool showMnemonic = false) const;
     QPointF windowPos() const;
 
     void initDragMove(const QPointF pos);

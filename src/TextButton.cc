@@ -111,7 +111,7 @@ void TextButton::setText(const QString set)
     }
 }
 
-void TextButton::setHeight(int buttonHeight)
+void TextButton::setHeight(qreal buttonHeight)
 {
     Q_UNUSED(buttonHeight)
 

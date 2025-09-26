@@ -180,7 +180,13 @@ Button::Button(QObject *parent, const QVariantList &args)
 void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 {
     Q_UNUSED(repaintRegion)
-
+    
+    const auto *deco = qobject_cast<Decoration *>(decoration());
+       
+    if (!deco) {
+        return;
+    }    
+    
     painter->save();
 
     // Opacity
@@ -190,16 +196,13 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     const QColor bgColor = backgroundColor();
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
-    painter->setBrush(bgColor);
-
-    const auto *deco = qobject_cast<Decoration *>(decoration());
-    if (deco && !windowIsMaximized()) {
-        const qreal radius = deco->cornerRadius();
-        const qreal offset = 0.5 * (static_cast<int>(m_isRightmost) - static_cast<int>(m_isLeftmost));   // - 0.5 for left; +0.5 for right
-        painter->drawPath(deco->getRoundedPath(geometry().adjusted(0.0, -0.5, offset, 0.0), radius+0.5, m_isLeftmost, m_isRightmost, false, false)); 
-    } else {
-        painter->drawRect(geometry());
-    }
+    painter->setBrush(bgColor);        
+    const qreal radius = deco->cornerRadius();
+    
+    const qreal offset = 0.5 * (static_cast<int>(m_isRightmost) - static_cast<int>(m_isLeftmost));   // -0.5 for left; +0.5 for right
+    
+    // Smart way to draw a rectangle with the right rounded/squared corner
+    painter->drawPath(deco->getRoundedPath(geometry().adjusted(0.0, -0.5, offset, 0.0), (radius+0.5)*!windowIsMaximized(), m_isLeftmost, m_isRightmost, false, false)); 
 
     // Foreground.
     painter->setRenderHint(QPainter::Antialiasing);
@@ -299,11 +302,11 @@ void Button::updateSize(qreal contentWidth, qreal contentHeight)
     setGeometry(QRectF(geometry().topLeft(), size));
 }
 
-void Button::setHeight(int buttonHeight)
+void Button::setHeight(qreal buttonHeight)
 {
     // For simplicity, don't count the 1.x:1 scaling in the left/right padding.
     // The left/right padding is mainly for the border offset alignment.
-    updateSize(qRound(buttonHeight * 1.2), buttonHeight);
+    updateSize((buttonHeight * 1.2), buttonHeight);
 }
 
 qreal Button::iconLineWidth(const qreal size) const
