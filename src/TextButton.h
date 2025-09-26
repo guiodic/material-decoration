@@ -50,7 +50,7 @@ public:
     QString text() const;
     void setText(const QString set);
 
-    void setHeight(qreal buttonHeight) override;
+    void setHeight(int buttonHeight) override;
     void updateGeometry();
 
 signals:

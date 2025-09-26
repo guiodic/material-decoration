@@ -302,7 +302,7 @@ void Button::updateSize(int contentWidth, int contentHeight)
     setGeometry(QRect(geometry().topLeft().toPoint(), size));
 }
 
-void Button::setHeight(qreal buttonHeight)
+void Button::setHeight(int buttonHeight)
 {
     // For simplicity, don't count the 1.x:1 scaling in the left/right padding.
     // The left/right padding is mainly for the border offset alignment.

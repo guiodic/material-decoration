@@ -475,7 +475,7 @@ void Decoration::updateTitleBarHoverState()
     }
 }
 
-void Decoration::setButtonGroupHeight(KDecoration3::DecorationButtonGroup *buttonGroup, qreal buttonHeight)
+void Decoration::setButtonGroupHeight(KDecoration3::DecorationButtonGroup *buttonGroup, int buttonHeight)
 {
     forEachButton<Button>(buttonGroup, [buttonHeight](Button *button) {
         button->setHeight(buttonHeight);
@@ -712,7 +712,7 @@ int Decoration::animationsDuration() const
     return m_internalSettings->animationsDuration();
 }
 
-qreal Decoration::buttonPadding() const
+int Decoration::buttonPadding() const
 {
     const qreal baseUnit = settings()->gridUnit();
     switch (m_internalSettings->buttonSize()) {
@@ -730,30 +730,30 @@ qreal Decoration::buttonPadding() const
     }
 }
 
-qreal Decoration::titleBarHeight() const
+int Decoration::titleBarHeight() const
 {
-    const QFontMetricsF QFontMetricsF(settings()->font());
-    return buttonPadding()*2 + QFontMetricsF.height();
+    const QFontMetrics fontMetrics(settings()->font());
+    return buttonPadding()*2 + fontMetrics.height();
 }
 
-qreal Decoration::appMenuButtonHorzPadding() const
+int Decoration::appMenuButtonHorzPadding() const
 {
     // smallSpacing is scaled by dpr with a min of 2px.
     // So we need to divide our "pixel units" by 2 before scaling by it.
     return settings()->smallSpacing() * m_internalSettings->menuButtonHorzPadding() / 2;
 }
 
-qreal Decoration::appMenuCaptionSpacing() const
+int Decoration::appMenuCaptionSpacing() const
 {
     return settings()->largeSpacing() * 4;
 }
 
-qreal Decoration::captionMinWidth() const
+int Decoration::captionMinWidth() const
 {
     return settings()->largeSpacing() * 8;
 }
 
-qreal Decoration::bottomBorderSize() const {
+int Decoration::bottomBorderSize() const {
     const qreal baseSize = settings()->smallSpacing();
     switch (settings()->borderSize()) {
         default:
@@ -776,7 +776,8 @@ qreal Decoration::bottomBorderSize() const {
             return baseSize*10; // Same as Breeze
     }
 }
-qreal Decoration::sideBorderSize() const {
+
+int Decoration::sideBorderSize() const {
     switch (settings()->borderSize()) {
         case KDecoration3::BorderSize::NoSides:
             return 0;
