@@ -44,7 +44,7 @@ public:
         painter->setRenderHints(QPainter::Antialiasing, true);
         button->setPenWidth(painter, 1.2);
 
-        const qreal radius = 6;
+        const int radius = 6;
         painter->drawPolygon( QVector<QPointF> {
             QPointF(-radius, 0),
             QPointF(0, -radius),

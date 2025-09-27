@@ -64,7 +64,7 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     connect(this, &Button::hoveredChanged, this,
         [this](bool hovered) {
             updateAnimationState(hovered);
-            update();
+            update(geometry().adjusted(-1, -1, 1, 1)); //
         });
 
     if (QCoreApplication::applicationName() == QStringLiteral("kded6")) {
@@ -86,11 +86,11 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
         setTransitionValue(value.toReal());
     });
     connect(this, &Button::transitionValueChanged, this, [this]() {
-        update();
+        update(geometry().adjusted(-1, -1, 1, 1));
     });
 
     connect(this, &Button::opacityChanged, this, [this]() {
-        update();
+        update(geometry().adjusted(-1, -1, 1, 1));
     });
 
     setHeight(decoration->titleBarHeight());
@@ -180,7 +180,22 @@ Button::Button(QObject *parent, const QVariantList &args)
 void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 {
     Q_UNUSED(repaintRegion)
-
+    
+    /*
+    qCDebug(category) << "Button::paint -"
+        // << "text:" << (qobject_cast<TextButton*>(this) ? qobject_cast<TextButton*>(this)->text() : "N/A")
+         << "hovered:" << isHovered()
+         << "pressed:" << isPressed()
+         << "geometry:" << geometry()
+         << "contentArea:" << contentArea(); 
+    */     
+    
+    const auto *deco = qobject_cast<Decoration *>(decoration());
+       
+    if (!deco) {
+        return;
+    }    
+    
     painter->save();
 
     // Opacity
@@ -190,16 +205,14 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     const QColor bgColor = backgroundColor();
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
-    painter->setBrush(bgColor);
-
-    const auto *deco = qobject_cast<Decoration *>(decoration());
-    if (deco && !windowIsMaximized()) {
-        const qreal radius = deco->cornerRadius();
-        const qreal offset = 0.5 * (static_cast<int>(m_isRightmost) - static_cast<int>(m_isLeftmost));   // - 0.5 for left; +0.5 for right
-        painter->drawPath(deco->getRoundedPath(geometry().adjusted(0.0, -0.5, offset, 0.0), radius+0.5, m_isLeftmost, m_isRightmost, false, false)); 
-    } else {
-        painter->drawRect(geometry());
-    }
+    painter->setBrush(bgColor);        
+    const qreal radius = deco->cornerRadius();
+    
+    //const qreal offset = (static_cast<int>(m_isRightmost) - static_cast<int>(m_isLeftmost));   // -0.5 for left; +0.5 for right
+    
+    // Smart way to draw a rectangle with the right rounded/squared corner
+    painter->drawPath(deco->getRoundedPath(geometry(), (radius-1)*!windowIsMaximized(), m_isLeftmost, m_isRightmost, false, false)); 
+    //painter->fillRect(geometry().toAlignedRect(), bgColor);
 
     // Foreground.
     painter->setRenderHint(QPainter::Antialiasing);
@@ -228,7 +241,8 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
             // The Gtk theme already has a fairly large amount of padding, as
             // the Breeze theme doesn't currently follow fitt's law. So use different
             // scale so that the icon is not a very tiny 8px.
-            size = (qMin(width, height))*1.2; // 120% for GTK
+            size = (qMin(width, height))*1.15; // 115% for GTK
+            painter->setRenderHint(QPainter::Antialiasing, false); //do not antialias gtk buttons, gtk will aliases them
         } else {
             size = (qMin(width, height))*0.6; // 60% of the Kwin Deco
         }        
@@ -289,20 +303,20 @@ void Button::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal)
     Q_UNUSED(iconRect)
 }
 
-void Button::updateSize(qreal contentWidth, qreal contentHeight)
+void Button::updateSize(int contentWidth, int contentHeight)
 {
-    const QSizeF size(
+    const QSize size(
         m_padding.left() + contentWidth + m_padding.right(),
         m_padding.top() + contentHeight + m_padding.bottom()
     );
-    setGeometry(QRectF(geometry().topLeft(), size));
+    setGeometry(QRect(geometry().topLeft().toPoint(), size));
 }
 
 void Button::setHeight(int buttonHeight)
 {
     // For simplicity, don't count the 1.x:1 scaling in the left/right padding.
     // The left/right padding is mainly for the border offset alignment.
-    updateSize(qRound(buttonHeight * 1.2), buttonHeight);
+    updateSize((buttonHeight * 1.2), buttonHeight);
 }
 
 qreal Button::iconLineWidth(const qreal size) const
@@ -522,12 +536,12 @@ void Button::setTransitionValue(qreal value)
     }
 }
 
-QMarginsF &Button::padding()
+QMargins &Button::padding()
 {
     return m_padding;
 }
 
-void Button::setHorzPadding(qreal value)
+void Button::setHorzPadding(int value)
 {
     padding().setLeft(value);
     padding().setRight(value);

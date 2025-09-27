@@ -56,8 +56,8 @@ public:
     Decoration(QObject *parent = nullptr, const QVariantList &args = QVariantList());
     ~Decoration() override;
 
-    QRectF titleBarRect() const;
-    QRectF centerRect() const;
+    QRect titleBarRect() const;
+    QRect centerRect() const;
 
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
 
@@ -85,8 +85,10 @@ private:
     void updateResizeBorders();
     void updateTitleBar();
     void updateTitleBarHoverState();
+
     void setButtonGroupHeight(KDecoration3::DecorationButtonGroup *buttonGroup, int buttonHeight);
-    void setButtonGroupHorzPadding(KDecoration3::DecorationButtonGroup *buttonGroup, qreal value);
+    void setButtonGroupHorzPadding(KDecoration3::DecorationButtonGroup *buttonGroup, int value);
+
     void updateButtonHeight();
     void updateButtonsGeometry();
     void setButtonGroupAnimation(KDecoration3::DecorationButtonGroup *buttonGroup, bool enabled, int duration);
@@ -114,13 +116,14 @@ private:
     bool bottomBorderVisible() const;
 
     bool titleBarIsHovered() const;
-    int getTextWidth(const QString text, bool showMnemonic = false) const;
-    QPointF windowPos() const;
 
-    void initDragMove(const QPointF pos);
+    int getTextWidth(const QString text, bool showMnemonic = false) const;
+    QPoint windowPos() const;
+
+    void initDragMove(const QPoint pos);
     void resetDragMove();
-    bool dragMoveTick(const QPointF pos);
-    void sendMoveEvent(const QPointF pos);
+    bool dragMoveTick(const QPoint pos);
+    void sendMoveEvent(const QPoint pos);
 
     QColor borderColor() const;
     QColor titleBarBackgroundColor() const;
@@ -142,7 +145,7 @@ private:
     QSharedPointer<InternalSettings> m_internalSettings;
     qreal m_cornerRadius = 0;
 
-    QPointF m_pressedPoint;
+    QPoint m_pressedPoint;
 
 #if HAVE_X11
     xcb_atom_t m_moveResizeAtom = 0;

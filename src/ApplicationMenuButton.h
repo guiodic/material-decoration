@@ -41,7 +41,7 @@ public:
         Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.5);
 
-        const int spacing = 4;
+        const qreal spacing = 4.0;
         for (int i = -1; i <= 1; ++i) {
             const qreal y = i * spacing;
             const QPointF left { -5.5, y };
