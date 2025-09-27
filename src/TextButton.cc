@@ -65,7 +65,7 @@ void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qrea
     painter->drawText(iconRect, mnemonicFlag | Qt::AlignCenter, m_text);
 }
 
-QSize TextButton::getTextSize()
+QSize TextButton::getTextSize() const
 {
     const auto *deco = qobject_cast<Decoration *>(decoration());
     if (!deco) {

@@ -216,11 +216,11 @@ QRect Decoration::titleBarRect() const
 QRect Decoration::centerRect() const
 {
     const bool leftButtonsVisible = !m_leftButtons->buttons().isEmpty();
-    const int leftOffset = m_leftButtons->geometry().right()
+    const int leftOffset = qRound(m_leftButtons->geometry().right())
         + (leftButtonsVisible ? settings()->smallSpacing() : 0);
 
     const bool rightButtonsVisible = !m_rightButtons->buttons().isEmpty();
-    const int rightOffset = m_rightButtons->geometry().width()
+    const int rightOffset = qRound(m_rightButtons->geometry().width())
         + (rightButtonsVisible ? settings()->smallSpacing() : 0);
 
     return titleBarRect().adjusted(
@@ -716,16 +716,16 @@ int Decoration::buttonPadding() const
     const qreal baseUnit = settings()->gridUnit();
     switch (m_internalSettings->buttonSize()) {
     case InternalSettings::ButtonTiny:
-        return (baseUnit * 0.2);
+        return qRound(baseUnit * 0.2);
     case InternalSettings::ButtonSmall:
-        return (baseUnit * 0.4);
+        return qRound(baseUnit * 0.4);
     default:
     case InternalSettings::ButtonDefault:
-        return (baseUnit * 0.6);
+        return qRound(baseUnit * 0.6);
     case InternalSettings::ButtonLarge:
-        return (baseUnit * 0.75);
+        return qRound(baseUnit * 0.75);
     case InternalSettings::ButtonVeryLarge:
-        return (baseUnit * 0.9);
+        return qRound(baseUnit * 0.9);
     }
 }
 
