@@ -564,7 +564,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
     int currentVisibleWidth = 0;
     for (KDecoration3::DecorationButton *button : buttons()) {
         if (button->isVisible()) {
-            currentVisibleWidth += button->geometry().width();
+            currentVisibleWidth += qRound(button->geometry().width());
         }
     }
 
