@@ -63,7 +63,7 @@ public:
         QPalette palette = decoratedClient->palette();
         palette.setColor(QPalette::WindowText, deco->titleBarForegroundColor());
         KIconLoader::global()->setCustomPalette(palette);
-        decoratedClient->icon().paint(painter, appIconRect.toRect());
+        decoratedClient->icon().paint(painter, appIconRect.toAlignedRect());
         if (activePalette == QPalette()) {
             KIconLoader::global()->resetPalette();
         } else {

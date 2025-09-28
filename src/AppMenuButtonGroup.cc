@@ -177,10 +177,10 @@ void AppMenuButtonGroup::repositionSearchMenu()
 
     if (KWindowSystem::isPlatformX11()) { // X11
         const QRectF buttonRect = button->geometry();
-        QPointF rootPosition = buttonRect.topLeft().toPoint();
+        QPoint rootPosition = buttonRect.topLeft().toPoint();
         rootPosition += deco->windowPos();
         // Re-popping up at the original position
-        m_searchMenu->popup(rootPosition.toPoint());
+        m_searchMenu->popup(rootPosition);
     } else { // Wayland
         KDecoration3::Positioner positioner;
         positioner.setAnchorRect(button->geometry());
@@ -453,6 +453,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
                         button->setVisible(false);
                     } else {
                         button->setEnabled(true);
+                        button->setVisible(true);
                     }
                 }
             }
@@ -614,10 +615,10 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
         deco->popup(positioner, menu);
     } else { //X11
         const QRectF buttonRect = button->geometry();
-        const QPointF position = buttonRect.topLeft().toPoint();
-        QPointF rootPosition(position);
+        const QPoint position = buttonRect.topLeft().toPoint();
+        QPoint rootPosition(position);
         rootPosition += deco->windowPos();
-        menu->popup(rootPosition.toPoint());
+        menu->popup(rootPosition);
     }
 
     if (buttonIndex == m_searchIndex) {
@@ -1038,7 +1039,7 @@ void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
         return;
     }
 
-    KDecoration3::DecorationButton *newHoveredButton = buttonAt(pos.x(), pos.y());
+    KDecoration3::DecorationButton *newHoveredButton = buttonAt(pos().toPoint());
 
     if (m_hoveredButton != newHoveredButton) {
         m_hoveredButton = newHoveredButton;
