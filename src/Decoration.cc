@@ -1135,8 +1135,8 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     // --- Determine alignment and final drawing rectangle ---
     QRect captionRect;
     Qt::Alignment alignment;
-    const int textWidth = fontMetrics.boundingRect(decoratedClient->caption()).width();
-    const QRect idealTextRect((size().width() - textWidth) / 2, 0, textWidth, titleBarHeight());
+    const qreal textWidth = fontMetrics.boundingRect(decoratedClient->caption()).width();
+    const QRect idealTextRect(qRound((size().width() - textWidth) / 2.0), 0, qRound(textWidth), titleBarHeight());
 
     switch (m_internalSettings->titleAlignment()) {
     case InternalSettings::AlignLeft:
