@@ -41,7 +41,7 @@ public:
     Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
 
     void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal) override;
-    QSize getTextSize() const;
+    QSizeF getTextSize() const;
 
 
     QAction* action() const;
@@ -50,7 +50,7 @@ public:
     QString text() const;
     void setText(const QString set);
 
-    void setHeight(int buttonHeight) override;
+    void setHeight(qreal buttonHeight) override;
     void updateGeometry();
 
 signals:

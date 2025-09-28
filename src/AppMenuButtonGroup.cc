@@ -561,10 +561,10 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
     setOverflowing(showOverflow);
 
     // calculate visible width
-    int currentVisibleWidth = 0;
+    qreal currentVisibleWidth = 0;
     for (KDecoration3::DecorationButton *button : buttons()) {
         if (button->isVisible()) {
-            currentVisibleWidth += qRound(button->geometry().width());
+            currentVisibleWidth += button->geometry().width();
         }
     }
 
@@ -574,7 +574,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
     }
 }
 
-int AppMenuButtonGroup::visibleWidth() const
+qreal AppMenuButtonGroup::visibleWidth() const
 {
     return m_visibleWidth;
 }

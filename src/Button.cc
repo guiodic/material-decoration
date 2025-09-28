@@ -48,6 +48,8 @@
 #include <QPainter>
 #include <QVariantAnimation>
 
+#define UPDATE_GEOM() update(geometry().adjusted(-1, -1, 1, 1))
+
 
 namespace Material
 {
@@ -61,12 +63,6 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     , m_padding()
     , m_isGtkButton(false)
 {
-    connect(this, &Button::hoveredChanged, this,
-        [this](bool hovered) {
-            updateAnimationState(hovered);
-            update(geometry().adjusted(-1, -1, 1, 1).toAlignedRect()); //adjusted(-1, -1, 1, 1) ... toAlignedRect()
-        });
-
     if (QCoreApplication::applicationName() == QStringLiteral("kded6")) {
         // See: https://github.com/Zren/material-decoration/issues/22
         // kde-gtk-config has a kded5 module which renders the buttons to svgs for gtk.
@@ -82,33 +78,43 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     m_animation->setStartValue(0.0);
     m_animation->setEndValue(1.0);
     m_animation->setEasingCurve(QEasingCurve::InOutQuad);
+    
+    
     connect(m_animation, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
         setTransitionValue(value.toReal());
     });
+    
+   
+    connect(this, &Button::hoveredChanged, this,
+        [this](bool hovered) {
+            updateAnimationState(hovered);
+            UPDATE_GEOM();
+        });
+
+    
     connect(this, &Button::transitionValueChanged, this, [this]() {
-        update(geometry().adjusted(-1, -1, 1, 1).toAlignedRect());
+        UPDATE_GEOM();
     });
 
     connect(this, &Button::opacityChanged, this, [this]() {
-        update(geometry().adjusted(-1, -1, 1, 1).toAlignedRect());
+       UPDATE_GEOM();
     });
     
     connect(this, &Button::checkedChanged, this, [this]() {
-        update(geometry().adjusted(-1, -1, 1, 1).toAlignedRect());
+        UPDATE_GEOM();
     }); 
     
     
     connect(this, &Button::pressedChanged, this, [this]() {
-        update(geometry().adjusted(-1, -1, 1, 1).toAlignedRect());
+       UPDATE_GEOM();
     }); 
-    
       
     connect(this, &Button::enabledChanged, this, [this]() {
-        update(geometry().adjusted(-1, -1, 1, 1).toAlignedRect());
+        UPDATE_GEOM();
     }); 
     
     connect(this, &Button::geometryChanged, this, [this]() {
-        update(geometry().adjusted(-1, -1, 1, 1).toAlignedRect());
+        UPDATE_GEOM();
     });
     
     
@@ -233,14 +239,14 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     //const qreal offset = (static_cast<int>(m_isRightmost) - static_cast<int>(m_isLeftmost));   // -0.5 for left; +0.5 for right
     
     // Smart way to draw a rectangle with the right rounded/squared corner
-    painter->drawPath(deco->getRoundedPath(geometry().toAlignedRect(), (radius-0.7)*!windowIsMaximized(), m_isLeftmost, m_isRightmost, false, false)); 
+    painter->drawPath(deco->getRoundedPath(geometry(), (radius-0.7)*!windowIsMaximized(), m_isLeftmost, m_isRightmost, false, false)); 
     //painter->fillRect(geometry().toAlignedRect(), bgColor); //.adjusted(-1, -1, 1, 1)
 
     // Foreground.
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setBrush(Qt::NoBrush);
 
-    const QRect contentRect = contentArea().toAlignedRect();
+    const QRectF contentRect = contentArea();
 
     // TextButton and AppIconButton are special, so we don't scale the painter
     if (auto textButton = qobject_cast<TextButton*>(this)) {
@@ -249,11 +255,11 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         AppIconButton::paintIcon(this, painter, contentRect, 0);
     } else {
         // All further rendering is performed inside a 18x18 square
-        const int width = contentRect.width();
-        const int height = contentRect.height();
+        const qreal width = contentRect.width();
+        const qreal height = contentRect.height();
         
         //Calculate scale for button icons
-        int size=14;
+        qreal size=14.0;
         if (m_isGtkButton) {
             // See: https://github.com/Zren/material-decoration/issues/22
             // kde-gtk-config has a kded5 module which renders the buttons to svgs for gtk.
@@ -263,10 +269,10 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
             // The Gtk theme already has a fairly large amount of padding, as
             // the Breeze theme doesn't currently follow fitt's law. So use different
             // scale so that the icon is not a very tiny 8px.
-            size = qRound(qMin(width, height)*1.15); // 115% for GTK
+            size = qMin(width, height)*1.15; // 115% for GTK
             painter->setRenderHint(QPainter::Antialiasing, false); //do not antialias gtk buttons, gtk will aliases them
         } else {
-            size = qRound(qMin(width, height)*0.6); // 60% of the Kwin Deco
+            size = qMin(width, height)*0.6; // 60% of the Kwin Deco
         }        
         
         painter->translate(contentRect.center());
@@ -275,7 +281,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         setPenWidth(painter, PenWidth::Symbol);
 
         // Icons
-        const QRect iconRect(-9, -9, 18, 18);
+        const QRectF iconRect(-9, -9, 18, 18);
         switch (type()) {
         // NOTE: Menu and ApplicationMenu are handled above
         case KDecoration3::DecorationButtonType::OnAllDesktops:
@@ -325,20 +331,20 @@ void Button::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal)
     Q_UNUSED(iconRect)
 }
 
-void Button::updateSize(int contentWidth, int contentHeight)
+void Button::updateSize(qreal contentWidth, qreal contentHeight)
 {
-    const QSize size(
+    const QSizeF size(
         m_padding.left() + contentWidth + m_padding.right(),
         m_padding.top() + contentHeight + m_padding.bottom()
     );
-    setGeometry(QRect(geometry().topLeft().toPoint(), size));
+    setGeometry(QRectF(geometry().topLeft(), size));
 }
 
-void Button::setHeight(int buttonHeight)
+void Button::setHeight(qreal buttonHeight)
 {
     // For simplicity, don't count the 1.x:1 scaling in the left/right padding.
     // The left/right padding is mainly for the border offset alignment.
-    updateSize(qRound(buttonHeight * 1.2), buttonHeight);
+    updateSize(buttonHeight * 1.25, buttonHeight);
 }
 
 qreal Button::iconLineWidth(const qreal size) const
@@ -558,12 +564,12 @@ void Button::setTransitionValue(qreal value)
     }
 }
 
-QMargins &Button::padding()
+QMarginsF &Button::padding()
 {
     return m_padding;
 }
 
-void Button::setHorzPadding(int value)
+void Button::setHorzPadding(qreal value)
 {
     padding().setLeft(value);
     padding().setRight(value);

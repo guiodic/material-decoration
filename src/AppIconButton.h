@@ -53,7 +53,7 @@ public:
             iconRect.width() * 0.7,
             iconRect.height() * 0.7
         );
-        QRectF appIconRect(QPoint(0,0), appIconSize);
+        QRectF appIconRect(QPointF(0,0), appIconSize);
         appIconRect.moveCenter(iconRect.center());
 
         const auto *deco = qobject_cast<Decoration *>(button->decoration());
@@ -63,7 +63,7 @@ public:
         QPalette palette = decoratedClient->palette();
         palette.setColor(QPalette::WindowText, deco->titleBarForegroundColor());
         KIconLoader::global()->setCustomPalette(palette);
-        decoratedClient->icon().paint(painter, appIconRect.toRect());
+        decoratedClient->icon().paint(painter, appIconRect.toAlignedRect());
         if (activePalette == QPalette()) {
             KIconLoader::global()->resetPalette();
         } else {
