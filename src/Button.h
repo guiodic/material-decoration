@@ -23,7 +23,7 @@
 #include <KDecoration3/DecorationButton>
 
 // Qt
-#include <QMargins>
+#include <QMarginsF>
 #include <QRectF>
 #include <QVariantAnimation>
 

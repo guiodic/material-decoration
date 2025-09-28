@@ -904,7 +904,7 @@ void Decoration::sendMoveEvent(const QPoint pos)
         }
 
         QPoint globalPos = windowPos()
-            - QPoint(0, titleBarHeight())
+            - QPoint(0, qRound(titleBarHeight()))
             + pos;
 
         //--- From: BreezeSizeGrip.cpp

@@ -67,7 +67,7 @@ void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qrea
 
 QSizeF TextButton::getTextSize() const
 {
-    const auto *deco = qobject_cast<Decoration *>(decoration());
+    const auto *deco = qobject_cast<const Decoration *>(decoration());
     if (!deco) {
         return QSizeF(0, 0);
     }
