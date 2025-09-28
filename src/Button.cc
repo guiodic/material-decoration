@@ -64,7 +64,7 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     connect(this, &Button::hoveredChanged, this,
         [this](bool hovered) {
             updateAnimationState(hovered);
-            update(geometry().adjusted(-1, -1, 1, 1)); //
+            update(geometry().adjusted(-1, -1, 1, 1).toAlignedRect()); //adjusted(-1, -1, 1, 1) ... toAlignedRect()
         });
 
     if (QCoreApplication::applicationName() == QStringLiteral("kded6")) {
@@ -86,12 +86,34 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
         setTransitionValue(value.toReal());
     });
     connect(this, &Button::transitionValueChanged, this, [this]() {
-        update(geometry().adjusted(-1, -1, 1, 1));
+        update(geometry().adjusted(-1, -1, 1, 1).toAlignedRect());
     });
 
     connect(this, &Button::opacityChanged, this, [this]() {
-        update(geometry().adjusted(-1, -1, 1, 1));
+        update(geometry().adjusted(-1, -1, 1, 1).toAlignedRect());
     });
+    
+    connect(this, &Button::checkedChanged, this, [this]() {
+        update(geometry().adjusted(-1, -1, 1, 1).toAlignedRect());
+    }); 
+    
+    
+    connect(this, &Button::pressedChanged, this, [this]() {
+        update(geometry().adjusted(-1, -1, 1, 1).toAlignedRect());
+    }); 
+    
+      
+    connect(this, &Button::enabledChanged, this, [this]() {
+        update(geometry().adjusted(-1, -1, 1, 1).toAlignedRect());
+    }); 
+    
+    connect(this, &Button::geometryChanged, this, [this]() {
+        update(geometry().adjusted(-1, -1, 1, 1).toAlignedRect());
+    });
+    
+    
+    
+    
 
     setHeight(decoration->titleBarHeight());
 
@@ -211,14 +233,14 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     //const qreal offset = (static_cast<int>(m_isRightmost) - static_cast<int>(m_isLeftmost));   // -0.5 for left; +0.5 for right
     
     // Smart way to draw a rectangle with the right rounded/squared corner
-    painter->drawPath(deco->getRoundedPath(geometry(), (radius-1)*!windowIsMaximized(), m_isLeftmost, m_isRightmost, false, false)); 
-    //painter->fillRect(geometry().toAlignedRect(), bgColor);
+    painter->drawPath(deco->getRoundedPath(geometry().toAlignedRect(), (radius-0.7)*!windowIsMaximized(), m_isLeftmost, m_isRightmost, false, false)); 
+    //painter->fillRect(geometry().toAlignedRect(), bgColor); //.adjusted(-1, -1, 1, 1)
 
     // Foreground.
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setBrush(Qt::NoBrush);
 
-    const QRectF contentRect = contentArea();
+    const QRect contentRect = contentArea().toAlignedRect();
 
     // TextButton and AppIconButton are special, so we don't scale the painter
     if (auto textButton = qobject_cast<TextButton*>(this)) {
@@ -227,11 +249,11 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         AppIconButton::paintIcon(this, painter, contentRect, 0);
     } else {
         // All further rendering is performed inside a 18x18 square
-        const qreal width = contentRect.width();
-        const qreal height = contentRect.height();
+        const int width = contentRect.width();
+        const int height = contentRect.height();
         
         //Calculate scale for button icons
-        qreal size=14.0;
+        int size=14;
         if (m_isGtkButton) {
             // See: https://github.com/Zren/material-decoration/issues/22
             // kde-gtk-config has a kded5 module which renders the buttons to svgs for gtk.
@@ -253,7 +275,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         setPenWidth(painter, PenWidth::Symbol);
 
         // Icons
-        const QRectF iconRect(-9, -9, 18, 18);
+        const QRect iconRect(-9, -9, 18, 18);
         switch (type()) {
         // NOTE: Menu and ApplicationMenu are handled above
         case KDecoration3::DecorationButtonType::OnAllDesktops:
