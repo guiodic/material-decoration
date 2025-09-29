@@ -84,7 +84,7 @@ public:
     bool isMenuOpen() const;
     bool menuLoadedOnce() const;
 
-    KDecoration3::DecorationButton* buttonAt(int x, int y) const;
+    KDecoration3::DecorationButton* buttonAt(QPoint pos) const;
 
     void unPressAllButtons();
     void handleHoverMove(const QPointF &pos);
