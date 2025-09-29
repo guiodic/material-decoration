@@ -61,7 +61,8 @@ public:
 
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
 
-    WId safeWindowId() const;
+    WId decoratedWindowId() const;
+    QPoint windowPos() const;
 
 public slots:
     bool init() override;
@@ -118,12 +119,11 @@ private:
     bool titleBarIsHovered() const;
 
     qreal getTextWidth(const QString text, bool showMnemonic = false) const;
-    QPoint windowPos() const;
 
+    
     void initDragMove(const QPoint pos);
     void resetDragMove();
     bool dragMoveTick(const QPoint pos);
-    void sendMoveEvent(const QPoint pos);
 
     QColor borderColor() const;
     QColor titleBarBackgroundColor() const;

@@ -300,10 +300,10 @@ void AppMenuButtonGroup::setOpacity(qreal value)
     }
 }
 
-KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(int x, int y) const
+KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(QPoint pos) const
 {
     for (auto *button : buttons()) {
-        if (button->isVisible() && button->geometry().contains(x, y)) {
+        if (button->isVisible() && button->geometry().contains(pos)) {
             return button;
         }
     }
@@ -1039,7 +1039,7 @@ void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
         return;
     }
 
-    KDecoration3::DecorationButton *newHoveredButton = buttonAt(qRound(pos.x()), qRound(pos.y()));
+    KDecoration3::DecorationButton *newHoveredButton = buttonAt(pos.toPoint());
 
     if (m_hoveredButton != newHoveredButton) {
         m_hoveredButton = newHoveredButton;
