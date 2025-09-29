@@ -331,7 +331,7 @@ bool Decoration::init()
 
 void Decoration::reconfigure()
 {
-    //resetDragMove();
+    resetDragMove();
     m_internalSettings->load();
     m_cornerRadius = m_internalSettings->cornerRadius();
 
