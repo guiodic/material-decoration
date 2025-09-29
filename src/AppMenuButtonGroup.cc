@@ -1039,7 +1039,7 @@ void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
         return;
     }
 
-    KDecoration3::DecorationButton *newHoveredButton = buttonAt(pos().toPoint());
+    KDecoration3::DecorationButton *newHoveredButton = buttonAt(qRound(pos.x()), qRound(pos.y()));
 
     if (m_hoveredButton != newHoveredButton) {
         m_hoveredButton = newHoveredButton;
