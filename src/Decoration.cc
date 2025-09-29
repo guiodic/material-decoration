@@ -57,11 +57,7 @@
 #include <QWheelEvent>
 #include <QTimer>
 
-// X11
-#if HAVE_X11
-#include <private/qtx11extras_p.h>
-#include <xcb/xcb.h>
-#endif
+
 
 namespace Material
 {
