@@ -248,7 +248,7 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 }
 
 bool Decoration::init()
-{
+{    
     m_internalSettings = QSharedPointer<InternalSettings>(new InternalSettings());
     m_cornerRadius = m_internalSettings->cornerRadius();
 
@@ -827,7 +827,7 @@ QPoint Decoration::windowPos() const
 {
 #if HAVE_X11
     if (KWindowSystem::isPlatformX11()) {
-        const WId windowId = decorationWindowId();
+        const WId windowId = decoratedWindowId();
         if (!windowId) {
             return QPoint(0, 0);
         }
@@ -1120,7 +1120,7 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
     painter->restore();
 }
 
-WId Decoration::decorationWindowId() const
+WId Decoration::decoratedWindowId() const
 {
 #if HAVE_X11
     if (const auto *kwinWindow = qobject_cast<const KWin::X11Window *>(this->parent())) {

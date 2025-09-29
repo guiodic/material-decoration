@@ -61,7 +61,7 @@ public:
 
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
 
-    WId decorationWindowId() const;
+    WId decoratedWindowId() const;
     QPoint windowPos() const;
 
 public slots:
