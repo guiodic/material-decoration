@@ -42,6 +42,7 @@
 // KWIN
 #if HAVE_X11
 #include <kwin-x11/x11window.h>
+#include <KWindowInfo>
 #endif
 
 // Qt
@@ -330,7 +331,7 @@ bool Decoration::init()
 
 void Decoration::reconfigure()
 {
-    resetDragMove();
+    //resetDragMove();
     m_internalSettings->load();
     m_cornerRadius = m_internalSettings->cornerRadius();
 
@@ -388,6 +389,7 @@ void Decoration::hoverMoveEvent(QHoverEvent *event)
     }
 }
 
+
 void Decoration::mouseReleaseEvent(QMouseEvent *event)
 {
     KDecoration3::Decoration::mouseReleaseEvent(event);
@@ -401,6 +403,7 @@ void Decoration::hoverLeaveEvent(QHoverEvent *event)
 
     resetDragMove();
 }
+
 
 void Decoration::wheelEvent(QWheelEvent *event)
 {
@@ -828,34 +831,16 @@ QPoint Decoration::windowPos() const
 {
 #if HAVE_X11
     if (KWindowSystem::isPlatformX11()) {
-        const WId windowId = safeWindowId();
+        const WId windowId = decorationWindowId();
         if (!windowId) {
             return QPoint(0, 0);
         }
+        
+        KWindowInfo info(windowId, NET::WMGeometry);
+        if (info.valid())
+            return info.geometry().topLeft();
 
-        //--- From: BreezeSizeGrip.cpp
-        /*
-        get root position matching position
-        need to use xcb because the embedding of the widget
-        breaks QT's mapToGlobal and other methods
-        */
-        auto connection( QX11Info::connection() );
-        xcb_get_geometry_cookie_t cookie( xcb_get_geometry( connection, windowId ) );
-        ScopedPointer<xcb_get_geometry_reply_t> reply( xcb_get_geometry_reply( connection, cookie, nullptr ) );
-        if (reply) {
-            // translate coordinates
-            xcb_translate_coordinates_cookie_t coordCookie( xcb_translate_coordinates(
-                connection, windowId, reply.data()->root,
-                -reply.data()->border_width,
-                -reply.data()->border_width ) );
-
-            ScopedPointer< xcb_translate_coordinates_reply_t> coordReply( xcb_translate_coordinates_reply( connection, coordCookie, nullptr ) );
-
-            if (coordReply) {
-                return QPoint(coordReply.data()->dst_x, coordReply.data()->dst_y);
-            }
-        }
-    }
+    }  
 #endif
 
 #if HAVE_Wayland
@@ -867,16 +852,17 @@ QPoint Decoration::windowPos() const
     return QPoint(0, 0);
 }
 
+
 void Decoration::initDragMove(const QPoint pos)
 {
     m_pressedPoint = pos;
 }
 
+
 void Decoration::resetDragMove()
 {
     m_pressedPoint = QPoint();
 }
-
 
 bool Decoration::dragMoveTick(const QPoint pos)
 {
@@ -887,99 +873,10 @@ bool Decoration::dragMoveTick(const QPoint pos)
     QPoint diff = pos - m_pressedPoint;
     // qCDebug(category) << "    diff" << diff << "mL" << diff.manhattanLength() << "sDD" << QApplication::startDragDistance();
     if (diff.manhattanLength() >= QApplication::startDragDistance()) {
-        sendMoveEvent(pos);
         resetDragMove();
         return true;
     }
     return false;
-}
-
-void Decoration::sendMoveEvent(const QPoint pos)
-{
-#if HAVE_X11
-    if (KWindowSystem::isPlatformX11()) {
-        const WId windowId = safeWindowId();
-        if (!windowId) {
-            return;
-        }
-
-        QPoint globalPos = windowPos()
-            - QPoint(0, qRound(titleBarHeight()))
-            + pos;
-
-        //--- From: BreezeSizeGrip.cpp
-        auto connection(QX11Info::connection());
-
-
-        // move/resize atom
-        if (!m_moveResizeAtom) {
-            // create atom if not found
-            const QString atomName( "_NET_WM_MOVERESIZE" );
-            xcb_intern_atom_cookie_t cookie( xcb_intern_atom( connection, false, atomName.size(), qPrintable( atomName ) ) );
-            ScopedPointer<xcb_intern_atom_reply_t> reply( xcb_intern_atom_reply( connection, cookie, nullptr ) );
-            m_moveResizeAtom = reply ? reply->atom : 0;
-        }
-        if (!m_moveResizeAtom) {
-            return;
-        }
-
-        // button release event
-        xcb_button_release_event_t releaseEvent{};
-
-        releaseEvent.response_type = XCB_BUTTON_RELEASE;
-        releaseEvent.event =  windowId;
-        releaseEvent.child = XCB_WINDOW_NONE;
-        releaseEvent.root = QX11Info::appRootWindow();
-        releaseEvent.event_x = pos.x();
-        releaseEvent.event_y = pos.y();
-        releaseEvent.root_x = globalPos.x();
-        releaseEvent.root_y = globalPos.y();
-        releaseEvent.detail = XCB_BUTTON_INDEX_1;
-        releaseEvent.state = XCB_BUTTON_MASK_1;
-        releaseEvent.time = XCB_CURRENT_TIME;
-        releaseEvent.same_screen = true;
-        xcb_send_event(
-            connection,
-            false,
-            windowId,
-            XCB_EVENT_MASK_BUTTON_RELEASE,
-            reinterpret_cast<const char*>(&releaseEvent)
-        );
-
-        xcb_ungrab_pointer(connection, XCB_TIME_CURRENT_TIME);
-
-        // move resize event
-        xcb_client_message_event_t clientMessageEvent{};
-
-        clientMessageEvent.response_type = XCB_CLIENT_MESSAGE;
-        clientMessageEvent.type = m_moveResizeAtom;
-        clientMessageEvent.format = 32;
-        clientMessageEvent.window = windowId;
-        clientMessageEvent.data.data32[0] = globalPos.x();
-        clientMessageEvent.data.data32[1] = globalPos.y();
-        clientMessageEvent.data.data32[2] = 8; // _NET_WM_MOVERESIZE_MOVE
-        clientMessageEvent.data.data32[3] = Qt::LeftButton;
-        clientMessageEvent.data.data32[4] = 0;
-
-        xcb_send_event(
-            connection,
-            false,
-            QX11Info::appRootWindow(),
-            XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT,
-            reinterpret_cast<const char*>(&clientMessageEvent)
-        );
-
-        xcb_flush(connection);
-    }
-#else
-    Q_UNUSED(pos)
-#endif
-
-#if HAVE_Wayland
-    if (KWindowSystem::isPlatformWayland()) {
-        // TODO
-    }
-#endif
 }
 
 qreal Decoration::cornerRadius() const
@@ -1227,16 +1124,10 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
     painter->restore();
 }
 
-
-WId Decoration::safeWindowId() const
+WId Decoration::decorationWindowId() const
 {
-    const auto *decoratedClient = window();
-    if (!decoratedClient) {
-        return 0;
-    }
-
 #if HAVE_X11
-    if (const auto *kwinWindow = qobject_cast<const KWin::X11Window *>(decoratedClient->decoration()->parent())) {
+    if (const auto *kwinWindow = qobject_cast<const KWin::X11Window *>(this->parent())) {
         return kwinWindow->window();
     }
 #endif
