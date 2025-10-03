@@ -970,6 +970,8 @@ void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
     QAction *action = actions.at(m_buttonIndexWaitingForPopup);
     if (action && action->menu() == menu) {
         // The menu we were waiting for is now ready.
+        // We must replace the action's menu with the new, populated one.
+        action->setMenu(menu);
         // We can now trigger the button again to pop it up.
         // It is crucial to reset the waiting index *before* calling trigger
         // to prevent an infinite loop.

@@ -151,7 +151,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
 void AppMenuModel::onMenuUpdated(QMenu *menu)
 {
     // This slot is called by the DBusMenuImporter whenever a menu's contents are ready.
-    if (m_menu.isNull()) { // First time update, this is the root application menu.
+    if (m_menu.isNull() || menu == m_menu.data()) { // First time update, or a top-level menu update.
         m_menu = menu;
         if (m_menu.isNull()) {
             return;

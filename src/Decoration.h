@@ -36,10 +36,6 @@
 #include <QWheelEvent>
 #include <QVariant>
 
-#if HAVE_X11
-#include <xcb/xcb.h>
-#endif
-
 
 namespace Material
 {
@@ -146,10 +142,6 @@ private:
     qreal m_cornerRadius = 0;
 
     QPoint m_pressedPoint;
-
-#if HAVE_X11
-    xcb_atom_t m_moveResizeAtom = 0;
-#endif
 
     friend class AppMenuButtonGroup;
     friend class Button;
