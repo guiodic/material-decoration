@@ -325,8 +325,7 @@ void AppMenuButtonGroup::resetButtons()
 
     // Now, immediately delete the button widgets we took ownership of.
     // This is necessary to prevent layout race conditions when recreating buttons
-    // in the same event loop cycle. The user's test confirmed this is safe
-    // and does not cause a double-free.
+    // in the same event loop cycle. 
     qDeleteAll(buttonsToDelete);
 
     Q_EMIT menuUpdated();
