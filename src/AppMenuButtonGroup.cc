@@ -317,7 +317,7 @@ void AppMenuButtonGroup::resetButtons()
     }
 
     // Create a copy of the button pointers before removing them from the group.
-    const auto buttonsToDelete = buttons();
+    const auto allButtons = buttons();
 
     // This removes all buttons with the "Custom" type from the group's list,
     // but does not delete the button widgets themselves.
@@ -326,7 +326,12 @@ void AppMenuButtonGroup::resetButtons()
     // Now, immediately delete the button widgets we took ownership of.
     // This is necessary to prevent layout race conditions when recreating buttons
     // in the same event loop cycle. 
-    qDeleteAll(buttonsToDelete);
+    for (auto *button : allButtons) {
+      if (button->type() == KDecoration3::DecorationButtonType::Custom) {
+          delete button;
+      }
+    };
+    //qDeleteAll(buttonsToDelete);
 
     Q_EMIT menuUpdated();
 }
