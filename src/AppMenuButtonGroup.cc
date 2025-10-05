@@ -312,26 +312,22 @@ KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(QPoint pos) const
 
 void AppMenuButtonGroup::resetButtons()
 {
-    const auto buttonsToDelete = buttons();
-    if (buttonsToDelete.isEmpty()) {
+    if (buttons().isEmpty()) {
         return;
     }
 
-    // --- INIZIO CODICE DI TEST ---
+    // Create a copy of the button pointers before removing them from the group.
+    const auto buttonsToDelete = buttons();
 
-    // 1. Creiamo una copia della lista dei puntatori ai pulsanti.
-    //    Questo è il passo cruciale, perché `removeButton` svuoterà la lista originale.
-    
-
-    // 2. Rimuoviamo i pulsanti dalla gestione del gruppo.
+    // This removes all buttons with the "Custom" type from the group's list,
+    // but does not delete the button widgets themselves.
     removeButton(KDecoration3::DecorationButtonType::Custom);
 
-    // 3. Ora eliminiamo immediatamente i widget usando la copia che abbiamo salvato.
-    //    ATTENZIONE: Questo è il codice che potrebbe reintrodurre il crash "double-free".
-    //    Usare solo per questo test.
+    // Now, immediately delete the button widgets we took ownership of.
+    // This is necessary to prevent layout race conditions when recreating buttons
+    // in the same event loop cycle. The user's test confirmed this is safe
+    // and does not cause a double-free.
     qDeleteAll(buttonsToDelete);
-
-    // --- FINE CODICE DI TEST ---
 
     Q_EMIT menuUpdated();
 }
