@@ -521,7 +521,7 @@ void Button::setAnimationEnabled(bool value)
 {
     if (m_animationEnabled != value) {
         m_animationEnabled = value;
-        emit animationEnabledChanged();
+        Q_EMIT animationEnabledChanged();
     }
 }
 
@@ -534,7 +534,7 @@ void Button::setAnimationDuration(int value)
 {
     if (m_animation->duration() != value) {
         m_animation->setDuration(value);
-        emit animationDurationChanged();
+        Q_EMIT animationDurationChanged();
     }
 }
 
@@ -547,7 +547,7 @@ void Button::setOpacity(qreal value)
 {
     if (m_opacity != value) {
         m_opacity = value;
-        emit opacityChanged();
+        Q_EMIT opacityChanged();
     }
 }
 
@@ -560,7 +560,7 @@ void Button::setTransitionValue(qreal value)
 {
     if (m_transitionValue != value) {
         m_transitionValue = value;
-        emit transitionValueChanged(value);
+        Q_EMIT transitionValueChanged(value);
     }
 }
 

@@ -77,7 +77,7 @@ AppMenuModel::AppMenuModel(QObject *parent)
     connect(m_serviceWatcher, &QDBusServiceWatcher::serviceUnregistered, this, [this](const QString & serviceName) {
         if (serviceName == m_serviceName) {
             setMenuAvailable(false);
-            emit modelNeedsUpdate();
+            Q_EMIT modelNeedsUpdate();
         }
     });
 
@@ -105,7 +105,7 @@ void AppMenuModel::setMenuAvailable(bool set)
 {
     if (m_menuAvailable != set) {
         m_menuAvailable = set;
-        emit menuAvailableChanged();
+        Q_EMIT menuAvailableChanged();
     }
 }
 
@@ -116,7 +116,7 @@ QMenu *AppMenuModel::menu() const
 
 void AppMenuModel::update()
 {
-    emit modelReset();
+    Q_EMIT modelReset();
     m_updatePending = false;
 }
 
@@ -151,7 +151,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
 void AppMenuModel::onMenuUpdated(QMenu *menu)
 {
     // This slot is called by the DBusMenuImporter whenever a menu's contents are ready.
-    if (m_menu.isNull()) { // First time update, this is the root application menu.
+    if (m_menu.isNull() || menu == m_menu.data()) { // First time update, or a top-level menu update.
         m_menu = menu;
         if (m_menu.isNull()) {
             return;
@@ -164,11 +164,11 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         }
 
         setMenuAvailable(true);
-        emit modelNeedsUpdate();
+        Q_EMIT modelNeedsUpdate();
 
         // Pre-fetching and deep caching are now handled on-demand.
     } else { // This is an update for a submenu that was previously requested.
-        emit subMenuReady(menu);
+        Q_EMIT subMenuReady(menu);
         const bool wasQueueEmpty = m_menusToDeepCache.isEmpty();
         if (m_isCachingSubtree || m_isCachingEverything) {
             // The deep caching phase has begun. Add the children of the newly-loaded
@@ -196,7 +196,7 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         if (m_pendingMenuUpdates > 0) {
             m_pendingMenuUpdates--;
             if (m_pendingMenuUpdates == 0) {
-                emit menuReadyForSearch();
+                Q_EMIT menuReadyForSearch();
             }
         }
     }

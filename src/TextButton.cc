@@ -92,7 +92,7 @@ void TextButton::setAction(QAction *set)
 {
     if (m_action != set) {
         m_action = set;
-        emit actionChanged();
+        Q_EMIT actionChanged();
     }
 }
 
@@ -105,7 +105,7 @@ void TextButton::setText(const QString set)
 {
     if (m_text != set) {
         m_text = set;
-        emit textChanged();
+        Q_EMIT textChanged();
 
         updateGeometry();
     }

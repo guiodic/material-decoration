@@ -54,9 +54,9 @@ void NavigableMenu::keyPressEvent(QKeyEvent *event)
             }
 
             if (isLeft) {
-                emit hitLeft();
+                Q_EMIT hitLeft();
             } else {
-                emit hitRight();
+                Q_EMIT hitRight();
             }
             event->accept();
         }

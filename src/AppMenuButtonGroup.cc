@@ -198,7 +198,7 @@ void AppMenuButtonGroup::setCurrentIndex(int set)
 {
     if (m_currentIndex != set) {
         m_currentIndex = set;
-        emit currentIndexChanged();
+        Q_EMIT currentIndexChanged();
     }
 }
 
@@ -211,7 +211,7 @@ void AppMenuButtonGroup::setOverflowing(bool set)
 {
     if (m_overflowing != set) {
         m_overflowing = set;
-        emit overflowingChanged();
+        Q_EMIT overflowingChanged();
     }
 }
 
@@ -224,7 +224,7 @@ void AppMenuButtonGroup::setHovered(bool value)
 {
     if (m_hovered != value) {
         m_hovered = value;
-        emit hoveredChanged(value);
+        Q_EMIT hoveredChanged(value);
     }
 }
 
@@ -237,7 +237,7 @@ void AppMenuButtonGroup::setShowing(bool value)
 {
     if (m_showing != value) {
         m_showing = value;
-        emit showingChanged(value);
+        Q_EMIT showingChanged(value);
     }
 }
 
@@ -250,7 +250,7 @@ void AppMenuButtonGroup::setAlwaysShow(bool value)
 {
     if (m_alwaysShow != value) {
         m_alwaysShow = value;
-        emit alwaysShowChanged(value);
+        Q_EMIT alwaysShowChanged(value);
     }
 }
 
@@ -263,7 +263,7 @@ void AppMenuButtonGroup::setAnimationEnabled(bool value)
 {
     if (m_animationEnabled != value) {
         m_animationEnabled = value;
-        emit animationEnabledChanged(value);
+        Q_EMIT animationEnabledChanged(value);
     }
 }
 
@@ -276,7 +276,7 @@ void AppMenuButtonGroup::setAnimationDuration(int value)
 {
     if (m_animation->duration() != value) {
         m_animation->setDuration(value);
-        emit animationDurationChanged(value);
+        Q_EMIT animationDurationChanged(value);
     }
 }
 
@@ -296,7 +296,7 @@ void AppMenuButtonGroup::setOpacity(qreal value)
             }
         }
 
-        emit opacityChanged(value);
+        Q_EMIT opacityChanged(value);
     }
 }
 
@@ -316,13 +316,24 @@ void AppMenuButtonGroup::resetButtons()
         return;
     }
 
+    // Create a copy of the button pointers before removing them from the group.
+    const auto allButtons = buttons();
+
     // This removes all buttons with the "Custom" type from the group's list,
-    // but does not delete the button widgets themselves. The buttons are parented
-    // to this widget, so their deletion is handled by the QObject ownership system.
-    // Manually calling qDeleteAll would lead to a double-free.
+    // but does not delete the button widgets themselves.
     removeButton(KDecoration3::DecorationButtonType::Custom);
 
-    emit menuUpdated();
+    // Now, immediately delete the button widgets we took ownership of.
+    // This is necessary to prevent layout race conditions when recreating buttons
+    // in the same event loop cycle. 
+    for (auto *button : allButtons) {
+      if (button->type() == KDecoration3::DecorationButtonType::Custom) {
+          delete button;
+      }
+    };
+    //qDeleteAll(buttonsToDelete);
+
+    Q_EMIT menuUpdated();
 }
 
 void AppMenuButtonGroup::onMenuReadyForSearch()
@@ -490,7 +501,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
             }
         }
 
-        emit menuUpdated();
+        Q_EMIT menuUpdated();
     }
 }
 
@@ -570,7 +581,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 
     if (m_visibleWidth != currentVisibleWidth) {
         m_visibleWidth = currentVisibleWidth;
-        emit menuUpdated();
+        Q_EMIT menuUpdated();
     }
 }
 
