@@ -198,7 +198,7 @@ void AppMenuButtonGroup::setCurrentIndex(int set)
 {
     if (m_currentIndex != set) {
         m_currentIndex = set;
-        emit currentIndexChanged();
+        Q_EMIT currentIndexChanged();
     }
 }
 
@@ -211,7 +211,7 @@ void AppMenuButtonGroup::setOverflowing(bool set)
 {
     if (m_overflowing != set) {
         m_overflowing = set;
-        emit overflowingChanged();
+        Q_EMIT overflowingChanged();
     }
 }
 
@@ -224,7 +224,7 @@ void AppMenuButtonGroup::setHovered(bool value)
 {
     if (m_hovered != value) {
         m_hovered = value;
-        emit hoveredChanged(value);
+        Q_EMIT hoveredChanged(value);
     }
 }
 
@@ -237,7 +237,7 @@ void AppMenuButtonGroup::setShowing(bool value)
 {
     if (m_showing != value) {
         m_showing = value;
-        emit showingChanged(value);
+        Q_EMIT showingChanged(value);
     }
 }
 
@@ -250,7 +250,7 @@ void AppMenuButtonGroup::setAlwaysShow(bool value)
 {
     if (m_alwaysShow != value) {
         m_alwaysShow = value;
-        emit alwaysShowChanged(value);
+        Q_EMIT alwaysShowChanged(value);
     }
 }
 
@@ -263,7 +263,7 @@ void AppMenuButtonGroup::setAnimationEnabled(bool value)
 {
     if (m_animationEnabled != value) {
         m_animationEnabled = value;
-        emit animationEnabledChanged(value);
+        Q_EMIT animationEnabledChanged(value);
     }
 }
 
@@ -276,7 +276,7 @@ void AppMenuButtonGroup::setAnimationDuration(int value)
 {
     if (m_animation->duration() != value) {
         m_animation->setDuration(value);
-        emit animationDurationChanged(value);
+        Q_EMIT animationDurationChanged(value);
     }
 }
 
@@ -296,7 +296,7 @@ void AppMenuButtonGroup::setOpacity(qreal value)
             }
         }
 
-        emit opacityChanged(value);
+        Q_EMIT opacityChanged(value);
     }
 }
 
@@ -322,7 +322,7 @@ void AppMenuButtonGroup::resetButtons()
     // Manually calling qDeleteAll would lead to a double-free.
     removeButton(KDecoration3::DecorationButtonType::Custom);
 
-    emit menuUpdated();
+    Q_EMIT menuUpdated();
 }
 
 void AppMenuButtonGroup::onMenuReadyForSearch()
@@ -490,7 +490,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
             }
         }
 
-        emit menuUpdated();
+        Q_EMIT menuUpdated();
     }
 }
 
@@ -570,7 +570,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 
     if (m_visibleWidth != currentVisibleWidth) {
         m_visibleWidth = currentVisibleWidth;
-        emit menuUpdated();
+        Q_EMIT menuUpdated();
     }
 }
 
@@ -968,10 +968,8 @@ void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
     }
 
     QAction *action = actions.at(m_buttonIndexWaitingForPopup);
-    if (action) {
+    if (action && action->menu() == menu) {
         // The menu we were waiting for is now ready.
-        // We must replace the action's menu with the new, populated one.
-        action->setMenu(menu);
         // We can now trigger the button again to pop it up.
         // It is crucial to reset the waiting index *before* calling trigger
         // to prevent an infinite loop.
