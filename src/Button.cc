@@ -243,7 +243,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     //painter->fillRect(geometry().toAlignedRect(), bgColor); //.adjusted(-1, -1, 1, 1)
 
     // Foreground.
-    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setRenderHint(QPainter::Antialiasing, true);
     painter->setBrush(Qt::NoBrush);
 
     const QRectF contentRect = contentArea();

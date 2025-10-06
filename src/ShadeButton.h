@@ -45,7 +45,7 @@ public:
         const QPointF offset(-5, -5);
 
         if (button->isChecked()) {
-            button->setPenWidth(painter, 1.0);
+            button->setPenWidth(painter, 1.25);
             painter->drawLine( 
                 QPointF( 0, 2 ) + offset,
                 QPointF( 10, 2 ) + offset
@@ -57,7 +57,7 @@ public:
                 QPointF( 9.5, 5.25 ) + offset
             });
         } else {
-            button->setPenWidth(painter, 1.0);
+            button->setPenWidth(painter, 1.25);
             painter->drawLine( 
                 QPointF( 0, 2 ) + offset,
                 QPointF( 10, 2 ) + offset
