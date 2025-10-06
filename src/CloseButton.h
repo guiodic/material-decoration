@@ -43,7 +43,7 @@ public:
         Q_UNUSED(button)
         Q_UNUSED(iconRect)
 
-        painter->setRenderHints(QPainter::Antialiasing, true);
+        //painter->setRenderHints(QPainter::Antialiasing, true);
 
         button->setPenWidth(painter, 1.5);
 

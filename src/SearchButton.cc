@@ -33,7 +33,7 @@ SearchButton::~SearchButton() = default;
 void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal)
 {
     Q_UNUSED(iconRect)
-    painter->setRenderHint(QPainter::Antialiasing, true);
+    //painter->setRenderHint(QPainter::Antialiasing, true);
     setPenWidth(painter, 1.25);
 
     const qreal circleRadius = 4.0;

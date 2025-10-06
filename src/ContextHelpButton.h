@@ -48,7 +48,7 @@ public:
         Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.25);
 
-        painter->setRenderHints(QPainter::Antialiasing, true);
+        //painter->setRenderHints(QPainter::Antialiasing, true);
         
         const QPointF offset(-5.5, -5.5);
 
