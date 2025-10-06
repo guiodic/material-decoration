@@ -65,7 +65,7 @@ public:
 
     void forceUnpress();
 
-    virtual qreal iconLineWidth(const qreal size) const;
+    //virtual qreal iconLineWidth(const qreal size) const;
     void setPenWidth(QPainter *painter, const qreal scale);
 
     virtual QColor backgroundColor() const;

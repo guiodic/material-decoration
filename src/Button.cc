@@ -231,15 +231,15 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 
     // Background
     const QColor bgColor = backgroundColor();
-    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setRenderHints(QPainter::Antialiasing, true);
     painter->setPen(Qt::NoPen);
-    painter->setBrush(bgColor);        
+    painter->setBrush(bgColor);
     const qreal radius = deco->cornerRadius();
-    
+
     //const qreal offset = (static_cast<int>(m_isRightmost) - static_cast<int>(m_isLeftmost));   // -0.5 for left; +0.5 for right
-    
+
     // Smart way to draw a rectangle with the right rounded/squared corner
-    painter->drawPath(deco->getRoundedPath(geometry(), (radius-0.7)*!windowIsMaximized(), m_isLeftmost, m_isRightmost, false, false)); 
+    painter->drawPath(deco->getRoundedPath(geometry(), (radius-0.7)*!windowIsMaximized(), m_isLeftmost, m_isRightmost, false, false));
     //painter->fillRect(geometry().toAlignedRect(), bgColor); //.adjusted(-1, -1, 1, 1)
 
     // Foreground.
@@ -257,26 +257,33 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         // All further rendering is performed inside a 18x18 square
         const qreal width = contentRect.width();
         const qreal height = contentRect.height();
-        
+
         //Calculate scale for button icons
-        qreal size=14.0;
+        qreal size;
         if (m_isGtkButton) {
             // See: https://github.com/Zren/material-decoration/issues/22
             // kde-gtk-config has a kded5 module which renders the buttons to svgs for gtk.
-            
+
             // The svgs are 50x50, located at ~/.config/gtk-3.0/assets/
             // They are usually scaled down to just 18x18 when drawn in gtk headerbars.
             // The Gtk theme already has a fairly large amount of padding, as
             // the Breeze theme doesn't currently follow fitt's law. So use different
             // scale so that the icon is not a very tiny 8px.
-            size = qMin(width, height)*1.15; // 115% for GTK
+            size = qMin(width, height) * 1.15; // 115% for GTK
             painter->setRenderHint(QPainter::Antialiasing, false); //do not antialias gtk buttons, gtk will aliases them
         } else {
-            size = qMin(width, height)*0.6; // 60% of the Kwin Deco
-        }        
-        
-        painter->translate(contentRect.center());
-        painter->scale(size / 18.0, size / 18.0);
+            size = qMin(width, height) * 0.6; // 60% of the Kwin Deco
+        }
+
+        // For a sharper image, we use integer-based positioning
+        const int iconSize = qRound(size);
+
+        // Translate to a rounded center
+        const QPointF center = contentRect.center();
+        painter->translate(qRound(center.x()), qRound(center.y()));
+
+        // Scale by an integer-based factor
+        painter->scale(static_cast<qreal>(iconSize) / 18.0, static_cast<qreal>(iconSize) / 18.0);
         
         setPenWidth(painter, PenWidth::Symbol);
 
@@ -347,20 +354,15 @@ void Button::setHeight(qreal buttonHeight)
     updateSize(buttonHeight * 1.1, buttonHeight);
 }
 
-qreal Button::iconLineWidth(const qreal size) const
-{
-    return PenWidth::Symbol * qMax((qreal)1.0, 18.0 / size);
-}
-
 void Button::setPenWidth(QPainter *painter, const qreal scale)
 {
-    const qreal width = contentArea().width();
-    const qreal height = contentArea().height();
-    const qreal size = qMin(width, height);
     QPen pen(foregroundColor());
     pen.setCapStyle(Qt::RoundCap);
     pen.setJoinStyle(Qt::MiterJoin);
-    pen.setWidthF(iconLineWidth(size) * scale);
+    // Set the base pen width. This will be correctly scaled by the painter's
+    // transformation in the paint() method, preserving the behavior of
+    // lines getting thicker as the icon scales up.
+    pen.setWidthF(PenWidth::Symbol * scale);
     painter->setPen(pen);
 }
 
