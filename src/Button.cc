@@ -391,7 +391,7 @@ QColor Button::backgroundColor() const
         QColor normalColor = QColor(hoveredColor);
         normalColor.setAlphaF(0);
 
-        if (isPressed()) {
+        if (isPressed() && !m_visualOverride) {
             const QColor pressedColor = decoratedClient->color(
                 KDecoration3::ColorGroup::Warning,
                 KDecoration3::ColorRole::Foreground
@@ -399,7 +399,7 @@ QColor Button::backgroundColor() const
             return KColorUtils::mix(normalColor, pressedColor, m_transitionValue);
         }
 
-        if (isHovered()) {
+        if (isHovered() && !m_visualOverride) {
             return KColorUtils::mix(normalColor, hoveredColor, m_transitionValue);
         }
     }
@@ -408,14 +408,14 @@ QColor Button::backgroundColor() const
     if (isChecked() && type() != KDecoration3::DecorationButtonType::Maximize) {
         const QColor normalColor = deco->titleBarForegroundColor();
 
-        if (isPressed()) {
+        if (isPressed() && !m_visualOverride) {
             const QColor pressedColor = KColorUtils::mix(
                 deco->titleBarBackgroundColor(),
                 deco->titleBarForegroundColor(),
                 0.7);
             return KColorUtils::mix(normalColor, pressedColor, m_transitionValue);
         }
-        if (isHovered()) {
+        if (isHovered() && !m_visualOverride) {
             const QColor hoveredColor = KColorUtils::mix(
                 deco->titleBarBackgroundColor(),
                 deco->titleBarForegroundColor(),
@@ -433,14 +433,14 @@ QColor Button::backgroundColor() const
     QColor normalColor = QColor(hoveredColor);
     normalColor.setAlphaF(0);
 
-    if (isPressed()) {
+    if (isPressed() && !m_visualOverride) {
         const QColor pressedColor = KColorUtils::mix(
             deco->titleBarBackgroundColor(),
             deco->titleBarForegroundColor(),
             0.3);
         return KColorUtils::mix(normalColor, pressedColor, m_transitionValue);
     }
-    if (isHovered()) {
+    if (isHovered() && !m_visualOverride) {
         return KColorUtils::mix(normalColor, hoveredColor, m_transitionValue);
     }
     return normalColor;
@@ -460,7 +460,7 @@ QColor Button::foregroundColor() const
             deco->titleBarForegroundColor(),
             0.2);
 
-        if (isPressed() || isHovered()) {
+        if ((isPressed() || isHovered()) && !m_visualOverride) {
             return KColorUtils::mix(
                 activeColor,
                 deco->titleBarBackgroundColor(),
@@ -475,7 +475,7 @@ QColor Button::foregroundColor() const
         deco->titleBarForegroundColor(),
         0.8);
 
-    if (isPressed() || isHovered()) {
+    if ((isPressed() || isHovered()) && !m_visualOverride) {
         // Breeze GTK has huge margins around the button. It looks better
         // when we just change the fgColor on hover instead of the bgColor.
         QColor hoveredColor;
@@ -622,6 +622,15 @@ void Button::forceUnpress()
     const bool wasEnabled = isEnabled();
     setEnabled(!wasEnabled);
     setEnabled(wasEnabled);
+}
+
+void Button::setVisualOverride(bool override)
+{
+    if (m_visualOverride == override) {
+        return;
+    }
+    m_visualOverride = override;
+    update();
 }
 
 
