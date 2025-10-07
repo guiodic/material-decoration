@@ -414,24 +414,6 @@ void AppMenuButtonGroup::performDebouncedMenuUpdate()
     }
 }
 
-void AppMenuButtonGroup::resetVisualUnpressAllButtons()
-{
-    for (auto *decoButton : buttons()) {
-        if (auto *button = qobject_cast<Button *>(decoButton)) {
-            button->setVisualOverride(false);
-        }
-    }
-}
-
-void AppMenuButtonGroup::visualUnpressAllButtons()
-{
-    for (auto *decoButton : buttons()) {
-        if (auto *button = qobject_cast<Button *>(decoButton)) {
-            button->setVisualOverride(true);
-        }
-    }
-}
-
 void AppMenuButtonGroup::updateAppMenuModel()
 {
     m_menuLoadedOnce = true;

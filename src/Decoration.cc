@@ -377,7 +377,7 @@ void Decoration::hoverMoveEvent(QHoverEvent *event)
 
     const bool dragStarted = dragMoveTick(event->position().toPoint());
     if (dragStarted) {
-        m_menuButtons->visualUnpressAllButtons();
+        // m_menuButtons->unPressAllButtons();
     }
 
     // The platform check has been removed, and the logic is now unified.
@@ -865,7 +865,6 @@ void Decoration::initDragMove(const QPoint pos)
 void Decoration::resetDragMove()
 {
     m_pressedPoint = QPoint();
-    m_menuButtons->resetVisualUnpressAllButtons();
 }
 
 bool Decoration::dragMoveTick(const QPoint pos)

@@ -87,8 +87,6 @@ public:
     KDecoration3::DecorationButton* buttonAt(QPoint pos) const;
 
     void unPressAllButtons();
-    void visualUnpressAllButtons();
-    void resetVisualUnpressAllButtons();
     void handleHoverMove(const QPointF &pos);
 
 public slots:

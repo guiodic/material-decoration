@@ -91,10 +91,8 @@ public:
 
     void setIsLeftmost(bool isLeftmost);
     void setIsRightmost(bool isRightmost);
-
+    
     bool windowIsMaximized();
-
-    void setVisualOverride(bool override);
 
 private Q_SLOTS:
     void updateAnimationState(bool hovered);
@@ -115,7 +113,6 @@ protected:
     bool m_isGtkButton;
     bool m_isLeftmost = false;
     bool m_isRightmost = false;
-    bool m_visualOverride = false;
 };
 
 } // namespace Material
