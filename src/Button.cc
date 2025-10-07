@@ -287,7 +287,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         // Scale by an integer-based factor
         painter->scale(static_cast<qreal>(iconSize) / 18.0, static_cast<qreal>(iconSize) / 18.0);
         
-        setPenWidth(painter, 1.0); // = PenWidth::Symbol
+        setPenWidth(painter, KDecoration3::pixelSize(deco->window()->scale()));
 
         // Icons
         const QRectF iconRect(-9, -9, 18, 18);

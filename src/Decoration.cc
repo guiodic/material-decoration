@@ -554,10 +554,15 @@ void Decoration::updateButtonsGeometry()
             -captionOffset,
             0
         );
+        const QPointF snappedTopLeft = KDecoration3::snapToPixelGrid(availableRect.topLeft(), window()->scale());
+
         setButtonGroupHorzPadding(m_menuButtons, m_internalSettings->menuButtonHorzPadding());
-        m_menuButtons->setPos(KDecoration3::snapToPixelGrid(availableRect.topLeft(), window()->scale()));
+        m_menuButtons->setPos(snappedTopLeft);
         m_menuButtons->setSpacing(0);
-        m_menuButtons->updateOverflow(availableRect);
+
+        // Use a rect with the snapped position but the original size for the overflow check.
+        // This prevents rounding errors from shrinking the available width.
+        m_menuButtons->updateOverflow(QRectF(snappedTopLeft, availableRect.size()));
     }
 
     //updateBlur();
@@ -723,9 +728,9 @@ qreal Decoration::buttonPadding() const
     case InternalSettings::ButtonDefault:
         return baseUnit * 0.6;
     case InternalSettings::ButtonLarge:
-        return baseUnit * 0.75;
+        return baseUnit * 0.8;
     case InternalSettings::ButtonVeryLarge:
-        return baseUnit * 0.9;
+        return baseUnit * 1.0;
     }
 }
 
