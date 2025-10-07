@@ -239,8 +239,9 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 
     paintTitleBarBackground(painter, repaintRegion);
 
-    paintCaption(painter, repaintRegion);
     paintButtons(painter, repaintRegion);
+    
+    paintCaption(painter, repaintRegion);
 
     //Don't paint outline for NoBorder, NoSideBorder, or Tiny borders.
     if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
