@@ -1087,12 +1087,4 @@ void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
     }
 }
 
-void AppMenuButtonGroup::closeCurrentMenu()
-{
-    if (isMenuOpen() && m_currentMenu) {
-        m_currentMenu->hide();
-    }
-}
-
-
 } // namespace Material
