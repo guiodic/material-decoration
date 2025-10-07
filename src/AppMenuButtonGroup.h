@@ -90,6 +90,8 @@ public:
     void visualUnpressAllButtons();
     void resetVisualUnpressAllButtons();
     void handleHoverMove(const QPointF &pos);
+    
+    void closeCurrentMenu();
 
 public slots:
     void setHamburgerMenu(bool value);

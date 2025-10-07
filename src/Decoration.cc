@@ -859,6 +859,7 @@ QPoint Decoration::windowPos() const
 void Decoration::initDragMove(const QPoint pos)
 {
     m_pressedPoint = pos;
+    m_menuButtons->closeCurrentMenu();
 }
 
 
