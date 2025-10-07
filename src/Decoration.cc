@@ -35,6 +35,7 @@
 #include <KDecoration3/DecorationButtonGroup>
 #include <KDecoration3/DecorationSettings>
 #include <KDecoration3/DecorationShadow>
+#include <KDecoration3/ScaleHelpers>
 
 // KF
 #include <KWindowSystem>
@@ -238,8 +239,9 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 
     paintTitleBarBackground(painter, repaintRegion);
 
-    paintCaption(painter, repaintRegion);
     paintButtons(painter, repaintRegion);
+    
+    paintCaption(painter, repaintRegion);
 
     //Don't paint outline for NoBorder, NoSideBorder, or Tiny borders.
     if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
@@ -534,14 +536,14 @@ void Decoration::updateButtonsGeometry()
     updateButtonHeight();
 
     // Left
-    m_leftButtons->setPos(QPointF(leftOffset, 0));
+    m_leftButtons->setPos(KDecoration3::snapToPixelGrid(QPointF(leftOffset, 0), window()->scale()));
     m_leftButtons->setSpacing(0);
 
     // Right
-    m_rightButtons->setPos(QPointF(
+    m_rightButtons->setPos(KDecoration3::snapToPixelGrid(QPointF(
         size().width() - rightOffset - m_rightButtons->geometry().width(),
         0
-    ));
+    ), window()->scale()));
     m_rightButtons->setSpacing(0);
 
     // Menu
@@ -553,10 +555,15 @@ void Decoration::updateButtonsGeometry()
             -captionOffset,
             0
         );
+        const QPointF snappedTopLeft = KDecoration3::snapToPixelGrid(availableRect.topLeft(), window()->scale());
+
         setButtonGroupHorzPadding(m_menuButtons, m_internalSettings->menuButtonHorzPadding());
-        m_menuButtons->setPos(availableRect.topLeft());
+        m_menuButtons->setPos(snappedTopLeft);
         m_menuButtons->setSpacing(0);
-        m_menuButtons->updateOverflow(availableRect);
+
+        // Use a rect with the snapped position but the original size for the overflow check.
+        // This prevents rounding errors from shrinking the available width.
+        m_menuButtons->updateOverflow(QRectF(snappedTopLeft, availableRect.size()));
     }
 
     //updateBlur();
@@ -722,9 +729,9 @@ qreal Decoration::buttonPadding() const
     case InternalSettings::ButtonDefault:
         return baseUnit * 0.6;
     case InternalSettings::ButtonLarge:
-        return baseUnit * 0.75;
+        return baseUnit * 0.8;
     case InternalSettings::ButtonVeryLarge:
-        return baseUnit * 0.9;
+        return baseUnit * 1.0;
     }
 }
 
@@ -992,7 +999,13 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
         radius = 0;
     }
 
-    painter->drawPath(getRoundedPath(QRectF(0, 0, size().width(), titleBarHeight()+1), radius, true, true, false, false));
+    const QRectF titleBarBackgroundRect(0, 0, size().width(), titleBarHeight() + 1);
+    painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(titleBarBackgroundRect, window()->scale()),
+                                     radius,
+                                     true,
+                                     true,
+                                     false,
+                                     false));
 
     painter->restore();
 }
@@ -1082,7 +1095,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     // --- Draw text ---
-    painter->drawText(captionRect, alignment, caption);
+    painter->drawText(KDecoration3::snapToPixelGrid(captionRect, window()->scale()), alignment, caption);
 
     painter->restore();
 }
@@ -1106,7 +1119,7 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
     QColor outlineColor(titleBarForegroundColor());
     outlineColor.setAlphaF(0.25);
     QPen pen(outlineColor);
-    pen.setWidth(PenWidth::Symbol);
+    pen.setWidthF(KDecoration3::pixelSize(window()->scale()));
     painter->setPen(pen);
 
     qreal radius = m_cornerRadius;
@@ -1114,8 +1127,12 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
         radius = 0;
     }
 
-    QRectF rect = this->rect();
-    painter->drawPath(getRoundedPath(rect, radius, true, true, false, false));
+    painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
+                                     radius,
+                                     true,
+                                     true,
+                                     false,
+                                     false));
 
     painter->restore();
 }

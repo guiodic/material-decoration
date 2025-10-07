@@ -38,6 +38,7 @@
 #include <KDecoration3/DecoratedWindow>
 #include <KDecoration3/Decoration>
 #include <KDecoration3/DecorationButton>
+#include <KDecoration3/ScaleHelpers>
 
 // KF
 #include <KColorUtils>
@@ -65,7 +66,7 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
 {
     if (QCoreApplication::applicationName() == QStringLiteral("kded6")) {
         // See: https://github.com/Zren/material-decoration/issues/22
-        // kde-gtk-config has a kded5 module which renders the buttons to svgs for gtk.
+        // kde-gtk-config has a kded module which renders the buttons to svgs for gtk.
         m_isGtkButton = true;
     }
 
@@ -77,7 +78,7 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     m_animation->setDuration(decoration->animationsDuration());
     m_animation->setStartValue(0.0);
     m_animation->setEndValue(1.0);
-    m_animation->setEasingCurve(QEasingCurve::InOutQuad);
+    m_animation->setEasingCurve(QEasingCurve::InOutCubic);
     
     
     connect(m_animation, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
@@ -95,9 +96,9 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     connect(this, &Button::transitionValueChanged, this, [this]() {
         UPDATE_GEOM();
     });
-
+    
     connect(this, &Button::opacityChanged, this, [this]() {
-       UPDATE_GEOM();
+        UPDATE_GEOM();
     });
     
     connect(this, &Button::checkedChanged, this, [this]() {
@@ -106,9 +107,9 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     
     
     connect(this, &Button::pressedChanged, this, [this]() {
-       UPDATE_GEOM();
+        UPDATE_GEOM();
     }); 
-      
+    
     connect(this, &Button::enabledChanged, this, [this]() {
         UPDATE_GEOM();
     }); 
@@ -235,11 +236,12 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->setPen(Qt::NoPen);
     painter->setBrush(bgColor);
     const qreal radius = deco->cornerRadius();
+    const QRectF snappedGeometry = KDecoration3::snapToPixelGrid(geometry(), deco->window()->scale());
 
     //const qreal offset = (static_cast<int>(m_isRightmost) - static_cast<int>(m_isLeftmost));   // -0.5 for left; +0.5 for right
 
     // Smart way to draw a rectangle with the right rounded/squared corner
-    painter->drawPath(deco->getRoundedPath(geometry(), (radius-0.7)*!windowIsMaximized(), m_isLeftmost, m_isRightmost, false, false));
+    painter->drawPath(deco->getRoundedPath(snappedGeometry, (radius-0.7)*!windowIsMaximized(), m_isLeftmost, m_isRightmost, false, false));
     //painter->fillRect(geometry().toAlignedRect(), bgColor); //.adjusted(-1, -1, 1, 1)
 
     // Foreground.
@@ -285,7 +287,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         // Scale by an integer-based factor
         painter->scale(static_cast<qreal>(iconSize) / 18.0, static_cast<qreal>(iconSize) / 18.0);
         
-        setPenWidth(painter, PenWidth::Symbol);
+        setPenWidth(painter, KDecoration3::pixelSize(deco->window()->scale()));
 
         // Icons
         const QRectF iconRect(-9, -9, 18, 18);
