@@ -66,7 +66,7 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
 {
     if (QCoreApplication::applicationName() == QStringLiteral("kded6")) {
         // See: https://github.com/Zren/material-decoration/issues/22
-        // kde-gtk-config has a kded5 module which renders the buttons to svgs for gtk.
+        // kde-gtk-config has a kded module which renders the buttons to svgs for gtk.
         m_isGtkButton = true;
     }
 
@@ -78,7 +78,7 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     m_animation->setDuration(decoration->animationsDuration());
     m_animation->setStartValue(0.0);
     m_animation->setEndValue(1.0);
-    m_animation->setEasingCurve(QEasingCurve::InOutQuad);
+    m_animation->setEasingCurve(QEasingCurve::InOutCubic);
     
     
     connect(m_animation, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
@@ -96,9 +96,9 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     connect(this, &Button::transitionValueChanged, this, [this]() {
         UPDATE_GEOM();
     });
-
+    
     connect(this, &Button::opacityChanged, this, [this]() {
-       UPDATE_GEOM();
+        UPDATE_GEOM();
     });
     
     connect(this, &Button::checkedChanged, this, [this]() {
@@ -107,9 +107,9 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     
     
     connect(this, &Button::pressedChanged, this, [this]() {
-       UPDATE_GEOM();
+        UPDATE_GEOM();
     }); 
-      
+    
     connect(this, &Button::enabledChanged, this, [this]() {
         UPDATE_GEOM();
     }); 
