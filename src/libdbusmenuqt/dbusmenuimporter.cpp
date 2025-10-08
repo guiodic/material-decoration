@@ -172,7 +172,7 @@ public:
         } else if (key == QLatin1String("shortcut")) {
             updateActionShortcut(action, value);
         } else {
-            qDebug(DBUSMENUQT) << "Unhandled property update" << key;
+            // qDebug(DBUSMENUQT) << "Unhandled property update" << key;
         }
     }
 
@@ -220,7 +220,7 @@ public:
         action->setProperty(DBUSMENU_PROPERTY_ICON_DATA_HASH, dataHash);
         QPixmap pix;
         if (!pix.loadFromData(data)) {
-            qDebug(DBUSMENUQT) << "Failed to decode icon-data property for action" << action->text();
+            // qDebug(DBUSMENUQT) << "Failed to decode icon-data property for action" << action->text();
             action->setIcon(QIcon());
             return;
         }
@@ -376,7 +376,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
 
     QDBusPendingReply<uint, DBusMenuLayoutItem> reply = *watcher;
     if (!reply.isValid()) {
-        qDebug(DBUSMENUQT) << reply.error().message();
+        // qDebug(DBUSMENUQT) << reply.error().message();
         if (menu) {
             Q_EMIT menuUpdated(menu);
         }
@@ -389,7 +389,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     DBusMenuLayoutItem rootItem = reply.argumentAt<1>();
 
     if (!menu) {
-        qDebug(DBUSMENUQT) << "No menu for id" << parentId;
+        // qDebug(DBUSMENUQT) << "No menu for id" << parentId;
         return;
     }
 
@@ -452,7 +452,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     }
 
     menu->setUpdatesEnabled(true);
-    qCDebug(category) << "[DBUSMENUIMPORTER] Emitting menuUpdated(" << menu << ")";
+    // qCDebug(category) << "[DBUSMENUIMPORTER] Emitting menuUpdated(" << menu << ")";
     Q_EMIT menuUpdated(menu);
 }
 
@@ -496,7 +496,7 @@ void DBusMenuImporter::slotAboutToShowDBusCallFinished(QDBusPendingCallWatcher *
 
     QDBusPendingReply<bool> reply = *watcher;
     if (reply.isError()) {
-        qDebug(DBUSMENUQT) << "Call to AboutToShow() failed:" << reply.error().message();
+        // qDebug(DBUSMENUQT) << "Call to AboutToShow() failed:" << reply.error().message();
         Q_EMIT menuUpdated(menu);
         return;
     }
