@@ -7,6 +7,7 @@
 
 #include <ui_config.h>
 
+#include <KLocalizedString>
 #include <KPluginFactory>
 #include <KSharedConfig>
 #include <kconfiggroup.h>
@@ -29,23 +30,23 @@ MaterialDecorationKCM::MaterialDecorationKCM(QObject *parent, const KPluginMetaD
     m_ui->setupUi(widget());
 
     // Populate combo boxes
-    m_ui->kcfg_TitleAlignment->addItems({QStringLiteral("Left"),
-                                         QStringLiteral("Center"),
-                                         QStringLiteral("Center (Full Width)"),
-                                         QStringLiteral("Right"),
-                                         QStringLiteral("Hidden")});
+    m_ui->kcfg_TitleAlignment->addItems({i18n("Left"),
+                                         i18n("Center"),
+                                         i18n("Center (Full Width)"),
+                                         i18n("Right"),
+                                         i18n("Hidden")});
 
-    m_ui->kcfg_ButtonSize->addItems({QStringLiteral("Tiny"),
-                                     QStringLiteral("Small"),
-                                     QStringLiteral("Default"),
-                                     QStringLiteral("Large"),
-                                     QStringLiteral("Very Large")});
+    m_ui->kcfg_ButtonSize->addItems({i18n("Tiny"),
+                                     i18n("Small"),
+                                     i18n("Default"),
+                                     i18n("Large"),
+                                     i18n("Very Large")});
 
-    m_ui->kcfg_ShadowSize->addItems({QStringLiteral("None"),
-                                     QStringLiteral("Small"),
-                                     QStringLiteral("Medium"),
-                                     QStringLiteral("Large"),
-                                     QStringLiteral("Very Large")});
+    m_ui->kcfg_ShadowSize->addItems({i18n("None"),
+                                     i18n("Small"),
+                                     i18n("Medium"),
+                                     i18n("Large"),
+                                     i18n("Very Large")});
     
     connect(m_ui->kcfg_ShadowStrength, &QSlider::valueChanged, m_ui->spinShadowStrength, &QSpinBox::setValue);
     connect(m_ui->spinShadowStrength, qOverload<int>(&QSpinBox::valueChanged), m_ui->kcfg_ShadowStrength, &QSlider::setValue);

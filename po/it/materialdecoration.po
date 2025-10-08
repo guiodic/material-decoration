@@ -1,0 +1,150 @@
+# Italian translation for materialdecoration_kcm
+# Copyright (C) 2025 Guido Iodice 
+# This file is distributed under the same license as the materialdecoration package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: materialdecoration_kcm\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-08 14:08+0000\n"
+"PO-Revision-Date: 2025-10-08 14:08+0000\n"
+"Last-Translator: \n"
+"Language-Team: Italian <kde-i18n-it@kde.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Lokalize 23.08.5\n"
+
+#: materialdecoration_kcm.json
+msgid "Material Decoration"
+msgstr "Decorazione Material"
+
+#: materialdecoration_kcm.json
+msgid "Configuration module for the Material Decoration"
+msgstr "Modulo di configurazione per la Decorazione Material"
+
+#: config.ui:20
+msgid "Appearance"
+msgstr "Aspetto"
+
+#: config.ui:26
+msgid "Title alignment:"
+msgstr "Allineamento del titolo:"
+
+#: config.ui:33
+msgid "Button size:"
+msgstr "Dimensione dei pulsanti:"
+
+#: config.ui:40
+msgid "Active window opacity:"
+msgstr "Opacità della finestra attiva:"
+
+#: config.ui:58
+msgid "Inactive window opacity:"
+msgstr "Opacità della finestra inattiva:"
+
+#: config.ui:76
+msgid "Corner radius:"
+msgstr "Raggio degli angoli:"
+
+#: config.ui:95
+msgid "Menu and Search"
+msgstr "Menu e ricerca"
+
+#: config.ui:101
+msgid "Always show application menu"
+msgstr "Mostra sempre il menu dell'applicazione"
+
+#: config.ui:108
+msgid "Enable search button"
+msgstr "Abilita il pulsante di ricerca"
+
+#: config.ui:115
+msgid "Show disabled menu actions"
+msgstr "Mostra le azioni del menu disabilitate"
+
+#: config.ui:122
+msgid "Use hamburger menu"
+msgstr "Usa il menu «hamburger»"
+
+#: config.ui:129
+msgid "Menu button horizontal padding:"
+msgstr "Spaziatura orizzontale del pulsante del menu:"
+
+#: config.ui:139
+msgid "Shadows"
+msgstr "Ombre"
+
+#: config.ui:145
+msgid "Shadow size:"
+msgstr "Dimensione delle ombre:"
+
+#: config.ui:152
+msgid "Shadow color:"
+msgstr "Colore delle ombre:"
+
+#: config.ui:159
+msgid "Shadow strength:"
+msgstr "Intensità delle ombre:"
+
+#: config.ui:185
+msgid "Animations"
+msgstr "Animazioni"
+
+#: config.ui:191
+msgid "Enable animations"
+msgstr "Abilita le animazioni"
+
+#: config.ui:198
+msgid "Animation duration:"
+msgstr "Durata dell'animazione:"
+
+#: kcm.cpp:32
+msgid "Left"
+msgstr "A sinistra"
+
+#: kcm.cpp:33
+msgid "Center"
+msgstr "Al centro"
+
+#: kcm.cpp:34
+msgid "Center (Full Width)"
+msgstr "Centrato (larghezza intera)"
+
+#: kcm.cpp:35
+msgid "Right"
+msgstr "A destra"
+
+#: kcm.cpp:36
+msgid "Hidden"
+msgstr "Nascosto"
+
+#: kcm.cpp:38
+msgid "Tiny"
+msgstr "Minuscolo"
+
+#: kcm.cpp:39 kcm.cpp:51
+msgid "Small"
+msgstr "Piccolo"
+
+#: kcm.cpp:40
+msgid "Default"
+msgstr "Predefinito"
+
+#: kcm.cpp:41 kcm.cpp:53
+msgid "Large"
+msgstr "Grande"
+
+#: kcm.cpp:42 kcm.cpp:54
+msgid "Very Large"
+msgstr "Molto grande"
+
+#: kcm.cpp:50
+msgid "None"
+msgstr "Nessuna"
+
+#: kcm.cpp:52
+msgid "Medium"
+msgstr "Medio"
