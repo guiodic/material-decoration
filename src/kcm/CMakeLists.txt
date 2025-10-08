@@ -1,5 +1,7 @@
 include(KDEInstallDirs)
 
+add_definitions(-DTRANSLATION_DOMAIN="materialdecoration")
+
 find_package(Qt${QT_MAJOR_VERSION} REQUIRED COMPONENTS
     Core
     Gui
@@ -21,7 +23,7 @@ set(KCM_SRCS
     kcm.cpp
 )
 
-qt_wrap_ui(KCM_SRCS
+ki18n_wrap_ui(KCM_SRCS
     config.ui
 )
 

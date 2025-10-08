@@ -26,9 +26,14 @@ find_package(Qt6 CONFIG REQUIRED COMPONENTS
     Widgets
     DBus
 )
+find_package(KF6 REQUIRED COMPONENTS I18n)
+
 include(ECMQtDeclareLoggingCategory)
+
+ki18n_install(po)
 
 add_subdirectory (src/libdbusmenuqt)
 add_subdirectory (src)
+add_subdirectory(po)
 
 feature_summary(WHAT ALL)

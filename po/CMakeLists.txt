@@ -1,0 +1,1 @@
+set(POT_CATALOG_NAME materialdecoration)
