@@ -14,7 +14,7 @@ find_package (KF6 REQUIRED COMPONENTS
     I18n
     IconThemes
     WindowSystem
-    KCMUtils
+    #KCMUtils
 )
 
 find_package(KWin REQUIRED)
@@ -83,7 +83,7 @@ target_link_libraries (materialdecoration
         KF6::GuiAddons
         KF6::IconThemes
         KF6::WindowSystem
-        KF6::KCMUtils
+        # KF6::KCMUtils
         ${X11_LIBRARIES}     
 #        ${Wayland_LIBRARIES}
 
