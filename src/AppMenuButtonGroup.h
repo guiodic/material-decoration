@@ -22,15 +22,15 @@
 #include "AppMenuModel.h"
 
 // KDecoration
-#include <KDecoration3/DecoratedWindow>
 #include <KDecoration3/DecorationButton>
 #include <KDecoration3/DecorationButtonGroup>
 
 // Qt
 #include <QMenu>
-#include <QTimer>
-#include <QVariantAnimation>
 #include <QLineEdit>
+
+class QTimer;
+class QVariantAnimation;
 
 namespace Material
 {

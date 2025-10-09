@@ -24,7 +24,7 @@ find_package(KWinX11 QUIET)
 find_package(X11 QUIET)
 find_package(XCB MODULE QUIET COMPONENTS
     XCB
-    RANDR
+    # RANDR
 )
 
 if(KWinX11_FOUND AND X11_FOUND AND XCB_FOUND)

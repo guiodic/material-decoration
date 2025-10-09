@@ -1,5 +1,5 @@
 # Italian translation for materialdecoration_kcm
-# Copyright (C) 2025 Guido Iodice 
+# SPDX-FileCopyrightText: 2025 Guido Iodice
 # This file is distributed under the same license as the materialdecoration package.
 #
 msgid ""
@@ -7,15 +7,15 @@ msgstr ""
 "Project-Id-Version: materialdecoration_kcm\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-10-08 14:08+0000\n"
-"PO-Revision-Date: 2025-10-08 14:08+0000\n"
-"Last-Translator: \n"
+"PO-Revision-Date: 2025-10-09 16:39+0200\n"
+"Last-Translator: Guido Iodice <guido.iodice@gmail.com>\n"
 "Language-Team: Italian <kde-i18n-it@kde.org>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Lokalize 23.08.5\n"
+"X-Generator: Lokalize 25.08.1\n"
 
 #: materialdecoration_kcm.json
 msgid "Material Decoration"
@@ -123,15 +123,15 @@ msgstr "Nascosto"
 
 #: kcm.cpp:38
 msgid "Tiny"
-msgstr "Minuscolo"
+msgstr "Minuscola"
 
 #: kcm.cpp:39 kcm.cpp:51
 msgid "Small"
-msgstr "Piccolo"
+msgstr "Piccola"
 
 #: kcm.cpp:40
 msgid "Default"
-msgstr "Predefinito"
+msgstr "Predefinita"
 
 #: kcm.cpp:41 kcm.cpp:53
 msgid "Large"
@@ -147,4 +147,4 @@ msgstr "Nessuna"
 
 #: kcm.cpp:52
 msgid "Medium"
-msgstr "Medio"
+msgstr "Media"

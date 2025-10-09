@@ -445,59 +445,35 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
         const auto actions = menu->actions();
         const int menuActionCount = actions.count();
-        // The button list contains menu buttons, plus an overflow button and a search button
-        const int currentButtonCount = buttons().count() > 0 ? buttons().count() - 2 : 0;
+        
+        resetButtons();
 
-        // If the number of actions is the same, just update the existing buttons
-        if (menuActionCount > 0 && menuActionCount == currentButtonCount) {
-            for (int i = 0; i < menuActionCount; ++i) {
-                QAction *itemAction = actions.at(i);
-                TextButton *button = qobject_cast<TextButton*>(buttons().at(i));
-                if (button) {
-                    const QString itemLabel = itemAction->text();
+        // Populate
+        for (int i = 0; i < menuActionCount; ++i) {
+            QAction *itemAction = actions.at(i);
+            const QString itemLabel = itemAction->text();
 
-                    button->setText(itemLabel);
-                    button->setAction(itemAction);
+            TextButton *b = new TextButton(deco, i, this);
+            b->setText(itemLabel);
+            b->setAction(itemAction);
+            b->setOpacity(m_opacity);
 
-                    if (itemLabel.isEmpty()) {
-                        button->setEnabled(false);
-                        button->setVisible(false);
-                    } else {
-                        button->setEnabled(true);
-                        button->setVisible(true);
-                    }
-                }
-            }
-        } else { // Fallback to the old, brute-force method if counts differ
-            resetButtons();
-
-            // Populate
-            for (int i = 0; i < menuActionCount; ++i) {
-                QAction *itemAction = actions.at(i);
-                const QString itemLabel = itemAction->text();
-
-                TextButton *b = new TextButton(deco, i, this);
-                b->setText(itemLabel);
-                b->setAction(itemAction);
-                b->setOpacity(m_opacity);
-
-                // Skip items with empty labels (The first item in a Gtk app)
-                if (itemLabel.isEmpty()) {
-                    b->setEnabled(false);
-                    b->setVisible(false);
-                }
-
-                addButton(QPointer<KDecoration3::DecorationButton>(b));
+            // Skip items with empty labels (The first item in a Gtk app)
+            if (itemLabel.isEmpty()) {
+                b->setEnabled(false);
+                b->setVisible(false);
             }
 
-            if (menuActionCount > 0) {
-                m_overflowIndex = menuActionCount;
-                addButton(new MenuOverflowButton(deco, m_overflowIndex, this));
+            addButton(QPointer<KDecoration3::DecorationButton>(b));
+        }
 
-                if (deco->searchEnabled()) {
-                    m_searchIndex = menuActionCount + 1;
-                    addButton(new SearchButton(deco, m_searchIndex, this));
-                }
+        if (menuActionCount > 0) {
+            m_overflowIndex = menuActionCount;
+            addButton(new MenuOverflowButton(deco, m_overflowIndex, this));
+
+            if (deco->searchEnabled()) {
+                m_searchIndex = menuActionCount + 1;
+                addButton(new SearchButton(deco, m_searchIndex, this));
             }
         }
 

@@ -25,8 +25,6 @@
 
 // KDecoration
 #include <KDecoration3/Decoration>
-#include <KDecoration3/DecorationButton>
-#include <KDecoration3/DecorationButtonGroup>
 
 // Qt
 #include <QHoverEvent>
@@ -36,6 +34,10 @@
 #include <QWheelEvent>
 #include <QVariant>
 
+namespace KDecoration3
+{
+class DecorationButtonGroup;
+}
 
 namespace Material
 {
