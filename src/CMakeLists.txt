@@ -3,7 +3,7 @@ find_package (KDecoration3 REQUIRED)
 find_package (Qt6 REQUIRED COMPONENTS
     Core
     Gui
-    GuiTools
+    # GuiTools
 )
 
 find_package (KF6 REQUIRED COMPONENTS
@@ -73,7 +73,7 @@ target_link_libraries (materialdecoration
         materialdecoration_core
         Qt6::Core
         Qt6::Gui
-        Qt6::GuiPrivate
+        # Qt6::GuiPrivate
         # Qt${QT_VERSION_MAJOR}::X11Extras
         KF6::ConfigCore
         KF6::ConfigGui
