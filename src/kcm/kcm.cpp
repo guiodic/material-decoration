@@ -73,6 +73,7 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_HamburgerMenu, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_ShowDisabledActions, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_MenuButtonHorzPadding, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_UseSystemMenuFont, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_ShadowSize, &QComboBox::currentIndexChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_ShadowColor, &KColorButton::changed, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_ShadowStrength, &QSlider::valueChanged, this, &MaterialDecorationKCM::updateChanged);
@@ -93,6 +94,7 @@ void MaterialDecorationKCM::load()
     m_ui->kcfg_HamburgerMenu->setChecked(m_settings->hamburgerMenu());
     m_ui->kcfg_ShowDisabledActions->setChecked(m_settings->showDisabledActions());
     m_ui->kcfg_MenuButtonHorzPadding->setValue(m_settings->menuButtonHorzPadding());
+    m_ui->kcfg_UseSystemMenuFont->setChecked(m_settings->useSystemMenuFont());
     m_ui->kcfg_ShadowSize->setCurrentIndex(m_settings->shadowSize());
     m_ui->kcfg_ShadowColor->setColor(m_settings->shadowColor());
     m_ui->kcfg_ShadowStrength->setValue(m_settings->shadowStrength());
@@ -112,6 +114,7 @@ void MaterialDecorationKCM::save()
     m_settings->setHamburgerMenu(m_ui->kcfg_HamburgerMenu->isChecked());
     m_settings->setShowDisabledActions(m_ui->kcfg_ShowDisabledActions->isChecked());
     m_settings->setMenuButtonHorzPadding(m_ui->kcfg_MenuButtonHorzPadding->value());
+    m_settings->setUseSystemMenuFont(m_ui->kcfg_UseSystemMenuFont->isChecked());
     m_settings->setShadowSize(m_ui->kcfg_ShadowSize->currentIndex());
     m_settings->setShadowColor(m_ui->kcfg_ShadowColor->color());
     m_settings->setShadowStrength(m_ui->kcfg_ShadowStrength->value());
@@ -138,6 +141,7 @@ void MaterialDecorationKCM::defaults()
     m_ui->kcfg_HamburgerMenu->setChecked(m_settings->hamburgerMenu());
     m_ui->kcfg_ShowDisabledActions->setChecked(m_settings->showDisabledActions());
     m_ui->kcfg_MenuButtonHorzPadding->setValue(m_settings->menuButtonHorzPadding());
+    m_ui->kcfg_UseSystemMenuFont->setChecked(m_settings->useSystemMenuFont());
     m_ui->kcfg_ShadowSize->setCurrentIndex(m_settings->shadowSize());
     m_ui->kcfg_ShadowColor->setColor(m_settings->shadowColor());
     m_ui->kcfg_ShadowStrength->setValue(m_settings->shadowStrength());
