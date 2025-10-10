@@ -147,3 +147,7 @@ msgstr ""
 #: kcm.cpp:52
 msgid "Medium"
 msgstr ""
+
+#: config.ui:136
+msgid "Use system menu font"
+msgstr ""

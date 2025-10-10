@@ -693,6 +693,11 @@ bool Decoration::menuAlwaysShow() const
     return m_internalSettings->menuAlwaysShow();
 }
 
+bool Decoration::useSystemMenuFont() const
+{
+    return m_internalSettings->useSystemMenuFont();
+}
+
 bool Decoration::hamburgerMenu() const
 {
     return m_internalSettings->hamburgerMenu();
@@ -819,17 +824,19 @@ bool Decoration::titleBarIsHovered() const
     return sectionUnderMouse() == Qt::TitleBarArea;
 }
 
-qreal Decoration::getTextWidth(const QString text, bool showMnemonic) const
+QFont Decoration::menuFont() const
 {
-    const QFontMetricsF fontMetrics(settings()->font());
+    return useSystemMenuFont() ? QApplication::font("QMenu") : settings()->font();
+}
+
+qreal Decoration::getMenuTextWidth(const QString text, bool showMnemonic) const
+{
+    const QFontMetricsF fontMetrics(menuFont());
     const QRectF textRect(titleBarRect());
     int flags = showMnemonic ? Qt::TextShowMnemonic : Qt::TextHideMnemonic;
     const QRectF boundingRect = fontMetrics.boundingRect(textRect, flags, text);
     return boundingRect.width();
 }
-
-//* scoped pointer convenience typedef
-template <typename T> using ScopedPointer = QScopedPointer<T, QScopedPointerPodDeleter>;
 
 QPoint Decoration::windowPos() const
 {

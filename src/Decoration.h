@@ -95,6 +95,7 @@ private:
     void updateShadow();
 
     bool menuAlwaysShow() const;
+    bool useSystemMenuFont() const;
     bool hamburgerMenu() const;
     bool searchEnabled() const;
     bool showDisabledActions() const;
@@ -116,9 +117,9 @@ private:
 
     bool titleBarIsHovered() const;
 
-    qreal getTextWidth(const QString text, bool showMnemonic = false) const;
+    QFont menuFont() const;
+    qreal getMenuTextWidth(const QString text, bool showMnemonic = false) const;
 
-    
     void initDragMove(const QPoint pos);
     void resetDragMove();
     bool dragMoveTick(const QPoint pos);

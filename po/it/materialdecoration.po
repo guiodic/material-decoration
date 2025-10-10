@@ -148,3 +148,7 @@ msgstr "Nessuna"
 #: kcm.cpp:52
 msgid "Medium"
 msgstr "Media"
+
+#: config.ui:136
+msgid "Use system menu font"
+msgstr "Usa il carattere del menu di sistema"

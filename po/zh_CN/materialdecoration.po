@@ -148,3 +148,7 @@ msgstr "无"
 #: kcm.cpp:52
 msgid "Medium"
 msgstr "中等"
+
+#: config.ui:136
+msgid "Use system menu font"
+msgstr "使用系统菜单字体"

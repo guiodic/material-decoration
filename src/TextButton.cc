@@ -55,8 +55,10 @@ TextButton::~TextButton()
 
 void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal)
 {
+    const auto *deco = qobject_cast<Decoration *>(decoration());
+
     // Font
-    painter->setFont(decoration()->settings()->font());
+    painter->setFont(deco->menuFont());
     painter->setPen(foregroundColor());
     painter->setRenderHint(QPainter::TextAntialiasing);
     painter->setOpacity(1.0);
@@ -79,7 +81,7 @@ QSizeF TextButton::getTextSize() const
     //     Qt::ElideRight,
     //     100, // Max width TODO: scale by dpi
     // );
-    const qreal textWidth = deco->getTextWidth(m_text);
+    const qreal textWidth = deco->getMenuTextWidth(m_text);
     const qreal titleBarHeight = deco->titleBarHeight();
     const QSizeF size(textWidth, titleBarHeight);
     return size;

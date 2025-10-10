@@ -148,3 +148,7 @@ msgstr "Aucun"
 #: kcm.cpp:52
 msgid "Medium"
 msgstr "Moyen"
+
+#: config.ui:136
+msgid "Use system menu font"
+msgstr "Utiliser la police de menu système"
