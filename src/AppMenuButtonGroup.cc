@@ -108,7 +108,7 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     m_animation->setDuration(decoration->animationsDuration());
     m_animation->setStartValue(0.0);
     m_animation->setEndValue(1.0);
-    m_animation->setEasingCurve(QEasingCurve::InOutQuad);
+    m_animation->setEasingCurve(QEasingCurve::InOutCubic);
     connect(m_animation, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
         setOpacity(value.toReal());
     });

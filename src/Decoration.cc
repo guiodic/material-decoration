@@ -567,7 +567,7 @@ void Decoration::updateButtonsGeometry()
         m_menuButtons->updateOverflow(QRectF(snappedTopLeft, availableRect.size()));
     }
 
-    //updateBlur();
+    updateBlur();
     update();
 }
 

@@ -58,6 +58,8 @@ void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qrea
     // Font
     painter->setFont(decoration()->settings()->font());
     painter->setPen(foregroundColor());
+    painter->setRenderHint(QPainter::TextAntialiasing);
+    painter->setOpacity(1.0);
 
     // TODO: Use Qt::TextShowMnemonic when Alt is pressed
     const bool isAltPressed = false;
