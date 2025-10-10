@@ -1,0 +1,150 @@
+# Copyright (C) 2025 Guido Iodice 
+# This file is distributed under the same license as the materialdecoration package.
+# Guido Iodice, 2025
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-08 13:54+0000\n"
+"PO-Revision-Date: 2025-10-10 10:59+0200\n"
+"Last-Translator: Heimen Stoffels <vistausss@fastmail.com>\n"
+"Language-Team: \n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.6\n"
+
+#: materialdecoration_kcm.json
+msgid "Material Decoration"
+msgstr "Material-decoratie"
+
+#: materialdecoration_kcm.json
+msgid "Configuration module for the Material Decoration"
+msgstr "Instelmodule van de Material-decoratie"
+
+#: config.ui:20
+msgid "Appearance"
+msgstr "Vormgeving"
+
+#: config.ui:26
+msgid "Title alignment:"
+msgstr "Titeluitlijning:"
+
+#: config.ui:33
+msgid "Button size:"
+msgstr "Knopgrootte:"
+
+#: config.ui:40
+msgid "Active window opacity:"
+msgstr "Doorzichtigheid van actieve vensters:"
+
+#: config.ui:58
+msgid "Inactive window opacity:"
+msgstr "Doorzichtigheid van inactieve vensters:"
+
+#: config.ui:76
+msgid "Corner radius:"
+msgstr "Hoekstraal:"
+
+#: config.ui:95
+msgid "Menu and Search"
+msgstr "Menu en zoeken"
+
+#: config.ui:101
+msgid "Always show application menu"
+msgstr "Menu's altijd tonen"
+
+#: config.ui:108
+msgid "Enable search button"
+msgstr "Zoekknop tonen"
+
+#: config.ui:115
+msgid "Show disabled menu actions"
+msgstr "Uitgeschakelde menu-items tonen"
+
+#: config.ui:122
+msgid "Use hamburger menu"
+msgstr "Hamburgermenu gebruiken"
+
+#: config.ui:129
+msgid "Menu button horizontal padding:"
+msgstr "Horizontale opvulling rond menuknop:"
+
+#: config.ui:139
+msgid "Shadows"
+msgstr "Schaduwen"
+
+#: config.ui:145
+msgid "Shadow size:"
+msgstr "Schaduwomvang:"
+
+#: config.ui:152
+msgid "Shadow color:"
+msgstr "Schaduwkleur:"
+
+#: config.ui:159
+msgid "Shadow strength:"
+msgstr "Schaduwsterkte:"
+
+#: config.ui:185
+msgid "Animations"
+msgstr "Animaties"
+
+#: config.ui:191
+msgid "Enable animations"
+msgstr "Animaties tonen"
+
+#: config.ui:198
+msgid "Animation duration:"
+msgstr "Animatieduur:"
+
+#: kcm.cpp:32
+msgid "Left"
+msgstr "Links"
+
+#: kcm.cpp:33
+msgid "Center"
+msgstr "Midden"
+
+#: kcm.cpp:34
+msgid "Center (Full Width)"
+msgstr "Midden (volle breedte)"
+
+#: kcm.cpp:35
+msgid "Right"
+msgstr "Rechts"
+
+#: kcm.cpp:36
+msgid "Hidden"
+msgstr "Verborgen"
+
+#: kcm.cpp:38
+msgid "Tiny"
+msgstr "Erg klein"
+
+#: kcm.cpp:39 kcm.cpp:51
+msgid "Small"
+msgstr "Klein"
+
+#: kcm.cpp:40
+msgid "Default"
+msgstr "Standaard"
+
+#: kcm.cpp:41 kcm.cpp:53
+msgid "Large"
+msgstr "Groot"
+
+#: kcm.cpp:42 kcm.cpp:54
+msgid "Very Large"
+msgstr "Erg groot"
+
+#: kcm.cpp:50
+msgid "None"
+msgstr "Geen"
+
+#: kcm.cpp:52
+msgid "Medium"
+msgstr "Gemiddeld"
