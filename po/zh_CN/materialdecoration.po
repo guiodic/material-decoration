@@ -1,0 +1,150 @@
+# Simplified Chinese translation for materialdecoration_kcm
+# SPDX-FileCopyrightText: 2025 Guido Iodice
+# This file is distributed under the same license as the materialdecoration package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-08 13:54+0000\n"
+"PO-Revision-Date: 2025-10-10 16:53+0800\n"
+"Last-Translator: su226 <thesu226@outlook.com>\n"
+"Language-Team: Chinese <kde-i18n-doc@kde.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Lokalize 25.08.2\n"
+
+#: materialdecoration_kcm.json
+msgid "Material Decoration"
+msgstr "Material 质感窗口装饰"
+
+#: materialdecoration_kcm.json
+msgid "Configuration module for the Material Decoration"
+msgstr "Material 质感窗口装饰的配置模块"
+
+#: config.ui:20
+msgid "Appearance"
+msgstr "外观"
+
+#: config.ui:26
+msgid "Title alignment:"
+msgstr "标题对齐："
+
+#: config.ui:33
+msgid "Button size:"
+msgstr "按钮大小："
+
+#: config.ui:40
+msgid "Active window opacity:"
+msgstr "活动窗口透明度："
+
+#: config.ui:58
+msgid "Inactive window opacity:"
+msgstr "非活动窗口透明度："
+
+#: config.ui:76
+msgid "Corner radius:"
+msgstr "圆角半径："
+
+#: config.ui:95
+msgid "Menu and Search"
+msgstr "菜单和搜索"
+
+#: config.ui:101
+msgid "Always show application menu"
+msgstr "始终显示应用程序菜单"
+
+#: config.ui:108
+msgid "Enable search button"
+msgstr "启用搜索按钮"
+
+#: config.ui:115
+msgid "Show disabled menu actions"
+msgstr "显示禁用的菜单操作"
+
+#: config.ui:122
+msgid "Use hamburger menu"
+msgstr "使用折叠菜单"
+
+#: config.ui:129
+msgid "Menu button horizontal padding:"
+msgstr "菜单按钮水平填充："
+
+#: config.ui:139
+msgid "Shadows"
+msgstr "阴影"
+
+#: config.ui:145
+msgid "Shadow size:"
+msgstr "阴影大小："
+
+#: config.ui:152
+msgid "Shadow color:"
+msgstr "阴影颜色："
+
+#: config.ui:159
+msgid "Shadow strength:"
+msgstr "阴影强度："
+
+#: config.ui:185
+msgid "Animations"
+msgstr "动画"
+
+#: config.ui:191
+msgid "Enable animations"
+msgstr "启用动画"
+
+#: config.ui:198
+msgid "Animation duration:"
+msgstr "动画时长："
+
+#: kcm.cpp:32
+msgid "Left"
+msgstr "居左"
+
+#: kcm.cpp:33
+msgid "Center"
+msgstr "居中"
+
+#: kcm.cpp:34
+msgid "Center (Full Width)"
+msgstr "居中（完整宽度）"
+
+#: kcm.cpp:35
+msgid "Right"
+msgstr "居右"
+
+#: kcm.cpp:36
+msgid "Hidden"
+msgstr "隐藏"
+
+#: kcm.cpp:38
+msgid "Tiny"
+msgstr "超小"
+
+#: kcm.cpp:39 kcm.cpp:51
+msgid "Small"
+msgstr "小"
+
+#: kcm.cpp:40
+msgid "Default"
+msgstr "默认"
+
+#: kcm.cpp:41 kcm.cpp:53
+msgid "Large"
+msgstr "大"
+
+#: kcm.cpp:42 kcm.cpp:54
+msgid "Very Large"
+msgstr "超大"
+
+#: kcm.cpp:50
+msgid "None"
+msgstr "无"
+
+#: kcm.cpp:52
+msgid "Medium"
+msgstr "中等"
