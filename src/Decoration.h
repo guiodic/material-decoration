@@ -125,6 +125,7 @@ private:
 
     QColor borderColor() const;
     QColor titleBarBackgroundColor() const;
+    QColor titleBarOpaqueBackgroundColor() const;
     QColor titleBarForegroundColor() const;
 
     void paintFrameBackground(QPainter *painter, const QRectF &repaintRegion) const;

@@ -456,14 +456,14 @@ QColor Button::foregroundColor() const
     //--- Checked
     if (isChecked() && type() != KDecoration3::DecorationButtonType::Maximize) {
         const QColor activeColor = KColorUtils::mix(
-            deco->titleBarBackgroundColor(),
+            deco->titleBarOpaqueBackgroundColor(),
             deco->titleBarForegroundColor(),
             0.2);
 
         if (isPressed() || isHovered()) {
             return KColorUtils::mix(
                 activeColor,
-                deco->titleBarBackgroundColor(),
+                deco->titleBarOpaqueBackgroundColor(),
                 m_transitionValue);
         }
         return activeColor;

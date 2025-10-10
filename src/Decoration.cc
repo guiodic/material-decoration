@@ -977,6 +977,15 @@ QColor Decoration::titleBarBackgroundColor() const
     return color;
 }
 
+QColor Decoration::titleBarOpaqueBackgroundColor() const
+{
+    const auto *decoratedClient = window();
+    const auto group = decoratedClient->isActive()
+        ? KDecoration3::ColorGroup::Active
+        : KDecoration3::ColorGroup::Inactive;
+    return decoratedClient->color(group, KDecoration3::ColorRole::TitleBar);
+}
+
 QColor Decoration::titleBarForegroundColor() const
 {
     const auto *decoratedClient = window();
