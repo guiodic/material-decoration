@@ -55,7 +55,7 @@ msgstr "Menu en zoeken"
 
 #: config.ui:101
 msgid "Always show application menu"
-msgstr "Menu's altijd tonen"
+msgstr "Programmamenu's altijd tonen"
 
 #: config.ui:108
 msgid "Enable search button"
