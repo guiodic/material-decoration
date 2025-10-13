@@ -959,13 +959,16 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
 QColor Decoration::borderColor() const
 {
     const auto *decoratedClient = window();
-    const auto group = decoratedClient->isActive()
-        ? KDecoration3::ColorGroup::Active
-        : KDecoration3::ColorGroup::Inactive;
     const qreal opacity = decoratedClient->isActive()
         ? m_internalSettings->activeOpacity()
         : m_internalSettings->inactiveOpacity();
-    QColor color = decoratedClient->color(group, KDecoration3::ColorRole::Frame);
+    
+    QColor color;
+    if (decoratedClient->isActive()) {
+        color = m_internalSettings->activeBorderColor();
+    } else {
+        color = m_internalSettings->inactiveBorderColor();
+    }
     color.setAlphaF(opacity);
     return color;
 }
