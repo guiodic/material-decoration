@@ -43,6 +43,18 @@
             <default>1.00</default>
         </entry>
 
+        <!-- custom border colors -->
+        <entry name="UseCustomBorderColors" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="ActiveBorderColor" type="Color">
+            <!-- fall back to theme frame color when not used -->
+            <default>0, 0, 0, 0</default>
+        </entry>
+        <entry name="InactiveBorderColor" type="Color">
+            <default>0, 0, 0, 0</default>
+        </entry>
+
         <!-- menu -->
         <entry name="MenuAlwaysShow" type="Bool">
             <default>true</default>

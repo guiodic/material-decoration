@@ -44,14 +44,50 @@
        <item row="1" column="1">
         <widget class="QComboBox" name="kcfg_ButtonSize"/>
        </item>
-       <item row="2" column="0">
+      <item row="2" column="0" colspan="2">
+       <widget class="QGroupBox" name="groupBox_BorderColors">
+        <property name="title">
+         <string>Border colors</string>
+        </property>
+        <layout class="QFormLayout" name="formLayout_border">
+         <item row="0" column="0" colspan="2">
+          <widget class="QCheckBox" name="kcfg_UseCustomBorderColors">
+           <property name="text">
+            <string>Use custom border colors</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_activeBorderColor">
+           <property name="text">
+            <string>Active border color:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="KColorButton" name="kcfg_ActiveBorderColor"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_inactiveBorderColor">
+           <property name="text">
+            <string>Inactive border color:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="KColorButton" name="kcfg_InactiveBorderColor"/>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="3" column="0">
         <widget class="QLabel" name="label_3">
          <property name="text">
           <string>Active window opacity:</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
+      <item row="3" column="1">
         <widget class="QSpinBox" name="kcfg_ActiveOpacity">
          <property name="suffix">
           <string>%</string>
@@ -64,14 +100,14 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="0">
+      <item row="4" column="0">
         <widget class="QLabel" name="label_4">
          <property name="text">
           <string>Inactive window opacity:</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
+      <item row="4" column="1">
         <widget class="QSpinBox" name="kcfg_InactiveOpacity">
          <property name="suffix">
           <string>%</string>
@@ -84,14 +120,14 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
+      <item row="5" column="0">
         <widget class="QLabel" name="label_10">
          <property name="text">
           <string>Corner radius:</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
+      <item row="5" column="1">
         <widget class="QSpinBox" name="kcfg_CornerRadius">
          <property name="suffix">
           <string>px</string>

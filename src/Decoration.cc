@@ -959,13 +959,25 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
 QColor Decoration::borderColor() const
 {
     const auto *decoratedClient = window();
-    const auto group = decoratedClient->isActive()
-        ? KDecoration3::ColorGroup::Active
-        : KDecoration3::ColorGroup::Inactive;
-    const qreal opacity = decoratedClient->isActive()
-        ? m_internalSettings->activeOpacity()
-        : m_internalSettings->inactiveOpacity();
-    QColor color = decoratedClient->color(group, KDecoration3::ColorRole::Frame);
+    const bool isActive = decoratedClient->isActive();
+    const qreal opacity = isActive ? m_internalSettings->activeOpacity()
+                                   : m_internalSettings->inactiveOpacity();
+
+    QColor color;
+    if (m_internalSettings->useCustomBorderColors()) {
+        color = isActive ? m_internalSettings->activeBorderColor()
+                         : m_internalSettings->inactiveBorderColor();
+        // If alpha is 0 (default placeholder), fall back to theme color
+        if (color.alpha() == 0) {
+            const auto group = isActive ? KDecoration3::ColorGroup::Active
+                                        : KDecoration3::ColorGroup::Inactive;
+            color = decoratedClient->color(group, KDecoration3::ColorRole::Frame);
+        }
+    } else {
+        const auto group = isActive ? KDecoration3::ColorGroup::Active
+                                    : KDecoration3::ColorGroup::Inactive;
+        color = decoratedClient->color(group, KDecoration3::ColorRole::Frame);
+    }
     color.setAlphaF(opacity);
     return color;
 }
