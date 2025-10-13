@@ -179,7 +179,7 @@ void AppMenuButtonGroup::repositionSearchMenu()
         const QRectF buttonRect = button->geometry();
         QPoint rootPosition = buttonRect.topLeft().toPoint();
         rootPosition += deco->windowPos();
-        deco->adjustForDecorationBorders (rootPosition);
+        deco->adjustForDecorationBorders(rootPosition);
         // Re-popping up at the original position
         m_searchMenu->popup(rootPosition);
     } else { // Wayland
@@ -606,7 +606,7 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
         const QPoint position = buttonRect.topLeft().toPoint();
         QPoint rootPosition(position);
         rootPosition += deco->windowPos();
-        deco->adjustForDecorationBorders (rootPosition);
+        deco->adjustForDecorationBorders(rootPosition);
         menu->popup(rootPosition);
     }
 

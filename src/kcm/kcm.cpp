@@ -102,6 +102,9 @@ void MaterialDecorationKCM::load()
     m_ui->kcfg_UseCustomBorderColors->setChecked(m_settings->useCustomBorderColors());
     m_ui->kcfg_ActiveBorderColor->setColor(m_settings->activeBorderColor());
     m_ui->kcfg_InactiveBorderColor->setColor(m_settings->inactiveBorderColor());
+    const bool useCustom = m_ui->kcfg_UseCustomBorderColors->isChecked();
+    m_ui->kcfg_ActiveBorderColor->setEnabled(useCustom);
+    m_ui->kcfg_InactiveBorderColor->setEnabled(useCustom);    
     m_ui->kcfg_MenuAlwaysShow->setChecked(m_settings->menuAlwaysShow());
     m_ui->kcfg_SearchEnabled->setChecked(m_settings->searchEnabled());
     m_ui->kcfg_ShowDisabledActions->setEnabled(m_settings->searchEnabled());
@@ -156,6 +159,9 @@ void MaterialDecorationKCM::defaults()
     m_ui->kcfg_UseCustomBorderColors->setChecked(m_settings->useCustomBorderColors());
     m_ui->kcfg_ActiveBorderColor->setColor(m_settings->activeBorderColor());
     m_ui->kcfg_InactiveBorderColor->setColor(m_settings->inactiveBorderColor());
+    const bool useCustom = m_ui->kcfg_UseCustomBorderColors->isChecked();
+    m_ui->kcfg_ActiveBorderColor->setEnabled(useCustom);
+    m_ui->kcfg_InactiveBorderColor->setEnabled(useCustom);
     m_ui->kcfg_MenuAlwaysShow->setChecked(m_settings->menuAlwaysShow());
     m_ui->kcfg_SearchEnabled->setChecked(m_settings->searchEnabled());
     m_ui->kcfg_HamburgerMenu->setChecked(m_settings->hamburgerMenu());

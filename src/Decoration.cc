@@ -965,6 +965,7 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
                                          false,
                                          false));
     };
+    
     painter->restore();
 }
 
