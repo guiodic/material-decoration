@@ -961,7 +961,7 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
        
     if (settings()->borderSize() != KDecoration3::BorderSize::None) {
         painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
-                                         m_cornerRadius,
+                                         m_cornerRadius+0.7,
                                          true,
                                          true,
                                          false,
