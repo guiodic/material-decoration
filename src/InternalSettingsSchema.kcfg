@@ -72,6 +72,17 @@
             <default>250</default>
         </entry>
 
+        <!-- border colors -->
+        <entry name="ActiveBorderColor" type="Color">
+            <default>0, 0, 0</default>
+        </entry>
+        <entry name="InactiveBorderColor" type="Color">
+            <default>128, 128, 128</default>
+        </entry>
+        <entry name="UseCustomBorderColors" type="Bool">
+            <default>false</default>
+        </entry>
+
         <!-- shadow -->
         <entry name="ShadowSize" type="Enum">
             <choices>
