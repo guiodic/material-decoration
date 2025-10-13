@@ -801,8 +801,7 @@ qreal Decoration::sideBorderSize() const {
 
 qreal Decoration::topBorderSize() const
 {
-    if (!topBorderVisible()) return 0;
-    return sideBorderSize();
+    return bottomBorderSize();
 }
 
 bool Decoration::leftBorderVisible() const {
