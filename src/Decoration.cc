@@ -1036,14 +1036,15 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
     painter->setPen(Qt::NoPen);
     painter->setBrush(titleBarBackgroundColor());
 
-    const qreal top = topBorderSize();
-    const qreal side = sideBorderSize();
+    const qreal top = topBorderVisible() ? topBorderSize() : 0;
+    const qreal left = leftBorderVisible() ? sideBorderSize() : 0;
+    const qreal right = rightBorderVisible() ? sideBorderSize() : 0;
     qreal radius = cornerRadius();
     if (window()->isMaximized()) {
         radius = 0;
     }
 
-    const QRectF titleBarBackgroundRect(side, top, size().width() - side*2, titleBarHeight() + 1);
+    const QRectF titleBarBackgroundRect(left, top, size().width() - left - right, titleBarHeight() + 1);
     painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(titleBarBackgroundRect, window()->scale()),
                                      radius,
                                      leftBorderVisible(),
