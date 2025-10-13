@@ -951,15 +951,23 @@ QPainterPath Decoration::getRoundedPath(const QRectF &rect, qreal radius, bool r
 void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRegion) const
 {
     Q_UNUSED(repaintRegion)
+    
+    painter->save();   
 
-    painter->save();
-
-    painter->fillRect(rect(), Qt::transparent);
+    painter->fillRect(rect(), Qt::transparent); //path
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
     painter->setBrush(borderColor());
-    painter->drawRect(rect());
-
+       
+    if (settings()->borderSize() != KDecoration3::BorderSize::None) {
+        painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
+                                         m_cornerRadius,
+                                         true,
+                                         true,
+                                         false,
+                                         false));
+        //painter->drawRect(rect()); //path
+    };
     painter->restore();
 }
 
@@ -1158,10 +1166,6 @@ void Decoration::paintButtons(QPainter *painter, const QRectF &repaintRegion) co
 void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) const
 {
     Q_UNUSED(repaintRegion)
-
-    if (!m_internalSettings->drawBorders()) {
-        return;
-    }
 
     // Simple 1.01px border outline
     painter->save();
