@@ -959,13 +959,23 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
 QColor Decoration::borderColor() const
 {
     const auto *decoratedClient = window();
-    const auto group = decoratedClient->isActive()
-        ? KDecoration3::ColorGroup::Active
-        : KDecoration3::ColorGroup::Inactive;
-    const qreal opacity = decoratedClient->isActive()
+    const bool isActive = decoratedClient->isActive();
+    const qreal opacity = isActive
         ? m_internalSettings->activeOpacity()
         : m_internalSettings->inactiveOpacity();
-    QColor color = decoratedClient->color(group, KDecoration3::ColorRole::Frame);
+    
+    QColor color;
+    if (m_internalSettings->useCustomBorderColors()) {
+        color = isActive
+            ? m_internalSettings->activeBorderColor()
+            : m_internalSettings->inactiveBorderColor();
+    } else {
+        const auto group = isActive
+            ? KDecoration3::ColorGroup::Active
+            : KDecoration3::ColorGroup::Inactive;
+        color = decoratedClient->color(group, KDecoration3::ColorRole::Frame);
+    }
+    
     color.setAlphaF(opacity);
     return color;
 }
@@ -1129,11 +1139,15 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
 {
     Q_UNUSED(repaintRegion)
 
+    if (!m_internalSettings->drawBorders()) {
+        return;
+    }
+
     // Simple 1.01px border outline
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setBrush(Qt::NoBrush);
-    QColor outlineColor(titleBarForegroundColor());
+    QColor outlineColor(borderColor());
     outlineColor.setAlphaF(0.25);
     QPen pen(outlineColor);
     pen.setWidthF(KDecoration3::pixelSize(window()->scale()));

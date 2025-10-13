@@ -23,6 +23,20 @@
             <max>24</max>
         </entry>
 
+        <!-- borders -->
+        <entry name="DrawBorders" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="UseCustomBorderColors" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="ActiveBorderColor" type="Color">
+            <default>55, 125, 255</default>
+        </entry>
+        <entry name="InactiveBorderColor" type="Color">
+            <default>200, 200, 200</default>
+        </entry>
+
         <!-- title alignment -->
         <entry name="TitleAlignment" type="Enum">
             <choices>

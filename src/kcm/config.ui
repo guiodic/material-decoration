@@ -104,6 +104,40 @@
          </property>
         </widget>
        </item>
+       <item row="5" column="0" colspan="2">
+        <widget class="QCheckBox" name="kcfg_DrawBorders">
+         <property name="text">
+          <string>Draw window borders</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0" colspan="2">
+        <widget class="QCheckBox" name="kcfg_UseCustomBorderColors">
+         <property name="text">
+          <string>Use custom border colors</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QLabel" name="label_11">
+         <property name="text">
+          <string>Active window border color:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1">
+        <widget class="KColorButton" name="kcfg_ActiveBorderColor"/>
+       </item>
+       <item row="8" column="0">
+        <widget class="QLabel" name="label_12">
+         <property name="text">
+          <string>Inactive window border color:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="1">
+        <widget class="KColorButton" name="kcfg_InactiveBorderColor"/>
+       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="menuSearchTab">
