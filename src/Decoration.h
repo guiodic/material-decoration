@@ -61,6 +61,15 @@ public:
 
     WId decoratedWindowId() const;
     QPoint windowPos() const;
+    
+    qreal bottomBorderSize() const;
+    qreal sideBorderSize() const;
+    qreal topBorderSize() const;
+
+    bool leftBorderVisible() const;
+    bool rightBorderVisible() const;
+    bool topBorderVisible() const;
+    bool bottomBorderVisible() const;
 
 public slots:
     bool init() override;
@@ -106,15 +115,6 @@ private:
     qreal appMenuButtonHorzPadding() const;
     qreal appMenuCaptionSpacing() const;
     qreal captionMinWidth() const;
-
-    qreal bottomBorderSize() const;
-    qreal sideBorderSize() const;
-    qreal topBorderSize() const;
-
-    bool leftBorderVisible() const;
-    bool rightBorderVisible() const;
-    bool topBorderVisible() const;
-    bool bottomBorderVisible() const;
 
     bool titleBarIsHovered() const;
 
