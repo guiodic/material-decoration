@@ -436,7 +436,8 @@ void Decoration::updateBorders()
 {
     const qreal sideSize = sideBorderSize();
     QMarginsF borders;
-    borders.setTop(titleBarHeight() + topBorderSize());
+    //borders.setTop(titleBarHeight() + topBorderSize());
+    borders.setTop(titleBarHeight() + (topBorderVisible() ? topBorderSize() : 0));
     borders.setLeft(leftBorderVisible() ? sideSize : 0);
     borders.setRight(rightBorderVisible() ? sideSize : 0);
     borders.setBottom(bottomBorderVisible() ? bottomBorderSize() : 0);
@@ -533,17 +534,18 @@ void Decoration::updateButtonsGeometry()
     const qreal sideSize = sideBorderSize();
     const qreal leftOffset = leftBorderVisible() ? sideSize : 0;
     const qreal rightOffset = rightBorderVisible() ? sideSize : 0;
+    const qreal topOffset = (topBorderVisible() ? topBorderSize() : 0);
 
     updateButtonHeight();
 
     // Left
-    m_leftButtons->setPos(KDecoration3::snapToPixelGrid(QPointF(leftOffset, 0), window()->scale()));
+    m_leftButtons->setPos(KDecoration3::snapToPixelGrid(QPointF(leftOffset, topOffset), window()->scale()));
     m_leftButtons->setSpacing(0);
 
     // Right
     m_rightButtons->setPos(KDecoration3::snapToPixelGrid(QPointF(
         size().width() - rightOffset - m_rightButtons->geometry().width(),
-        0
+        topOffset
     ), window()->scale()));
     m_rightButtons->setSpacing(0);
 
@@ -552,9 +554,9 @@ void Decoration::updateButtonsGeometry()
         const qreal captionOffset = captionMinWidth() + settings()->smallSpacing();
         const QRectF availableRect = centerRect().adjusted(
             0,
-            0,
+            topOffset,
             -captionOffset,
-            0
+            topOffset
         );
         const QPointF snappedTopLeft = KDecoration3::snapToPixelGrid(availableRect.topLeft(), window()->scale());
 
@@ -1129,6 +1131,17 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     // --- Draw text ---
+    
+    const qreal topOffset = (topBorderVisible() ? topBorderSize() : 0);
+    
+    captionRect.adjust(
+            0,
+            topOffset,
+            0,
+            topOffset
+    );
+    
+    
     painter->drawText(KDecoration3::snapToPixelGrid(captionRect, window()->scale()), alignment, caption);
 
     painter->restore();
