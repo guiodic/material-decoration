@@ -70,6 +70,7 @@ public:
     bool rightBorderVisible() const;
     bool topBorderVisible() const;
     bool bottomBorderVisible() const;
+    void adjustForDecorationBorders(QPoint &rootPosition);
 
 public slots:
     bool init() override;

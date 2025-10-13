@@ -27,6 +27,7 @@ namespace Material
       
     static const QLoggingCategory category("kdecoration.material");
     static const QString s_configFilename = QStringLiteral("kdecoration_materialrc");
+    static constexpr qreal BorderRadiusAdjustment = 0.7;
 
     //--- Standard pen widths
     namespace PenWidth

@@ -534,7 +534,7 @@ void Decoration::updateButtonsGeometry()
     const qreal sideSize = sideBorderSize();
     const qreal leftOffset = leftBorderVisible() ? sideSize : 0;
     const qreal rightOffset = rightBorderVisible() ? sideSize : 0;
-    const qreal topOffset = (topBorderVisible() ? topBorderSize() : 0);
+    const qreal topOffset = topBorderVisible() ? topBorderSize() : 0;
 
     updateButtonHeight();
 
@@ -954,19 +954,18 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
     
     painter->save();   
 
-    painter->fillRect(rect(), Qt::transparent); //path
+    painter->fillRect(rect(), Qt::transparent); 
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
     painter->setBrush(borderColor());
        
     if (settings()->borderSize() != KDecoration3::BorderSize::None) {
         painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
-                                         (m_cornerRadius+0.7)*!window()->isMaximized(),
+                                         (m_cornerRadius+Material::BorderRadiusAdjustment)*!window()->isMaximized(),
                                          Decoration::leftBorderVisible(),
                                          Decoration::rightBorderVisible(),
                                          false,
                                          false));
-        //painter->drawRect(rect()); //path
     };
     painter->restore();
 }
@@ -1150,7 +1149,6 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
             topOffset
     );
     
-    
     painter->drawText(KDecoration3::snapToPixelGrid(captionRect, window()->scale()), alignment, caption);
 
     painter->restore();
@@ -1203,5 +1201,16 @@ WId Decoration::decoratedWindowId() const
 
     return 0;
 }
+
+void Decoration::adjustForDecorationBorders(QPoint &rootPosition)
+{
+    if (leftBorderVisible()) {
+        rootPosition.rx() -= qRound(sideBorderSize());
+    }
+
+    if (topBorderVisible()) {
+        rootPosition.ry() -= qRound(topBorderSize());
+    }
+}   
 
 } // namespace Material
