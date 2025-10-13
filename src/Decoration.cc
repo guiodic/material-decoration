@@ -961,9 +961,9 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
        
     if (settings()->borderSize() != KDecoration3::BorderSize::None) {
         painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
-                                         m_cornerRadius+0.7,
-                                         true,
-                                         true,
+                                         (m_cornerRadius+0.7)*!window()->isMaximized(),
+                                         Decoration::leftBorderVisible(),
+                                         Decoration::rightBorderVisible(),
                                          false,
                                          false));
         //painter->drawRect(rect()); //path
@@ -1046,8 +1046,8 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
     const QRectF titleBarBackgroundRect(side, top, size().width() - side*2, titleBarHeight() + 1);
     painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(titleBarBackgroundRect, window()->scale()),
                                      radius,
-                                     true,
-                                     true,
+                                     leftBorderVisible(),
+                                     rightBorderVisible(),
                                      false,
                                      false));
 
