@@ -244,9 +244,9 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
     paintCaption(painter, repaintRegion);
 
     //Don't paint outline for NoBorder, NoSideBorder, or Tiny borders.
-    if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
-        paintOutline(painter, repaintRegion);
-    }
+    //if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
+    //    paintOutline(painter, repaintRegion);
+    //}
 }
 
 bool Decoration::init()
@@ -1030,7 +1030,7 @@ QColor Decoration::titleBarForegroundColor() const
 void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repaintRegion) const
 {
     Q_UNUSED(repaintRegion)
-
+    
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
@@ -1045,7 +1045,7 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
 
     const QRectF titleBarBackgroundRect(side, top, size().width() - side*2, titleBarHeight() + 1);
     painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(titleBarBackgroundRect, window()->scale()),
-                                     radius - side,
+                                     radius,
                                      true,
                                      true,
                                      false,
