@@ -109,6 +109,7 @@ private:
 
     qreal bottomBorderSize() const;
     qreal sideBorderSize() const;
+    qreal topBorderSize() const;
 
     bool leftBorderVisible() const;
     bool rightBorderVisible() const;

@@ -294,7 +294,7 @@ bool Decoration::init()
     connect(decoratedClient, &KDecoration3::DecoratedWindow::captionChanged,
             this, repaintTitleBar);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
-            this, repaintTitleBar);
+            this, [this] { update(); });
 
     updateBorders();
     updateResizeBorders();
@@ -436,7 +436,7 @@ void Decoration::updateBorders()
 {
     const qreal sideSize = sideBorderSize();
     QMarginsF borders;
-    borders.setTop(titleBarHeight());
+    borders.setTop(titleBarHeight() + topBorderSize());
     borders.setLeft(leftBorderVisible() ? sideSize : 0);
     borders.setRight(rightBorderVisible() ? sideSize : 0);
     borders.setBottom(bottomBorderVisible() ? bottomBorderSize() : 0);
@@ -797,6 +797,12 @@ qreal Decoration::sideBorderSize() const {
     }
 }
 
+qreal Decoration::topBorderSize() const
+{
+    if (!topBorderVisible()) return 0;
+    return sideBorderSize();
+}
+
 bool Decoration::leftBorderVisible() const {
     const auto *decoratedClient = window();
     return !decoratedClient->isMaximizedHorizontally()
@@ -950,7 +956,6 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
     painter->setBrush(borderColor());
-    painter->setClipRect(0, borderTop(), size().width(), size().height() - borderTop(), Qt::IntersectClip);
     painter->drawRect(rect());
 
     painter->restore();
@@ -1021,14 +1026,16 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
     painter->setPen(Qt::NoPen);
     painter->setBrush(titleBarBackgroundColor());
 
+    const qreal top = topBorderSize();
+    const qreal side = sideBorderSize();
     qreal radius = cornerRadius();
     if (window()->isMaximized()) {
         radius = 0;
     }
 
-    const QRectF titleBarBackgroundRect(0, 0, size().width(), titleBarHeight() + 1);
+    const QRectF titleBarBackgroundRect(side, top, size().width() - side*2, titleBarHeight() + 1);
     painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(titleBarBackgroundRect, window()->scale()),
-                                     radius,
+                                     radius - side,
                                      true,
                                      true,
                                      false,
