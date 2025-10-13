@@ -436,7 +436,6 @@ void Decoration::updateBorders()
 {
     const qreal sideSize = sideBorderSize();
     QMarginsF borders;
-    //borders.setTop(titleBarHeight() + topBorderSize());
     borders.setTop(titleBarHeight() + (topBorderVisible() ? topBorderSize() : 0));
     borders.setLeft(leftBorderVisible() ? sideSize : 0);
     borders.setRight(rightBorderVisible() ? sideSize : 0);
