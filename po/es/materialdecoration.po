@@ -30,24 +30,24 @@ msgid "Appearance"
 msgstr "Apariencia"
 
 #: config.ui:26
-msgid "Title alignment:"
-msgstr "Alineación del título:"
+msgid "Title alignment"
+msgstr "Alineación del título"
 
 #: config.ui:33
-msgid "Button size:"
-msgstr "Tamaño de los botones:"
+msgid "Button size"
+msgstr "Tamaño de los botones"
 
 #: config.ui:40
-msgid "Active window opacity:"
-msgstr "Opacidad de la ventana activa:"
+msgid "Active window opacity"
+msgstr "Opacidad de la ventana activa"
 
 #: config.ui:58
-msgid "Inactive window opacity:"
-msgstr "Opacidad de la ventana inactiva:"
+msgid "Inactive window opacity"
+msgstr "Opacidad de la ventana inactiva"
 
 #: config.ui:76
-msgid "Corner radius:"
-msgstr "Radio de las esquinas:"
+msgid "Corner radius"
+msgstr "Radio de las esquinas"
 
 #: config.ui:95
 msgid "Menu and Search"
@@ -70,24 +70,24 @@ msgid "Use hamburger menu"
 msgstr "Usar el menú de hamburguesa"
 
 #: config.ui:129
-msgid "Menu button horizontal padding:"
-msgstr "Relleno horizontal del botón de menú:"
+msgid "Menu button horizontal padding"
+msgstr "Relleno horizontal del botón de menú"
 
 #: config.ui:139
 msgid "Shadows"
 msgstr "Sombras"
 
 #: config.ui:145
-msgid "Shadow size:"
-msgstr "Tamaño de la sombra:"
+msgid "Shadow size"
+msgstr "Tamaño de la sombra"
 
 #: config.ui:152
-msgid "Shadow color:"
-msgstr "Color de la sombra:"
+msgid "Shadow color"
+msgstr "Color de la sombra"
 
 #: config.ui:159
-msgid "Shadow strength:"
-msgstr "Intensidad de la sombra:"
+msgid "Shadow strength"
+msgstr "Intensidad de la sombra"
 
 #: config.ui:185
 msgid "Animations"
@@ -98,8 +98,8 @@ msgid "Enable animations"
 msgstr "Activar animaciones"
 
 #: config.ui:198
-msgid "Animation duration:"
-msgstr "Duración de la animación:"
+msgid "Animation duration"
+msgstr "Duración de la animación"
 
 #: kcm.cpp:32
 msgid "Left"
@@ -152,3 +152,15 @@ msgstr "Mediano"
 #: config.ui:136
 msgid "Use system menu font"
 msgstr "Usar la fuente del menú del sistema"
+
+#: config.ui:110
+msgid "Use custom border colors"
+msgstr "Usar colores de borde personalizados"
+
+#: config.ui:117
+msgid "Active window border color"
+msgstr "Color del borde de la ventana activa"
+
+#: config.ui:127
+msgid "Inactive window border color"
+msgstr "Color del borde de la ventana inactiva"

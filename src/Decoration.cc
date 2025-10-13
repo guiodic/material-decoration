@@ -964,7 +964,7 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
                                          Decoration::rightBorderVisible(),
                                          false,
                                          false));
-    };
+    }
     
     painter->restore();
 }
@@ -1210,6 +1210,6 @@ void Decoration::adjustForDecorationBorders(QPoint &rootPosition)
     if (topBorderVisible()) {
         rootPosition.ry() -= qRound(topBorderSize());
     }
-}   
+}
 
 } // namespace Material
