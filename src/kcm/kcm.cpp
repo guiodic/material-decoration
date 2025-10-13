@@ -79,6 +79,15 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_ShadowStrength, &QSlider::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_AnimationsEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_AnimationsDuration, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_UseCustomBorderColors, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_ActiveBorderColor, &KColorButton::changed, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_InactiveBorderColor, &KColorButton::changed, this, &MaterialDecorationKCM::updateChanged);
+
+    // Enable/disable color pickers based on checkbox
+    connect(m_ui->kcfg_UseCustomBorderColors, &QCheckBox::toggled, m_ui->kcfg_ActiveBorderColor, &QWidget::setEnabled);
+    connect(m_ui->kcfg_UseCustomBorderColors, &QCheckBox::toggled, m_ui->kcfg_InactiveBorderColor, &QWidget::setEnabled);
+    connect(m_ui->kcfg_UseCustomBorderColors, &QCheckBox::toggled, m_ui->label_active_border_color, &QWidget::setEnabled);
+    connect(m_ui->kcfg_UseCustomBorderColors, &QCheckBox::toggled, m_ui->label_inactive_border_color, &QWidget::setEnabled);
 }
 
 void MaterialDecorationKCM::load()
@@ -100,6 +109,15 @@ void MaterialDecorationKCM::load()
     m_ui->kcfg_ShadowStrength->setValue(m_settings->shadowStrength());
     m_ui->kcfg_AnimationsEnabled->setChecked(m_settings->animationsEnabled());
     m_ui->kcfg_AnimationsDuration->setValue(m_settings->animationsDuration());
+    m_ui->kcfg_UseCustomBorderColors->setChecked(m_settings->useCustomBorderColors());
+    m_ui->kcfg_ActiveBorderColor->setColor(m_settings->activeBorderColor());
+    m_ui->kcfg_InactiveBorderColor->setColor(m_settings->inactiveBorderColor());
+
+    const bool useCustom = m_settings->useCustomBorderColors();
+    m_ui->kcfg_ActiveBorderColor->setEnabled(useCustom);
+    m_ui->kcfg_InactiveBorderColor->setEnabled(useCustom);
+    m_ui->label_active_border_color->setEnabled(useCustom);
+    m_ui->label_inactive_border_color->setEnabled(useCustom);
 }
 
 void MaterialDecorationKCM::save()
@@ -120,6 +138,9 @@ void MaterialDecorationKCM::save()
     m_settings->setShadowStrength(m_ui->kcfg_ShadowStrength->value());
     m_settings->setAnimationsEnabled(m_ui->kcfg_AnimationsEnabled->isChecked());
     m_settings->setAnimationsDuration(m_ui->kcfg_AnimationsDuration->value());
+    m_settings->setUseCustomBorderColors(m_ui->kcfg_UseCustomBorderColors->isChecked());
+    m_settings->setActiveBorderColor(m_ui->kcfg_ActiveBorderColor->color());
+    m_settings->setInactiveBorderColor(m_ui->kcfg_InactiveBorderColor->color());
 
     m_settings->save();
     QDBusConnection::sessionBus().call(QDBusMessage::createMethodCall(QStringLiteral("org.kde.KWin"),
@@ -147,6 +168,14 @@ void MaterialDecorationKCM::defaults()
     m_ui->kcfg_ShadowStrength->setValue(m_settings->shadowStrength());
     m_ui->kcfg_AnimationsEnabled->setChecked(m_settings->animationsEnabled());
     m_ui->kcfg_AnimationsDuration->setValue(m_settings->animationsDuration());
+    m_ui->kcfg_UseCustomBorderColors->setChecked(m_settings->useCustomBorderColors());
+    m_ui->kcfg_ActiveBorderColor->setColor(m_settings->activeBorderColor());
+    m_ui->kcfg_InactiveBorderColor->setColor(m_settings->inactiveBorderColor());
+    const bool useCustom = m_settings->useCustomBorderColors();
+    m_ui->kcfg_ActiveBorderColor->setEnabled(useCustom);
+    m_ui->kcfg_InactiveBorderColor->setEnabled(useCustom);
+    m_ui->label_active_border_color->setEnabled(useCustom);
+    m_ui->label_inactive_border_color->setEnabled(useCustom);
     markAsChanged();
 }
 

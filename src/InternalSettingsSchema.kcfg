@@ -91,6 +91,17 @@
             <min>25</min>
             <max>255</max>
         </entry>
+
+        <!-- border colors -->
+        <entry name="UseCustomBorderColors" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="ActiveBorderColor" type="Color">
+            <default>0, 0, 0</default>
+        </entry>
+        <entry name="InactiveBorderColor" type="Color">
+            <default>0, 0, 0</default>
+        </entry>
     </group>
 
 </kcfg>
