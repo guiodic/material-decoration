@@ -30,24 +30,24 @@ msgid "Appearance"
 msgstr "Erscheinungsbild"
 
 #: config.ui:26
-msgid "Title alignment:"
-msgstr "Titelausrichtung:"
+msgid "Title alignment"
+msgstr "Titelausrichtung"
 
 #: config.ui:33
-msgid "Button size:"
-msgstr "Knopfgröße:"
+msgid "Button size"
+msgstr "Knopfgröße"
 
 #: config.ui:40
-msgid "Active window opacity:"
-msgstr "Deckkraft des aktiven Fensters:"
+msgid "Active window opacity"
+msgstr "Deckkraft des aktiven Fensters"
 
 #: config.ui:58
-msgid "Inactive window opacity:"
-msgstr "Deckkraft des inaktiven Fensters:"
+msgid "Inactive window opacity"
+msgstr "Deckkraft des inaktiven Fensters"
 
 #: config.ui:76
-msgid "Corner radius:"
-msgstr "Eckenradius:"
+msgid "Corner radius"
+msgstr "Eckenradius"
 
 #: config.ui:95
 msgid "Menu and Search"
@@ -70,24 +70,24 @@ msgid "Use hamburger menu"
 msgstr "Hamburger-Menü verwenden"
 
 #: config.ui:129
-msgid "Menu button horizontal padding:"
-msgstr "Horizontaler Abstand der Menüschaltfläche:"
+msgid "Menu button horizontal padding"
+msgstr "Horizontaler Abstand der Menüschaltfläche"
 
 #: config.ui:139
 msgid "Shadows"
 msgstr "Schatten"
 
 #: config.ui:145
-msgid "Shadow size:"
-msgstr "Schattengröße:"
+msgid "Shadow size"
+msgstr "Schattengröße"
 
 #: config.ui:152
-msgid "Shadow color:"
-msgstr "Schattenfarbe:"
+msgid "Shadow color"
+msgstr "Schattenfarbe"
 
 #: config.ui:159
-msgid "Shadow strength:"
-msgstr "Schattenstärke:"
+msgid "Shadow strength"
+msgstr "Schattenstärke"
 
 #: config.ui:185
 msgid "Animations"
@@ -98,8 +98,8 @@ msgid "Enable animations"
 msgstr "Animationen aktivieren"
 
 #: config.ui:198
-msgid "Animation duration:"
-msgstr "Animationsdauer:"
+msgid "Animation duration"
+msgstr "Animationsdauer"
 
 #: kcm.cpp:32
 msgid "Left"
@@ -152,3 +152,15 @@ msgstr "Mittel"
 #: config.ui:136
 msgid "Use system menu font"
 msgstr "System-Menüschriftart verwenden"
+
+#: config.ui:110
+msgid "Use custom border colors"
+msgstr "Benutzerdefinierte Rahmenfarben verwenden"
+
+#: config.ui:117
+msgid "Active window border color"
+msgstr "Rahmenfarbe des aktiven Fensters"
+
+#: config.ui:127
+msgid "Inactive window border color"
+msgstr "Rahmenfarbe des inaktiven Fensters"

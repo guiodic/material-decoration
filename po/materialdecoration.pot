@@ -29,23 +29,23 @@ msgid "Appearance"
 msgstr ""
 
 #: config.ui:26
-msgid "Title alignment:"
+msgid "Title alignment"
 msgstr ""
 
 #: config.ui:33
-msgid "Button size:"
+msgid "Button size"
 msgstr ""
 
 #: config.ui:40
-msgid "Active window opacity:"
+msgid "Active window opacity"
 msgstr ""
 
 #: config.ui:58
-msgid "Inactive window opacity:"
+msgid "Inactive window opacity"
 msgstr ""
 
 #: config.ui:76
-msgid "Corner radius:"
+msgid "Corner radius"
 msgstr ""
 
 #: config.ui:95
@@ -69,7 +69,7 @@ msgid "Use hamburger menu"
 msgstr ""
 
 #: config.ui:129
-msgid "Menu button horizontal padding:"
+msgid "Menu button horizontal padding"
 msgstr ""
 
 #: config.ui:139
@@ -77,15 +77,15 @@ msgid "Shadows"
 msgstr ""
 
 #: config.ui:145
-msgid "Shadow size:"
+msgid "Shadow size"
 msgstr ""
 
 #: config.ui:152
-msgid "Shadow color:"
+msgid "Shadow color"
 msgstr ""
 
 #: config.ui:159
-msgid "Shadow strength:"
+msgid "Shadow strength"
 msgstr ""
 
 #: config.ui:185
@@ -97,7 +97,7 @@ msgid "Enable animations"
 msgstr ""
 
 #: config.ui:198
-msgid "Animation duration:"
+msgid "Animation duration"
 msgstr ""
 
 #: kcm.cpp:32
@@ -150,4 +150,16 @@ msgstr ""
 
 #: config.ui:136
 msgid "Use system menu font"
+msgstr ""
+
+#: config.ui:110
+msgid "Use custom border colors"
+msgstr ""
+
+#: config.ui:117
+msgid "Active window border color"
+msgstr ""
+
+#: config.ui:127
+msgid "Inactive window border color"
 msgstr ""

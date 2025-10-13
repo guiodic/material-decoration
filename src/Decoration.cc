@@ -244,9 +244,9 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
     paintCaption(painter, repaintRegion);
 
     //Don't paint outline for NoBorder, NoSideBorder, or Tiny borders.
-    if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
-        paintOutline(painter, repaintRegion);
-    }
+    //if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
+    //    paintOutline(painter, repaintRegion);
+    //}
 }
 
 bool Decoration::init()
@@ -294,7 +294,7 @@ bool Decoration::init()
     connect(decoratedClient, &KDecoration3::DecoratedWindow::captionChanged,
             this, repaintTitleBar);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
-            this, repaintTitleBar);
+            this, [this] { update(); });
 
     updateBorders();
     updateResizeBorders();
@@ -436,7 +436,7 @@ void Decoration::updateBorders()
 {
     const qreal sideSize = sideBorderSize();
     QMarginsF borders;
-    borders.setTop(titleBarHeight());
+    borders.setTop(titleBarHeight() + (topBorderVisible() ? topBorderSize() : 0));
     borders.setLeft(leftBorderVisible() ? sideSize : 0);
     borders.setRight(rightBorderVisible() ? sideSize : 0);
     borders.setBottom(bottomBorderVisible() ? bottomBorderSize() : 0);
@@ -533,17 +533,18 @@ void Decoration::updateButtonsGeometry()
     const qreal sideSize = sideBorderSize();
     const qreal leftOffset = leftBorderVisible() ? sideSize : 0;
     const qreal rightOffset = rightBorderVisible() ? sideSize : 0;
+    const qreal topOffset = topBorderVisible() ? topBorderSize() : 0;
 
     updateButtonHeight();
 
     // Left
-    m_leftButtons->setPos(KDecoration3::snapToPixelGrid(QPointF(leftOffset, 0), window()->scale()));
+    m_leftButtons->setPos(KDecoration3::snapToPixelGrid(QPointF(leftOffset, topOffset), window()->scale()));
     m_leftButtons->setSpacing(0);
 
     // Right
     m_rightButtons->setPos(KDecoration3::snapToPixelGrid(QPointF(
         size().width() - rightOffset - m_rightButtons->geometry().width(),
-        0
+        topOffset
     ), window()->scale()));
     m_rightButtons->setSpacing(0);
 
@@ -552,9 +553,9 @@ void Decoration::updateButtonsGeometry()
         const qreal captionOffset = captionMinWidth() + settings()->smallSpacing();
         const QRectF availableRect = centerRect().adjusted(
             0,
-            0,
+            topOffset,
             -captionOffset,
-            0
+            topOffset
         );
         const QPointF snappedTopLeft = KDecoration3::snapToPixelGrid(availableRect.topLeft(), window()->scale());
 
@@ -797,6 +798,11 @@ qreal Decoration::sideBorderSize() const {
     }
 }
 
+qreal Decoration::topBorderSize() const
+{
+    return bottomBorderSize();
+}
+
 bool Decoration::leftBorderVisible() const {
     const auto *decoratedClient = window();
     return !decoratedClient->isMaximizedHorizontally()
@@ -943,29 +949,46 @@ QPainterPath Decoration::getRoundedPath(const QRectF &rect, qreal radius, bool r
 void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRegion) const
 {
     Q_UNUSED(repaintRegion)
+    
+    painter->save();   
 
-    painter->save();
-
-    painter->fillRect(rect(), Qt::transparent);
+    painter->fillRect(rect(), Qt::transparent); 
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
     painter->setBrush(borderColor());
-    painter->setClipRect(0, borderTop(), size().width(), size().height() - borderTop(), Qt::IntersectClip);
-    painter->drawRect(rect());
-
+       
+    if (settings()->borderSize() != KDecoration3::BorderSize::None) {
+        painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
+                                         (m_cornerRadius+Material::BorderRadiusAdjustment)*!window()->isMaximized(),
+                                         Decoration::leftBorderVisible(),
+                                         Decoration::rightBorderVisible(),
+                                         false,
+                                         false));
+    }
+    
     painter->restore();
 }
 
 QColor Decoration::borderColor() const
 {
     const auto *decoratedClient = window();
-    const auto group = decoratedClient->isActive()
-        ? KDecoration3::ColorGroup::Active
-        : KDecoration3::ColorGroup::Inactive;
-    const qreal opacity = decoratedClient->isActive()
+    const bool isActive = decoratedClient->isActive();
+    const qreal opacity = isActive
         ? m_internalSettings->activeOpacity()
         : m_internalSettings->inactiveOpacity();
-    QColor color = decoratedClient->color(group, KDecoration3::ColorRole::Frame);
+    
+    QColor color;
+    if (m_internalSettings->useCustomBorderColors()) {
+        color = isActive
+            ? m_internalSettings->activeBorderColor()
+            : m_internalSettings->inactiveBorderColor();
+    } else {
+        const auto group = isActive
+            ? KDecoration3::ColorGroup::Active
+            : KDecoration3::ColorGroup::Inactive;
+        color = decoratedClient->color(group, KDecoration3::ColorRole::Frame);
+    }
+    
     color.setAlphaF(opacity);
     return color;
 }
@@ -1005,22 +1028,25 @@ QColor Decoration::titleBarForegroundColor() const
 void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repaintRegion) const
 {
     Q_UNUSED(repaintRegion)
-
+    
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
     painter->setBrush(titleBarBackgroundColor());
 
+    const qreal top = topBorderVisible() ? topBorderSize() : 0;
+    const qreal left = leftBorderVisible() ? sideBorderSize() : 0;
+    const qreal right = rightBorderVisible() ? sideBorderSize() : 0;
     qreal radius = cornerRadius();
     if (window()->isMaximized()) {
         radius = 0;
     }
 
-    const QRectF titleBarBackgroundRect(0, 0, size().width(), titleBarHeight() + 1);
+    const QRectF titleBarBackgroundRect(left, top, size().width() - left - right, titleBarHeight() + 1);
     painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(titleBarBackgroundRect, window()->scale()),
                                      radius,
-                                     true,
-                                     true,
+                                     leftBorderVisible(),
+                                     rightBorderVisible(),
                                      false,
                                      false));
 
@@ -1112,6 +1138,16 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     // --- Draw text ---
+    
+    const qreal topOffset = (topBorderVisible() ? topBorderSize() : 0);
+    
+    captionRect.adjust(
+            0,
+            topOffset,
+            0,
+            topOffset
+    );
+    
     painter->drawText(KDecoration3::snapToPixelGrid(captionRect, window()->scale()), alignment, caption);
 
     painter->restore();
@@ -1133,7 +1169,7 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setBrush(Qt::NoBrush);
-    QColor outlineColor(titleBarForegroundColor());
+    QColor outlineColor(borderColor());
     outlineColor.setAlphaF(0.25);
     QPen pen(outlineColor);
     pen.setWidthF(KDecoration3::pixelSize(window()->scale()));
@@ -1163,6 +1199,17 @@ WId Decoration::decoratedWindowId() const
 #endif
 
     return 0;
+}
+
+void Decoration::adjustForDecorationBorders(QPoint &rootPosition)
+{
+    if (leftBorderVisible()) {
+        rootPosition.rx() -= qRound(sideBorderSize());
+    }
+
+    if (topBorderVisible()) {
+        rootPosition.ry() -= qRound(topBorderSize());
+    }
 }
 
 } // namespace Material

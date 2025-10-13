@@ -30,24 +30,24 @@ msgid "Appearance"
 msgstr "外观"
 
 #: config.ui:26
-msgid "Title alignment:"
-msgstr "标题对齐："
+msgid "Title alignment"
+msgstr "标题对齐"
 
 #: config.ui:33
-msgid "Button size:"
-msgstr "按钮大小："
+msgid "Button size"
+msgstr "按钮大小"
 
 #: config.ui:40
-msgid "Active window opacity:"
-msgstr "活动窗口透明度："
+msgid "Active window opacity"
+msgstr "活动窗口透明度"
 
 #: config.ui:58
-msgid "Inactive window opacity:"
-msgstr "非活动窗口透明度："
+msgid "Inactive window opacity"
+msgstr "非活动窗口透明度"
 
 #: config.ui:76
-msgid "Corner radius:"
-msgstr "圆角半径："
+msgid "Corner radius"
+msgstr "圆角半径"
 
 #: config.ui:95
 msgid "Menu and Search"
@@ -70,24 +70,24 @@ msgid "Use hamburger menu"
 msgstr "使用折叠菜单"
 
 #: config.ui:129
-msgid "Menu button horizontal padding:"
-msgstr "菜单按钮水平填充："
+msgid "Menu button horizontal padding"
+msgstr "菜单按钮水平填充"
 
 #: config.ui:139
 msgid "Shadows"
 msgstr "阴影"
 
 #: config.ui:145
-msgid "Shadow size:"
-msgstr "阴影大小："
+msgid "Shadow size"
+msgstr "阴影大小"
 
 #: config.ui:152
-msgid "Shadow color:"
-msgstr "阴影颜色："
+msgid "Shadow color"
+msgstr "阴影颜色"
 
 #: config.ui:159
-msgid "Shadow strength:"
-msgstr "阴影强度："
+msgid "Shadow strength"
+msgstr "阴影强度"
 
 #: config.ui:185
 msgid "Animations"
@@ -98,8 +98,8 @@ msgid "Enable animations"
 msgstr "启用动画"
 
 #: config.ui:198
-msgid "Animation duration:"
-msgstr "动画时长："
+msgid "Animation duration"
+msgstr "动画时长"
 
 #: kcm.cpp:32
 msgid "Left"
@@ -152,3 +152,15 @@ msgstr "中等"
 #: config.ui:136
 msgid "Use system menu font"
 msgstr "使用系统菜单字体"
+
+#: config.ui:110
+msgid "Use custom border colors"
+msgstr "使用自定义边框颜色"
+
+#: config.ui:117
+msgid "Active window border color"
+msgstr "活动窗口边框颜色"
+
+#: config.ui:127
+msgid "Inactive window border color"
+msgstr "非活动窗口边框颜色"
