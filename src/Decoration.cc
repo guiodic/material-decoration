@@ -252,7 +252,12 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 bool Decoration::init()
 {    
     m_internalSettings = QSharedPointer<InternalSettings>(new InternalSettings());
-    m_cornerRadius = m_internalSettings->cornerRadius();
+    
+    if (settings()->isAlphaChannelSupported()) {
+        m_cornerRadius = m_internalSettings->cornerRadius();
+    } else {
+        m_cornerRadius = 0;
+    }    
 
     auto *decoratedClient = window();
 
@@ -311,6 +316,8 @@ bool Decoration::init()
 
     connect(settings().get(), &KDecoration3::DecorationSettings::reconfigured,
         this, &Decoration::reconfigure);
+    connect(settings().get(), &KDecoration3::DecorationSettings::alphaChannelSupportedChanged,
+        this, &Decoration::reconfigure);
     connect(m_internalSettings.data(), &InternalSettings::configChanged,
         this, &Decoration::reconfigure);
     
@@ -331,7 +338,12 @@ void Decoration::reconfigure()
 {
     resetDragMove();
     m_internalSettings->load();
-    m_cornerRadius = m_internalSettings->cornerRadius();
+    
+    if (settings()->isAlphaChannelSupported()) {
+        m_cornerRadius = m_internalSettings->cornerRadius();
+    } else {
+        m_cornerRadius = 0;
+    }    
 
     updateBorders();
     updateTitleBar();
@@ -1037,7 +1049,7 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
     const qreal top = topBorderVisible() ? topBorderSize() : 0;
     const qreal left = leftBorderVisible() ? sideBorderSize() : 0;
     const qreal right = rightBorderVisible() ? sideBorderSize() : 0;
-    qreal radius = cornerRadius();
+    qreal radius = m_cornerRadius;
     if (window()->isMaximized()) {
         radius = 0;
     }

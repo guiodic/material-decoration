@@ -175,14 +175,14 @@ void AppMenuButtonGroup::repositionSearchMenu()
         return;
     }
 
-    if (KWindowSystem::isPlatformX11()) { // X11
+    if (KWindowSystem::isPlatformX11() && Material::isKWinOlderThan650()) { // X11 and kwin_x11 < 6.5.0
         const QRectF buttonRect = button->geometry();
         QPoint rootPosition = buttonRect.topLeft().toPoint();
         rootPosition += deco->windowPos();
         deco->adjustForDecorationBorders(rootPosition);
         // Re-popping up at the original position
         m_searchMenu->popup(rootPosition);
-    } else { // Wayland
+    } else { // Wayland or kwin_x11 >= 6.5.0
         KDecoration3::Positioner positioner;
         positioner.setAnchorRect(button->geometry());
         deco->popup(positioner, m_searchMenu);
@@ -597,7 +597,7 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
         connect(navMenu, &NavigableMenu::hitRight, this, &AppMenuButtonGroup::onHitRight, Qt::UniqueConnection);
     }
     menu->installEventFilter(this);
-    if (KWindowSystem::isPlatformWayland()) {
+    if (KWindowSystem::isPlatformWayland() || !Material::isKWinOlderThan650()) {
         KDecoration3::Positioner positioner;
         positioner.setAnchorRect(button->geometry());
         deco->popup(positioner, menu);
