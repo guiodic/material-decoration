@@ -13,14 +13,14 @@ Wayland, GTK apps don't export the menu. You need to start them with
 
 ### Configuration
 
-Make sure you add the AppMenu button in System Settings > Application Style >
-Window Decorations > Buttons Tab.
+Make sure you add the AppMenu button in System Settings > Colors & Themes >
+Window Decorations > Configure Titlebar Buttons…. 
 
-From the configuration module in KDE System Settings, you can modify various
-aspects of the decoration, both in terms of appearance and behaviour. For
-example, you can transform it into a hamburger menu, disable the search
-function, and even decide whether to include inactive actions (those that are
-greyed out) in the search results.
+There, byy clicking the pencil icon that is displayed when you select
+the Material theme, you can modify various aspects of the decoration,
+both in terms of appearance and behaviour. For example, you can transform
+it into a hamburger menu, disable the search function, and even decide whether
+to include inactive actions (those that are greyed out) in the search results.
 
 # Build instructions for Plasma 6
 
