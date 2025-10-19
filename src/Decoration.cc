@@ -353,6 +353,7 @@ void Decoration::reconfigure()
 
     updateButtonsGeometry();
     updateButtonAnimation();
+    updateBlur();
     updateShadow();
     update();
 }
@@ -971,7 +972,7 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
        
     if (settings()->borderSize() != KDecoration3::BorderSize::None) {
         painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
-                                         (m_cornerRadius+Material::BorderRadiusAdjustment)*!window()->isMaximized(),
+                                         (m_cornerRadius)*!window()->isMaximized(),
                                          Decoration::leftBorderVisible(),
                                          Decoration::rightBorderVisible(),
                                          false,
