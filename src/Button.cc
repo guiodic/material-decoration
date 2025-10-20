@@ -624,14 +624,4 @@ void Button::forceUnpress()
     setEnabled(wasEnabled);
 }
 
-
-bool Button::windowIsMaximized() 
-{
-    if (const auto *win = decoration()->window()) {
-        return win->isMaximized();
-    }
-    return false;
-}
-
-
 } // namespace Material
