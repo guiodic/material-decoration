@@ -62,7 +62,7 @@
 
 namespace Material
 {
-    
+ 
 
 namespace
 {
@@ -253,12 +253,8 @@ bool Decoration::init()
 {    
     m_internalSettings = QSharedPointer<InternalSettings>(new InternalSettings());
     
-    if (settings()->isAlphaChannelSupported()) {
-        m_cornerRadius = m_internalSettings->cornerRadius();
-    } else {
-        m_cornerRadius = 0;
-    }    
-
+    updateCornerRadius();
+    
     auto *decoratedClient = window();
 
     auto repaintTitleBar = [this] {
@@ -341,12 +337,7 @@ void Decoration::reconfigure()
     resetDragMove();
     m_internalSettings->load();
     
-    if (settings()->isAlphaChannelSupported()) {
-        m_cornerRadius = m_internalSettings->cornerRadius();
-    } else {
-        m_cornerRadius = 0;
-    }    
-
+    updateCornerRadius();
     updateBorders();
     updateTitleBar();
 
@@ -1209,13 +1200,13 @@ WId Decoration::decoratedWindowId() const
 
 void Decoration::updateCornerRadius()
 {
-    if (window()->isMaximized()) {
+    if (window()->isMaximized() || !settings()->isAlphaChannelSupported()) {
         m_cornerRadius = 0;
     } else {
         m_cornerRadius = m_internalSettings->cornerRadius();
     }
-}  
-        
+}
+
 void Decoration::adjustForDecorationBorders(QPoint &rootPosition)
 {
     if (leftBorderVisible()) {
