@@ -282,6 +282,8 @@ bool Decoration::init()
     connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged,
             this, &Decoration::updateButtonsGeometry);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
+            this, &Decoration::updateCornerRadius);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
             this, &Decoration::updateButtonsGeometry);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
             this, &Decoration::updateShadow);
@@ -436,13 +438,8 @@ void Decoration::onSectionUnderMouseChanged(const Qt::WindowFrameSection value)
 
 void Decoration::updateBlur()
 {
-    qreal radius = m_cornerRadius;
-    if (window()->isMaximized()) {
-        radius = 0;
-    }
-
     const QPainterPath path = getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
-                                            (radius)*!window()->isMaximized(),
+                                            m_cornerRadius,
                                             Decoration::leftBorderVisible(),
                                             Decoration::rightBorderVisible(),
                                             false,
@@ -690,13 +687,8 @@ void Decoration::updateShadow()
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
 
-    qreal radius = m_cornerRadius;
-    if (window()->isMaximized()) {
-        radius = 0;
-    }
-
     painter.drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(innerRect, window()->scale()),
-                                         (radius)*!window()->isMaximized(),
+                                         m_cornerRadius,
                                          Decoration::leftBorderVisible(),
                                          Decoration::rightBorderVisible(),
                                          false,
@@ -982,7 +974,7 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
        
     if (settings()->borderSize() != KDecoration3::BorderSize::None) {
         painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
-                                         (m_cornerRadius)*!window()->isMaximized(),
+                                         m_cornerRadius,
                                          Decoration::leftBorderVisible(),
                                          Decoration::rightBorderVisible(),
                                          false,
@@ -1060,14 +1052,10 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
     const qreal top = topBorderVisible() ? topBorderSize() : 0;
     const qreal left = leftBorderVisible() ? sideBorderSize() : 0;
     const qreal right = rightBorderVisible() ? sideBorderSize() : 0;
-    qreal radius = m_cornerRadius;
-    if (window()->isMaximized()) {
-        radius = 0;
-    }
-
+    
     const QRectF titleBarBackgroundRect(left, top, size().width() - left - right, titleBarHeight() + 1);
     painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(titleBarBackgroundRect, window()->scale()),
-                                     (radius)*!window()->isMaximized(),
+                                     m_cornerRadius,
                                      Decoration::leftBorderVisible(),
                                      Decoration::rightBorderVisible(),
                                      false,
@@ -1198,17 +1186,12 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
     pen.setWidthF(KDecoration3::pixelSize(window()->scale()));
     painter->setPen(pen);
 
-    qreal radius = m_cornerRadius;
-    if (window()->isMaximized()) {
-        radius = 0;
-    }
-
     painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
-                                     (radius)*!window()->isMaximized(),
-                                      Decoration::leftBorderVisible(),
-                                      Decoration::rightBorderVisible(),
-                                      false,
-                                      false));
+                                     m_cornerRadius,
+                                     Decoration::leftBorderVisible(),
+                                     Decoration::rightBorderVisible(),
+                                     false,
+                                     false));
 
     painter->restore();
 }
@@ -1224,6 +1207,15 @@ WId Decoration::decoratedWindowId() const
     return 0;
 }
 
+void Decoration::updateCornerRadius()
+{
+    if (window()->isMaximized()) {
+        m_cornerRadius = 0;
+    } else {
+        m_cornerRadius = m_internalSettings->cornerRadius();
+    }
+}  
+        
 void Decoration::adjustForDecorationBorders(QPoint &rootPosition)
 {
     if (leftBorderVisible()) {
