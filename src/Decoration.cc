@@ -441,7 +441,12 @@ void Decoration::updateBlur()
         radius = 0;
     }
 
-    const QPainterPath path = getRoundedPath(rect(), radius, true, true, false, false);
+    const QPainterPath path = getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
+                                            (radius)*!window()->isMaximized(),
+                                            Decoration::leftBorderVisible(),
+                                            Decoration::rightBorderVisible(),
+                                            false,
+                                            false);
     setBlurRegion(QRegion(path.toFillPolygon().toPolygon()));
 }
 
@@ -690,7 +695,12 @@ void Decoration::updateShadow()
         radius = 0;
     }
 
-    painter.drawPath(getRoundedPath(innerRect, radius, true, true, false, false));
+    painter.drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(innerRect, window()->scale()),
+                                         (radius)*!window()->isMaximized(),
+                                         Decoration::leftBorderVisible(),
+                                         Decoration::rightBorderVisible(),
+                                         false,
+                                         false));
 
     painter.end();
 
@@ -1057,9 +1067,9 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
 
     const QRectF titleBarBackgroundRect(left, top, size().width() - left - right, titleBarHeight() + 1);
     painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(titleBarBackgroundRect, window()->scale()),
-                                     radius,
-                                     leftBorderVisible(),
-                                     rightBorderVisible(),
+                                     (radius)*!window()->isMaximized(),
+                                     Decoration::leftBorderVisible(),
+                                     Decoration::rightBorderVisible(),
                                      false,
                                      false));
 
@@ -1194,11 +1204,11 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
-                                     radius,
-                                     true,
-                                     true,
-                                     false,
-                                     false));
+                                     (radius)*!window()->isMaximized(),
+                                      Decoration::leftBorderVisible(),
+                                      Decoration::rightBorderVisible(),
+                                      false,
+                                      false));
 
     painter->restore();
 }
