@@ -16,7 +16,7 @@ Wayland, GTK apps don't export the menu. You need to start them with
 Make sure you add the AppMenu button in System Settings > Colors & Themes >
 Window Decorations > Configure Titlebar Buttons…. 
 
-There, byy clicking the pencil icon that is displayed when you select
+There, by clicking the pencil icon that is displayed when you select
 the Material theme, you can modify various aspects of the decoration,
 both in terms of appearance and behaviour. For example, you can transform
 it into a hamburger menu, disable the search function, and even decide whether
