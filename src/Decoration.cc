@@ -429,7 +429,7 @@ void Decoration::onSectionUnderMouseChanged(const Qt::WindowFrameSection value)
 
 void Decoration::updateBlur()
 {
-    const QPainterPath path = getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
+    const QPainterPath path = getRoundedPath(rect(),
                                             m_cornerRadius,
                                             leftBorderVisible(),
                                             rightBorderVisible(),
@@ -678,12 +678,12 @@ void Decoration::updateShadow()
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
 
-    painter.drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(innerRect, window()->scale()),
-                                         m_cornerRadius,
-                                         leftBorderVisible(),
-                                         rightBorderVisible(),
-                                         false,
-                                         false));
+    painter.drawPath(getRoundedPath(innerRect,
+                                    m_cornerRadius,
+                                    leftBorderVisible(),
+                                    rightBorderVisible(),
+                                    false,
+                                    false));
 
     painter.end();
 
