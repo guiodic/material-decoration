@@ -62,7 +62,7 @@
 
 namespace Material
 {
-    
+ 
 
 namespace
 {
@@ -245,7 +245,7 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 
     //Don't paint outline for NoBorder, NoSideBorder, or Tiny borders.
     //if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
-    //    paintOutline(painter, repaintRegion);
+    // paintOutline(painter, repaintRegion);
     //}
 }
 
@@ -253,12 +253,8 @@ bool Decoration::init()
 {    
     m_internalSettings = QSharedPointer<InternalSettings>(new InternalSettings());
     
-    if (settings()->isAlphaChannelSupported()) {
-        m_cornerRadius = m_internalSettings->cornerRadius();
-    } else {
-        m_cornerRadius = 0;
-    }    
-
+    updateCornerRadius();
+    
     auto *decoratedClient = window();
 
     auto repaintTitleBar = [this] {
@@ -281,6 +277,8 @@ bool Decoration::init()
             this, &Decoration::updateTitleBar);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged,
             this, &Decoration::updateButtonsGeometry);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
+            this, &Decoration::updateCornerRadius);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
             this, &Decoration::updateButtonsGeometry);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
@@ -339,12 +337,7 @@ void Decoration::reconfigure()
     resetDragMove();
     m_internalSettings->load();
     
-    if (settings()->isAlphaChannelSupported()) {
-        m_cornerRadius = m_internalSettings->cornerRadius();
-    } else {
-        m_cornerRadius = 0;
-    }    
-
+    updateCornerRadius();
     updateBorders();
     updateTitleBar();
 
@@ -436,12 +429,12 @@ void Decoration::onSectionUnderMouseChanged(const Qt::WindowFrameSection value)
 
 void Decoration::updateBlur()
 {
-    qreal radius = m_cornerRadius;
-    if (window()->isMaximized()) {
-        radius = 0;
-    }
-
-    const QPainterPath path = getRoundedPath(rect(), radius, true, true, false, false);
+    const QPainterPath path = getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
+                                            m_cornerRadius,
+                                            leftBorderVisible(),
+                                            rightBorderVisible(),
+                                            false,
+                                            false);
     setBlurRegion(QRegion(path.toFillPolygon().toPolygon()));
 }
 
@@ -685,12 +678,12 @@ void Decoration::updateShadow()
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
 
-    qreal radius = m_cornerRadius;
-    if (window()->isMaximized()) {
-        radius = 0;
-    }
-
-    painter.drawPath(getRoundedPath(innerRect, radius, true, true, false, false));
+    painter.drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(innerRect, window()->scale()),
+                                         m_cornerRadius,
+                                         leftBorderVisible(),
+                                         rightBorderVisible(),
+                                         false,
+                                         false));
 
     painter.end();
 
@@ -972,9 +965,9 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
        
     if (settings()->borderSize() != KDecoration3::BorderSize::None) {
         painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
-                                         (m_cornerRadius)*!window()->isMaximized(),
-                                         Decoration::leftBorderVisible(),
-                                         Decoration::rightBorderVisible(),
+                                         m_cornerRadius,
+                                         leftBorderVisible(),
+                                         rightBorderVisible(),
                                          false,
                                          false));
     }
@@ -1050,14 +1043,10 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
     const qreal top = topBorderVisible() ? topBorderSize() : 0;
     const qreal left = leftBorderVisible() ? sideBorderSize() : 0;
     const qreal right = rightBorderVisible() ? sideBorderSize() : 0;
-    qreal radius = m_cornerRadius;
-    if (window()->isMaximized()) {
-        radius = 0;
-    }
-
+    
     const QRectF titleBarBackgroundRect(left, top, size().width() - left - right, titleBarHeight() + 1);
     painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(titleBarBackgroundRect, window()->scale()),
-                                     radius,
+                                     m_cornerRadius,
                                      leftBorderVisible(),
                                      rightBorderVisible(),
                                      false,
@@ -1188,15 +1177,10 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
     pen.setWidthF(KDecoration3::pixelSize(window()->scale()));
     painter->setPen(pen);
 
-    qreal radius = m_cornerRadius;
-    if (window()->isMaximized()) {
-        radius = 0;
-    }
-
     painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
-                                     radius,
-                                     true,
-                                     true,
+                                     m_cornerRadius,
+                                     leftBorderVisible(),
+                                     rightBorderVisible(),
                                      false,
                                      false));
 
@@ -1212,6 +1196,15 @@ WId Decoration::decoratedWindowId() const
 #endif
 
     return 0;
+}
+
+void Decoration::updateCornerRadius()
+{
+    if (window()->isMaximized() || !settings()->isAlphaChannelSupported()) {
+        m_cornerRadius = 0;
+    } else {
+        m_cornerRadius = m_internalSettings->cornerRadius();
+    }
 }
 
 void Decoration::adjustForDecorationBorders(QPoint &rootPosition)

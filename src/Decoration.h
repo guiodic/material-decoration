@@ -103,6 +103,7 @@ private:
     void setButtonGroupAnimation(KDecoration3::DecorationButtonGroup *buttonGroup, bool enabled, int duration);
     void updateButtonAnimation();
     void updateShadow();
+    void updateCornerRadius();
 
     bool menuAlwaysShow() const;
     bool useSystemMenuFont() const;
