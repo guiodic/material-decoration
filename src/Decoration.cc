@@ -440,8 +440,8 @@ void Decoration::updateBlur()
 {
     const QPainterPath path = getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
                                             m_cornerRadius,
-                                            Decoration::leftBorderVisible(),
-                                            Decoration::rightBorderVisible(),
+                                            leftBorderVisible(),
+                                            rightBorderVisible(),
                                             false,
                                             false);
     setBlurRegion(QRegion(path.toFillPolygon().toPolygon()));
@@ -689,8 +689,8 @@ void Decoration::updateShadow()
 
     painter.drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(innerRect, window()->scale()),
                                          m_cornerRadius,
-                                         Decoration::leftBorderVisible(),
-                                         Decoration::rightBorderVisible(),
+                                         leftBorderVisible(),
+                                         rightBorderVisible(),
                                          false,
                                          false));
 
@@ -975,8 +975,8 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
     if (settings()->borderSize() != KDecoration3::BorderSize::None) {
         painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
                                          m_cornerRadius,
-                                         Decoration::leftBorderVisible(),
-                                         Decoration::rightBorderVisible(),
+                                         leftBorderVisible(),
+                                         rightBorderVisible(),
                                          false,
                                          false));
     }
@@ -1056,8 +1056,8 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
     const QRectF titleBarBackgroundRect(left, top, size().width() - left - right, titleBarHeight() + 1);
     painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(titleBarBackgroundRect, window()->scale()),
                                      m_cornerRadius,
-                                     Decoration::leftBorderVisible(),
-                                     Decoration::rightBorderVisible(),
+                                     leftBorderVisible(),
+                                     rightBorderVisible(),
                                      false,
                                      false));
 
@@ -1188,8 +1188,8 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
 
     painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
                                      m_cornerRadius,
-                                     Decoration::leftBorderVisible(),
-                                     Decoration::rightBorderVisible(),
+                                     leftBorderVisible(),
+                                     rightBorderVisible(),
                                      false,
                                      false));
 
