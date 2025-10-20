@@ -245,7 +245,7 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 
     //Don't paint outline for NoBorder, NoSideBorder, or Tiny borders.
     //if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
-    //    paintOutline(painter, repaintRegion);
+    // paintOutline(painter, repaintRegion);
     //}
 }
 
