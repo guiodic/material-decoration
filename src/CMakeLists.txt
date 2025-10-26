@@ -30,9 +30,9 @@ find_package(XCB MODULE QUIET COMPONENTS
 if(KWinX11_FOUND AND X11_FOUND AND XCB_FOUND)
     set(HAVE_X11 ON)
     #include_directories(/usr/include/kwin-x11)
-    include_directories(materialdecoration PRIVATE
-         $<TARGET_PROPERTY:KWinX11::kwin,INTERFACE_INCLUDE_DIRECTORIES>
-    )
+    #include_directories(materialdecoration PRIVATE
+    #     $<TARGET_PROPERTY:KWinX11::kwin,INTERFACE_INCLUDE_DIRECTORIES>
+    #)
     set(X11_LIBRARIES XCB::XCB)
     message(STATUS "Building with X11 support")
 else()
@@ -40,7 +40,7 @@ else()
     message(STATUS "Building without X11 support")
 endif()
 
-set(HAVE_KDecoration3_5_25 ON)
+#set(HAVE_KDecoration3_5_25 ON)
 
 
 configure_file(BuildConfig.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/BuildConfig.h)
@@ -93,7 +93,7 @@ target_link_libraries (materialdecoration
 )
 
 if(KWinX11_FOUND)
-    target_link_libraries(materialdecoration PRIVATE KWinX11::kwin)
+    #target_link_libraries(materialdecoration PRIVATE KWinX11::kwin)
 endif()
 
 # Core library with shared code (e.g., settings)

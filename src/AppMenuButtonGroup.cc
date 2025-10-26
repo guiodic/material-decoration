@@ -175,19 +175,12 @@ void AppMenuButtonGroup::repositionSearchMenu()
         return;
     }
 
-    if (KWindowSystem::isPlatformX11() && Material::isKWinOlderThan650()) { // X11 and kwin_x11 < 6.5.0
-        const QRectF buttonRect = button->geometry();
-        QPoint rootPosition = buttonRect.topLeft().toPoint();
-        rootPosition += deco->windowPos();
-        deco->adjustForDecorationBorders(rootPosition);
-        // Re-popping up at the original position
-        m_searchMenu->popup(rootPosition);
-    } else { // Wayland or kwin_x11 >= 6.5.0
-        KDecoration3::Positioner positioner;
-        positioner.setAnchorRect(button->geometry());
-        deco->popup(positioner, m_searchMenu);
-        m_searchMenu->popup(m_searchMenu->pos()); //HACK without this the scrollbar remain even if not necessary
-    }
+    
+    KDecoration3::Positioner positioner;
+    positioner.setAnchorRect(button->geometry());
+    deco->popup(positioner, m_searchMenu);
+    m_searchMenu->popup(m_searchMenu->pos()); //HACK without this the scrollbar remain even if not necessary
+    
 }
 
 int AppMenuButtonGroup::currentIndex() const
@@ -597,18 +590,11 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
         connect(navMenu, &NavigableMenu::hitRight, this, &AppMenuButtonGroup::onHitRight, Qt::UniqueConnection);
     }
     menu->installEventFilter(this);
-    if (KWindowSystem::isPlatformWayland() || !Material::isKWinOlderThan650()) {
-        KDecoration3::Positioner positioner;
-        positioner.setAnchorRect(button->geometry());
-        deco->popup(positioner, menu);
-    } else { //X11
-        const QRectF buttonRect = button->geometry();
-        const QPoint position = buttonRect.topLeft().toPoint();
-        QPoint rootPosition(position);
-        rootPosition += deco->windowPos();
-        deco->adjustForDecorationBorders(rootPosition);
-        menu->popup(rootPosition);
-    }
+    
+    KDecoration3::Positioner positioner;
+    positioner.setAnchorRect(button->geometry());
+    deco->popup(positioner, menu);
+    
 
     if (buttonIndex == m_searchIndex) {
         m_searchLineEdit->activateWindow();
