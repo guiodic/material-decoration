@@ -42,7 +42,7 @@
 
 // KWIN
 #if HAVE_X11
-#include <kwin-x11/x11window.h>
+#include <kwin/x11window.h>
 #include <KWindowInfo>
 #endif
 
