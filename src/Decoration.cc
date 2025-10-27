@@ -342,8 +342,8 @@ void Decoration::reconfigure()
     updateTitleBar();
 
     m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
-    m_menuButtons->setAlwaysShow(menuAlwaysShow());
     m_menuButtons->updateAppMenuModel();
+    m_menuButtons->setAlwaysShow(menuAlwaysShow());
 
     updateButtonsGeometry();
     updateButtonAnimation();

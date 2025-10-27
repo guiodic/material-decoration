@@ -22,9 +22,6 @@
 #include <QWidget>
 #include <QDebug>
 
-#include <KAboutData> // kwin version
-#include <QVersionNumber>
-
 
 namespace Material
 {
@@ -33,23 +30,7 @@ namespace Material
     static const QString s_configFilename = QStringLiteral("kdecoration_materialrc");
     static constexpr qreal cornerRadiusAdjustment = 0.7;
     
-    inline bool isKWinOlderThan650()
-    {
-        QString versionString = KAboutData::applicationData().version();
-        QVersionNumber current = QVersionNumber::fromString(versionString);
-        QVersionNumber threshold(6, 5, 0);
-        
-        if (current.isNull()) {
-            // qCDebug(category) << "Unknown KWin version (" << versionString << ")";
-            return false;
-        }
-        
-        // qCDebug(category) << "KWin version (" << versionString << ")";
-        // qCDebug(category) << "isKWinOlderThan650? " << (QVersionNumber::compare(current, threshold) < 0);
-        
-        return QVersionNumber::compare(current, threshold) < 0;
-    }
-
+    
     //--- Standard pen widths
     namespace PenWidth
     {
