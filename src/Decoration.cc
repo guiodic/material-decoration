@@ -308,6 +308,7 @@ bool Decoration::init()
             this, &Decoration::onSectionUnderMouseChanged);
     updateTitleBarHoverState();
 
+    updateBlur();
     // For some reason, the shadow should be installed the last. Otherwise,
     // the Window Decorations KCM crashes.
     updateShadow();
