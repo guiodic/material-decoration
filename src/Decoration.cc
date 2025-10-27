@@ -431,7 +431,7 @@ void Decoration::onSectionUnderMouseChanged(const Qt::WindowFrameSection value)
 
 void Decoration::updateBlur()
 {
-    const QPainterPath path = getRoundedPath(rect(),
+    const QPainterPath path = getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
                                             m_cornerRadius,
                                             leftBorderVisible(),
                                             rightBorderVisible(),
