@@ -308,6 +308,7 @@ bool Decoration::init()
             this, &Decoration::onSectionUnderMouseChanged);
     updateTitleBarHoverState();
 
+    updateBlur();
     // For some reason, the shadow should be installed the last. Otherwise,
     // the Window Decorations KCM crashes.
     updateShadow();
@@ -342,8 +343,8 @@ void Decoration::reconfigure()
     updateTitleBar();
 
     m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
-    m_menuButtons->setAlwaysShow(menuAlwaysShow());
     m_menuButtons->updateAppMenuModel();
+    m_menuButtons->setAlwaysShow(menuAlwaysShow());
 
     updateButtonsGeometry();
     updateButtonAnimation();
@@ -430,7 +431,7 @@ void Decoration::onSectionUnderMouseChanged(const Qt::WindowFrameSection value)
 
 void Decoration::updateBlur()
 {
-    const QPainterPath path = getRoundedPath(rect(),
+    const QPainterPath path = getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
                                             m_cornerRadius,
                                             leftBorderVisible(),
                                             rightBorderVisible(),
