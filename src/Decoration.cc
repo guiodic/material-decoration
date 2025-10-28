@@ -231,7 +231,7 @@ QRectF Decoration::centerRect() const
 
 void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 {
-    auto *decoratedClient = window();
+    const auto *decoratedClient = window();
 
     if (!decoratedClient->isShaded()) {
         paintFrameBackground(painter, repaintRegion);
@@ -255,7 +255,7 @@ bool Decoration::init()
     
     updateCornerRadius();
     
-    auto *decoratedClient = window();
+    const auto *decoratedClient = window();
 
     auto repaintTitleBar = [this] {
         update(titleBar());
@@ -957,6 +957,8 @@ QPainterPath Decoration::getRoundedPath(const QRectF &rect, qreal radius, bool r
 void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRegion) const
 {
     Q_UNUSED(repaintRegion)
+    
+    
     
     painter->save();   
 
