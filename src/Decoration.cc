@@ -255,6 +255,9 @@ bool Decoration::init()
     
     updateCornerRadius();
     
+    const auto radius = KDecoration3::BorderRadius(m_cornerRadius, m_cornerRadius, m_cornerRadius, m_cornerRadius);
+    setBorderRadius(radius);
+    
     const auto *decoratedClient = window();
 
     auto repaintTitleBar = [this] {
@@ -684,8 +687,8 @@ void Decoration::updateShadow()
                                     m_cornerRadius,
                                     leftBorderVisible(),
                                     rightBorderVisible(),
-                                    false,
-                                    false));
+                                    m_cornerRadius,
+                                    m_cornerRadius));
 
     painter.end();
 
