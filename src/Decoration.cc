@@ -231,11 +231,11 @@ QRectF Decoration::centerRect() const
 
 void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 {
-    const auto *decoratedClient = window();
+    //const auto *decoratedClient = window();
 
-    if (!decoratedClient->isShaded()) {
-        paintFrameBackground(painter, repaintRegion);
-    }
+    //if (!decoratedClient->isShaded()) {
+    paintFrameBackground(painter, repaintRegion);
+    //}
 
     paintTitleBarBackground(painter, repaintRegion);
 
@@ -958,16 +958,14 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
 {
     Q_UNUSED(repaintRegion)
     
-    
-    
     painter->save();   
 
     painter->fillRect(rect(), Qt::transparent); 
-    painter->setRenderHint(QPainter::Antialiasing);
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(borderColor());
-       
+    
     if (settings()->borderSize() != KDecoration3::BorderSize::None) {
+        painter->setRenderHint(QPainter::Antialiasing);
+        painter->setPen(Qt::NoPen);        
+        painter->setBrush(borderColor());
         painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
                                          m_cornerRadius,
                                          leftBorderVisible(),
