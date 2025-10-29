@@ -1152,12 +1152,7 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
     pen.setWidthF(KDecoration3::pixelSize(window()->scale()));
     painter->setPen(pen);
 
-    painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
-                                         m_cornerRadius,
-                                         leftBorderVisible(),
-                                         rightBorderVisible(),
-                                         m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
-                                         m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible()));
+    painter->drawPath(m_framePath);
 
     painter->restore();
 }
