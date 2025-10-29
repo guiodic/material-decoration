@@ -857,12 +857,6 @@ QPoint Decoration::windowPos() const
     }  
 #endif
 
-#if HAVE_Wayland
-    if (KWindowSystem::isPlatformWayland()) {
-        // TODO
-    }
-#endif
-
     return QPoint(0, 0);
 }
 

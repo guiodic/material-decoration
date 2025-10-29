@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2025 Guido Iodice <guido[dot]iodice[at]gmail[dot]com>
  * Copyright (C) 2020 Chris Holland <zrenfire@gmail.com>
  * Copyright (C) 2018 Vlad Zagorodniy <vladzzag@gmail.com>
  *
@@ -71,7 +72,6 @@ public:
     bool rightBorderVisible() const;
     bool topBorderVisible() const;
     bool bottomBorderVisible() const;
-    void adjustForDecorationBorders(QPoint &rootPosition);
 
 public slots:
     bool init() override;
