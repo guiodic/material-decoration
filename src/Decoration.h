@@ -87,6 +87,7 @@ protected:
 
 private slots:
     void onSectionUnderMouseChanged(const Qt::WindowFrameSection value);
+    void onSizeChanged();
 
 private:
     void setupMenu();

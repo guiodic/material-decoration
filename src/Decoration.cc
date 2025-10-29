@@ -289,7 +289,7 @@ bool Decoration::init()
     connect(decoratedClient, &KDecoration3::DecoratedWindow::shadedChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::sizeChanged,
-            this, &Decoration::updateBlur);
+        this, &Decoration::onSizeChanged);
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::captionChanged,
             this, repaintTitleBar);
@@ -1203,6 +1203,12 @@ void Decoration::updatePaths()
                                     rightBorderVisible(),
                                     false,
                                     false);
+}
+
+void Decoration::onSizeChanged()
+{
+    updatePaths();
+    updateBlur();
 }
 
 
