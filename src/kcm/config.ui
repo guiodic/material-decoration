@@ -100,42 +100,52 @@
           <number>0</number>
          </property>
          <property name="maximum">
-          <number>24</number>
+          <number>16</number>
          </property>
         </widget>
        </item>
-       <item row="5" column="0" colspan="2">
+       <item row="6" column="0" colspan="2">
         <widget class="QCheckBox" name="kcfg_UseCustomBorderColors">
          <property name="text">
           <string>Use custom border colors</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
+       <item row="7" column="0">
         <widget class="QLabel" name="label_11">
          <property name="text">
           <string>Active window border color</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
+       <item row="7" column="1">
         <widget class="KColorButton" name="kcfg_ActiveBorderColor">
          <property name="alphaChannelEnabled">
           <bool>false</bool>
          </property>
         </widget>
        </item>
-       <item row="7" column="0">
+       <item row="8" column="0">
         <widget class="QLabel" name="label_12">
          <property name="text">
           <string>Inactive window border color</string>
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
+       <item row="8" column="1">
         <widget class="KColorButton" name="kcfg_InactiveBorderColor">
          <property name="alphaChannelEnabled">
           <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QCheckBox" name="kcfg_BottomCorners">
+         <property name="text">
+          <string>Round bottom corners</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
