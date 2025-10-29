@@ -48,6 +48,10 @@ msgstr ""
 msgid "Corner radius"
 msgstr ""
 
+#: config.ui:145
+msgid "Round bottom corners"
+msgstr ""
+
 #: config.ui:95
 msgid "Menu and Search"
 msgstr ""

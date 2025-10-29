@@ -164,3 +164,7 @@ msgstr "Randkleur van actief venster"
 #: config.ui:127
 msgid "Inactive window border color"
 msgstr "Randkleur van inactief venster"
+
+#: config.ui:145
+msgid "Round bottom corners"
+msgstr "Onderste hoeken afronden"

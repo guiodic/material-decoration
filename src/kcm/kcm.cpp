@@ -176,6 +176,7 @@ void MaterialDecorationKCM::defaults()
     m_ui->kcfg_ShadowStrength->setValue(m_settings->shadowStrength());
     m_ui->kcfg_AnimationsEnabled->setChecked(m_settings->animationsEnabled());
     m_ui->kcfg_AnimationsDuration->setValue(m_settings->animationsDuration());
+    m_ui->kcfg_BottomCorners->setChecked(m_settings->bottomCornerRadiusFlag());
     markAsChanged();
 }
 
