@@ -20,7 +20,11 @@
         <entry name="CornerRadius" type="Int">
             <default>6</default>
             <min>0</min>
-            <max>24</max>
+            <max>16</max>
+        </entry>
+        
+        <entry name="BottomCornerRadiusFlag" type="bool">
+            <default>true</default>
         </entry>
 
         <!-- borders -->

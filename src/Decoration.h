@@ -33,6 +33,7 @@
 #include <QSharedPointer>
 #include <QWheelEvent>
 #include <QVariant>
+#include <QPainterPath>
 
 namespace KDecoration3
 {
@@ -90,7 +91,7 @@ private slots:
 private:
     void setupMenu();
     void updateBlur();
-    void updateBorders();
+    void updateBordersCornersBlurShadow();
     void updateResizeBorders();
     void updateTitleBar();
     void updateTitleBarHoverState();
@@ -104,6 +105,7 @@ private:
     void updateButtonAnimation();
     void updateShadow();
     void updateCornerRadius();
+    void updatePaths();
 
     bool menuAlwaysShow() const;
     bool useSystemMenuFont() const;
@@ -146,9 +148,13 @@ private:
     AppMenuButtonGroup *m_menuButtons;
 
     QSharedPointer<InternalSettings> m_internalSettings;
-    qreal m_cornerRadius = 0;
+    qreal m_cornerRadius = 0.0;
+    bool m_bottomCornersFlag = true;
 
     QPoint m_pressedPoint;
+
+    QPainterPath m_framePath;
+    QPainterPath m_titleBarPath;
 
     friend class AppMenuButtonGroup;
     friend class Button;

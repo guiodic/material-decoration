@@ -164,3 +164,7 @@ msgstr "Rahmenfarbe des aktiven Fensters"
 #: config.ui:127
 msgid "Inactive window border color"
 msgstr "Rahmenfarbe des inaktiven Fensters"
+
+#: config.ui:145
+msgid "Round bottom corners"
+msgstr "Untere Ecken abrunden"

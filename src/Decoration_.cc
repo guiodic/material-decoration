@@ -421,7 +421,13 @@ void Decoration::onSectionUnderMouseChanged(const Qt::WindowFrameSection value)
 
 void Decoration::updateBlur()
 {
-    setBlurRegion(QRegion(m_framePath.toFillPolygon().toPolygon()));
+    const QPainterPath path = getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
+                                         m_cornerRadius,
+                                         leftBorderVisible(),
+                                         rightBorderVisible(),
+                                         m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
+                                         m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible());
+    setBlurRegion(QRegion(path.toFillPolygon().toPolygon()));
 }
 
 void Decoration::updateBordersCornersBlurShadow()
@@ -434,7 +440,6 @@ void Decoration::updateBordersCornersBlurShadow()
     borders.setBottom(bottomBorderVisible() ? bottomBorderSize() : 0);
     setBorders(borders);
     updateCornerRadius();
-    updatePaths();
     updateBlur();
     updateShadow();
 }
@@ -564,7 +569,6 @@ void Decoration::updateButtonsGeometry()
         m_menuButtons->updateOverflow(QRectF(snappedTopLeft, availableRect.size()));
     }
 
-    updatePaths();
     updateBlur();
     update();
 }
@@ -955,7 +959,12 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
         painter->setRenderHint(QPainter::Antialiasing);
         painter->setPen(Qt::NoPen);        
         painter->setBrush(borderColor());
-        painter->drawPath(m_framePath);
+        painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
+                                         m_cornerRadius,
+                                         leftBorderVisible(),
+                                         rightBorderVisible(),
+                                         m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
+                                         m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible()));
     }
     
     painter->restore();
@@ -1031,7 +1040,12 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
     const qreal right = rightBorderVisible() ? sideBorderSize() : 0;
     
     const QRectF titleBarBackgroundRect(left, top, size().width() - left - right, titleBarHeight() + 1);
-    painter->drawPath(m_titleBarPath);
+    painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(titleBarBackgroundRect, window()->scale()),
+                                     m_cornerRadius,
+                                     leftBorderVisible(),
+                                     rightBorderVisible(),
+                                     false,
+                                     false));
 
     painter->restore();
 }
@@ -1192,28 +1206,6 @@ void Decoration::updateCornerRadius()
     
     const auto radius = KDecoration3::BorderRadius(0.0, 0.0, m_bottomCornersFlag ? bottomRightCornerRadius : 0.0, m_bottomCornersFlag ? bottomLeftCornerRadius : 0.0);
     setBorderRadius(radius);
-}
-
-void Decoration::updatePaths()
-{
-    m_framePath = getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
-                                 m_cornerRadius,
-                                 leftBorderVisible(),
-                                 rightBorderVisible(),
-                                 m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
-                                 m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible());
-
-    const qreal top = topBorderVisible() ? topBorderSize() : 0;
-    const qreal left = leftBorderVisible() ? sideBorderSize() : 0;
-    const qreal right = rightBorderVisible() ? sideBorderSize() : 0;
-    
-    const QRectF titleBarBackgroundRect(left, top, size().width() - left - right, titleBarHeight() + 1);
-    m_titleBarPath = getRoundedPath(KDecoration3::snapToPixelGrid(titleBarBackgroundRect, window()->scale()),
-                                    m_cornerRadius,
-                                    leftBorderVisible(),
-                                    rightBorderVisible(),
-                                    false,
-                                    false);
 }
 
 
