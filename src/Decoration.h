@@ -90,7 +90,7 @@ private slots:
 private:
     void setupMenu();
     void updateBlur();
-    void updateBorders();
+    void updateBordersCornersBlurShadow();
     void updateResizeBorders();
     void updateTitleBar();
     void updateTitleBarHoverState();

@@ -252,9 +252,7 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 bool Decoration::init()
 {    
     m_internalSettings = QSharedPointer<InternalSettings>(new InternalSettings());
-    
-    updateCornerRadius();
-    
+        
     const auto *decoratedClient = window();
 
     auto repaintTitleBar = [this] {
@@ -278,19 +276,17 @@ bool Decoration::init()
     connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged,
             this, &Decoration::updateButtonsGeometry);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
-            this, &Decoration::updateCornerRadius);
+            this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
             this, &Decoration::updateButtonsGeometry);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
-            this, &Decoration::updateShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
-            this, &Decoration::updateBorders);
+            this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedHorizontallyChanged,
-            this, &Decoration::updateBorders);
+            this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedVerticallyChanged,
-            this, &Decoration::updateBorders);
+            this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::shadedChanged,
-            this, &Decoration::updateBorders);
+            this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::sizeChanged,
             this, &Decoration::updateBlur);
 
@@ -299,7 +295,7 @@ bool Decoration::init()
     connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
             this, [this] { update(); });
 
-    updateBorders();
+    updateBordersCornersBlurShadow();
     updateResizeBorders();
     updateTitleBar();
     QTimer::singleShot(0, this, &Decoration::updateButtonsGeometry); // avoid wrong geometry (for example Spectacle)
@@ -307,11 +303,6 @@ bool Decoration::init()
     connect(this, &KDecoration3::Decoration::sectionUnderMouseChanged,
             this, &Decoration::onSectionUnderMouseChanged);
     updateTitleBarHoverState();
-
-    updateBlur();
-    // For some reason, the shadow should be installed the last. Otherwise,
-    // the Window Decorations KCM crashes.
-    updateShadow();
 
     connect(settings().get(), &KDecoration3::DecorationSettings::reconfigured,
         this, &Decoration::reconfigure);
@@ -324,11 +315,11 @@ bool Decoration::init()
     // The reconfigure signal will update active windows, but we need to hook
     // individual signals for the preview in the KCM.
     connect(settings().get(), &KDecoration3::DecorationSettings::borderSizeChanged,
-        this, &Decoration::updateBorders);
+        this, &Decoration::updateBordersCornersBlurShadow);
     connect(settings().get(), &KDecoration3::DecorationSettings::fontChanged,
-        this, &Decoration::updateBorders);
+        this, &Decoration::updateBordersCornersBlurShadow);
     connect(settings().get(), &KDecoration3::DecorationSettings::spacingChanged,
-        this, &Decoration::updateBorders);
+        this, &Decoration::updateBordersCornersBlurShadow);
     
     return true;
 }
@@ -338,8 +329,6 @@ void Decoration::reconfigure()
     resetDragMove();
     m_internalSettings->load();
     
-    updateCornerRadius();
-    updateBorders();
     updateTitleBar();
 
     m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
@@ -348,8 +337,7 @@ void Decoration::reconfigure()
 
     updateButtonsGeometry();
     updateButtonAnimation();
-    updateBlur();
-    updateShadow();
+    updateBordersCornersBlurShadow();
     update();
 }
 
@@ -432,15 +420,15 @@ void Decoration::onSectionUnderMouseChanged(const Qt::WindowFrameSection value)
 void Decoration::updateBlur()
 {
     const QPainterPath path = getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
-                                            m_cornerRadius,
-                                            leftBorderVisible(),
-                                            rightBorderVisible(),
-                                            m_bottomCornersFlag,
-                                            m_bottomCornersFlag);
+                                         m_cornerRadius,
+                                         leftBorderVisible(),
+                                         rightBorderVisible(),
+                                         m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
+                                         m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible());
     setBlurRegion(QRegion(path.toFillPolygon().toPolygon()));
 }
 
-void Decoration::updateBorders()
+void Decoration::updateBordersCornersBlurShadow()
 {
     const qreal sideSize = sideBorderSize();
     QMarginsF borders;
@@ -449,6 +437,9 @@ void Decoration::updateBorders()
     borders.setRight(rightBorderVisible() ? sideSize : 0);
     borders.setBottom(bottomBorderVisible() ? bottomBorderSize() : 0);
     setBorders(borders);
+    updateCornerRadius();
+    updateBlur();
+    updateShadow();
 }
 
 void Decoration::updateResizeBorders()
@@ -606,7 +597,7 @@ void Decoration::updateShadow()
     const QColor shadowColor = m_internalSettings->shadowColor();
     const int shadowStrengthInt = m_internalSettings->shadowStrength();
     const int shadowSizePreset = m_internalSettings->shadowSize();
-    const qreal cornerRadius = m_cornerRadius;
+    const qreal cornerRadius = m_internalSettings->cornerRadius();
 
     if (s_cachedShadow
         && s_shadowColor == shadowColor
@@ -681,11 +672,11 @@ void Decoration::updateShadow()
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
 
     painter.drawPath(getRoundedPath(innerRect,
-                                    m_cornerRadius,
-                                    leftBorderVisible(),
-                                    rightBorderVisible(),
-                                    m_cornerRadius,
-                                    m_cornerRadius));
+                                    cornerRadius,
+                                    true,
+                                    true,
+                                    true,
+                                    true));
 
     painter.end();
 
@@ -970,8 +961,8 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
                                          m_cornerRadius,
                                          leftBorderVisible(),
                                          rightBorderVisible(),
-                                         m_bottomCornersFlag,
-                                         m_bottomCornersFlag));
+                                         m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
+                                         m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible()));
     }
     
     painter->restore();
@@ -1180,11 +1171,11 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
     painter->setPen(pen);
 
     painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
-                                     m_cornerRadius,
-                                     leftBorderVisible(),
-                                     rightBorderVisible(),
-                                     m_bottomCornersFlag,
-                                     m_bottomCornersFlag));
+                                         m_cornerRadius,
+                                         leftBorderVisible(),
+                                         rightBorderVisible(),
+                                         m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
+                                         m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible()));
 
     painter->restore();
 }
@@ -1203,25 +1194,17 @@ WId Decoration::decoratedWindowId() const
 void Decoration::updateCornerRadius()
 {    
     if (window()->isMaximized() || !settings()->isAlphaChannelSupported()) {
-        m_cornerRadius = 0;
+        m_cornerRadius = 0.0;
     } else {
         m_cornerRadius = m_internalSettings->cornerRadius();
     }
     
-    const qreal bottomCornersRadius = m_bottomCornersFlag ? m_cornerRadius : 0.0;
-    const auto radius = KDecoration3::BorderRadius(m_cornerRadius, m_cornerRadius, bottomCornersRadius, bottomCornersRadius);
+    const qreal bottomRightCornerRadius = (m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible()) ? m_cornerRadius : 0.0;
+    const qreal bottomLeftCornerRadius = (m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible()) ? m_cornerRadius : 0.0;
+    
+    const auto radius = KDecoration3::BorderRadius(0.0, 0.0, bottomRightCornerRadius, bottomLeftCornerRadius);
     setBorderRadius(radius);
 }
 
-void Decoration::adjustForDecorationBorders(QPoint &rootPosition)
-{
-    if (leftBorderVisible()) {
-        rootPosition.rx() -= qRound(sideBorderSize());
-    }
-
-    if (topBorderVisible()) {
-        rootPosition.ry() -= qRound(topBorderSize());
-    }
-}
 
 } // namespace Material
