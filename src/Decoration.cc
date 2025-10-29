@@ -289,7 +289,7 @@ bool Decoration::init()
     connect(decoratedClient, &KDecoration3::DecoratedWindow::shadedChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::sizeChanged,
-            this, &Decoration::updateBlur);
+        this, &Decoration::onSizeChanged);
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::captionChanged,
             this, repaintTitleBar);
@@ -857,12 +857,6 @@ QPoint Decoration::windowPos() const
     }  
 #endif
 
-#if HAVE_Wayland
-    if (KWindowSystem::isPlatformWayland()) {
-        // TODO
-    }
-#endif
-
     return QPoint(0, 0);
 }
 
@@ -1158,12 +1152,7 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
     pen.setWidthF(KDecoration3::pixelSize(window()->scale()));
     painter->setPen(pen);
 
-    painter->drawPath(getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
-                                         m_cornerRadius,
-                                         leftBorderVisible(),
-                                         rightBorderVisible(),
-                                         m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
-                                         m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible()));
+    painter->drawPath(m_framePath);
 
     painter->restore();
 }
@@ -1214,6 +1203,12 @@ void Decoration::updatePaths()
                                     rightBorderVisible(),
                                     false,
                                     false);
+}
+
+void Decoration::onSizeChanged()
+{
+    updatePaths();
+    updateBlur();
 }
 
 

@@ -320,12 +320,7 @@ void AppMenuButtonGroup::resetButtons()
     // Now, immediately delete the button widgets we took ownership of.
     // This is necessary to prevent layout race conditions when recreating buttons
     // in the same event loop cycle. 
-    for (auto *button : allButtons) {
-      if (button->type() == KDecoration3::DecorationButtonType::Custom) {
-          delete button;
-      }
-    };
-    //qDeleteAll(buttonsToDelete);
+    qDeleteAll(allButtons);
 
     Q_EMIT menuUpdated();
 }
