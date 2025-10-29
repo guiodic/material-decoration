@@ -146,7 +146,8 @@ private:
     AppMenuButtonGroup *m_menuButtons;
 
     QSharedPointer<InternalSettings> m_internalSettings;
-    qreal m_cornerRadius = 0;
+    qreal m_cornerRadius = 0.0;
+    bool m_bottomCornersFlag = true;
 
     QPoint m_pressedPoint;
 

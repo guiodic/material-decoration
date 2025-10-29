@@ -255,9 +255,6 @@ bool Decoration::init()
     
     updateCornerRadius();
     
-    const auto radius = KDecoration3::BorderRadius(m_cornerRadius, m_cornerRadius, m_cornerRadius, m_cornerRadius);
-    setBorderRadius(radius);
-    
     const auto *decoratedClient = window();
 
     auto repaintTitleBar = [this] {
@@ -438,8 +435,8 @@ void Decoration::updateBlur()
                                             m_cornerRadius,
                                             leftBorderVisible(),
                                             rightBorderVisible(),
-                                            false,
-                                            false);
+                                            m_bottomCornersFlag,
+                                            m_bottomCornersFlag);
     setBlurRegion(QRegion(path.toFillPolygon().toPolygon()));
 }
 
@@ -973,8 +970,8 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
                                          m_cornerRadius,
                                          leftBorderVisible(),
                                          rightBorderVisible(),
-                                         false,
-                                         false));
+                                         m_bottomCornersFlag,
+                                         m_bottomCornersFlag));
     }
     
     painter->restore();
@@ -1186,8 +1183,8 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
                                      m_cornerRadius,
                                      leftBorderVisible(),
                                      rightBorderVisible(),
-                                     false,
-                                     false));
+                                     m_bottomCornersFlag,
+                                     m_bottomCornersFlag));
 
     painter->restore();
 }
@@ -1204,12 +1201,16 @@ WId Decoration::decoratedWindowId() const
 }
 
 void Decoration::updateCornerRadius()
-{
+{    
     if (window()->isMaximized() || !settings()->isAlphaChannelSupported()) {
         m_cornerRadius = 0;
     } else {
         m_cornerRadius = m_internalSettings->cornerRadius();
     }
+    
+    const qreal bottomCornersRadius = m_bottomCornersFlag ? m_cornerRadius : 0.0;
+    const auto radius = KDecoration3::BorderRadius(m_cornerRadius, m_cornerRadius, bottomCornersRadius, bottomCornersRadius);
+    setBorderRadius(radius);
 }
 
 void Decoration::adjustForDecorationBorders(QPoint &rootPosition)
