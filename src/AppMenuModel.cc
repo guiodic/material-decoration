@@ -122,16 +122,16 @@ void AppMenuModel::update()
 
 void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QString &menuObjectPath)
 {
+    // A menu change means any in-progress caching is now invalid.
+    stopCaching();
+    m_pendingMenuUpdates = 0;
+    
     if (m_serviceName == serviceName && m_menuObjectPath == menuObjectPath) {
         if (m_importer) {
             QMetaObject::invokeMethod(m_importer, "updateMenu", Qt::QueuedConnection);
         }
         return;
     }
-
-    // A menu change means any in-progress caching is now invalid.
-    stopCaching();
-    m_pendingMenuUpdates = 0;
 
     m_serviceName = serviceName;
     m_serviceWatcher->setWatchedServices(QStringList({m_serviceName}));
