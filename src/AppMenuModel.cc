@@ -160,8 +160,8 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         // Connect signals for top-level actions to update the model when they change.
         const auto actions = m_menu->actions();
         for (QAction *a : actions) {
-            connect(a, &QAction::destroyed, this, &AppMenuModel::modelNeedsUpdate);
-            connect(a, &QAction::changed, this, &AppMenuModel::modelNeedsUpdate);
+            connect(a, &QAction::destroyed, this, &AppMenuModel::modelNeedsUpdate, Qt::UniqueConnection);
+            connect(a, &QAction::changed, this, &AppMenuModel::modelNeedsUpdate, Qt::UniqueConnection);
         }
 
         setMenuAvailable(true);
