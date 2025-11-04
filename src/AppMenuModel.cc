@@ -161,6 +161,7 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         const auto actions = m_menu->actions();
         for (QAction *a : actions) {
             connect(a, &QAction::destroyed, this, &AppMenuModel::modelNeedsUpdate);
+            connect(a, &QAction::changed, this, &AppMenuModel::modelNeedsUpdate);
         }
 
         setMenuAvailable(true);
