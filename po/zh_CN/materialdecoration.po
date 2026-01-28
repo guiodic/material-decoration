@@ -168,3 +168,7 @@ msgstr "非活动窗口边框颜色"
 #: config.ui:145
 msgid "Round bottom corners"
 msgstr "圆润底角"
+
+#: config.ui:154
+msgid "Hide window title when space is limited"
+msgstr "当空间有限时隐藏窗口标题"

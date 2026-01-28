@@ -91,6 +91,7 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_AnimationsEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_AnimationsDuration, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_BottomCorners, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_HideCaptionWhenLimitedSpace, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
 }
 
 void MaterialDecorationKCM::load()
@@ -119,6 +120,7 @@ void MaterialDecorationKCM::load()
     m_ui->kcfg_AnimationsEnabled->setChecked(m_settings->animationsEnabled());
     m_ui->kcfg_AnimationsDuration->setValue(m_settings->animationsDuration());
     m_ui->kcfg_BottomCorners->setChecked(m_settings->bottomCornerRadiusFlag());
+    m_ui->kcfg_HideCaptionWhenLimitedSpace->setChecked(m_settings->hideCaptionWhenLimitedSpace());
 }
 
 void MaterialDecorationKCM::save()
@@ -143,6 +145,7 @@ void MaterialDecorationKCM::save()
     m_settings->setAnimationsEnabled(m_ui->kcfg_AnimationsEnabled->isChecked());
     m_settings->setAnimationsDuration(m_ui->kcfg_AnimationsDuration->value());
     m_settings->setBottomCornerRadiusFlag(m_ui->kcfg_BottomCorners->isChecked());
+    m_settings->setHideCaptionWhenLimitedSpace(m_ui->kcfg_HideCaptionWhenLimitedSpace->isChecked());
 
     m_settings->save();
     QDBusConnection::sessionBus().call(QDBusMessage::createMethodCall(QStringLiteral("org.kde.KWin"),
@@ -177,6 +180,7 @@ void MaterialDecorationKCM::defaults()
     m_ui->kcfg_AnimationsEnabled->setChecked(m_settings->animationsEnabled());
     m_ui->kcfg_AnimationsDuration->setValue(m_settings->animationsDuration());
     m_ui->kcfg_BottomCorners->setChecked(m_settings->bottomCornerRadiusFlag());
+    m_ui->kcfg_HideCaptionWhenLimitedSpace->setChecked(m_settings->hideCaptionWhenLimitedSpace());
     markAsChanged();
 }
 

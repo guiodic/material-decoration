@@ -168,3 +168,7 @@ msgstr "Color del borde de la ventana inactiva"
 #: config.ui:145
 msgid "Round bottom corners"
 msgstr "Redondear esquinas inferiores"
+
+#: config.ui:154
+msgid "Hide window title when space is limited"
+msgstr "Ocultar el título de la ventana cuando el espacio es limitado"
