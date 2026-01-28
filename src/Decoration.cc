@@ -58,7 +58,7 @@
 #include <QWheelEvent>
 #include <QTimer>
 
-constexpr int MIN_WIDTH_FOR_CAPTION = 250;
+static constexpr int MIN_WIDTH_FOR_CAPTION = 250;
 
 namespace Material
 {
