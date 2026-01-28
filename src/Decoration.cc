@@ -1059,7 +1059,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     // Hide caption if there is not enough space
-    if (hideCaptionWhenLimitedSpace() && availableRect.width() < 250) {
+    if (appMenuVisible && hideCaptionWhenLimitedSpace() && availableRect.width() < 250) {
         return;
     }
 
