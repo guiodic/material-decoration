@@ -167,3 +167,7 @@ msgstr ""
 #: config.ui:127
 msgid "Inactive window border color"
 msgstr ""
+
+#: config.ui:154
+msgid "Hide window title when space is limited"
+msgstr ""

@@ -50,6 +50,10 @@
             <default>AlignCenter</default>
         </entry>
 
+        <entry name="HideCaptionWhenLimitedSpace" type="Bool">
+            <default>true</default>
+        </entry>
+
         <!-- opacity -->
         <entry name="ActiveOpacity" type="Double">
             <default>1.00</default>

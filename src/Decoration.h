@@ -115,6 +115,7 @@ private:
     bool showDisabledActions() const;
     bool animationsEnabled() const;
     int animationsDuration() const;
+    bool hideCaptionWhenLimitedSpace() const;
     qreal buttonPadding() const;
     qreal titleBarHeight() const;
     qreal appMenuButtonHorzPadding() const;

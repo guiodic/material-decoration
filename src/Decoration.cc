@@ -721,6 +721,11 @@ int Decoration::animationsDuration() const
     return m_internalSettings->animationsDuration();
 }
 
+bool Decoration::hideCaptionWhenLimitedSpace() const
+{
+    return m_internalSettings->hideCaptionWhenLimitedSpace();
+}
+
 qreal Decoration::buttonPadding() const
 {
     const qreal baseUnit = settings()->gridUnit();
@@ -1054,7 +1059,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     // Hide caption if there is not enough space
-    if (availableRect.width() < 250) {
+    if (hideCaptionWhenLimitedSpace() && availableRect.width() < 250) {
         return;
     }
 

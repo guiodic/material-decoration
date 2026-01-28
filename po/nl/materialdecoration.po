@@ -168,3 +168,7 @@ msgstr "Randkleur van inactief venster"
 #: config.ui:145
 msgid "Round bottom corners"
 msgstr "Onderste hoeken afronden"
+
+#: config.ui:154
+msgid "Hide window title when space is limited"
+msgstr "Venstertitel verbergen wanneer de ruimte beperkt is"
