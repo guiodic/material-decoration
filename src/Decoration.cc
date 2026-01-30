@@ -40,12 +40,6 @@
 // KF
 #include <KWindowSystem>
 
-// KWIN
-#if HAVE_X11
-#include <kwin/x11window.h>
-#include <KWindowInfo>
-#endif
-
 // Qt
 #include <QApplication>
 #include <QDebug>
@@ -849,17 +843,10 @@ qreal Decoration::getMenuTextWidth(const QString text, bool showMnemonic) const
 QPoint Decoration::windowPos() const
 {
 #if HAVE_X11
-    if (KWindowSystem::isPlatformX11()) {
-        const WId windowId = decoratedWindowId();
-        if (!windowId) {
-            return QPoint(0, 0);
-        }
-        
-        KWindowInfo info(windowId, NET::WMGeometry);
-        if (info.valid())
-            return info.geometry().topLeft();
-
-    }  
+    if (const auto *p = parent()) {
+        return p->property("clientGeometry").toRect().topLeft();
+    }
+    return QPoint(0, 0);
 #endif
 
     return QPoint(0, 0);
@@ -1160,17 +1147,6 @@ void Decoration::paintOutline(QPainter *painter, const QRectF &repaintRegion) co
     painter->drawPath(m_framePath);
 
     painter->restore();
-}
-
-WId Decoration::decoratedWindowId() const
-{
-#if HAVE_X11
-    if (const auto *kwinWindow = qobject_cast<const KWin::X11Window *>(this->parent())) {
-        return kwinWindow->window();
-    }
-#endif
-
-    return 0;
 }
 
 void Decoration::updateCornerRadius()

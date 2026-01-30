@@ -61,7 +61,6 @@ public:
 
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
 
-    WId decoratedWindowId() const;
     QPoint windowPos() const;
     
     qreal bottomBorderSize() const;
