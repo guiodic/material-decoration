@@ -843,7 +843,10 @@ qreal Decoration::getMenuTextWidth(const QString text, bool showMnemonic) const
 QPoint Decoration::windowPos() const
 {
 #if HAVE_X11
-    return this->parent()->property("clientGeometry").toRect().topLeft(); 
+    if (const auto *p = parent()) {
+        return p->property("clientGeometry").toRect().topLeft();
+    }
+    return QPoint(0, 0);
 #endif
 
     return QPoint(0, 0);
