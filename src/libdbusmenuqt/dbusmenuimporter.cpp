@@ -447,9 +447,9 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         }
 
         // Ensure correct position.
-        if (i >= currentActions.count() || currentActions.at(i) != action) {
+        QAction *before = (i < currentActions.count()) ? currentActions.at(i) : nullptr;
+        if (before != action) {
             // If action was already in menu, insertAction will move it.
-            QAction *before = (i < currentActions.count()) ? currentActions.at(i) : nullptr;
             menu->insertAction(before, action);
             // Refresh the cached actions list after a move or insert
             currentActions = menu->actions();
