@@ -674,7 +674,7 @@ void AppMenuButtonGroup::handleOverflowTrigger()
     if (!overflowing()) {
         return;
     }
-    auto *actionMenu = new QMenu();
+    auto *actionMenu = new NavigableMenu();
     actionMenu->setAttribute(Qt::WA_DeleteOnClose);
 
     if (m_appMenuModel && m_appMenuModel->menu()) {
