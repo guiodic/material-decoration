@@ -434,35 +434,72 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
         const auto actions = menu->actions();
         const int menuActionCount = actions.count();
-        
-        resetButtons();
 
-        // Populate
-        for (int i = 0; i < menuActionCount; ++i) {
-            QAction *itemAction = actions.at(i);
-            const QString itemLabel = itemAction->text();
+        // Check if we can do an in-place update instead of a full rebuild
+        QList<TextButton*> existingTextButtons;
+        KDecoration3::DecorationButton *existingOverflowButton = nullptr;
+        KDecoration3::DecorationButton *existingSearchButton = nullptr;
 
-            TextButton *b = new TextButton(deco, i, this);
-            b->setText(itemLabel);
-            b->setAction(itemAction);
-            b->setOpacity(m_opacity);
-
-            // Skip items with empty labels (The first item in a Gtk app)
-            if (itemLabel.isEmpty()) {
-                b->setEnabled(false);
-                b->setVisible(false);
+        for (auto *b : buttons()) {
+            if (auto *tb = qobject_cast<TextButton*>(b)) {
+                existingTextButtons.append(tb);
+            } else if (qobject_cast<MenuOverflowButton*>(b)) {
+                existingOverflowButton = b;
+            } else if (qobject_cast<SearchButton*>(b)) {
+                existingSearchButton = b;
             }
-
-            addButton(QPointer<KDecoration3::DecorationButton>(b));
         }
 
-        if (menuActionCount > 0) {
-            m_overflowIndex = menuActionCount;
-            addButton(new MenuOverflowButton(deco, m_overflowIndex, this));
+        bool searchEnabled = deco->searchEnabled();
+        bool canUpdateInPlace = (existingTextButtons.count() == menuActionCount)
+                             && (existingOverflowButton != nullptr || menuActionCount == 0)
+                             && (existingSearchButton != nullptr || !searchEnabled);
 
-            if (deco->searchEnabled()) {
-                m_searchIndex = menuActionCount + 1;
-                addButton(new SearchButton(deco, m_searchIndex, this));
+        if (canUpdateInPlace) {
+            for (int i = 0; i < menuActionCount; ++i) {
+                QAction *itemAction = actions.at(i);
+                TextButton *b = existingTextButtons.at(i);
+                b->setText(itemAction->text());
+                b->setAction(itemAction);
+                if (itemAction->text().isEmpty()) {
+                    b->setEnabled(false);
+                    b->setVisible(false);
+                } else {
+                    b->setEnabled(true); // Or use itemAction->isEnabled()? TextButton handles its own visibility/enabled based on context usually
+                    b->setVisible(true);
+                }
+            }
+            // No need to recreate buttons, just update state.
+        } else {
+            resetButtons();
+
+            // Populate
+            for (int i = 0; i < menuActionCount; ++i) {
+                QAction *itemAction = actions.at(i);
+                const QString itemLabel = itemAction->text();
+
+                TextButton *b = new TextButton(deco, i, this);
+                b->setText(itemLabel);
+                b->setAction(itemAction);
+                b->setOpacity(m_opacity);
+
+                // Skip items with empty labels (The first item in a Gtk app)
+                if (itemLabel.isEmpty()) {
+                    b->setEnabled(false);
+                    b->setVisible(false);
+                }
+
+                addButton(QPointer<KDecoration3::DecorationButton>(b));
+            }
+
+            if (menuActionCount > 0) {
+                m_overflowIndex = menuActionCount;
+                addButton(new MenuOverflowButton(deco, m_overflowIndex, this));
+
+                if (searchEnabled) {
+                    m_searchIndex = menuActionCount + 1;
+                    addButton(new SearchButton(deco, m_searchIndex, this));
+                }
             }
         }
 
@@ -878,7 +915,8 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     if (m_appMenuModel) {
         QMenu *rootMenu = m_appMenuModel->menu();
         if (rootMenu) {
-            searchMenu(rootMenu, text, results);
+            QSet<QMenu *> visited;
+            searchMenu(rootMenu, text, results, visited);
         }
     }
 
@@ -904,7 +942,11 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         return;
     }
 
+    int count = 0;
     for (QAction *action : results) {
+        if (count >= 100) {
+            break;
+        }
         const ActionInfo info = getActionPath(action);
         if (!info.isEffectivelyEnabled && !deco->showDisabledActions()) {
             continue;
@@ -918,6 +960,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
             m_searchMenu->hide();
         });
         m_searchMenu->addAction(newAction);
+        count++;
     }
 
     repositionSearchMenu();
@@ -945,7 +988,14 @@ void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
         // to prevent an infinite loop.
         const int buttonIndex = m_buttonIndexWaitingForPopup;
         m_buttonIndexWaitingForPopup = -1;
-        trigger(buttonIndex);
+
+        if (menu->actions().isEmpty()) {
+            // If the menu is still empty after a load attempt, just show it
+            // as is instead of re-triggering another load, which would loop.
+            popupMenu(menu, buttonIndex);
+        } else {
+            trigger(buttonIndex);
+        }
     }
 }
 
@@ -956,14 +1006,19 @@ void AppMenuButtonGroup::onSearchTimerTimeout()
     }
 }
 
-void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results)
+void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results, QSet<QMenu *> &visited)
 {
+    if (!menu || visited.contains(menu)) {
+        return;
+    }
+    visited.insert(menu);
+
     for (QAction *action : menu->actions()) {
         if (action->isSeparator()) {
             continue;
         }
         if (action->menu()) {
-            searchMenu(action->menu(), text, results);
+            searchMenu(action->menu(), text, results, visited);
         } else {
             const ActionInfo info = getActionPath(action);
             if (info.path.contains(text, Qt::CaseInsensitive)) {
