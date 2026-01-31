@@ -17,6 +17,8 @@
 #include <QDBusVariant>
 #include <QDebug>
 #include <QFont>
+#include <QHash>
+#include <QIcon>
 #include <QMenu>
 #include <QPointer>
 #include <QSet>
@@ -79,6 +81,7 @@ public:
 
     QSet<int> m_idsRefreshedByAboutToShow;
     QSet<int> m_pendingLayoutUpdates;
+    QHash<QString, QIcon> m_iconCache;
 
     QDBusPendingCallWatcher *refresh(int id)
     {
@@ -130,7 +133,7 @@ public:
         }
 
         bool isKdeTitle = map.take(QStringLiteral("x-kde-title")).toBool();
-        updateAction(action, map, map.keys());
+        updateAction(action, map);
 
         if (isKdeTitle) {
             action = createKdeTitle(action, parent);
@@ -140,18 +143,19 @@ public:
     }
 
     /**
-     * Update mutable properties of an action. A property may be listed in
-     * requestedProperties but not in map, this means we should use the default value
-     * for this property.
+     * Update mutable properties of an action.
      *
      * @param action the action to update
      * @param map holds the property values
-     * @param requestedProperties which properties has been requested
      */
-    void updateAction(QAction *action, const QVariantMap &map, const QStringList &requestedProperties)
+    void updateAction(QAction *action, const QVariantMap &map)
     {
-        for (const QString &key : requestedProperties) {
-            updateActionProperty(action, key, map.value(key));
+        for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
+            const QString &key = it.key();
+            if (key == QLatin1String("type") || key == QLatin1String("toggle-type") || key == QLatin1String("children-display")) {
+                continue;
+            }
+            updateActionProperty(action, key, it.value());
         }
     }
 
@@ -206,7 +210,15 @@ public:
             action->setIcon(QIcon());
             return;
         }
-        action->setIcon(q->iconForName(iconName));
+
+        auto it = m_iconCache.constFind(iconName);
+        if (it != m_iconCache.constEnd()) {
+            action->setIcon(*it);
+        } else {
+            const QIcon icon = q->iconForName(iconName);
+            m_iconCache.insert(iconName, icon);
+            action->setIcon(icon);
+        }
     }
 
     void updateActionIconByData(QAction *action, const QVariant &value)
@@ -395,17 +407,18 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
 
     menu->setUpdatesEnabled(false);
 
-    // remove outdated actions
-    QSet<int> newDBusMenuItemIds;
-    newDBusMenuItemIds.reserve(rootItem.children.count());
-    for (const DBusMenuLayoutItem &item : std::as_const(rootItem.children)) {
-        newDBusMenuItemIds << item.id;
+    const auto actions = menu->actions();
+    QSet<int> newIds;
+    newIds.reserve(rootItem.children.count());
+    for (const auto &child : rootItem.children) {
+        newIds.insert(child.id);
     }
-    for (QAction *action : menu->actions()) {
+
+    // 1. Remove (via deleteLater) actions no longer present
+    for (QAction *action : actions) {
         int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
-        if (!newDBusMenuItemIds.contains(id)) {
-            // Not calling removeAction() as QMenu will immediately close when it becomes empty,
-            // which can happen when an application completely reloads this menu.
+        if (!newIds.contains(id)) {
+            // Not calling removeAction() as QMenu will immediately close when it becomes empty.
             // When the action is deleted deferred, it is removed from the menu.
             action->deleteLater();
             if (action->menu()) {
@@ -415,11 +428,16 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         }
     }
 
-    // insert or update new actions into our menu
-    for (const DBusMenuLayoutItem &dbusMenuItem : std::as_const(rootItem.children)) {
-        DBusMenuImporterPrivate::ActionForId::Iterator it = d->m_actionForId.find(dbusMenuItem.id);
-        QAction *action = nullptr;
-        if (it == d->m_actionForId.end()) {
+    // 2. Synchronize existing actions and add new ones
+    for (int i = 0; i < rootItem.children.count(); ++i) {
+        const DBusMenuLayoutItem &dbusMenuItem = rootItem.children.at(i);
+        QAction *action = d->m_actionForId.value(dbusMenuItem.id);
+
+        if (action) {
+            // Update properties
+            d->updateAction(action, dbusMenuItem.properties);
+        } else {
+            // Create
             int id = dbusMenuItem.id;
             action = d->createAction(id, dbusMenuItem.properties, menu);
             d->m_actionForId.insert(id, action);
@@ -436,18 +454,14 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
                 connect(menuAction, &QMenu::aboutToShow, this, &DBusMenuImporter::slotMenuAboutToShow, Qt::UniqueConnection);
             }
             connect(menu, &QMenu::aboutToHide, this, &DBusMenuImporter::slotMenuAboutToHide, Qt::UniqueConnection);
+        }
 
-            menu->addAction(action);
-        } else {
-            action = *it;
-            QStringList filteredKeys = dbusMenuItem.properties.keys();
-            filteredKeys.removeOne(QStringLiteral("type"));
-            filteredKeys.removeOne(QStringLiteral("toggle-type"));
-            filteredKeys.removeOne(QStringLiteral("children-display"));
-            d->updateAction(*it, dbusMenuItem.properties, filteredKeys);
-            // Move the action to the tail so we can keep the order same as the dbus request.
-            menu->removeAction(action);
-            menu->addAction(action);
+        // Ensure correct position.
+        const auto currentActions = menu->actions();
+        if (i >= currentActions.count() || currentActions.at(i) != action) {
+            // If action was already in menu, insertAction will move it.
+            QAction *before = (i < currentActions.count()) ? currentActions.at(i) : nullptr;
+            menu->insertAction(before, action);
         }
     }
 

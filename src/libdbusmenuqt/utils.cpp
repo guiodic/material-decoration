@@ -12,6 +12,7 @@
 QString swapMnemonicChar(const QString &in, const char src, const char dst)
 {
     QString out;
+    out.reserve(in.length());
     bool mnemonicFound = false;
 
     for (int pos = 0; pos < in.length();) {
