@@ -846,7 +846,6 @@ QPoint Decoration::windowPos() const
     if (const auto *p = parent()) {
         return p->property("clientGeometry").toRect().topLeft();
     }
-    return QPoint(0, 0);
 #endif
 
     return QPoint(0, 0);
