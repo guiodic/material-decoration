@@ -73,6 +73,7 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void onMenuUpdated(QMenu *menu);
+    void onActionChanged();
     void processNext();
 
 private:

@@ -116,6 +116,7 @@ QMenu *AppMenuModel::menu() const
 
 void AppMenuModel::update()
 {
+    stopCaching();
     Q_EMIT modelReset();
     m_updatePending = false;
 }
@@ -139,6 +140,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     m_menuObjectPath = menuObjectPath;
 
     if (m_importer) {
+        m_importer->disconnect(this);
         m_importer->deleteLater();
     }
 
@@ -146,6 +148,14 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     QMetaObject::invokeMethod(m_importer, "updateMenu", Qt::QueuedConnection);
 
     connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, &AppMenuModel::onMenuUpdated);
+}
+
+void AppMenuModel::onActionChanged()
+{
+    // This is called when a top-level action changes (e.g., text, icon, enabled state).
+    // We emit modelNeedsUpdate to eventually trigger a modelReset, but we could
+    // add more sophisticated filtering here if needed.
+    Q_EMIT modelNeedsUpdate();
 }
 
 void AppMenuModel::onMenuUpdated(QMenu *menu)
@@ -161,7 +171,7 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         const auto actions = m_menu->actions();
         for (QAction *a : actions) {
             connect(a, &QAction::destroyed, this, &AppMenuModel::modelNeedsUpdate, Qt::UniqueConnection);
-            connect(a, &QAction::changed, this, &AppMenuModel::modelNeedsUpdate, Qt::UniqueConnection);
+            connect(a, &QAction::changed, this, &AppMenuModel::onActionChanged, Qt::UniqueConnection);
         }
 
         setMenuAvailable(true);
@@ -239,6 +249,7 @@ void AppMenuModel::cacheSubtree(QMenu *menu)
 void AppMenuModel::stopCaching()
 {
     if (!m_isCachingSubtree && !m_isCachingEverything) {
+        m_pendingMenuUpdates = 0; // Ensure consistency
         return;
     }
 
@@ -248,6 +259,7 @@ void AppMenuModel::stopCaching()
     m_isCachingSubtree = false;
     m_isCachingEverything = false;
     m_deepCacheStarted = false;
+    m_pendingMenuUpdates = 0;
 }
 
 void AppMenuModel::startDeepCaching()
