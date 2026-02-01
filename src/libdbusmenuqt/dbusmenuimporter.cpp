@@ -509,6 +509,8 @@ void DBusMenuImporter::slotAboutToShowDBusCallFinished(QDBusPendingCallWatcher *
     int id = watcher->property(DBUSMENU_PROPERTY_ID).toInt();
     watcher->deleteLater();
 
+    d->m_idsRefreshedByAboutToShow << id;
+
     QMenu *menu = d->menuForId(id);
     if (!menu) {
         d->m_idsRefreshedByAboutToShow.remove(id);
@@ -525,7 +527,6 @@ void DBusMenuImporter::slotAboutToShowDBusCallFinished(QDBusPendingCallWatcher *
     // We used to only refresh if needRefresh was true.
     // However, some servers are buggy and don't signal correctly, or signals are lost.
     // Since this is called JIT before showing a menu, always refreshing is safer.
-    d->m_idsRefreshedByAboutToShow << id;
     d->refresh(id);
 }
 
@@ -554,6 +555,7 @@ void DBusMenuImporter::slotMenuAboutToShow()
     if (d->m_idsRefreshedByAboutToShow.contains(id)) {
         return; // Update already in progress, ignore re-entrant call.
     }
+    d->m_idsRefreshedByAboutToShow << id;
 
     updateMenu(menu);
 }
