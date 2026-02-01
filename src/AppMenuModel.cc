@@ -187,10 +187,10 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
             const auto actions = menu->actions();
              for (QAction *a : actions) {
                  if (auto subMenu = a->menu()) {
-                     if (m_menusInQueue.contains(subMenu)) {
+                     if (m_seenMenus.contains(subMenu)) {
                          continue;
                      }
-                     m_menusInQueue.insert(subMenu);
+                     m_seenMenus.insert(subMenu);
                      m_menusToDeepCache.append(QPointer(subMenu));
                  }
              }
@@ -224,11 +224,12 @@ void AppMenuModel::stopCaching()
 {
     if (!m_isCachingEverything) {
         m_pendingMenuUpdates = 0; // Ensure consistency
+        m_seenMenus.clear();
         return;
     }
 
     m_menusToDeepCache.clear();
-    m_menusInQueue.clear();
+    m_seenMenus.clear();
     m_staggerTimer->stop();
     m_isCachingEverything = false;
     m_deepCacheStarted = false;
@@ -244,7 +245,7 @@ void AppMenuModel::startDeepCaching()
 
     m_isCachingEverything = true;
     m_menusToDeepCache.clear();
-    m_menusInQueue.clear();
+    m_seenMenus.clear();
 
     if (!m_menu) {
         return;
@@ -255,10 +256,10 @@ void AppMenuModel::startDeepCaching()
     const auto actions = m_menu->actions();
     for (QAction *a : actions) {
         if (auto subMenu = a->menu()) {
-             if (m_menusInQueue.contains(subMenu)) {
+             if (m_seenMenus.contains(subMenu)) {
                  continue;
              }
-            m_menusInQueue.insert(subMenu);
+            m_seenMenus.insert(subMenu);
             m_menusToDeepCache.append(QPointer(subMenu));
         }
     }
@@ -273,6 +274,7 @@ void AppMenuModel::processNext()
         // We are done processing all submenus.
         m_isCachingEverything = false;
         m_deepCacheStarted = false;
+        m_seenMenus.clear();
         
         // If there are no pending DBus updates, the menu is ready for search.
         if (m_pendingMenuUpdates == 0) {
@@ -282,7 +284,6 @@ void AppMenuModel::processNext()
     }
 
     QPointer<QMenu> menuToProcessPtr = m_menusToDeepCache.takeFirst();
-    m_menusInQueue.remove(menuToProcessPtr.data());
     QMenu *menuToProcess = menuToProcessPtr.data();
 
     if (menuToProcess) {
@@ -292,8 +293,8 @@ void AppMenuModel::processNext()
             const auto actions = menuToProcess->actions();
             for (QAction *a : actions) {
                 if (auto subMenu = a->menu()) {
-                    if (!m_menusInQueue.contains(subMenu)) {
-                        m_menusInQueue.insert(subMenu);
+                    if (!m_seenMenus.contains(subMenu)) {
+                        m_seenMenus.insert(subMenu);
                         m_menusToDeepCache.append(QPointer(subMenu));
                     }
                 }
