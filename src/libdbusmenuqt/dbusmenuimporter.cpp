@@ -327,10 +327,13 @@ QMenu *DBusMenuImporter::menu() const
 
 void DBusMenuImporterPrivate::slotItemsPropertiesUpdated(const DBusMenuItemList &updatedList, const DBusMenuItemKeysList &removedList)
 {
+    bool needLayoutUpdate = false;
     for (const DBusMenuItem &item : updatedList) {
         QAction *action = m_actionForId.value(item.id);
         if (!action) {
             // We don't know this action. It probably is in a menu we haven't fetched yet.
+            // This can happen if a new item is added but LayoutUpdated hasn't been received yet.
+            needLayoutUpdate = true;
             continue;
         }
 
@@ -344,6 +347,7 @@ void DBusMenuImporterPrivate::slotItemsPropertiesUpdated(const DBusMenuItemList 
         QAction *action = m_actionForId.value(item.id);
         if (!action) {
             // We don't know this action. It probably is in a menu we haven't fetched yet.
+            needLayoutUpdate = true;
             continue;
         }
 
@@ -351,6 +355,10 @@ void DBusMenuImporterPrivate::slotItemsPropertiesUpdated(const DBusMenuItemList 
         for (const QString &key : properties) {
             updateActionProperty(action, key, QVariant());
         }
+    }
+
+    if (needLayoutUpdate) {
+        q->slotLayoutUpdated(0, 0);
     }
 }
 
