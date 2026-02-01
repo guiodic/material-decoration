@@ -469,9 +469,6 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     }
 
     menu->setUpdatesEnabled(true);
-    //if (menu->isVisible()) {
-    //    menu->update();
-    //}
     // qCDebug(category) << "[DBUSMENUIMPORTER] Emitting menuUpdated(" << menu << ")";
     Q_EMIT menuUpdated(menu);
 }
@@ -491,12 +488,23 @@ void DBusMenuImporter::updateMenu(QMenu *menu)
     Q_ASSERT(menu);
 
     QAction *action = menu->menuAction();
-    Q_ASSERT(action);
+    if (!action) {
+        return;
+    }
 
     int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
 
+    if (d->m_idsRefreshedByAboutToShow.contains(id)) {
+        return; // Update already in progress, ignore re-entrant call.
+    }
+    d->m_idsRefreshedByAboutToShow << id;
+
     auto call = d->m_interface->AboutToShow(id);
     QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, this);
+    if (!watcher) {
+        d->m_idsRefreshedByAboutToShow.remove(id);
+        return;
+    }
     watcher->setProperty(DBUSMENU_PROPERTY_ID, id);
     connect(watcher, &QDBusPendingCallWatcher::finished, this, &DBusMenuImporter::slotAboutToShowDBusCallFinished);
 
@@ -508,8 +516,6 @@ void DBusMenuImporter::slotAboutToShowDBusCallFinished(QDBusPendingCallWatcher *
 {
     int id = watcher->property(DBUSMENU_PROPERTY_ID).toInt();
     watcher->deleteLater();
-
-    d->m_idsRefreshedByAboutToShow << id;
 
     QMenu *menu = d->menuForId(id);
     if (!menu) {
@@ -547,27 +553,12 @@ void DBusMenuImporter::slotMenuAboutToShow()
     QMenu *menu = qobject_cast<QMenu *>(sender());
     Q_ASSERT(menu);
 
-    QAction *action = menu->menuAction();
-    if (!action) {
-        return;
-    }
-    int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
-    if (d->m_idsRefreshedByAboutToShow.contains(id)) {
-        return; // Update already in progress, ignore re-entrant call.
-    }
-    d->m_idsRefreshedByAboutToShow << id;
-
     updateMenu(menu);
 }
 
 void DBusMenuImporter::slotActionHovered(QAction *action)
 {
     if (action && action->menu() && action->menu()->actions().isEmpty()) {
-        const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
-        if (d->m_idsRefreshedByAboutToShow.contains(id)) {
-            return; // Update already in progress, ignore re-entrant call.
-        }
-        d->m_idsRefreshedByAboutToShow << id;
         updateMenu(action->menu());
     }
 }
