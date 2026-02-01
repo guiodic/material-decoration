@@ -614,8 +614,8 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
         oldButton->setChecked(false);
     }
 
-    // After successfully showing a menu, predictively pre-fetch its children
-    // after a short delay to keep the UI smooth.
+    // When the search menu is shown, trigger deep caching after a short delay
+    // to make subsequent searches faster.
     m_delayedCacheTimer->stop();
     m_buttonIndexOfMenuToCache = buttonIndex;
     m_delayedCacheTimer->start();
