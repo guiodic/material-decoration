@@ -309,7 +309,9 @@ void AppMenuButtonGroup::resetButtons()
     if (buttons().isEmpty()) {
         return;
     }
-
+    setCurrentIndex(-1);
+    m_currentMenu = nullptr;
+    
     // Create a copy of the button pointers before removing them from the group.
     const auto allButtons = buttons();
 
