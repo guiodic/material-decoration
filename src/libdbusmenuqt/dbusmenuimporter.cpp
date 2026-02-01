@@ -549,6 +549,10 @@ void DBusMenuImporter::slotMenuAboutToShow()
 void DBusMenuImporter::slotActionHovered(QAction *action)
 {
     if (action && action->menu() && action->menu()->actions().isEmpty()) {
+        const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
+        if (d->m_idsRefreshedByAboutToShow.contains(id)) {
+            return; // Update already in progress, ignore re-entrant call.
+        }
         updateMenu(action->menu());
     }
 }
