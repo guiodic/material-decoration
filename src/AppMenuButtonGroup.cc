@@ -434,6 +434,11 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
         const auto actions = menu->actions();
         const int menuActionCount = actions.count();
+
+        // Preserve current menu state if possible
+        const bool wasSearchOpen = (m_currentIndex == m_searchIndex && m_searchIndex != -1);
+        const bool wasOverflowOpen = (m_currentIndex == m_overflowIndex && m_overflowIndex != -1);
+        QPointer<QMenu> previousMenu = m_currentMenu;
         
         resetButtons();
 
@@ -463,6 +468,21 @@ void AppMenuButtonGroup::updateAppMenuModel()
             if (deco->searchEnabled()) {
                 m_searchIndex = menuActionCount + 1;
                 addButton(new SearchButton(deco, m_searchIndex, this));
+            }
+        }
+
+        // Restore state
+        if (wasSearchOpen && m_searchIndex != -1) {
+            setCurrentIndex(m_searchIndex);
+            m_currentMenu = previousMenu;
+            if (auto *b = buttons().value(m_currentIndex)) {
+                b->setChecked(true);
+            }
+        } else if (wasOverflowOpen && m_overflowIndex != -1) {
+            setCurrentIndex(m_overflowIndex);
+            m_currentMenu = previousMenu;
+            if (auto *b = buttons().value(m_currentIndex)) {
+                b->setChecked(true);
             }
         }
 
