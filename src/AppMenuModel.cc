@@ -181,7 +181,7 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
     } else { // This is an update for a submenu that was previously requested.
         Q_EMIT subMenuReady(menu);
         const bool wasQueueEmpty = m_menusToDeepCache.isEmpty();
-        if (m_isCachingSubtree || m_isCachingEverything) {
+        if (m_isCachingEverything) {
             // The deep caching phase has begun. Add the children of the newly-loaded
             // submenu to the processing queue.
             const auto actions = menu->actions();
@@ -220,35 +220,9 @@ void AppMenuModel::loadSubMenu(QMenu *menu)
     }
 }
 
-void AppMenuModel::cacheSubtree(QMenu *menu)
-{
-    if (!menu) {
-        return;
-    }
-
-    m_isCachingSubtree = true;
-
-    const bool wasQueueEmpty = m_menusToDeepCache.isEmpty();
-    const auto actions = menu->actions();
-    for (QAction *action : actions) {
-        if (auto subMenu = action->menu()) {
-            if (subMenu->actions().isEmpty()) {
-                if (!m_menusInQueue.contains(subMenu)) {
-                    m_menusInQueue.insert(subMenu);
-                    m_menusToDeepCache.append(QPointer(subMenu));
-                }
-            }
-        }
-    }
-
-    if (wasQueueEmpty && !m_menusToDeepCache.isEmpty()) {
-        processNext();
-    }
-}
-
 void AppMenuModel::stopCaching()
 {
-    if (!m_isCachingSubtree && !m_isCachingEverything) {
+    if (!m_isCachingEverything) {
         m_pendingMenuUpdates = 0; // Ensure consistency
         return;
     }
@@ -256,7 +230,6 @@ void AppMenuModel::stopCaching()
     m_menusToDeepCache.clear();
     m_menusInQueue.clear();
     m_staggerTimer->stop();
-    m_isCachingSubtree = false;
     m_isCachingEverything = false;
     m_deepCacheStarted = false;
     m_pendingMenuUpdates = 0;
@@ -298,7 +271,6 @@ void AppMenuModel::processNext()
 {
     if (m_menusToDeepCache.isEmpty()) {
         // We are done processing all submenus.
-        m_isCachingSubtree = false;
         m_isCachingEverything = false;
         m_deepCacheStarted = false;
         // Note: m_pendingMenuUpdates might still be > 0 here if the last

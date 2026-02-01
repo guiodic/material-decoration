@@ -65,7 +65,6 @@ signals:
 
 public Q_SLOTS:
     void loadSubMenu(QMenu *menu);
-    void cacheSubtree(QMenu *menu);
     void stopCaching();
 
 public Q_SLOTS:
@@ -81,7 +80,6 @@ private:
     QList<QPointer<QMenu>> m_menusToDeepCache;
     QSet<QMenu *> m_menusInQueue;
     bool m_menuAvailable;
-    bool m_isCachingSubtree = false;
     bool m_isCachingEverything = false;
     bool m_deepCacheStarted = false;
     int m_pendingMenuUpdates = 0;
