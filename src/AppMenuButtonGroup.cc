@@ -374,7 +374,7 @@ void AppMenuButtonGroup::onMenuUpdateThrottleTimeout()
 
 void AppMenuButtonGroup::onDelayedCacheTimerTimeout()
 {
-    if (!m_appMenuModel || !m_menuToCache) {
+    if (!m_appMenuModel) {
         return;
     }
 
@@ -617,7 +617,6 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
     // After successfully showing a menu, predictively pre-fetch its children
     // after a short delay to keep the UI smooth.
     m_delayedCacheTimer->stop();
-    m_menuToCache = menu;
     m_buttonIndexOfMenuToCache = buttonIndex;
     m_delayedCacheTimer->start();
 }
