@@ -380,8 +380,6 @@ void AppMenuButtonGroup::onDelayedCacheTimerTimeout()
 
     if (m_buttonIndexOfMenuToCache == m_searchIndex) {
         m_appMenuModel->startDeepCaching();
-    } else {
-        m_appMenuModel->cacheSubtree(m_menuToCache.data());
     }
 }
 
