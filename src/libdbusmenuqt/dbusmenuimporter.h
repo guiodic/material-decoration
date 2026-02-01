@@ -76,6 +76,7 @@ protected:
 
 private Q_SLOTS:
     void sendClickedEvent(int);
+    void slotActionHovered(QAction *);
     void slotMenuAboutToShow();
     void slotMenuAboutToHide();
     void slotAboutToShowDBusCallFinished(QDBusPendingCallWatcher *);
