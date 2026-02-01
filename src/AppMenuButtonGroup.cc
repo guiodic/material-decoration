@@ -875,7 +875,8 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     if (m_appMenuModel) {
         QMenu *rootMenu = m_appMenuModel->menu();
         if (rootMenu) {
-            searchMenu(rootMenu, text, results);
+            QSet<QMenu *> visited;
+            searchMenu(rootMenu, text, results, visited);
         }
     }
 
@@ -953,14 +954,19 @@ void AppMenuButtonGroup::onSearchTimerTimeout()
     }
 }
 
-void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results)
+void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results, QSet<QMenu *> &visited)
 {
+    if (!menu || visited.contains(menu)) {
+        return;
+    }
+    visited.insert(menu);
+
     for (QAction *action : menu->actions()) {
         if (action->isSeparator()) {
             continue;
         }
         if (action->menu()) {
-            searchMenu(action->menu(), text, results);
+            searchMenu(action->menu(), text, results, visited);
         } else {
             const ActionInfo info = getActionPath(action);
             if (info.path.contains(text, Qt::CaseInsensitive)) {

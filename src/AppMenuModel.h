@@ -78,7 +78,7 @@ private Q_SLOTS:
 private:
     QTimer *m_staggerTimer;
     QList<QPointer<QMenu>> m_menusToDeepCache;
-    QSet<QMenu *> m_menusInQueue;
+    QSet<QMenu *> m_seenMenus;
     bool m_menuAvailable;
     bool m_isCachingEverything = false;
     bool m_deepCacheStarted = false;
