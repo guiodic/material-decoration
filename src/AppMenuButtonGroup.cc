@@ -472,14 +472,15 @@ void AppMenuButtonGroup::updateAppMenuModel()
         }
 
         // Restore state
+        int indexToRestore = -1;
         if (wasSearchOpen && m_searchIndex != -1) {
-            setCurrentIndex(m_searchIndex);
-            m_currentMenu = previousMenu;
-            if (auto *b = buttons().value(m_currentIndex)) {
-                b->setChecked(true);
-            }
+            indexToRestore = m_searchIndex;
         } else if (wasOverflowOpen && m_overflowIndex != -1) {
-            setCurrentIndex(m_overflowIndex);
+            indexToRestore = m_overflowIndex;
+        }
+
+        if (indexToRestore != -1) {
+            setCurrentIndex(indexToRestore);
             m_currentMenu = previousMenu;
             if (auto *b = buttons().value(m_currentIndex)) {
                 b->setChecked(true);
