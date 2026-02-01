@@ -93,6 +93,7 @@ public:
     QMenu *createMenu(QWidget *parent)
     {
         QMenu *menu = q->createMenu(parent);
+        QObject::connect(menu, &QMenu::hovered, q, &DBusMenuImporter::slotActionHovered);
         return menu;
     }
 
@@ -546,14 +547,16 @@ void DBusMenuImporter::slotMenuAboutToShow()
     updateMenu(menu);
 }
 
+void DBusMenuImporter::slotActionHovered(QAction *action)
+{
+    if (action && action->menu() && action->menu()->actions().isEmpty()) {
+        updateMenu(action->menu());
+    }
+}
+
 QMenu *DBusMenuImporter::createMenu(QWidget *parent)
 {
     return new QMenu(parent);
-    
-    // submenu-opening-onhover
-    //QMenu *menu = new QMenu(parent);
-    //menu->installEventFilter(this); 
-    //return menu;
 }
 
 QIcon DBusMenuImporter::iconForName(const QString &name)
