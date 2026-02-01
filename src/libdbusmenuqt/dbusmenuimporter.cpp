@@ -327,10 +327,13 @@ QMenu *DBusMenuImporter::menu() const
 
 void DBusMenuImporterPrivate::slotItemsPropertiesUpdated(const DBusMenuItemList &updatedList, const DBusMenuItemKeysList &removedList)
 {
+    bool needLayoutUpdate = false;
     for (const DBusMenuItem &item : updatedList) {
         QAction *action = m_actionForId.value(item.id);
         if (!action) {
             // We don't know this action. It probably is in a menu we haven't fetched yet.
+            // This can happen if a new item is added but LayoutUpdated hasn't been received yet.
+            needLayoutUpdate = true;
             continue;
         }
 
@@ -344,6 +347,7 @@ void DBusMenuImporterPrivate::slotItemsPropertiesUpdated(const DBusMenuItemList 
         QAction *action = m_actionForId.value(item.id);
         if (!action) {
             // We don't know this action. It probably is in a menu we haven't fetched yet.
+            needLayoutUpdate = true;
             continue;
         }
 
@@ -351,6 +355,10 @@ void DBusMenuImporterPrivate::slotItemsPropertiesUpdated(const DBusMenuItemList 
         for (const QString &key : properties) {
             updateActionProperty(action, key, QVariant());
         }
+    }
+
+    if (needLayoutUpdate) {
+        q->slotLayoutUpdated(0, 0);
     }
 }
 
@@ -461,9 +469,6 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     }
 
     menu->setUpdatesEnabled(true);
-    //if (menu->isVisible()) {
-    //    menu->update();
-    //}
     // qCDebug(category) << "[DBUSMENUIMPORTER] Emitting menuUpdated(" << menu << ")";
     Q_EMIT menuUpdated(menu);
 }
@@ -483,12 +488,23 @@ void DBusMenuImporter::updateMenu(QMenu *menu)
     Q_ASSERT(menu);
 
     QAction *action = menu->menuAction();
-    Q_ASSERT(action);
+    if (!action) {
+        return;
+    }
 
     int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
 
+    if (d->m_idsRefreshedByAboutToShow.contains(id)) {
+        return; // Update already in progress, ignore re-entrant call.
+    }
+    d->m_idsRefreshedByAboutToShow << id;
+
     auto call = d->m_interface->AboutToShow(id);
     QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, this);
+    if (!watcher) {
+        d->m_idsRefreshedByAboutToShow.remove(id);
+        return;
+    }
     watcher->setProperty(DBUSMENU_PROPERTY_ID, id);
     connect(watcher, &QDBusPendingCallWatcher::finished, this, &DBusMenuImporter::slotAboutToShowDBusCallFinished);
 
@@ -516,8 +532,7 @@ void DBusMenuImporter::slotAboutToShowDBusCallFinished(QDBusPendingCallWatcher *
     }
     // We used to only refresh if needRefresh was true.
     // However, some servers are buggy and don't signal correctly, or signals are lost.
-    // Since this is called JIT before showing a menu, always refreshing is safer.
-    d->m_idsRefreshedByAboutToShow << id;
+    // Since this is called JIT before showing a menu, always refreshing is safer
     d->refresh(id);
 }
 
@@ -538,26 +553,12 @@ void DBusMenuImporter::slotMenuAboutToShow()
     QMenu *menu = qobject_cast<QMenu *>(sender());
     Q_ASSERT(menu);
 
-    QAction *action = menu->menuAction();
-    if (!action) {
-        return;
-    }
-    int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
-    if (d->m_idsRefreshedByAboutToShow.contains(id)) {
-        return; // Update already in progress, ignore re-entrant call.
-    }
-
     updateMenu(menu);
 }
 
 void DBusMenuImporter::slotActionHovered(QAction *action)
 {
     if (action && action->menu() && action->menu()->actions().isEmpty()) {
-        const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
-        if (d->m_idsRefreshedByAboutToShow.contains(id)) {
-            return; // Update already in progress, ignore re-entrant call.
-        }
-        d->m_idsRefreshedByAboutToShow << id;
         updateMenu(action->menu());
     }
 }

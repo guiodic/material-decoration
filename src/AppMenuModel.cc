@@ -77,6 +77,7 @@ AppMenuModel::AppMenuModel(QObject *parent)
     connect(m_serviceWatcher, &QDBusServiceWatcher::serviceUnregistered, this, [this](const QString & serviceName) {
         if (serviceName == m_serviceName) {
             setMenuAvailable(false);
+            stopCaching();
             Q_EMIT modelNeedsUpdate();
         }
     });
@@ -116,7 +117,6 @@ QMenu *AppMenuModel::menu() const
 
 void AppMenuModel::update()
 {
-    stopCaching();
     Q_EMIT modelReset();
     m_updatePending = false;
 }
@@ -178,6 +178,22 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         Q_EMIT modelNeedsUpdate();
 
         // Pre-fetching and deep caching are now handled on-demand.
+        if (m_isCachingEverything) {
+            const bool wasQueueEmpty = m_menusToDeepCache.isEmpty();
+            const auto actions = m_menu->actions();
+            for (QAction *a : actions) {
+                if (auto subMenu = a->menu()) {
+                    if (!m_seenMenus.contains(subMenu)) {
+                        m_seenMenus.insert(subMenu);
+                        m_menusToDeepCache.append(QPointer(subMenu));
+                    }
+                }
+            }
+
+            if (wasQueueEmpty && !m_menusToDeepCache.isEmpty()) {
+                processNext();
+            }
+        }
     } else { // This is an update for a submenu that was previously requested.
         Q_EMIT subMenuReady(menu);
         const bool wasQueueEmpty = m_menusToDeepCache.isEmpty();
