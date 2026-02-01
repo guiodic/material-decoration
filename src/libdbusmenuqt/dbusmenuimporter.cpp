@@ -526,7 +526,7 @@ void DBusMenuImporter::slotAboutToShowDBusCallFinished(QDBusPendingCallWatcher *
     }
     // We used to only refresh if needRefresh was true.
     // However, some servers are buggy and don't signal correctly, or signals are lost.
-    // Since this is called JIT before showing a menu, always refreshing is safer.
+    // Since this is called JIT before showing a menu, always refreshing is safer
     d->refresh(id);
 }
 
