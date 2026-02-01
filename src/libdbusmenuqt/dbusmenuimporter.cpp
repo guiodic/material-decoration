@@ -301,9 +301,7 @@ DBusMenuImporter::~DBusMenuImporter()
 void DBusMenuImporter::slotLayoutUpdated(uint revision, int parentId)
 {
     Q_UNUSED(revision)
-    if (d->m_idsRefreshedByAboutToShow.remove(parentId)) {
-        return;
-    }
+    d->m_idsRefreshedByAboutToShow.remove(parentId);
     d->m_pendingLayoutUpdates << parentId;
     if (!d->m_pendingLayoutUpdateTimer.isActive()) {
         d->m_pendingLayoutUpdateTimer.start();
@@ -373,6 +371,8 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     int parentId = watcher->property(DBUSMENU_PROPERTY_ID).toInt();
     watcher->deleteLater();
 
+    d->m_idsRefreshedByAboutToShow.remove(parentId);
+
     QMenu *menu = d->menuForId(parentId);
 
     QDBusPendingReply<uint, DBusMenuLayoutItem> reply = *watcher;
@@ -403,21 +403,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         newIds.insert(child.id);
     }
 
-    // 1. Remove (via deleteLater) actions no longer present
-    for (QAction *action : actions) {
-        int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
-        if (!newIds.contains(id)) {
-            // Not calling removeAction() as QMenu will immediately close when it becomes empty.
-            // When the action is deleted deferred, it is removed from the menu.
-            action->deleteLater();
-            if (action->menu()) {
-                action->menu()->deleteLater();
-            }
-            d->m_actionForId.remove(id);
-        }
-    }
-
-    // 2. Synchronize existing actions and add new ones
+    // 1. Synchronize existing actions and add new ones
     auto currentActions = menu->actions();
     for (int i = 0; i < rootItem.children.count(); ++i) {
         const DBusMenuLayoutItem &dbusMenuItem = rootItem.children.at(i);
@@ -426,6 +412,9 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         if (action) {
             // Update properties
             d->updateAction(action, dbusMenuItem.properties);
+            if (action->parent() != menu) {
+                action->setParent(menu);
+            }
         } else {
             // Create
             int id = dbusMenuItem.id;
@@ -456,7 +445,23 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         }
     }
 
+    // 2. Remove actions no longer present
+    for (QAction *action : actions) {
+        int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
+        if (!newIds.contains(id)) {
+            menu->removeAction(action);
+            action->deleteLater();
+            if (action->menu()) {
+                action->menu()->deleteLater();
+            }
+            d->m_actionForId.remove(id);
+        }
+    }
+
     menu->setUpdatesEnabled(true);
+    //if (menu->isVisible()) {
+    //    menu->update();
+    //}
     // qCDebug(category) << "[DBUSMENUIMPORTER] Emitting menuUpdated(" << menu << ")";
     Q_EMIT menuUpdated(menu);
 }
@@ -496,25 +501,22 @@ void DBusMenuImporter::slotAboutToShowDBusCallFinished(QDBusPendingCallWatcher *
 
     QMenu *menu = d->menuForId(id);
     if (!menu) {
+        d->m_idsRefreshedByAboutToShow.remove(id);
         return;
     }
 
     QDBusPendingReply<bool> reply = *watcher;
     if (reply.isError()) {
+        d->m_idsRefreshedByAboutToShow.remove(id);
         // qDebug(DBUSMENUQT) << "Call to AboutToShow() failed:" << reply.error().message();
         Q_EMIT menuUpdated(menu);
         return;
     }
-    // Note, this isn't used by Qt's QPT - but we get a LayoutChanged emitted before
-    // this returns, which equates to the same thing
-    bool needRefresh = reply.argumentAt<0>();
-
-    if (needRefresh || menu->actions().isEmpty()) {
-        d->m_idsRefreshedByAboutToShow << id;
-        d->refresh(id);
-    } else if (menu) {
-        Q_EMIT menuUpdated(menu);
-    }
+    // We used to only refresh if needRefresh was true.
+    // However, some servers are buggy and don't signal correctly, or signals are lost.
+    // Since this is called JIT before showing a menu, always refreshing is safer.
+    d->m_idsRefreshedByAboutToShow << id;
+    d->refresh(id);
 }
 
 void DBusMenuImporter::slotMenuAboutToHide()
