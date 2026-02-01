@@ -273,9 +273,11 @@ void AppMenuModel::processNext()
         // We are done processing all submenus.
         m_isCachingEverything = false;
         m_deepCacheStarted = false;
-        // Note: m_pendingMenuUpdates might still be > 0 here if the last
-        // few DBus calls are still in flight. The menuReadyForSearch signal
-        // will be emitted correctly in onMenuUpdated when the last reply arrives.
+        
+        // If there are no pending DBus updates, the menu is ready for search.
+        if (m_pendingMenuUpdates == 0) {
+            Q_EMIT menuReadyForSearch();
+        }
         return;
     }
 
@@ -284,11 +286,28 @@ void AppMenuModel::processNext()
     QMenu *menuToProcess = menuToProcessPtr.data();
 
     if (menuToProcess) {
+        if (!menuToProcess->actions().isEmpty()) {
+            // This menu is already loaded. We can skip the DBus call and
+            // immediately add its children to the queue to continue the traversal.
+            const auto actions = menuToProcess->actions();
+            for (QAction *a : actions) {
+                if (auto subMenu = a->menu()) {
+                    if (!m_menusInQueue.contains(subMenu)) {
+                        m_menusInQueue.insert(subMenu);
+                        m_menusToDeepCache.append(QPointer(subMenu));
+                    }
+                }
+            }
+            // Move to the next item immediately.
+            m_staggerTimer->start();
+            return;
+        }
+
         m_pendingMenuUpdates++;
         m_importer->updateMenu(menuToProcess);
     }
 
-    // Schedule the next item to be processed. The 0ms delay yields to the
+    // Schedule the next item to be processed. The interval yields to the
     // event loop, preventing the UI from freezing.
     m_staggerTimer->start();
 }
