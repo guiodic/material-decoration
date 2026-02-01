@@ -553,6 +553,7 @@ void DBusMenuImporter::slotActionHovered(QAction *action)
         if (d->m_idsRefreshedByAboutToShow.contains(id)) {
             return; // Update already in progress, ignore re-entrant call.
         }
+        d->m_idsRefreshedByAboutToShow << id;
         updateMenu(action->menu());
     }
 }
