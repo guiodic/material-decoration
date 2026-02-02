@@ -51,7 +51,7 @@
 #include <QVariantAnimation>
 #include <QWidgetAction>
 
-static constexpr int MAX_SEARCH_RESULTS = 100;
+
 
 namespace Material
 {
@@ -568,20 +568,81 @@ void AppMenuButtonGroup::setHamburgerMenu(bool value)
 
 void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 {
-    bool showOverflow = m_hamburgerMenu;
+    const qreal availableWidth = availableRect.width();
+
+    KDecoration3::DecorationButton *overflowButton = nullptr;
+    KDecoration3::DecorationButton *searchButton = nullptr;
+    QList<TextButton *> textButtons;
+
     for (KDecoration3::DecorationButton *button : buttons()) {
-        if (qobject_cast<MenuOverflowButton *>(button)) {
-            button->setVisible(showOverflow);
-        } else if (qobject_cast<TextButton *>(button)) {
-            if (button->isEnabled()) {
-                if (m_hamburgerMenu || !availableRect.contains(button->geometry())) {
-                    button->setVisible(false);
-                    showOverflow = true;
-                } else {
-                    button->setVisible(true);
-                }
+        if (auto *tb = qobject_cast<TextButton *>(button)) {
+            textButtons.append(tb);
+        } else if (qobject_cast<MenuOverflowButton *>(button)) {
+            overflowButton = button;
+        } else if (qobject_cast<SearchButton *>(button)) {
+            searchButton = button;
+        }
+    }
+
+    qreal fixedWidth = 0;
+    if (searchButton && searchButton->isVisible()) {
+        fixedWidth += searchButton->geometry().width();
+    }
+
+    bool showOverflow = m_hamburgerMenu;
+
+    if (m_hamburgerMenu) {
+        for (TextButton *tb : textButtons) {
+            tb->setVisible(false);
+        }
+        showOverflow = true;
+    } else {
+        // First pass: check if all enabled text buttons fit without overflow button
+        qreal totalTextWidth = 0;
+        int enabledCount = 0;
+        for (TextButton *tb : textButtons) {
+            if (tb->isEnabled()) {
+                totalTextWidth += tb->geometry().width();
+                enabledCount++;
+            } else {
+                tb->setVisible(false);
             }
         }
+
+        if (enabledCount > 0 && fixedWidth + totalTextWidth <= availableWidth) {
+            showOverflow = false;
+            for (TextButton *tb : textButtons) {
+                if (tb->isEnabled()) {
+                    tb->setVisible(true);
+                }
+            }
+        } else if (enabledCount > 0) {
+            showOverflow = true;
+            const qreal overflowBtnWidth = overflowButton ? overflowButton->geometry().width() : 0;
+            qreal remainingWidth = availableWidth - fixedWidth - overflowBtnWidth;
+
+            bool fits = true;
+            for (TextButton *tb : textButtons) {
+                if (!tb->isEnabled()) {
+                    continue;
+                }
+
+                const qreal w = tb->geometry().width();
+                if (fits && w <= remainingWidth) {
+                    tb->setVisible(true);
+                    remainingWidth -= w;
+                } else {
+                    fits = false;
+                    tb->setVisible(false);
+                }
+            }
+        } else {
+            showOverflow = false;
+        }
+    }
+
+    if (overflowButton) {
+        overflowButton->setVisible(showOverflow);
     }
     setOverflowing(showOverflow);
 
@@ -963,7 +1024,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
     int resultCount = 0;
     for (QAction *action : results) {
-        if (resultCount >= MAX_SEARCH_RESULTS) { // stop if results > 100
+        if (resultCount >= 100) {
             break;
         }
 
