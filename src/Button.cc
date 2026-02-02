@@ -210,15 +210,6 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 {
     Q_UNUSED(repaintRegion)
     
-    /*
-    qCDebug(category) << "Button::paint -"
-        // << "text:" << (qobject_cast<TextButton*>(this) ? qobject_cast<TextButton*>(this)->text() : "N/A")
-         << "hovered:" << isHovered()
-         << "pressed:" << isPressed()
-         << "geometry:" << geometry()
-         << "contentArea:" << contentArea(); 
-    */     
-    
     const auto *deco = qobject_cast<Decoration *>(decoration());
        
     if (!deco) {

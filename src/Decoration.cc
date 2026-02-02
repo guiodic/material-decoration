@@ -225,22 +225,10 @@ QRectF Decoration::centerRect() const
 
 void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 {
-    //const auto *decoratedClient = window();
-
-    //if (!decoratedClient->isShaded()) {
     paintFrameBackground(painter, repaintRegion);
-    //}
-
     paintTitleBarBackground(painter, repaintRegion);
-
     paintButtons(painter, repaintRegion);
-    
     paintCaption(painter, repaintRegion);
-
-    //Don't paint outline for NoBorder, NoSideBorder, or Tiny borders.
-    //if (settings()->borderSize() >= KDecoration3::BorderSize::Normal) {
-    // paintOutline(painter, repaintRegion);
-    //}
 }
 
 bool Decoration::init()
@@ -870,7 +858,6 @@ bool Decoration::dragMoveTick(const QPoint pos)
     }
 
     QPoint diff = pos - m_pressedPoint;
-    // qCDebug(category) << "    diff" << diff << "mL" << diff.manhattanLength() << "sDD" << QApplication::startDragDistance();
     if (diff.manhattanLength() >= QApplication::startDragDistance()) {
         resetDragMove();
         return true;

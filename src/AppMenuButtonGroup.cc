@@ -51,7 +51,7 @@
 #include <QVariantAnimation>
 #include <QWidgetAction>
 
-
+static constexpr int MAX_SEARCH_RESULTS = 100;
 
 namespace Material
 {
@@ -439,35 +439,63 @@ void AppMenuButtonGroup::updateAppMenuModel()
         const bool wasSearchOpen = (m_currentIndex == m_searchIndex && m_searchIndex != -1);
         const bool wasOverflowOpen = (m_currentIndex == m_overflowIndex && m_overflowIndex != -1);
         QPointer<QMenu> previousMenu = m_currentMenu;
-        
-        resetButtons();
 
-        // Populate
-        for (int i = 0; i < menuActionCount; ++i) {
-            QAction *itemAction = actions.at(i);
-            const QString itemLabel = itemAction->text();
-
-            TextButton *b = new TextButton(deco, i, this);
-            b->setText(itemLabel);
-            b->setAction(itemAction);
-            b->setOpacity(m_opacity);
-
-            // Skip items with empty labels (The first item in a Gtk app)
-            if (itemLabel.isEmpty()) {
-                b->setEnabled(false);
-                b->setVisible(false);
+        // Try in-place update if possible to reduce flicker and object churn
+        int existingTextButtonCount = 0;
+        for (auto *b : buttons()) {
+            if (qobject_cast<TextButton *>(b)) {
+                existingTextButtonCount++;
             }
-
-            addButton(QPointer<KDecoration3::DecorationButton>(b));
         }
 
-        if (menuActionCount > 0) {
-            m_overflowIndex = menuActionCount;
-            addButton(new MenuOverflowButton(deco, m_overflowIndex, this));
+        if (existingTextButtonCount == menuActionCount && existingTextButtonCount > 0) {
+            const auto buttonList = buttons();
+            int actionIdx = 0;
+            for (auto *b : buttonList) {
+                if (auto *textButton = qobject_cast<TextButton *>(b)) {
+                    QAction *itemAction = actions.at(actionIdx++);
+                    textButton->setAction(itemAction);
+                    textButton->setText(itemAction->text());
+                    // Skip items with empty labels (The first item in a Gtk app)
+                    if (itemAction->text().isEmpty()) {
+                        textButton->setEnabled(false);
+                        textButton->setVisible(false);
+                    } else {
+                        textButton->setEnabled(itemAction->isEnabled());
+                        textButton->setVisible(true);
+                    }
+                }
+            }
+        } else {
+            resetButtons();
 
-            if (deco->searchEnabled()) {
-                m_searchIndex = menuActionCount + 1;
-                addButton(new SearchButton(deco, m_searchIndex, this));
+            // Populate
+            for (int i = 0; i < menuActionCount; ++i) {
+                QAction *itemAction = actions.at(i);
+                const QString itemLabel = itemAction->text();
+
+                TextButton *b = new TextButton(deco, i, this);
+                b->setText(itemLabel);
+                b->setAction(itemAction);
+                b->setOpacity(m_opacity);
+
+                // Skip items with empty labels (The first item in a Gtk app)
+                if (itemLabel.isEmpty()) {
+                    b->setEnabled(false);
+                    b->setVisible(false);
+                }
+
+                addButton(QPointer<KDecoration3::DecorationButton>(b));
+            }
+
+            if (menuActionCount > 0) {
+                m_overflowIndex = menuActionCount;
+                addButton(new MenuOverflowButton(deco, m_overflowIndex, this));
+
+                if (deco->searchEnabled()) {
+                    m_searchIndex = menuActionCount + 1;
+                    addButton(new SearchButton(deco, m_searchIndex, this));
+                }
             }
         }
 
@@ -694,8 +722,14 @@ void AppMenuButtonGroup::handleOverflowTrigger()
     if (!overflowing()) {
         return;
     }
+
+    if (m_overflowMenu) {
+        m_overflowMenu->deleteLater();
+    }
+
     auto *actionMenu = new NavigableMenu();
     actionMenu->setAttribute(Qt::WA_DeleteOnClose);
+    m_overflowMenu = actionMenu;
 
     if (m_appMenuModel && m_appMenuModel->menu()) {
         int overflowStartsAt = 0;
@@ -915,7 +949,9 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     // Clear previous results
     const auto actions = m_searchMenu->actions();
     for (int i = actions.count() - 1; i >= 2; --i) {
-        m_searchMenu->removeAction(actions.at(i));
+        QAction *action = actions.at(i);
+        m_searchMenu->removeAction(action);
+        action->deleteLater();
     }
 
     // Add new results
@@ -925,7 +961,12 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         return;
     }
 
+    int resultCount = 0;
     for (QAction *action : results) {
+        if (resultCount >= MAX_SEARCH_RESULTS) { // stop if results > 100
+            break;
+        }
+
         const ActionInfo info = getActionPath(action);
         if (!info.isEffectivelyEnabled && !deco->showDisabledActions()) {
             continue;
@@ -939,6 +980,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
             m_searchMenu->hide();
         });
         m_searchMenu->addAction(newAction);
+        resultCount++;
     }
 
     repositionSearchMenu();
@@ -966,7 +1008,12 @@ void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
         // to prevent an infinite loop.
         const int buttonIndex = m_buttonIndexWaitingForPopup;
         m_buttonIndexWaitingForPopup = -1;
-        trigger(buttonIndex);
+
+        if (menu->actions().isEmpty()) {
+            popupMenu(menu, buttonIndex);
+        } else {
+            trigger(buttonIndex);
+        }
     }
 }
 

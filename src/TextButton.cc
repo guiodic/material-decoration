@@ -75,11 +75,6 @@ QSizeF TextButton::getTextSize() const
         return QSizeF(0, 0);
     }
 
-    // const QString elidedText = painter->fontMetrics().elidedText(
-    //     m_text,
-    //     Qt::ElideRight,
-    //     100, // Max width TODO: scale by dpi
-    // );
     const qreal textWidth = deco->getMenuTextWidth(m_text);
     const qreal titleBarHeight = deco->titleBarHeight();
     const QSizeF size(textWidth, titleBarHeight);
