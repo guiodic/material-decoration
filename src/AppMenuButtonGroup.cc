@@ -492,6 +492,8 @@ void AppMenuButtonGroup::updateAppMenuModel()
                 if (itemLabel.isEmpty()) {
                     b->setEnabled(false);
                     b->setVisible(false);
+                } else {
+                    b->setEnabled(itemAction->isEnabled());
                 }
 
                 addButton(QPointer<KDecoration3::DecorationButton>(b));
