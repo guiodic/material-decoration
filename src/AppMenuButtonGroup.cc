@@ -51,7 +51,7 @@
 #include <QVariantAnimation>
 #include <QWidgetAction>
 
-
+static constexpr int MAX_SEARCH_RESULTS = 100;
 
 namespace Material
 {
@@ -311,6 +311,10 @@ void AppMenuButtonGroup::resetButtons()
     }
     setCurrentIndex(-1);
     m_currentMenu = nullptr;
+
+    if (m_overflowMenu) {
+        m_overflowMenu->deleteLater();
+    }
     
     // Create a copy of the button pointers before removing them from the group.
     const auto allButtons = buttons();
@@ -442,13 +446,18 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
         // Try in-place update if possible to reduce flicker and object churn
         int existingTextButtonCount = 0;
+        bool hasSearchButton = false;
         for (auto *b : buttons()) {
             if (qobject_cast<TextButton *>(b)) {
                 existingTextButtonCount++;
+            } else if (qobject_cast<SearchButton *>(b)) {
+                hasSearchButton = true;
             }
         }
 
-        if (existingTextButtonCount == menuActionCount && existingTextButtonCount > 0) {
+        const bool searchStateMatches = (hasSearchButton == deco->searchEnabled());
+
+        if (existingTextButtonCount == menuActionCount && existingTextButtonCount > 0 && searchStateMatches) {
             const auto buttonList = buttons();
             int actionIdx = 0;
             for (auto *b : buttonList) {
@@ -1024,7 +1033,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
     int resultCount = 0;
     for (QAction *action : results) {
-        if (resultCount >= 100) {
+        if (resultCount >= MAX_SEARCH_RESULTS) { // stop after 100 results
             break;
         }
 
