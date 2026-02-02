@@ -67,7 +67,7 @@ public:
         if (activePalette == QPalette()) {
             KIconLoader::global()->resetPalette();
         } else {
-            KIconLoader::global()->setCustomPalette(palette);
+            KIconLoader::global()->setCustomPalette(activePalette);
         }
     }
 };

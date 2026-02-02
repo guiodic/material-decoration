@@ -164,6 +164,7 @@ private:
     int m_buttonIndexOfMenuToCache = -1;
 
     QPointer<QMenu> m_searchMenu;
+    QPointer<QMenu> m_overflowMenu;
     QPointer<QLineEdit> m_searchLineEdit;
     QTimer *m_searchDebounceTimer;
     QTimer *m_menuUpdateDebounceTimer;
