@@ -44,16 +44,23 @@
 #include <KColorUtils>
 
 // Qt
+#include <QCoreApplication>
 #include <QDebug>
-#include <QMargins>
+#include <QHoverEvent>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QVariantAnimation>
+#include <QTimer>
+#include <QDBusConnection>
+#include <QDBusMessage>
 
 #define UPDATE_GEOM() update(geometry().adjusted(-1, -1, 1, 1))
 
 
 namespace Material
 {
+
+static constexpr int s_longPressDuration = 750;
 
 Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, QObject *parent)
     : DecorationButton(type, decoration, parent)
@@ -63,7 +70,11 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     , m_transitionValue(0)
     , m_padding()
     , m_isGtkButton(false)
+    , m_holdTimer(new QTimer(this))
 {
+    m_holdTimer->setSingleShot(true);
+    connect(m_holdTimer, &QTimer::timeout, this, &Button::handleHoldTimeout);
+
     if (QCoreApplication::applicationName() == QStringLiteral("kded6")) {
         // See: https://github.com/Zren/material-decoration/issues/22
         // kde-gtk-config has a kded module which renders the buttons to svgs for gtk.
@@ -107,6 +118,16 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     
     
     connect(this, &Button::pressedChanged, this, [this]() {
+        if (this->type() == KDecoration3::DecorationButtonType::Close ||
+            this->type() == KDecoration3::DecorationButtonType::Maximize ||
+            this->type() == KDecoration3::DecorationButtonType::Minimize) {
+            if (isPressed()) {
+                m_longPressTriggered = false;
+                m_holdTimer->start(s_longPressDuration);
+            } else {
+                m_holdTimer->stop();
+            }
+        }
         UPDATE_GEOM();
     }); 
     
@@ -204,6 +225,22 @@ KDecoration3::DecorationButton* Button::create(KDecoration3::DecorationButtonTyp
 Button::Button(QObject *parent, const QVariantList &args)
     : Button(args.at(0).value<KDecoration3::DecorationButtonType>(), args.at(1).value<Decoration*>(), parent)
 {
+}
+
+void Button::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (m_longPressTriggered) {
+        m_longPressTriggered = false;
+        forceUnpress();
+
+        // Refresh hover state, simulate a mouse HoverMove.
+        const QPointF decoPos = event->position();
+        QHoverEvent hoverEvent(QEvent::HoverMove, decoPos, event->globalPosition(), QPointF(-1, -1), event->modifiers());
+        QCoreApplication::sendEvent(decoration(), &hoverEvent);
+
+        return;
+    }
+    KDecoration3::DecorationButton::mouseReleaseEvent(event);
 }
 
 void Button::paint(QPainter *painter, const QRectF &repaintRegion)
@@ -613,6 +650,51 @@ void Button::forceUnpress()
     const bool wasEnabled = isEnabled();
     setEnabled(!wasEnabled);
     setEnabled(wasEnabled);
+}
+
+void Button::handleHoldTimeout()
+{
+    m_longPressTriggered = true;
+    switch (type()) {
+    case KDecoration3::DecorationButtonType::Close:
+        onCloseHold();
+        break;
+    case KDecoration3::DecorationButtonType::Maximize:
+        onMaximizeHold();
+        break;
+    case KDecoration3::DecorationButtonType::Minimize:
+        onMinimizeHold();
+        break;
+    default:
+        break;
+    }
+}
+
+void Button::onCloseHold()
+{
+    qCDebug(category) << "onCloseHold triggered";
+    QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.kglobalaccel"),
+                                                         QStringLiteral("/component/kwin"),
+                                                         QStringLiteral("org.kde.kglobalaccel.Component"),
+                                                         QStringLiteral("invokeShortcut"));
+    message << QStringLiteral("Minimize to tray");
+    QDBusConnection::sessionBus().send(message);
+}
+
+void Button::onMinimizeHold()
+{
+    qCDebug(category) << "onMinimizeHold triggered";
+    QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.kglobalaccel"),
+                                                         QStringLiteral("/component/kwin"),
+                                                         QStringLiteral("org.kde.kglobalaccel.Component"),
+                                                         QStringLiteral("invokeShortcut"));
+    message << QStringLiteral("minimizeAllOthersActiveScreen");
+    QDBusConnection::sessionBus().send(message);
+}
+
+void Button::onMaximizeHold()
+{
+    qCDebug(category) << "onMaximizeHold triggered";
 }
 
 } // namespace Material

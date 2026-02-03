@@ -24,8 +24,11 @@
 
 // Qt
 #include <QMarginsF>
+#include <QMouseEvent>
 #include <QRectF>
 #include <QVariantAnimation>
+
+class QTimer;
 
 namespace Material
 {
@@ -56,6 +59,7 @@ public:
 
 
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
     virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal);
 
 
@@ -94,6 +98,7 @@ public:
 
 private Q_SLOTS:
     void updateAnimationState(bool hovered);
+    void handleHoldTimeout();
 
 signals:
     void animationEnabledChanged();
@@ -103,6 +108,10 @@ signals:
     void paddingChanged();
 
 protected:
+    void onCloseHold();
+    void onMinimizeHold();
+    void onMaximizeHold();
+
     bool m_animationEnabled;
     QVariantAnimation *m_animation;
     qreal m_opacity;
@@ -111,6 +120,9 @@ protected:
     bool m_isGtkButton;
     bool m_isLeftmost = false;
     bool m_isRightmost = false;
+
+    QTimer *m_holdTimer = nullptr;
+    bool m_longPressTriggered = false;
 };
 
 } // namespace Material
