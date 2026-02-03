@@ -684,6 +684,12 @@ void Button::onCloseHold()
 void Button::onMinimizeHold()
 {
     qCDebug(category) << "onMinimizeHold triggered";
+    QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.kglobalaccel"),
+                                                         QStringLiteral("/component/kwin"),
+                                                         QStringLiteral("org.kde.kglobalaccel.Component"),
+                                                         QStringLiteral("invokeShortcut"));
+    message << QStringLiteral("minimizeAllOthersActiveScreen");
+    QDBusConnection::sessionBus().send(message);
 }
 
 void Button::onMaximizeHold()
