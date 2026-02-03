@@ -22,6 +22,13 @@ both in terms of appearance and behaviour. For example, you can transform
 it into a hamburger menu, disable the search function, and even decide whether
 to include inactive actions (those that are greyed out) in the search results.
 
+### Actions on Press-and-Hold buttons
+
+Pressing and holding the “Close” button will minimize the window to the traybar if the [kwin-minimize2tray](https://aur.archlinux.org/packages/kwin-minimize2tray-git) script is present and enabled.
+
+On Plasma 6.6, pressing and holding the "Minimize" button will minimize ALL windows but the active one on Plasma 6.6 (Wayland). This requires MinimizeAll script (please enable it in System Settings).
+For X11, please copy the directory `/usr/share/kwin-wayland/scripts/minimizeall` to `/usr/share/kwin-x11/scripts/minimizeall`
+
 # Build instructions for Plasma 6
 
 ```
@@ -35,6 +42,9 @@ sudo make install
 ```
 for Arch and derivatives, please install the AUR package 
 [material-kwin-decoration-git](https://aur.archlinux.org/packages/material-kwin-decoration-git)
+
+
+
 
 NOTE: the master branch is aligned with the latest Plasma version. For earlier
 ones, see the other branches.
