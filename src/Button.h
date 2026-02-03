@@ -108,6 +108,8 @@ signals:
     void paddingChanged();
 
 protected:
+    void onCloseHold();
+    void onMinimizeHold();
     void onMaximizeHold();
 
     bool m_animationEnabled;
