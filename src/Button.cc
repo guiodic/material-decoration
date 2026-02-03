@@ -44,7 +44,9 @@
 #include <KColorUtils>
 
 // Qt
+#include <QCoreApplication>
 #include <QDebug>
+#include <QHoverEvent>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QVariantAnimation>
@@ -227,6 +229,13 @@ void Button::mouseReleaseEvent(QMouseEvent *event)
 {
     if (m_longPressTriggered) {
         m_longPressTriggered = false;
+        forceUnpress();
+
+        // Refresh hover state, simulate a mouse HoverMove.
+        const QPointF decoPos = event->position();
+        QHoverEvent hoverEvent(QEvent::HoverMove, decoPos, event->globalPosition(), QPointF(-1, -1), event->modifiers());
+        QCoreApplication::sendEvent(decoration(), &hoverEvent);
+
         return;
     }
     KDecoration3::DecorationButton::mouseReleaseEvent(event);
