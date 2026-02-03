@@ -51,6 +51,8 @@
 #include <QPainter>
 #include <QVariantAnimation>
 #include <QTimer>
+#include <QDBusConnection>
+#include <QDBusMessage>
 
 #define UPDATE_GEOM() update(geometry().adjusted(-1, -1, 1, 1))
 
@@ -671,6 +673,12 @@ void Button::handleHoldTimeout()
 void Button::onCloseHold()
 {
     qCDebug(category) << "onCloseHold triggered";
+    QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.kglobalaccel"),
+                                                         QStringLiteral("/component/kwin"),
+                                                         QStringLiteral("org.kde.kglobalaccel.Component"),
+                                                         QStringLiteral("invokeShortcut"));
+    message << QStringLiteral("Minimize to tray");
+    QDBusConnection::sessionBus().send(message);
 }
 
 void Button::onMinimizeHold()
