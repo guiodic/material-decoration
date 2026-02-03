@@ -223,7 +223,6 @@ void Button::mouseReleaseEvent(QMouseEvent *event)
 {
     if (m_longPressTriggered) {
         m_longPressTriggered = false;
-        forceUnpress();
         return;
     }
     KDecoration3::DecorationButton::mouseReleaseEvent(event);
