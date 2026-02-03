@@ -45,9 +45,10 @@
 
 // Qt
 #include <QDebug>
-#include <QMargins>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QVariantAnimation>
+#include <QTimer>
 
 #define UPDATE_GEOM() update(geometry().adjusted(-1, -1, 1, 1))
 
@@ -63,7 +64,11 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     , m_transitionValue(0)
     , m_padding()
     , m_isGtkButton(false)
+    , m_holdTimer(new QTimer(this))
 {
+    m_holdTimer->setSingleShot(true);
+    connect(m_holdTimer, &QTimer::timeout, this, &Button::handleHoldTimeout);
+
     if (QCoreApplication::applicationName() == QStringLiteral("kded6")) {
         // See: https://github.com/Zren/material-decoration/issues/22
         // kde-gtk-config has a kded module which renders the buttons to svgs for gtk.
@@ -107,6 +112,14 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     
     
     connect(this, &Button::pressedChanged, this, [this]() {
+        if (this->type() == KDecoration3::DecorationButtonType::Maximize) {
+            if (isPressed()) {
+                m_longPressTriggered = false;
+                m_holdTimer->start(750);
+            } else {
+                m_holdTimer->stop();
+            }
+        }
         UPDATE_GEOM();
     }); 
     
@@ -204,6 +217,16 @@ KDecoration3::DecorationButton* Button::create(KDecoration3::DecorationButtonTyp
 Button::Button(QObject *parent, const QVariantList &args)
     : Button(args.at(0).value<KDecoration3::DecorationButtonType>(), args.at(1).value<Decoration*>(), parent)
 {
+}
+
+void Button::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (m_longPressTriggered) {
+        m_longPressTriggered = false;
+        forceUnpress();
+        return;
+    }
+    KDecoration3::DecorationButton::mouseReleaseEvent(event);
 }
 
 void Button::paint(QPainter *painter, const QRectF &repaintRegion)
@@ -613,6 +636,17 @@ void Button::forceUnpress()
     const bool wasEnabled = isEnabled();
     setEnabled(!wasEnabled);
     setEnabled(wasEnabled);
+}
+
+void Button::handleHoldTimeout()
+{
+    m_longPressTriggered = true;
+    onMaximizeHold();
+}
+
+void Button::onMaximizeHold()
+{
+    qCDebug(category) << "onMaximizeHold triggered";
 }
 
 } // namespace Material
