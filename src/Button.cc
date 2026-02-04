@@ -60,8 +60,6 @@
 namespace Material
 {
 
-static constexpr int s_longPressDuration = 750;
-
 Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, QObject *parent)
     : DecorationButton(type, decoration, parent)
     , m_animationEnabled(true)
@@ -118,12 +116,14 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     
     
     connect(this, &Button::pressedChanged, this, [this]() {
-        if (this->type() == KDecoration3::DecorationButtonType::Close ||
+        const auto *deco = qobject_cast<Decoration *>(this->decoration());
+        if (deco && deco->m_internalSettings->longPressEnabled() &&
+            (this->type() == KDecoration3::DecorationButtonType::Close ||
             this->type() == KDecoration3::DecorationButtonType::Maximize ||
-            this->type() == KDecoration3::DecorationButtonType::Minimize) {
+            this->type() == KDecoration3::DecorationButtonType::Minimize)) {
             if (isPressed()) {
                 m_longPressTriggered = false;
-                m_holdTimer->start(s_longPressDuration);
+                m_holdTimer->start(deco->m_internalSettings->longPressDuration());
             } else {
                 m_holdTimer->stop();
             }

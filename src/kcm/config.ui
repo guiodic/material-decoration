@@ -299,6 +299,71 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="otherTab">
+      <attribute name="title">
+       <string>Other</string>
+      </attribute>
+      <layout class="QFormLayout" name="formLayout_5">
+       <item row="0" column="0" colspan="2">
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QCheckBox" name="kcfg_LongPressEnabled">
+           <property name="text">
+            <string>Enable long-press actions on window buttons</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="longPressInfoButton">
+           <property name="toolTip">
+            <string>When enabled:
+
+* Long-pressing the close button minimizes the window to the system tray (requires the kwin-minimize2tray plugin)
+
+* Long-pressing the minimize button minimizes all windows except the current one (requires Plasma 6.6 or later)</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_13">
+         <property name="text">
+          <string>Long-press duration</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QSpinBox" name="kcfg_LongPressDuration">
+         <property name="suffix">
+          <string> ms</string>
+         </property>
+         <property name="minimum">
+          <number>500</number>
+         </property>
+         <property name="maximum">
+          <number>5000</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>
