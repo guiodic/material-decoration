@@ -316,11 +316,13 @@
          <item>
           <widget class="QToolButton" name="longPressInfoButton">
            <property name="toolTip">
-            <string>When enabled:
-
-* Long-pressing the close button minimizes the window to the system tray (requires the kwin-minimize2tray plugin)
-
-* Long-pressing the minimize button minimizes all windows except the current one (requires Plasma 6.6 or later)</string>
+            <string>&lt;html&gt;&lt;body&gt;&lt;div style=&quot;width: 350px;&quot;&gt;
+&lt;p&gt;When enabled:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Long-pressing the close button minimizes the window to the system tray (requires the kwin-minimize2tray plugin)&lt;/li&gt;
+&lt;li&gt;Long-pressing the minimize button minimizes all windows except the current one (requires Plasma 6.6 or later)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="text">
             <string/>
