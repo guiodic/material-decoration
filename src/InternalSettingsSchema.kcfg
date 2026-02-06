@@ -53,6 +53,11 @@
         <entry name="HideCaptionWhenLimitedSpace" type="Bool">
             <default>true</default>
         </entry>
+        <entry name="MinWidthForCaption" type="Int">
+            <default>250</default>
+            <min>0</min>
+            <max>500</max>
+        </entry>
 
         <!-- opacity -->
         <entry name="ActiveOpacity" type="Double">

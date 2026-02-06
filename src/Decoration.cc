@@ -52,8 +52,6 @@
 #include <QWheelEvent>
 #include <QTimer>
 
-static constexpr int MIN_WIDTH_FOR_CAPTION = 250;
-
 namespace Material
 {
  
@@ -741,12 +739,12 @@ qreal Decoration::appMenuButtonHorzPadding() const
 
 qreal Decoration::appMenuCaptionSpacing() const
 {
-    return settings()->largeSpacing() * 4;
+    return settings()->largeSpacing() * 3;
 }
 
 qreal Decoration::captionMinWidth() const
 {
-    return settings()->largeSpacing() * 8;
+    return settings()->largeSpacing() * 6;
 }
 
 qreal Decoration::bottomBorderSize() const {
@@ -1032,7 +1030,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     // Hide caption if there is not enough space
-    if (appMenuVisible && hideCaptionWhenLimitedSpace() && availableRect.width() < MIN_WIDTH_FOR_CAPTION) {
+    if (appMenuVisible && hideCaptionWhenLimitedSpace() && availableRect.width() < m_internalSettings->minWidthForCaption()) {
         return;
     }
 
