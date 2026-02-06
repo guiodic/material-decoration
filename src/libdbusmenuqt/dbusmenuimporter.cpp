@@ -391,7 +391,7 @@ void DBusMenuImporter::processPendingLayoutUpdates()
     const QSet<int> ids = d->m_pendingLayoutUpdates;
     d->m_pendingLayoutUpdates.clear();
     for (int id : ids) {
-        d->refresh(id);
+        d->refresh(id, (id == 0) ? 2 : 1);
     }
 }
 
