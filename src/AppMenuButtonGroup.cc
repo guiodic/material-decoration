@@ -465,8 +465,13 @@ void AppMenuButtonGroup::updateAppMenuModel()
                     QAction *itemAction = actions.at(actionIdx++);
                     textButton->setAction(itemAction);
                     textButton->setText(itemAction->text());
-                    // Skip items with empty labels (The first item in a Gtk app)
-                    if (itemAction->text().isEmpty()) {
+                    
+                    bool shouldShow = !itemAction->text().isEmpty() && itemAction->isVisible();
+                    if (shouldShow && itemAction->menu() && itemAction->menu()->actions().isEmpty()) {
+                        shouldShow = false;
+                    }
+
+                    if (!shouldShow) {
                         textButton->setEnabled(false);
                         textButton->setVisible(false);
                     } else {
@@ -488,8 +493,12 @@ void AppMenuButtonGroup::updateAppMenuModel()
                 b->setAction(itemAction);
                 b->setOpacity(m_opacity);
 
-                // Skip items with empty labels (The first item in a Gtk app)
-                if (itemLabel.isEmpty()) {
+                bool shouldShow = !itemLabel.isEmpty() && itemAction->isVisible();
+                if (shouldShow && itemAction->menu() && itemAction->menu()->actions().isEmpty()) {
+                    shouldShow = false;
+                }
+
+                if (!shouldShow) {
                     b->setEnabled(false);
                     b->setVisible(false);
                 } else {

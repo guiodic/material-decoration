@@ -177,10 +177,19 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         setMenuAvailable(true);
         Q_EMIT modelNeedsUpdate();
 
+        // Load first-level submenus to check for emptiness.
+        // This ensures top-level menus are hidden if empty and shown when populated.
+        for (QAction *a : actions) {
+            if (auto subMenu = a->menu()) {
+                if (subMenu->actions().isEmpty()) {
+                    loadSubMenu(subMenu);
+                }
+            }
+        }
+
         // Pre-fetching and deep caching are now handled on-demand.
         if (m_isCachingEverything) {
             const bool wasQueueEmpty = m_menusToDeepCache.isEmpty();
-            const auto actions = m_menu->actions();
             for (QAction *a : actions) {
                 if (auto subMenu = a->menu()) {
                     if (!m_seenMenus.contains(subMenu)) {
@@ -196,6 +205,11 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         }
     } else { // This is an update for a submenu that was previously requested.
         Q_EMIT subMenuReady(menu);
+
+        if (m_menu && menu->parent() == m_menu.data()) {
+            Q_EMIT modelNeedsUpdate();
+        }
+
         const bool wasQueueEmpty = m_menusToDeepCache.isEmpty();
         if (m_isCachingEverything) {
             // The deep caching phase has begun. Add the children of the newly-loaded
