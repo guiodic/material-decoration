@@ -198,3 +198,6 @@ msgstr ""
 
 msgid "Long-press duration"
 msgstr "Durata della pressione prolungata"
+
+msgid "Minimum reserved space"
+msgstr "Spazio minimo riservato"

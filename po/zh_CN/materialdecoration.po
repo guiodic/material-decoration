@@ -198,3 +198,6 @@ msgstr ""
 
 msgid "Long-press duration"
 msgstr "长按持续时间"
+
+msgid "Minimum reserved space"
+msgstr "最小保留空间"

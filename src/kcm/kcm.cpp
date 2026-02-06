@@ -95,6 +95,9 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_AnimationsDuration, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_BottomCorners, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_HideCaptionWhenLimitedSpace, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_HideCaptionWhenLimitedSpace, &QCheckBox::toggled, m_ui->kcfg_MinWidthForCaption, &QSpinBox::setEnabled);
+    connect(m_ui->kcfg_HideCaptionWhenLimitedSpace, &QCheckBox::toggled, m_ui->label_minWidthForCaption, &QLabel::setEnabled);
+    connect(m_ui->kcfg_MinWidthForCaption, qOverload<int>(&QSpinBox::valueChanged), this, &MaterialDecorationKCM::updateChanged);
 
     connect(m_ui->kcfg_LongPressEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_LongPressEnabled, &QCheckBox::toggled, m_ui->kcfg_LongPressDuration, &QSpinBox::setEnabled);
@@ -128,6 +131,9 @@ void MaterialDecorationKCM::load()
     m_ui->kcfg_AnimationsDuration->setValue(m_settings->animationsDuration());
     m_ui->kcfg_BottomCorners->setChecked(m_settings->bottomCornerRadiusFlag());
     m_ui->kcfg_HideCaptionWhenLimitedSpace->setChecked(m_settings->hideCaptionWhenLimitedSpace());
+    m_ui->kcfg_MinWidthForCaption->setValue(m_settings->minWidthForCaption());
+    m_ui->kcfg_MinWidthForCaption->setEnabled(m_settings->hideCaptionWhenLimitedSpace());
+    m_ui->label_minWidthForCaption->setEnabled(m_settings->hideCaptionWhenLimitedSpace());
 
     m_ui->kcfg_LongPressEnabled->setChecked(m_settings->longPressEnabled());
     m_ui->kcfg_LongPressDuration->setValue(m_settings->longPressDuration());
@@ -157,6 +163,7 @@ void MaterialDecorationKCM::save()
     m_settings->setAnimationsDuration(m_ui->kcfg_AnimationsDuration->value());
     m_settings->setBottomCornerRadiusFlag(m_ui->kcfg_BottomCorners->isChecked());
     m_settings->setHideCaptionWhenLimitedSpace(m_ui->kcfg_HideCaptionWhenLimitedSpace->isChecked());
+    m_settings->setMinWidthForCaption(m_ui->kcfg_MinWidthForCaption->value());
 
     m_settings->setLongPressEnabled(m_ui->kcfg_LongPressEnabled->isChecked());
     m_settings->setLongPressDuration(m_ui->kcfg_LongPressDuration->value());
@@ -195,6 +202,9 @@ void MaterialDecorationKCM::defaults()
     m_ui->kcfg_AnimationsDuration->setValue(m_settings->animationsDuration());
     m_ui->kcfg_BottomCorners->setChecked(m_settings->bottomCornerRadiusFlag());
     m_ui->kcfg_HideCaptionWhenLimitedSpace->setChecked(m_settings->hideCaptionWhenLimitedSpace());
+    m_ui->kcfg_MinWidthForCaption->setValue(m_settings->minWidthForCaption());
+    m_ui->kcfg_MinWidthForCaption->setEnabled(m_settings->hideCaptionWhenLimitedSpace());
+    m_ui->label_minWidthForCaption->setEnabled(m_settings->hideCaptionWhenLimitedSpace());
 
     m_ui->kcfg_LongPressEnabled->setChecked(m_settings->longPressEnabled());
     m_ui->kcfg_LongPressDuration->setValue(m_settings->longPressDuration());

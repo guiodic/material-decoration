@@ -104,6 +104,9 @@ msgstr ""
 msgid "Animation duration"
 msgstr ""
 
+msgid "Minimum reserved space"
+msgstr ""
+
 #: kcm.cpp:32
 msgid "Left"
 msgstr ""

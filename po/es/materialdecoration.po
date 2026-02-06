@@ -198,3 +198,6 @@ msgstr ""
 
 msgid "Long-press duration"
 msgstr "Duración de la pulsación larga"
+
+msgid "Minimum reserved space"
+msgstr "Espacio mínimo reservado"

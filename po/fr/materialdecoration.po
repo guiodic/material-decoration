@@ -198,3 +198,6 @@ msgstr ""
 
 msgid "Long-press duration"
 msgstr "Durée de l'appui long"
+
+msgid "Minimum reserved space"
+msgstr "Espace minimum réservé"
