@@ -177,16 +177,6 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         setMenuAvailable(true);
         Q_EMIT modelNeedsUpdate();
 
-        // Load first-level submenus to check for emptiness.
-        // This ensures top-level menus are hidden if empty and shown when populated.
-        for (QAction *a : actions) {
-            if (auto subMenu = a->menu()) {
-                if (subMenu->actions().isEmpty()) {
-                    loadSubMenu(subMenu);
-                }
-            }
-        }
-
         // Pre-fetching and deep caching are now handled on-demand.
         if (m_isCachingEverything) {
             const bool wasQueueEmpty = m_menusToDeepCache.isEmpty();
