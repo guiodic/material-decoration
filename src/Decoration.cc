@@ -406,12 +406,11 @@ void Decoration::updateBlur()
 
 void Decoration::updateBordersCornersBlurShadow()
 {
-    const qreal sideSize = sideBorderSize();
     QMarginsF borders;
-    borders.setTop(titleBarHeight() + (topBorderVisible() ? topBorderSize() : 0));
-    borders.setLeft(leftBorderVisible() ? sideSize : 0);
-    borders.setRight(rightBorderVisible() ? sideSize : 0);
-    borders.setBottom(bottomBorderVisible() ? bottomBorderSize() : 0);
+    borders.setTop(titleBarHeight() + topOffset());
+    borders.setLeft(leftOffset());
+    borders.setRight(rightOffset());
+    borders.setBottom(bottomOffset());
     setBorders(borders);
     updateCornerRadius();
     updatePaths();
@@ -506,21 +505,20 @@ void Decoration::updateButtonsGeometry()
         rightmostButton->setIsRightmost(true);
     }
 
-    const qreal sideSize = sideBorderSize();
-    const qreal leftOffset = leftBorderVisible() ? sideSize : 0;
-    const qreal rightOffset = rightBorderVisible() ? sideSize : 0;
-    const qreal topOffset = topBorderVisible() ? topBorderSize() : 0;
+    const qreal left = leftOffset();
+    const qreal right = rightOffset();
+    const qreal top = topOffset();
 
     updateButtonHeight();
 
     // Left
-    m_leftButtons->setPos(KDecoration3::snapToPixelGrid(QPointF(leftOffset, topOffset), window()->scale()));
+    m_leftButtons->setPos(KDecoration3::snapToPixelGrid(QPointF(left, top), window()->scale()));
     m_leftButtons->setSpacing(0);
 
     // Right
     m_rightButtons->setPos(KDecoration3::snapToPixelGrid(QPointF(
-        size().width() - rightOffset - m_rightButtons->geometry().width(),
-        topOffset
+        size().width() - right - m_rightButtons->geometry().width(),
+        top
     ), window()->scale()));
     m_rightButtons->setSpacing(0);
 
@@ -529,9 +527,9 @@ void Decoration::updateButtonsGeometry()
         const qreal captionOffset = captionMinWidth() + settings()->smallSpacing();
         const QRectF availableRect = centerRect().adjusted(
             0,
-            topOffset,
+            top,
             -captionOffset,
-            topOffset
+            top
         );
         const QPointF snappedTopLeft = KDecoration3::snapToPixelGrid(availableRect.topLeft(), window()->scale());
 
@@ -807,6 +805,22 @@ bool Decoration::bottomBorderVisible() const {
         && !decoratedClient->isShaded();
 }
 
+qreal Decoration::leftOffset() const {
+    return leftBorderVisible() ? sideBorderSize() : 0;
+}
+
+qreal Decoration::rightOffset() const {
+    return rightBorderVisible() ? sideBorderSize() : 0;
+}
+
+qreal Decoration::topOffset() const {
+    return topBorderVisible() ? topBorderSize() : 0;
+}
+
+qreal Decoration::bottomOffset() const {
+    return bottomBorderVisible() ? bottomBorderSize() : 0;
+}
+
 bool Decoration::titleBarIsHovered() const
 {
     return sectionUnderMouse() == Qt::TitleBarArea;
@@ -990,17 +1004,12 @@ QColor Decoration::titleBarForegroundColor() const
 void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repaintRegion) const
 {
     Q_UNUSED(repaintRegion)
-    
+
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
     painter->setBrush(titleBarBackgroundColor());
 
-    const qreal top = topBorderVisible() ? topBorderSize() : 0;
-    const qreal left = leftBorderVisible() ? sideBorderSize() : 0;
-    const qreal right = rightBorderVisible() ? sideBorderSize() : 0;
-    
-    const QRectF titleBarBackgroundRect(left, top, size().width() - left - right, titleBarHeight() + 1);
     painter->drawPath(m_titleBarPath);
 
     painter->restore();
@@ -1091,16 +1100,9 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     // --- Draw text ---
-    
-    const qreal topOffset = (topBorderVisible() ? topBorderSize() : 0);
-    
-    captionRect.adjust(
-            0,
-            topOffset,
-            0,
-            topOffset
-    );
-    
+
+    captionRect.adjust(0, topOffset(), 0, topOffset());
+
     painter->drawText(KDecoration3::snapToPixelGrid(captionRect, window()->scale()), alignment, caption);
 
     painter->restore();
@@ -1157,11 +1159,7 @@ void Decoration::updatePaths()
                                  m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
                                  m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible());
 
-    const qreal top = topBorderVisible() ? topBorderSize() : 0;
-    const qreal left = leftBorderVisible() ? sideBorderSize() : 0;
-    const qreal right = rightBorderVisible() ? sideBorderSize() : 0;
-    
-    const QRectF titleBarBackgroundRect(left, top, size().width() - left - right, titleBarHeight() + 1);
+    const QRectF titleBarBackgroundRect(leftOffset(), topOffset(), size().width() - leftOffset() - rightOffset(), titleBarHeight() + 1);
     m_titleBarPath = getRoundedPath(KDecoration3::snapToPixelGrid(titleBarBackgroundRect, window()->scale()),
                                     m_cornerRadius,
                                     leftBorderVisible(),

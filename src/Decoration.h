@@ -72,6 +72,11 @@ public:
     bool topBorderVisible() const;
     bool bottomBorderVisible() const;
 
+    qreal leftOffset() const;
+    qreal rightOffset() const;
+    qreal topOffset() const;
+    qreal bottomOffset() const;
+
 public slots:
     bool init() override;
     void reconfigure();
