@@ -805,22 +805,6 @@ bool Decoration::bottomBorderVisible() const {
         && !decoratedClient->isShaded();
 }
 
-qreal Decoration::leftOffset() const {
-    return leftBorderVisible() ? sideBorderSize() : 0;
-}
-
-qreal Decoration::rightOffset() const {
-    return rightBorderVisible() ? sideBorderSize() : 0;
-}
-
-qreal Decoration::topOffset() const {
-    return topBorderVisible() ? topBorderSize() : 0;
-}
-
-qreal Decoration::bottomOffset() const {
-    return bottomBorderVisible() ? bottomBorderSize() : 0;
-}
-
 bool Decoration::titleBarIsHovered() const
 {
     return sectionUnderMouse() == Qt::TitleBarArea;
@@ -1101,7 +1085,8 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
 
     // --- Draw text ---
 
-    captionRect.adjust(0, topOffset(), 0, topOffset());
+    const qreal offset = topOffset();
+    captionRect.adjust(0, offset, 0, offset);
 
     painter->drawText(KDecoration3::snapToPixelGrid(captionRect, window()->scale()), alignment, caption);
 
@@ -1159,7 +1144,12 @@ void Decoration::updatePaths()
                                  m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
                                  m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible());
 
-    const QRectF titleBarBackgroundRect(leftOffset(), topOffset(), size().width() - leftOffset() - rightOffset(), titleBarHeight() + 1);
+    
+    const qreal left = leftOffset();
+    const qreal top = topOffset();
+    const qreal right = rightOffset();
+    const QRectF titleBarBackgroundRect(left, top, size().width() - left - right, titleBarHeight() + 1);
+    
     m_titleBarPath = getRoundedPath(KDecoration3::snapToPixelGrid(titleBarBackgroundRect, window()->scale()),
                                     m_cornerRadius,
                                     leftBorderVisible(),
