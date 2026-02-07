@@ -72,6 +72,11 @@ public:
     bool topBorderVisible() const;
     bool bottomBorderVisible() const;
 
+    qreal leftOffset() const { return leftBorderVisible() ? sideBorderSize() : 0; }
+    qreal rightOffset() const { return rightBorderVisible() ? sideBorderSize() : 0; }
+    qreal topOffset() const { return topBorderVisible() ? topBorderSize() : 0; }
+    qreal bottomOffset() const { return bottomBorderVisible() ? bottomBorderSize() : 0; }
+
 public slots:
     bool init() override;
     void reconfigure();
