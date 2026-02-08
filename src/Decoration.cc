@@ -689,6 +689,11 @@ bool Decoration::showDisabledActions() const
     return m_internalSettings->showDisabledActions();
 }
 
+bool Decoration::searchIgnoreTopLevel() const
+{
+    return m_internalSettings->searchIgnoreTopLevel();
+}
+
 bool Decoration::animationsEnabled() const
 {
     return m_internalSettings->animationsEnabled();

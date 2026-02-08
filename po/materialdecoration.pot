@@ -174,3 +174,6 @@ msgstr ""
 #: config.ui:154
 msgid "Hide window title when space is limited"
 msgstr ""
+
+msgid "Ignore top-level menu labels"
+msgstr ""

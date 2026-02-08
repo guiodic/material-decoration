@@ -201,3 +201,6 @@ msgstr "Duur voor lang indrukken"
 
 msgid "Minimum reserved space"
 msgstr "Minimaal gereserveerde ruimte"
+
+msgid "Ignore top-level menu labels"
+msgstr "Menu-labels op het hoogste niveau negeren"

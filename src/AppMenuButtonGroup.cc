@@ -1130,7 +1130,9 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAct
             searchMenu(action->menu(), text, results, visited);
         } else {
             const ActionInfo info = getActionPath(action);
-            if (info.searchablePath.contains(text, Qt::CaseInsensitive)) {
+            const auto *deco = qobject_cast<const Decoration *>(decoration());
+            const bool matchPath = (deco && deco->searchIgnoreTopLevel()) ? info.searchablePath.contains(text, Qt::CaseInsensitive) : info.path.contains(text, Qt::CaseInsensitive);
+            if (matchPath) {
                 results.append(action);
             }
         }

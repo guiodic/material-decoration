@@ -201,3 +201,6 @@ msgstr "Durée de l'appui long"
 
 msgid "Minimum reserved space"
 msgstr "Espace minimum réservé"
+
+msgid "Ignore top-level menu labels"
+msgstr "Ignorer les étiquettes de menu de premier niveau"

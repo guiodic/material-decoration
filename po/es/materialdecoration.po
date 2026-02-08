@@ -201,3 +201,6 @@ msgstr "Duración de la pulsación larga"
 
 msgid "Minimum reserved space"
 msgstr "Espacio mínimo reservado"
+
+msgid "Ignore top-level menu labels"
+msgstr "Ignorar etiquetas de menú de nivel superior"
