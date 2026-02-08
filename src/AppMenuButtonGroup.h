@@ -138,7 +138,7 @@ private:
     void resetButtons();
     void setupSearchMenu();
     void repositionSearchMenu();
-    void searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results, QSet<QMenu *> &visited);
+    void searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results, QSet<QMenu *> &visited, bool ignoreTopLevel);
     ActionInfo getActionPath(QAction *action) const;
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
 
