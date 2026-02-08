@@ -131,6 +131,7 @@ protected:
 private:
     struct ActionInfo {
         QString path;
+        QString searchablePath;
         bool isEffectivelyEnabled;
     };
 

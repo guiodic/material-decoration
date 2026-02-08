@@ -531,7 +531,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
 AppMenuButtonGroup::ActionInfo AppMenuButtonGroup::getActionPath(QAction *action) const
 {
     if (!action) {
-        return { QString(), false };
+        return { QString(), QString(), false };
     }
 
     QStringList path;
@@ -565,7 +565,17 @@ AppMenuButtonGroup::ActionInfo AppMenuButtonGroup::getActionPath(QAction *action
         }
     }
 
-    return { path.join(QStringLiteral(" » ")), isEffectivelyEnabled };
+    const QString fullPath = path.join(QStringLiteral(" » "));
+    QString searchablePath;
+    if (path.size() > 1) {
+        QStringList searchablePathList = path;
+        searchablePathList.removeFirst();
+        searchablePath = searchablePathList.join(QStringLiteral(" » "));
+    } else {
+        searchablePath = QString();
+    }
+
+    return { fullPath, searchablePath, isEffectivelyEnabled };
 }
 
 void AppMenuButtonGroup::setHamburgerMenu(bool value)
@@ -1120,7 +1130,7 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAct
             searchMenu(action->menu(), text, results, visited);
         } else {
             const ActionInfo info = getActionPath(action);
-            if (info.path.contains(text, Qt::CaseInsensitive)) {
+            if (info.searchablePath.contains(text, Qt::CaseInsensitive)) {
                 results.append(action);
             }
         }
