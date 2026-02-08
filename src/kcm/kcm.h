@@ -36,4 +36,6 @@ private:
     Material::InternalSettings *m_settings = nullptr;
 
     void setupConnections();
+    bool isChanged() const;
+    void updateUI();
 };
