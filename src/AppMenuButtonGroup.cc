@@ -531,7 +531,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
 AppMenuButtonGroup::ActionInfo AppMenuButtonGroup::getActionPath(QAction *action) const
 {
     if (!action) {
-        return { QString(), false };
+        return { QString(), QString(), false };
     }
 
     QStringList path;
@@ -565,7 +565,10 @@ AppMenuButtonGroup::ActionInfo AppMenuButtonGroup::getActionPath(QAction *action
         }
     }
 
-    return { path.join(QStringLiteral(" » ")), isEffectivelyEnabled };
+    const QString fullPath = path.join(QStringLiteral(" » "));
+    const QString searchablePath = path.mid(1).join(QStringLiteral(" » "));
+
+    return { fullPath, searchablePath, isEffectivelyEnabled };
 }
 
 void AppMenuButtonGroup::setHamburgerMenu(bool value)
@@ -1011,7 +1014,9 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         QMenu *rootMenu = m_appMenuModel->menu();
         if (rootMenu) {
             QSet<QMenu *> visited;
-            searchMenu(rootMenu, text, results, visited);
+            const auto *deco = qobject_cast<const Decoration *>(decoration());
+            const bool ignoreTopLevel = deco && deco->searchIgnoreTopLevel();
+            searchMenu(rootMenu, text, results, visited, ignoreTopLevel);
         }
     }
 
@@ -1105,7 +1110,7 @@ void AppMenuButtonGroup::onSearchTimerTimeout()
     }
 }
 
-void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results, QSet<QMenu *> &visited)
+void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results, QSet<QMenu *> &visited, bool ignoreTopLevel)
 {
     if (!menu || visited.contains(menu)) {
         return;
@@ -1117,10 +1122,11 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAct
             continue;
         }
         if (action->menu()) {
-            searchMenu(action->menu(), text, results, visited);
+            searchMenu(action->menu(), text, results, visited, ignoreTopLevel);
         } else {
             const ActionInfo info = getActionPath(action);
-            if (info.path.contains(text, Qt::CaseInsensitive)) {
+            const QString &pathToSearch = ignoreTopLevel ? info.searchablePath : info.path;
+            if (pathToSearch.contains(text, Qt::CaseInsensitive)) {
                 results.append(action);
             }
         }

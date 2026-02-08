@@ -201,3 +201,6 @@ msgstr "Dauer für langes Drücken"
 
 msgid "Minimum reserved space"
 msgstr "Minimal reservierter Platz"
+
+msgid "Ignore top-level menu labels"
+msgstr "Top-Level-Menübeschriftungen ignorieren"

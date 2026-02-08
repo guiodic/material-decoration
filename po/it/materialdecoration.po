@@ -201,3 +201,6 @@ msgstr "Durata della pressione prolungata"
 
 msgid "Minimum reserved space"
 msgstr "Spazio minimo riservato"
+
+msgid "Ignore top-level menu labels"
+msgstr "Ignora le etichette dei menu di primo livello"

@@ -117,6 +117,7 @@ private:
     bool hamburgerMenu() const;
     bool searchEnabled() const;
     bool showDisabledActions() const;
+    bool searchIgnoreTopLevel() const;
     bool animationsEnabled() const;
     int animationsDuration() const;
     bool hideCaptionWhenLimitedSpace() const;
