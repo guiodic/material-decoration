@@ -106,6 +106,13 @@ void MaterialDecorationKCM::setupConnections()
 
 void MaterialDecorationKCM::load()
 {
+    m_settings->load();
+    updateUI();
+    updateChanged();
+}
+
+void MaterialDecorationKCM::updateUI()
+{
     m_ui->kcfg_TitleAlignment->setCurrentIndex(m_settings->titleAlignment());
     m_ui->kcfg_ButtonSize->setCurrentIndex(m_settings->buttonSize());
     m_ui->kcfg_ActiveOpacity->setValue(qRound(m_settings->activeOpacity() * 100));
@@ -116,7 +123,7 @@ void MaterialDecorationKCM::load()
     m_ui->kcfg_InactiveBorderColor->setColor(m_settings->inactiveBorderColor());
     const bool useCustom = m_ui->kcfg_UseCustomBorderColors->isChecked();
     m_ui->kcfg_ActiveBorderColor->setEnabled(useCustom);
-    m_ui->kcfg_InactiveBorderColor->setEnabled(useCustom);    
+    m_ui->kcfg_InactiveBorderColor->setEnabled(useCustom);
     m_ui->kcfg_MenuAlwaysShow->setChecked(m_settings->menuAlwaysShow());
     m_ui->kcfg_SearchEnabled->setChecked(m_settings->searchEnabled());
     m_ui->kcfg_ShowDisabledActions->setEnabled(m_settings->searchEnabled());
@@ -173,49 +180,82 @@ void MaterialDecorationKCM::save()
                                                                      QStringLiteral("/KWin"),
                                                                      QStringLiteral("org.kde.KWin"),
                                                                      QStringLiteral("reconfigure")));
+    updateChanged();
 }
 
 void MaterialDecorationKCM::defaults()
 {
-    m_settings->setDefaults();
-    m_ui->kcfg_TitleAlignment->setCurrentIndex(m_settings->titleAlignment());
-    m_ui->kcfg_ButtonSize->setCurrentIndex(m_settings->buttonSize());
-    m_ui->kcfg_ActiveOpacity->setValue(qRound(m_settings->activeOpacity() * 100));
-    m_ui->kcfg_InactiveOpacity->setValue(qRound(m_settings->inactiveOpacity() * 100));
-    m_ui->kcfg_CornerRadius->setValue(m_settings->cornerRadius());
-    m_ui->kcfg_UseCustomBorderColors->setChecked(m_settings->useCustomBorderColors());
-    m_ui->kcfg_ActiveBorderColor->setColor(m_settings->activeBorderColor());
-    m_ui->kcfg_InactiveBorderColor->setColor(m_settings->inactiveBorderColor());
+    Material::InternalSettings s;
+    s.setDefaults();
+
+    m_ui->kcfg_TitleAlignment->setCurrentIndex(s.titleAlignment());
+    m_ui->kcfg_ButtonSize->setCurrentIndex(s.buttonSize());
+    m_ui->kcfg_ActiveOpacity->setValue(qRound(s.activeOpacity() * 100));
+    m_ui->kcfg_InactiveOpacity->setValue(qRound(s.inactiveOpacity() * 100));
+    m_ui->kcfg_CornerRadius->setValue(s.cornerRadius());
+    m_ui->kcfg_UseCustomBorderColors->setChecked(s.useCustomBorderColors());
+    m_ui->kcfg_ActiveBorderColor->setColor(s.activeBorderColor());
+    m_ui->kcfg_InactiveBorderColor->setColor(s.inactiveBorderColor());
     const bool useCustom = m_ui->kcfg_UseCustomBorderColors->isChecked();
     m_ui->kcfg_ActiveBorderColor->setEnabled(useCustom);
     m_ui->kcfg_InactiveBorderColor->setEnabled(useCustom);
-    m_ui->kcfg_MenuAlwaysShow->setChecked(m_settings->menuAlwaysShow());
-    m_ui->kcfg_SearchEnabled->setChecked(m_settings->searchEnabled());
-    m_ui->kcfg_HamburgerMenu->setChecked(m_settings->hamburgerMenu());
-    m_ui->kcfg_ShowDisabledActions->setChecked(m_settings->showDisabledActions());
-    m_ui->kcfg_MenuButtonHorzPadding->setValue(m_settings->menuButtonHorzPadding());
-    m_ui->kcfg_UseSystemMenuFont->setChecked(m_settings->useSystemMenuFont());
-    m_ui->kcfg_ShadowSize->setCurrentIndex(m_settings->shadowSize());
-    m_ui->kcfg_ShadowColor->setColor(m_settings->shadowColor());
-    m_ui->kcfg_ShadowStrength->setValue(m_settings->shadowStrength());
-    m_ui->kcfg_AnimationsEnabled->setChecked(m_settings->animationsEnabled());
-    m_ui->kcfg_AnimationsDuration->setValue(m_settings->animationsDuration());
-    m_ui->kcfg_BottomCorners->setChecked(m_settings->bottomCornerRadiusFlag());
-    m_ui->kcfg_HideCaptionWhenLimitedSpace->setChecked(m_settings->hideCaptionWhenLimitedSpace());
-    m_ui->kcfg_MinWidthForCaption->setValue(m_settings->minWidthForCaption());
-    m_ui->kcfg_MinWidthForCaption->setEnabled(m_settings->hideCaptionWhenLimitedSpace());
-    m_ui->label_minWidthForCaption->setEnabled(m_settings->hideCaptionWhenLimitedSpace());
+    m_ui->kcfg_MenuAlwaysShow->setChecked(s.menuAlwaysShow());
+    m_ui->kcfg_SearchEnabled->setChecked(s.searchEnabled());
+    m_ui->kcfg_ShowDisabledActions->setEnabled(s.searchEnabled());
+    m_ui->kcfg_HamburgerMenu->setChecked(s.hamburgerMenu());
+    m_ui->kcfg_ShowDisabledActions->setChecked(s.showDisabledActions());
+    m_ui->kcfg_MenuButtonHorzPadding->setValue(s.menuButtonHorzPadding());
+    m_ui->kcfg_UseSystemMenuFont->setChecked(s.useSystemMenuFont());
+    m_ui->kcfg_ShadowSize->setCurrentIndex(s.shadowSize());
+    m_ui->kcfg_ShadowColor->setColor(s.shadowColor());
+    m_ui->kcfg_ShadowStrength->setValue(s.shadowStrength());
+    m_ui->kcfg_AnimationsEnabled->setChecked(s.animationsEnabled());
+    m_ui->kcfg_AnimationsDuration->setValue(s.animationsDuration());
+    m_ui->kcfg_BottomCorners->setChecked(s.bottomCornerRadiusFlag());
+    m_ui->kcfg_HideCaptionWhenLimitedSpace->setChecked(s.hideCaptionWhenLimitedSpace());
+    m_ui->kcfg_MinWidthForCaption->setValue(s.minWidthForCaption());
+    m_ui->kcfg_MinWidthForCaption->setEnabled(s.hideCaptionWhenLimitedSpace());
+    m_ui->label_minWidthForCaption->setEnabled(s.hideCaptionWhenLimitedSpace());
+    m_ui->kcfg_LongPressEnabled->setChecked(s.longPressEnabled());
+    m_ui->kcfg_LongPressDuration->setValue(s.longPressDuration());
+    m_ui->kcfg_LongPressDuration->setEnabled(s.longPressEnabled());
 
-    m_ui->kcfg_LongPressEnabled->setChecked(m_settings->longPressEnabled());
-    m_ui->kcfg_LongPressDuration->setValue(m_settings->longPressDuration());
-    m_ui->kcfg_LongPressDuration->setEnabled(m_settings->longPressEnabled());
+    updateChanged();
+}
 
-    markAsChanged();
+bool MaterialDecorationKCM::isChanged() const
+{
+    if (m_ui->kcfg_TitleAlignment->currentIndex() != m_settings->titleAlignment()) return true;
+    if (m_ui->kcfg_ButtonSize->currentIndex() != m_settings->buttonSize()) return true;
+    if (m_ui->kcfg_ActiveOpacity->value() != qRound(m_settings->activeOpacity() * 100)) return true;
+    if (m_ui->kcfg_InactiveOpacity->value() != qRound(m_settings->inactiveOpacity() * 100)) return true;
+    if (m_ui->kcfg_CornerRadius->value() != m_settings->cornerRadius()) return true;
+    if (m_ui->kcfg_UseCustomBorderColors->isChecked() != m_settings->useCustomBorderColors()) return true;
+    if (m_ui->kcfg_ActiveBorderColor->color() != m_settings->activeBorderColor()) return true;
+    if (m_ui->kcfg_InactiveBorderColor->color() != m_settings->inactiveBorderColor()) return true;
+    if (m_ui->kcfg_MenuAlwaysShow->isChecked() != m_settings->menuAlwaysShow()) return true;
+    if (m_ui->kcfg_SearchEnabled->isChecked() != m_settings->searchEnabled()) return true;
+    if (m_ui->kcfg_HamburgerMenu->isChecked() != m_settings->hamburgerMenu()) return true;
+    if (m_ui->kcfg_ShowDisabledActions->isChecked() != m_settings->showDisabledActions()) return true;
+    if (m_ui->kcfg_MenuButtonHorzPadding->value() != m_settings->menuButtonHorzPadding()) return true;
+    if (m_ui->kcfg_UseSystemMenuFont->isChecked() != m_settings->useSystemMenuFont()) return true;
+    if (m_ui->kcfg_ShadowSize->currentIndex() != m_settings->shadowSize()) return true;
+    if (m_ui->kcfg_ShadowColor->color() != m_settings->shadowColor()) return true;
+    if (m_ui->kcfg_ShadowStrength->value() != m_settings->shadowStrength()) return true;
+    if (m_ui->kcfg_AnimationsEnabled->isChecked() != m_settings->animationsEnabled()) return true;
+    if (m_ui->kcfg_AnimationsDuration->value() != m_settings->animationsDuration()) return true;
+    if (m_ui->kcfg_BottomCorners->isChecked() != m_settings->bottomCornerRadiusFlag()) return true;
+    if (m_ui->kcfg_HideCaptionWhenLimitedSpace->isChecked() != m_settings->hideCaptionWhenLimitedSpace()) return true;
+    if (m_ui->kcfg_MinWidthForCaption->value() != m_settings->minWidthForCaption()) return true;
+    if (m_ui->kcfg_LongPressEnabled->isChecked() != m_settings->longPressEnabled()) return true;
+    if (m_ui->kcfg_LongPressDuration->value() != m_settings->longPressDuration()) return true;
+
+    return false;
 }
 
 void MaterialDecorationKCM::updateChanged()
 {
-    markAsChanged();
+    setNeedsSave(isChanged());
 }
 
 #include "kcm.moc"
