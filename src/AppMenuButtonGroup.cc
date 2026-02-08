@@ -175,12 +175,10 @@ void AppMenuButtonGroup::repositionSearchMenu()
         return;
     }
 
-    
     KDecoration3::Positioner positioner;
     positioner.setAnchorRect(button->geometry());
     deco->popup(positioner, m_searchMenu);
     m_searchMenu->popup(m_searchMenu->pos()); //HACK without this the scrollbar remain even if not necessary
-    
 }
 
 int AppMenuButtonGroup::currentIndex() const
@@ -692,7 +690,7 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
         return;
     }
 
-    QMenu *oldMenu = m_currentMenu;
+    QPointer<QMenu> oldMenu = m_currentMenu;
     KDecoration3::DecorationButton *oldButton = (0 <= m_currentIndex && m_currentIndex < buttons().length()) ? buttons().value(m_currentIndex) : nullptr;
 
     // 1. Set the new internal state. This must happen before popup for positioning.
@@ -705,15 +703,16 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
         connect(navMenu, &NavigableMenu::hitLeft, this, &AppMenuButtonGroup::onHitLeft, Qt::UniqueConnection);
         connect(navMenu, &NavigableMenu::hitRight, this, &AppMenuButtonGroup::onHitRight, Qt::UniqueConnection);
     }
-    menu->installEventFilter(this);
-    
+    if (menu != m_searchMenu) {
+        menu->installEventFilter(this);
+    }
+
     KDecoration3::Positioner positioner;
     positioner.setAnchorRect(button->geometry());
     deco->popup(positioner, menu);
     
 
-    if (buttonIndex == m_searchIndex) {
-        m_searchLineEdit->activateWindow();
+    if (buttonIndex == m_searchIndex && m_searchLineEdit) {
         m_searchLineEdit->setFocus();
         m_searchUiVisible = true;
     }
@@ -920,12 +919,17 @@ void AppMenuButtonGroup::updateShowing()
 
 void AppMenuButtonGroup::onMenuAboutToHide()
 {
-    if (auto navMenu = qobject_cast<NavigableMenu *>(sender())) {
+    QMenu *menu = qobject_cast<QMenu *>(sender());
+    if (!menu) {
+        return;
+    }
+
+    if (auto navMenu = qobject_cast<NavigableMenu *>(menu)) {
         disconnect(navMenu, &NavigableMenu::hitLeft, this, &AppMenuButtonGroup::onHitLeft);
         disconnect(navMenu, &NavigableMenu::hitRight, this, &AppMenuButtonGroup::onHitRight);
     }
 
-    if (m_searchLineEdit) {
+    if (menu == m_searchMenu && m_searchLineEdit) {
         m_searchLineEdit->clear();
         m_searchUiVisible = false;
         m_lastResults.clear();
@@ -977,7 +981,9 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         const auto actions = m_searchMenu->actions();
         if (actions.count() > 2) {
             for (int i = actions.count() - 1; i >= 2; --i) {
-                m_searchMenu->removeAction(actions.at(i));
+                QAction *action = actions.at(i);
+                m_searchMenu->removeAction(action);
+                action->deleteLater();
             }
         }
         m_lastResults.clear();
@@ -1047,8 +1053,11 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         newAction->setEnabled(info.isEffectivelyEnabled);
         newAction->setCheckable(action->isCheckable());
         newAction->setChecked(action->isChecked());
-        connect(newAction, &QAction::triggered, this, [action, this]() {
-            action->trigger();
+        QPointer<QAction> safeAction = action;
+        connect(newAction, &QAction::triggered, this, [safeAction, this]() {
+            if (safeAction) {
+                safeAction->trigger();
+            }
             m_searchMenu->hide();
         });
         m_searchMenu->addAction(newAction);
