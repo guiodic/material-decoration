@@ -185,9 +185,41 @@ void MaterialDecorationKCM::save()
 
 void MaterialDecorationKCM::defaults()
 {
-    m_settings->setDefaults();
-    updateUI();
-    m_settings->load();
+    Material::InternalSettings s;
+    s.setDefaults();
+
+    m_ui->kcfg_TitleAlignment->setCurrentIndex(s.titleAlignment());
+    m_ui->kcfg_ButtonSize->setCurrentIndex(s.buttonSize());
+    m_ui->kcfg_ActiveOpacity->setValue(qRound(s.activeOpacity() * 100));
+    m_ui->kcfg_InactiveOpacity->setValue(qRound(s.inactiveOpacity() * 100));
+    m_ui->kcfg_CornerRadius->setValue(s.cornerRadius());
+    m_ui->kcfg_UseCustomBorderColors->setChecked(s.useCustomBorderColors());
+    m_ui->kcfg_ActiveBorderColor->setColor(s.activeBorderColor());
+    m_ui->kcfg_InactiveBorderColor->setColor(s.inactiveBorderColor());
+    const bool useCustom = m_ui->kcfg_UseCustomBorderColors->isChecked();
+    m_ui->kcfg_ActiveBorderColor->setEnabled(useCustom);
+    m_ui->kcfg_InactiveBorderColor->setEnabled(useCustom);
+    m_ui->kcfg_MenuAlwaysShow->setChecked(s.menuAlwaysShow());
+    m_ui->kcfg_SearchEnabled->setChecked(s.searchEnabled());
+    m_ui->kcfg_ShowDisabledActions->setEnabled(s.searchEnabled());
+    m_ui->kcfg_HamburgerMenu->setChecked(s.hamburgerMenu());
+    m_ui->kcfg_ShowDisabledActions->setChecked(s.showDisabledActions());
+    m_ui->kcfg_MenuButtonHorzPadding->setValue(s.menuButtonHorzPadding());
+    m_ui->kcfg_UseSystemMenuFont->setChecked(s.useSystemMenuFont());
+    m_ui->kcfg_ShadowSize->setCurrentIndex(s.shadowSize());
+    m_ui->kcfg_ShadowColor->setColor(s.shadowColor());
+    m_ui->kcfg_ShadowStrength->setValue(s.shadowStrength());
+    m_ui->kcfg_AnimationsEnabled->setChecked(s.animationsEnabled());
+    m_ui->kcfg_AnimationsDuration->setValue(s.animationsDuration());
+    m_ui->kcfg_BottomCorners->setChecked(s.bottomCornerRadiusFlag());
+    m_ui->kcfg_HideCaptionWhenLimitedSpace->setChecked(s.hideCaptionWhenLimitedSpace());
+    m_ui->kcfg_MinWidthForCaption->setValue(s.minWidthForCaption());
+    m_ui->kcfg_MinWidthForCaption->setEnabled(s.hideCaptionWhenLimitedSpace());
+    m_ui->label_minWidthForCaption->setEnabled(s.hideCaptionWhenLimitedSpace());
+    m_ui->kcfg_LongPressEnabled->setChecked(s.longPressEnabled());
+    m_ui->kcfg_LongPressDuration->setValue(s.longPressDuration());
+    m_ui->kcfg_LongPressDuration->setEnabled(s.longPressEnabled());
+
     updateChanged();
 }
 
