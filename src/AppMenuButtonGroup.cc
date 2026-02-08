@@ -462,7 +462,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
                 if (auto *textButton = qobject_cast<TextButton *>(b)) {
                     QAction *itemAction = actions.at(actionIdx++);
                     textButton->setAction(itemAction);
-                    textButton->setText(itemAction->text());
+                    textButton->setText(itemAction->text().trimmed());
                     // Skip items with empty labels (The first item in a Gtk app)
                     if (itemAction->text().isEmpty()) {
                         textButton->setEnabled(false);
@@ -479,7 +479,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
             // Populate
             for (int i = 0; i < menuActionCount; ++i) {
                 QAction *itemAction = actions.at(i);
-                const QString itemLabel = itemAction->text();
+                const QString itemLabel = itemAction->text().trimmed();
 
                 TextButton *b = new TextButton(deco, i, this);
                 b->setText(itemLabel);
@@ -537,7 +537,7 @@ AppMenuButtonGroup::ActionInfo AppMenuButtonGroup::getActionPath(QAction *action
     QStringList path;
     bool isEffectivelyEnabled = action->isEnabled();
 
-    path.prepend(action->text().remove(QLatin1Char('&')));
+    path.prepend(action->text().trimmed().remove(QLatin1Char('&')));
 
     QSet<QMenu*> visitedMenus;
     QMenu *currentMenu = qobject_cast<QMenu*>(action->parent());
@@ -554,7 +554,7 @@ AppMenuButtonGroup::ActionInfo AppMenuButtonGroup::getActionPath(QAction *action
             if (!parentAction->isEnabled()) {
                 isEffectivelyEnabled = false;
             }
-            const QString text = parentAction->text().remove(QLatin1Char('&'));
+            const QString text = parentAction->text().trimmed().remove(QLatin1Char('&'));
             if (!text.isEmpty()) {
                 path.prepend(text);
             }

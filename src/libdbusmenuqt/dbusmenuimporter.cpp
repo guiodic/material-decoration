@@ -180,6 +180,9 @@ public:
     void updateActionLabel(QAction *action, const QVariant &value)
     {
         QString text = swapMnemonicChar(value.toString(), '_', '&');
+        if (action->menu()) {
+            text += QLatin1String("  ");
+        }
         action->setText(text);
     }
 
