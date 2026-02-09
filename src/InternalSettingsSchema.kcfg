@@ -128,6 +128,10 @@
             <min>500</min>
             <max>5000</max>
         </entry>
+
+        <entry name="DragFromButtonsEnabled" type="Bool">
+            <default>true</default>
+        </entry>
     </group>
 
 </kcfg>

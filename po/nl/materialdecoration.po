@@ -173,8 +173,11 @@ msgstr "Onderste hoeken afronden"
 msgid "Hide window title when space is limited"
 msgstr "Venstertitel verbergen wanneer de ruimte beperkt is"
 
-msgid "Other"
-msgstr "Overig"
+msgid "Button Options"
+msgstr "Knopopties"
+
+msgid "Allow window dragging from buttons"
+msgstr "Vensters slepen vanaf knoppen toestaan"
 
 msgid "Enable long-press actions on window buttons"
 msgstr "Acties bij lang indrukken op vensterknoppen inschakelen"

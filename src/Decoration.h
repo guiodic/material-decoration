@@ -120,6 +120,7 @@ private:
     bool searchIgnoreTopLevel() const;
     bool animationsEnabled() const;
     int animationsDuration() const;
+    bool dragFromButtonsEnabled() const;
     bool hideCaptionWhenLimitedSpace() const;
     qreal buttonPadding() const;
     qreal titleBarHeight() const;
@@ -135,6 +136,7 @@ private:
     void initDragMove(const QPoint pos);
     void resetDragMove();
     bool dragMoveTick(const QPoint pos);
+    void unPressAllButtons();
 
     QColor borderColor() const;
     QColor titleBarBackgroundColor() const;

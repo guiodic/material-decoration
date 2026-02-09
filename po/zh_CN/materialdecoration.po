@@ -173,8 +173,11 @@ msgstr "圆润底角"
 msgid "Hide window title when space is limited"
 msgstr "当空间有限时隐藏窗口标题"
 
-msgid "Other"
-msgstr "其他"
+msgid "Button Options"
+msgstr "按钮选项"
+
+msgid "Allow window dragging from buttons"
+msgstr "允许从按钮拖动窗口"
 
 msgid "Enable long-press actions on window buttons"
 msgstr "启用窗口按钮上的长按操作"

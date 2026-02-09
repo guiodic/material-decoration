@@ -171,10 +171,13 @@ msgstr "Redondear esquinas inferiores"
 
 #: config.ui:154
 msgid "Hide window title when space is limited"
-msgstr "Ocultar el título de la ventana cuando el espacio es limitado"
+msgstr "Ocultar el título de la ventana quando el espacio es limitado"
 
-msgid "Other"
-msgstr "Otro"
+msgid "Button Options"
+msgstr "Opciones de botones"
+
+msgid "Allow window dragging from buttons"
+msgstr "Permitir arrastrar ventanas desde los botones"
 
 msgid "Enable long-press actions on window buttons"
 msgstr "Activar acciones de pulsación larga en los botones de la ventana"

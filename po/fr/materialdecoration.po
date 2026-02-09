@@ -173,8 +173,11 @@ msgstr "Arrondir les coins inférieurs"
 msgid "Hide window title when space is limited"
 msgstr "Masquer le titre de la fenêtre lorsque l'espace est limité"
 
-msgid "Other"
-msgstr "Autre"
+msgid "Button Options"
+msgstr "Options des boutons"
+
+msgid "Allow window dragging from buttons"
+msgstr "Autoriser le déplacement des fenêtres à partir des boutons"
 
 msgid "Enable long-press actions on window buttons"
 msgstr "Activer les actions par appui long sur les boutons de fenêtre"

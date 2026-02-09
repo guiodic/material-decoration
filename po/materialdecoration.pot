@@ -175,5 +175,11 @@ msgstr ""
 msgid "Hide window title when space is limited"
 msgstr ""
 
+msgid "Button Options"
+msgstr ""
+
+msgid "Allow window dragging from buttons"
+msgstr ""
+
 msgid "Ignore top-level menu labels"
 msgstr ""
