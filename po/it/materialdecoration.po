@@ -173,8 +173,11 @@ msgstr "Arrotonda gli angoli inferiori"
 msgid "Hide window title when space is limited"
 msgstr "Nascondi il titolo della finestra quando lo spazio è limitato"
 
-msgid "Other"
-msgstr "Altro"
+msgid "Button Options"
+msgstr "Opzioni dei Bottoni"
+
+msgid "Allow window dragging from buttons"
+msgstr "Consenti il trascinamento della finestra dai pulsanti"
 
 msgid "Enable long-press actions on window buttons"
 msgstr "Abilita le azioni di pressione prolungata sui pulsanti della finestra"

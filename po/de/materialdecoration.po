@@ -173,8 +173,11 @@ msgstr "Untere Ecken abrunden"
 msgid "Hide window title when space is limited"
 msgstr "Fenstertitel ausblenden, wenn der Platz begrenzt ist"
 
-msgid "Other"
-msgstr "Andere"
+msgid "Button Options"
+msgstr "Schaltflächen-Optionen"
+
+msgid "Allow window dragging from buttons"
+msgstr "Fensterverschieben von Schaltflächen aus erlauben"
 
 msgid "Enable long-press actions on window buttons"
 msgstr "Aktionen bei langem Drücken auf Fensterschaltflächen aktivieren"

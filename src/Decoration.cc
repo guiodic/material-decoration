@@ -327,17 +327,28 @@ void Decoration::mousePressEvent(QMouseEvent *event)
 {
     KDecoration3::Decoration::mousePressEvent(event);
 
-    if (m_menuButtons->geometry().contains(event->pos())) {
-        if (event->button() == Qt::LeftButton) {
-            initDragMove(event->pos());
-            event->setAccepted(false);
+    const QPoint pos = event->pos();
 
-        // If AppMenuButton's do not handle the button
-        } else if (event->button() == Qt::MiddleButton || event->button() == Qt::RightButton) {
-            // Don't accept the event. KDecoration3 will
-            // accept the event even if it doesn't pass
-            // button->acceptableButtons()->testFlag(button)
+    // Determine if the click occurred on any of the button groups.
+    // Menu buttons always allow dragging, while 
+    // left and right groups depend on the configuration.
+    const bool onMenuButtons = m_menuButtons && m_menuButtons->geometry().contains(pos);
+    const bool onStandardButtons = dragFromButtonsEnabled() && (
+        (m_leftButtons && m_leftButtons->geometry().contains(pos)) ||
+        (m_rightButtons && m_rightButtons->geometry().contains(pos))
+    );
+
+    if (onMenuButtons || onStandardButtons) {
+        const Qt::MouseButton button = event->button();
+
+        if (button == Qt::LeftButton) {
+            // Initialize window drag move and reject event so KWin handles the drag
+            initDragMove(pos);
             event->setAccepted(false);
+        } else if (button == Qt::MiddleButton || button == Qt::RightButton) {
+            // Accept the event for Middle and Right buttons to prevent KWin 
+            // from showing the window's context menu.
+            event->accept();
         }
     }
 }
@@ -355,7 +366,7 @@ void Decoration::hoverMoveEvent(QHoverEvent *event)
 
     const bool dragStarted = dragMoveTick(event->position().toPoint());
     if (dragStarted) {
-        m_menuButtons->unPressAllButtons();
+        unPressAllButtons();
         return;
     }
 
@@ -704,6 +715,11 @@ int Decoration::animationsDuration() const
     return m_internalSettings->animationsDuration();
 }
 
+bool Decoration::dragFromButtonsEnabled() const
+{
+    return m_internalSettings->dragFromButtonsEnabled();
+}
+
 bool Decoration::hideCaptionWhenLimitedSpace() const
 {
     return m_internalSettings->hideCaptionWhenLimitedSpace();
@@ -864,6 +880,14 @@ bool Decoration::dragMoveTick(const QPoint pos)
         return true;
     }
     return false;
+}
+
+void Decoration::unPressAllButtons()
+{
+    auto forceUnpress = [](Button *b) { b->forceUnpress(); };
+    forEachButton<Button>(m_leftButtons, forceUnpress);
+    forEachButton<Button>(m_rightButtons, forceUnpress);
+    forEachButton<Button>(m_menuButtons, forceUnpress);
 }
 
 qreal Decoration::cornerRadius() const

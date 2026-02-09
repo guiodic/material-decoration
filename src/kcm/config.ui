@@ -328,7 +328,7 @@
      </widget>
      <widget class="QWidget" name="otherTab">
       <attribute name="title">
-       <string>Other</string>
+       <string>Button Options</string>
       </attribute>
       <layout class="QFormLayout" name="formLayout_5">
        <item row="0" column="0" colspan="2">
@@ -388,6 +388,13 @@
          </property>
          <property name="maximum">
           <number>5000</number>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0" colspan="2">
+        <widget class="QCheckBox" name="kcfg_DragFromButtonsEnabled">
+         <property name="text">
+          <string>Allow window dragging from buttons</string>
          </property>
         </widget>
        </item>
