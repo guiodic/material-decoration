@@ -171,7 +171,7 @@ msgstr "Redondear esquinas inferiores"
 
 #: config.ui:154
 msgid "Hide window title when space is limited"
-msgstr "Ocultar el título de la ventana quando el espacio es limitado"
+msgstr "Ocultar el título de la ventana cuando el espacio es limitado"
 
 msgid "Button Options"
 msgstr "Opciones de botones"
