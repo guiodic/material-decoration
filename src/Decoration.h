@@ -152,9 +152,9 @@ private:
 
     qreal cornerRadius() const;
 
-    KDecoration3::DecorationButtonGroup *m_leftButtons;
-    KDecoration3::DecorationButtonGroup *m_rightButtons;
-    AppMenuButtonGroup *m_menuButtons;
+    KDecoration3::DecorationButtonGroup *m_leftButtons = nullptr;
+    KDecoration3::DecorationButtonGroup *m_rightButtons = nullptr;
+    AppMenuButtonGroup *m_menuButtons = nullptr;
 
     QSharedPointer<InternalSettings> m_internalSettings;
     qreal m_cornerRadius = 0.0;

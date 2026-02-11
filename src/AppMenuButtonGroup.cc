@@ -140,6 +140,14 @@ AppMenuButtonGroup::~AppMenuButtonGroup()
     if (m_searchMenu) {
         delete m_searchMenu.data();
     }
+    
+    // explicit destruction even 
+    // if it already is Qt::WA_DeleteOnClose,
+    // deal whit the corner-case in which the window 
+    // is closed while the m_overflowMenu is open
+    if (m_overflowMenu) { 
+        delete m_overflowMenu.data();
+    }
 }
 
 void AppMenuButtonGroup::setupSearchMenu()
