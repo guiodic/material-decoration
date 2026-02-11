@@ -172,7 +172,8 @@ Decoration::Decoration(QObject *parent, const QVariantList &args)
 
 Decoration::~Decoration()
 {
-    if (--s_decoCount == 0) {
+    if (--s_decoCount <= 0) {
+        s_decoCount = 0; // defensive reset
         s_cachedShadow.reset();
         s_shadowSizePreset = -1;
         s_shadowStrength = -1;
