@@ -19,6 +19,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <atomic>
+
 // own
 #include "Decoration.h"
 #include "AppMenuButtonGroup.h"
@@ -156,7 +158,8 @@ void forEachButton(KDecoration3::DecorationButtonGroup *buttonGroup, Func f)
 
 } // anonymous namespace
 
-static int s_decoCount = 0;
+static std::atomic<int> s_decoCount(0);
+
 static int s_shadowSizePreset = InternalSettings::ShadowVeryLarge;
 static int s_shadowStrength = 255;
 static QColor s_shadowColor = QColor(33, 33, 33);
@@ -174,7 +177,7 @@ Decoration::~Decoration()
 {
     if (--s_decoCount <= 0) {
         Q_ASSERT_X(s_decoCount >= 0, "Decoration::~Decoration()", "s_decoCount became negative, indicating a logic error!");
-        s_decoCount = 0; // defensive reset
+        s_decoCount.store(0); // defensive reset
         s_cachedShadow.reset();
         s_shadowSizePreset = -1;
         s_shadowStrength = -1;
