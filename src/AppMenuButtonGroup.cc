@@ -1148,7 +1148,10 @@ int AppMenuButtonGroup::findNextVisibleButtonIndex(int currentIndex, bool forwar
         return -1;
     }
 
-    int step = forward ? 1 : -1;
+    bool isRtl = QGuiApplication::layoutDirection() == Qt::RightToLeft;
+    // In RTL, the "next" button visually (forward=true) is at a lower index.
+    int step = (forward ^ isRtl) ? 1 : -1;
+
     // Start from the next button, not the current one
     int newIndex = currentIndex + step;
 
