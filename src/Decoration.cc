@@ -758,7 +758,8 @@ qreal Decoration::appMenuButtonHorzPadding() const
 {
     // Use gridUnit as base for horizontal padding to match Breeze's precision.
     // Default setting of 4 results in exactly 1 gridUnit of padding.
-    return settings()->gridUnit() * m_internalSettings->menuButtonHorzPadding() / 4;
+    static constexpr int PADDING_UNIT_DIVISOR = 4;
+    return settings()->gridUnit() * m_internalSettings->menuButtonHorzPadding() / PADDING_UNIT_DIVISOR;
 }
 
 qreal Decoration::appMenuCaptionSpacing() const
