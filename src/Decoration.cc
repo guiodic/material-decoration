@@ -756,9 +756,9 @@ qreal Decoration::titleBarHeight() const
 
 qreal Decoration::appMenuButtonHorzPadding() const
 {
-    // smallSpacing is scaled by dpr with a min of 2px.
-    // So we need to divide our "pixel units" by 2 before scaling by it.
-    return settings()->smallSpacing() * m_internalSettings->menuButtonHorzPadding() / 2;
+    // Use gridUnit as base for horizontal padding to match Breeze's precision.
+    // Default setting of 4 results in exactly 1 gridUnit of padding.
+    return settings()->gridUnit() * m_internalSettings->menuButtonHorzPadding() / 4;
 }
 
 qreal Decoration::appMenuCaptionSpacing() const
@@ -844,9 +844,9 @@ QFont Decoration::menuFont() const
 qreal Decoration::getMenuTextWidth(const QString text, bool showMnemonic) const
 {
     const QFontMetricsF fontMetrics(menuFont());
-    const QRectF textRect(titleBarRect());
     int flags = showMnemonic ? Qt::TextShowMnemonic : Qt::TextHideMnemonic;
-    const QRectF boundingRect = fontMetrics.boundingRect(textRect, flags, text);
+    // Use an unconstrained bounding rect to get the ideal width.
+    const QRectF boundingRect = fontMetrics.boundingRect(QRectF(), flags, text);
     return boundingRect.width();
 }
 
