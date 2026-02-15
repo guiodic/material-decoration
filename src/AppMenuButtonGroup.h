@@ -55,17 +55,8 @@ public:
     Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity NOTIFY opacityChanged)
 
 
-    int currentIndex() const;
-    void setCurrentIndex(int set);
-
-    bool overflowing() const;
-    void setOverflowing(bool set);
-
     bool hovered() const;
     void setHovered(bool value);
-
-    bool showing() const;
-    void setShowing(bool value);
 
     bool alwaysShow() const;
     void setAlwaysShow(bool value);
@@ -81,20 +72,17 @@ public:
 
     qreal visibleWidth() const;
 
-    bool isMenuOpen() const;
     bool menuLoadedOnce() const;
 
-    KDecoration3::DecorationButton* buttonAt(QPoint pos) const;
-
-    void unPressAllButtons();
     void handleHoverMove(const QPointF &pos);
 
 public slots:
     void setHamburgerMenu(bool value);
-    void onMenuReadyForSearch();
     void updateAppMenuModel();
     void updateOverflow(QRectF availableRect);
-    void trigger(int index);
+
+private slots:
+    void onMenuReadyForSearch();
     void triggerOverflow();
     void updateShowing();
     void onMenuAboutToHide();
@@ -129,6 +117,23 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
+    int currentIndex() const;
+    void setCurrentIndex(int set);
+
+    bool overflowing() const;
+    void setOverflowing(bool set);
+
+    bool showing() const;
+    void setShowing(bool value);
+
+    bool isMenuOpen() const;
+
+    KDecoration3::DecorationButton* buttonAt(QPoint pos) const;
+
+    void unPressAllButtons();
+
+    void trigger(int index);
+
     struct ActionInfo {
         QString path;
         QString searchablePath;
@@ -182,6 +187,9 @@ private:
     QList<QAction *> m_lastResults;
 
     QPointer<KDecoration3::DecorationButton> m_hoveredButton = nullptr;
+
+    friend class AppMenuButton;
+    friend class Decoration;
 };
 
 } // namespace Material

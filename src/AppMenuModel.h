@@ -48,9 +48,6 @@ public:
 public:
     void updateApplicationMenu(const QString &serviceName, const QString &menuObjectPath);
 
-    bool menuAvailable() const;
-    void setMenuAvailable(bool set);
-
     QMenu *menu() const;
 
 private Q_SLOTS:
@@ -76,6 +73,9 @@ private Q_SLOTS:
     void processNext();
 
 private:
+    bool menuAvailable() const;
+    void setMenuAvailable(bool set);
+
     QTimer *m_staggerTimer;
     QList<QPointer<QMenu>> m_menusToDeepCache;
     QSet<QMenu *> m_seenMenus;

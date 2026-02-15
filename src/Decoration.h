@@ -56,26 +56,7 @@ public:
     Decoration(QObject *parent = nullptr, const QVariantList &args = QVariantList());
     ~Decoration() override;
 
-    QRectF titleBarRect() const;
-    QRectF centerRect() const;
-
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
-
-    QPoint windowPos() const;
-    
-    qreal bottomBorderSize() const;
-    qreal sideBorderSize() const;
-    qreal topBorderSize() const;
-
-    bool leftBorderVisible() const;
-    bool rightBorderVisible() const;
-    bool topBorderVisible() const;
-    bool bottomBorderVisible() const;
-
-    qreal leftOffset() const { return leftBorderVisible() ? sideBorderSize() : 0; }
-    qreal rightOffset() const { return rightBorderVisible() ? sideBorderSize() : 0; }
-    qreal topOffset() const { return topBorderVisible() ? topBorderSize() : 0; }
-    qreal bottomOffset() const { return bottomBorderVisible() ? bottomBorderSize() : 0; }
 
 public slots:
     bool init() override;
@@ -94,6 +75,25 @@ private slots:
     void onSizeChanged();
 
 private:
+    QRectF titleBarRect() const;
+    QRectF centerRect() const;
+
+    QPoint windowPos() const;
+
+    qreal bottomBorderSize() const;
+    qreal sideBorderSize() const;
+    qreal topBorderSize() const;
+
+    bool leftBorderVisible() const;
+    bool rightBorderVisible() const;
+    bool topBorderVisible() const;
+    bool bottomBorderVisible() const;
+
+    qreal leftOffset() const { return leftBorderVisible() ? sideBorderSize() : 0; }
+    qreal rightOffset() const { return rightBorderVisible() ? sideBorderSize() : 0; }
+    qreal topOffset() const { return topBorderVisible() ? topBorderSize() : 0; }
+    qreal bottomOffset() const { return bottomBorderVisible() ? bottomBorderSize() : 0; }
+
     void setupMenu();
     void updateBlur();
     void updateBordersCornersBlurShadow();

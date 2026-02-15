@@ -47,3 +47,6 @@ cmake-build-*/
 *.swo
 .DS_Store
 Thumbs.db
+
+## Dolphin
+.directory/

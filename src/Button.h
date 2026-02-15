@@ -60,22 +60,11 @@ public:
 
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
-    virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal);
-
-
-    virtual void updateSize(qreal contentWidth, qreal contentHeight);
-    virtual void setHeight(qreal buttonHeight);
-
 
     void forceUnpress();
 
     //virtual qreal iconLineWidth(const qreal size) const;
     void setPenWidth(QPainter *painter, const qreal scale);
-
-    virtual QColor backgroundColor() const;
-    virtual QColor foregroundColor() const;
-
-    QRectF contentArea() const;
 
     bool animationEnabled() const;
     void setAnimationEnabled(bool value);
@@ -86,10 +75,6 @@ public:
     qreal opacity() const;
     void setOpacity(qreal value);
 
-    qreal transitionValue() const;
-    void setTransitionValue(qreal value);
-
-    QMarginsF &padding();
     void setHorzPadding(qreal value);
    // void setVertPadding(int value);
 
@@ -108,6 +93,20 @@ signals:
     void paddingChanged();
 
 protected:
+    virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal);
+    virtual void updateSize(qreal contentWidth, qreal contentHeight);
+    virtual void setHeight(qreal buttonHeight);
+
+    virtual QColor backgroundColor() const;
+    virtual QColor foregroundColor() const;
+
+    QRectF contentArea() const;
+
+    qreal transitionValue() const;
+    void setTransitionValue(qreal value);
+
+    QMarginsF &padding();
+
     void onCloseHold();
     void onMinimizeHold();
     void onMaximizeHold();
@@ -123,6 +122,8 @@ protected:
 
     QTimer *m_holdTimer = nullptr;
     bool m_longPressTriggered = false;
+
+    friend class Decoration;
 };
 
 } // namespace Material
