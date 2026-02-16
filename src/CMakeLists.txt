@@ -3,6 +3,7 @@ find_package (KDecoration3 REQUIRED)
 find_package (Qt6 REQUIRED COMPONENTS
     Core
     Gui
+    Svg
     # GuiTools
 )
 
@@ -53,6 +54,7 @@ set (decoration_SRCS
     BoxShadowHelper.cc
     Button.cc
     Decoration.cc
+    IconProvider.cc
     MenuOverflowButton.cc
     SearchButton.cc
     TextButton.cc
@@ -74,6 +76,7 @@ target_link_libraries (materialdecoration
         Qt6::Core
         Qt6::Gui
         Qt6::DBus
+        Qt6::Svg
         # Qt6::GuiPrivate
         # Qt${QT_VERSION_MAJOR}::X11Extras
         KF6::ConfigCore

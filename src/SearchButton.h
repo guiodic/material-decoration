@@ -33,6 +33,7 @@ public:
 
 protected:
     void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal) override;
+    QString iconName() const override;
 };
 
 } // namespace Material

@@ -49,4 +49,9 @@ void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qr
     painter->drawLine(handleStart, handleEnd);
 }
 
+QString SearchButton::iconName() const
+{
+    return QStringLiteral("Search");
+}
+
 } // namespace Material

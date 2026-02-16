@@ -21,6 +21,7 @@
 #include "Button.h"
 #include "Material.h"
 #include "Decoration.h"
+#include "IconProvider.h"
 
 #include "AppIconButton.h"
 #include "ApplicationMenuButton.h"
@@ -49,6 +50,7 @@
 #include <QHoverEvent>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QSvgRenderer>
 #include <QVariantAnimation>
 #include <QTimer>
 #include <QDBusConnection>
@@ -319,43 +321,50 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 
         // Icons
         const QRectF iconRect(-9, -9, 18, 18);
-        switch (type()) {
-        // NOTE: Menu and ApplicationMenu are handled above
-        case KDecoration3::DecorationButtonType::OnAllDesktops:
-            OnAllDesktopsButton::paintIcon(this, painter, iconRect, 0);
-            break;
 
-        case KDecoration3::DecorationButtonType::ContextHelp:
-            ContextHelpButton::paintIcon(this, painter, iconRect, 0);
-            break;
+        if (!paintSvgIcon(painter, iconRect)) {
+            switch (type()) {
+            // NOTE: Menu and ApplicationMenu are handled above
+            case KDecoration3::DecorationButtonType::ApplicationMenu:
+                ApplicationMenuButton::paintIcon(this, painter, iconRect, 0);
+                break;
 
-        case KDecoration3::DecorationButtonType::Shade:
-            ShadeButton::paintIcon(this, painter, iconRect, 0);
-            break;
+            case KDecoration3::DecorationButtonType::OnAllDesktops:
+                OnAllDesktopsButton::paintIcon(this, painter, iconRect, 0);
+                break;
 
-        case KDecoration3::DecorationButtonType::KeepAbove:
-            KeepAboveButton::paintIcon(this, painter, iconRect, 0);
-            break;
+            case KDecoration3::DecorationButtonType::ContextHelp:
+                ContextHelpButton::paintIcon(this, painter, iconRect, 0);
+                break;
 
-        case KDecoration3::DecorationButtonType::KeepBelow:
-            KeepBelowButton::paintIcon(this, painter, iconRect, 0);
-            break;
+            case KDecoration3::DecorationButtonType::Shade:
+                ShadeButton::paintIcon(this, painter, iconRect, 0);
+                break;
 
-        case KDecoration3::DecorationButtonType::Close:
-            CloseButton::paintIcon(this, painter, iconRect, 0);
-            break;
+            case KDecoration3::DecorationButtonType::KeepAbove:
+                KeepAboveButton::paintIcon(this, painter, iconRect, 0);
+                break;
 
-        case KDecoration3::DecorationButtonType::Maximize:
-            MaximizeButton::paintIcon(this, painter, iconRect, 0);
-            break;
+            case KDecoration3::DecorationButtonType::KeepBelow:
+                KeepBelowButton::paintIcon(this, painter, iconRect, 0);
+                break;
 
-        case KDecoration3::DecorationButtonType::Minimize:
-            MinimizeButton::paintIcon(this, painter, iconRect, 0);
-            break;
+            case KDecoration3::DecorationButtonType::Close:
+                CloseButton::paintIcon(this, painter, iconRect, 0);
+                break;
 
-        default:
-            paintIcon(painter, iconRect, 0);
-            break;
+            case KDecoration3::DecorationButtonType::Maximize:
+                MaximizeButton::paintIcon(this, painter, iconRect, 0);
+                break;
+
+            case KDecoration3::DecorationButtonType::Minimize:
+                MinimizeButton::paintIcon(this, painter, iconRect, 0);
+                break;
+
+            default:
+                paintIcon(painter, iconRect, 0);
+                break;
+            }
         }
     }
 
@@ -366,6 +375,86 @@ void Button::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal)
 {
     Q_UNUSED(painter)
     Q_UNUSED(iconRect)
+}
+
+QString Button::iconName() const
+{
+    switch (type()) {
+    case KDecoration3::DecorationButtonType::Close:
+        return QStringLiteral("Close");
+    case KDecoration3::DecorationButtonType::Maximize:
+        return isChecked() ? QStringLiteral("UnMaximize") : QStringLiteral("Maximize");
+    case KDecoration3::DecorationButtonType::Minimize:
+        return QStringLiteral("Minimize");
+    case KDecoration3::DecorationButtonType::OnAllDesktops:
+        return QStringLiteral("OnAllDesktops");
+    case KDecoration3::DecorationButtonType::ContextHelp:
+        return QStringLiteral("Help");
+    case KDecoration3::DecorationButtonType::Shade:
+        return QStringLiteral("Shade");
+    case KDecoration3::DecorationButtonType::KeepAbove:
+        return QStringLiteral("KeepAbove");
+    case KDecoration3::DecorationButtonType::KeepBelow:
+        return QStringLiteral("KeepBelow");
+    case KDecoration3::DecorationButtonType::ApplicationMenu:
+        return QStringLiteral("ApplicationMenu");
+    default:
+        return QString();
+    }
+}
+
+bool Button::paintSvgIcon(QPainter *painter, const QRectF &iconRect)
+{
+    const QString baseName = iconName();
+    if (baseName.isEmpty()) {
+        return false;
+    }
+
+    QSharedPointer<QSvgRenderer> renderer = IconProvider::getRenderer(baseName);
+    if (!renderer) {
+        return false;
+    }
+
+    const QColor color = foregroundColor();
+    
+    // Determine the actual pixel size for the current painter transform.
+    // This ensures the icon remains sharp across different scales and DPIs.
+    const QRectF deviceRect = painter->transform().mapRect(iconRect);
+    const QSize pixelSize = deviceRect.size().toSize();
+
+    if (!m_cachedIcon.isNull() && 
+        m_cachedIcon.size() == pixelSize && 
+        m_cachedIconColor == color && 
+        m_cachedIconName == baseName) {
+        
+        painter->save();
+        painter->resetTransform();
+        painter->drawImage(deviceRect.topLeft(), m_cachedIcon);
+        painter->restore();
+        return true;
+    }
+
+    QImage img(pixelSize, QImage::Format_ARGB32_Premultiplied);
+    img.fill(Qt::transparent);
+
+    QPainter imgPainter(&img);
+    // Render SVG into the pixel-aligned buffer
+    renderer->render(&imgPainter, QRectF(QPointF(0, 0), pixelSize));
+    
+    // Apply the foreground color using the source-in composition mode
+    imgPainter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    imgPainter.fillRect(img.rect(), color);
+    imgPainter.end();
+
+    m_cachedIcon = img;
+    m_cachedIconColor = color;
+    m_cachedIconName = baseName;
+
+    painter->save();
+    painter->resetTransform();
+    painter->drawImage(deviceRect.topLeft(), m_cachedIcon);
+    painter->restore();
+    return true;
 }
 
 void Button::updateSize(qreal contentWidth, qreal contentHeight)

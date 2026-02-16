@@ -6,7 +6,7 @@
    fill="#1f1f1f"
    version="1.1"
    id="svg1"
-   sodipodi:docname="Maximize.svg"
+   sodipodi:docname="KeepBelow.svg"
    inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -24,9 +24,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="true"
-     inkscape:zoom="33.252033"
-     inkscape:cx="12.014303"
-     inkscape:cy="11.999267"
+     inkscape:zoom="33.17093"
+     inkscape:cx="12.013531"
+     inkscape:cy="11.998458"
      inkscape:current-layer="svg1">
     <inkscape:grid
        id="grid1"
@@ -44,7 +44,7 @@
        visible="true" />
   </sodipodi:namedview>
   <path
-     d="m 80,-80 v -800 h 800 v 800 z m 88.88888,-88.88888 H 791.11112 V -791.11112 H 168.88888 Z m 0,0 v -622.22224 z"
+     d="M 480,-80 120,-438.20895 203.99999,-521.79105 480,-248.65672 l 276,-273.13433 84,83.5821 z M 480,-438.20895 120,-796.41792 203.99999,-880 480,-606.86568 756,-880 l 84,83.58208 z"
      id="path1"
-     style="stroke-width:1.11112" />
+     style="stroke-width:1.49626" />
 </svg>

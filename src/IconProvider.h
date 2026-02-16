@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2020 Chris Holland <zrenfire@gmail.com>
- * Copyright (C) 2019 Zain Ahmad <zain.x.ahmad@gmail.com>
+ * Copyright (C) 2025 Guido Iodice <guido[dot]iodice[at]gmail[dot]com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,24 +17,22 @@
 
 #pragma once
 
-// own
-#include "AppMenuButton.h"
+#include <QMap>
+#include <QString>
+#include <QSvgRenderer>
+#include <QSharedPointer>
 
 namespace Material
 {
 
-class Decoration;
-
-class MenuOverflowButton : public AppMenuButton
+class IconProvider
 {
-    Q_OBJECT
-
 public:
-    MenuOverflowButton(Decoration *decoration, const int buttonIndex, QObject *parent = nullptr);
-    ~MenuOverflowButton() override;
+    static QSharedPointer<QSvgRenderer> getRenderer(const QString &iconName);
 
-    void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal) override;
-    QString iconName() const override;
+private:
+    static QString findIcon(const QString &iconName);
+    static QMap<QString, QSharedPointer<QSvgRenderer>> s_renderers;
 };
 
 } // namespace Material

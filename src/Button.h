@@ -26,6 +26,7 @@
 #include <QMarginsF>
 #include <QMouseEvent>
 #include <QRectF>
+#include <QImage>
 #include <QVariantAnimation>
 
 class QTimer;
@@ -94,6 +95,8 @@ signals:
 
 protected:
     virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal);
+    bool paintSvgIcon(QPainter *painter, const QRectF &iconRect);
+    virtual QString iconName() const;
     virtual void updateSize(qreal contentWidth, qreal contentHeight);
     virtual void setHeight(qreal buttonHeight);
 
@@ -122,6 +125,10 @@ protected:
 
     QTimer *m_holdTimer = nullptr;
     bool m_longPressTriggered = false;
+
+    QImage m_cachedIcon;
+    QColor m_cachedIconColor;
+    QString m_cachedIconName;
 
     friend class Decoration;
 };

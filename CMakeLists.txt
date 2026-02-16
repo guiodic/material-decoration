@@ -25,6 +25,7 @@ include (KDECompilerSettings NO_POLICY_SCOPE)
 find_package(Qt6 CONFIG REQUIRED COMPONENTS
     Widgets
     DBus
+    Svg
 )
 find_package(KF6 REQUIRED COMPONENTS I18n)
 
@@ -35,5 +36,7 @@ ki18n_install(po)
 add_subdirectory (src/libdbusmenuqt)
 add_subdirectory (src)
 add_subdirectory(po)
+
+install(DIRECTORY icons DESTINATION ${KDE_INSTALL_DATADIR}/material-decoration)
 
 feature_summary(WHAT ALL)

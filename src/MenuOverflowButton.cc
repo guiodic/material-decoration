@@ -51,4 +51,9 @@ void MenuOverflowButton::paintIcon(QPainter *painter, const QRectF &iconRect, co
     ApplicationMenuButton::paintIcon(this, painter, iconRect, 0);
 }
 
+QString MenuOverflowButton::iconName() const
+{
+    return QStringLiteral("ApplicationMenu");
+}
+
 } // namespace Material
