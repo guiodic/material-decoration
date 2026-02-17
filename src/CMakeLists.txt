@@ -1,5 +1,11 @@
 find_package (KDecoration3 REQUIRED)
 
+if (KDecoration3_VERSION VERSION_GREATER_EQUAL "6.6.0")
+    set(HAVE_EXCLUDE_FROM_CAPTURE ON)
+else()
+    set(HAVE_EXCLUDE_FROM_CAPTURE OFF)
+endif()
+
 find_package (Qt6 REQUIRED COMPONENTS
     Core
     Gui

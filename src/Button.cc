@@ -18,6 +18,7 @@
  */
 
 // own
+#include "BuildConfig.h"
 #include "Button.h"
 #include "Material.h"
 #include "Decoration.h"
@@ -32,6 +33,9 @@
 #include "CloseButton.h"
 #include "MaximizeButton.h"
 #include "MinimizeButton.h"
+#if HAVE_EXCLUDE_FROM_CAPTURE
+#include "ExcludeFromCaptureButton.h"
+#endif
 #include "TextButton.h"
 
 // KDecoration
@@ -188,6 +192,12 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
         MinimizeButton::init(this, decoratedClient);
         break;
 
+#if HAVE_EXCLUDE_FROM_CAPTURE
+    case KDecoration3::DecorationButtonType::ExcludeFromCapture:
+        ExcludeFromCaptureButton::init(this, decoratedClient);
+        break;
+#endif
+
     default:
         break;
     }
@@ -215,6 +225,9 @@ KDecoration3::DecorationButton* Button::create(KDecoration3::DecorationButtonTyp
     case KDecoration3::DecorationButtonType::Close:
     case KDecoration3::DecorationButtonType::Maximize:
     case KDecoration3::DecorationButtonType::Minimize:
+#if HAVE_EXCLUDE_FROM_CAPTURE
+    case KDecoration3::DecorationButtonType::ExcludeFromCapture:
+#endif
         return new Button(type, deco, parent);
 
     default:
@@ -353,6 +366,12 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
             MinimizeButton::paintIcon(this, painter, iconRect, 0);
             break;
 
+#if HAVE_EXCLUDE_FROM_CAPTURE
+        case KDecoration3::DecorationButtonType::ExcludeFromCapture:
+            ExcludeFromCaptureButton::paintIcon(this, painter, iconRect, 0);
+            break;
+#endif
+
         default:
             paintIcon(painter, iconRect, 0);
             break;
@@ -432,6 +451,17 @@ QColor Button::backgroundColor() const
         }
     }
 
+#if HAVE_EXCLUDE_FROM_CAPTURE
+    //--- ExcludeFromCapture
+    if (type() == KDecoration3::DecorationButtonType::ExcludeFromCapture && isChecked()) {
+        auto *decoratedClient = deco->window();
+        return decoratedClient->color(
+            KDecoration3::ColorGroup::Warning,
+            KDecoration3::ColorRole::Foreground
+        );
+    }
+#endif
+
     //--- Checked
     if (isChecked() && type() != KDecoration3::DecorationButtonType::Maximize) {
         const QColor normalColor = deco->titleBarForegroundColor();
@@ -483,6 +513,12 @@ QColor Button::foregroundColor() const
 
     //--- Checked
     if (isChecked() && type() != KDecoration3::DecorationButtonType::Maximize) {
+#if HAVE_EXCLUDE_FROM_CAPTURE
+        if (type() == KDecoration3::DecorationButtonType::ExcludeFromCapture) {
+            return deco->titleBarOpaqueBackgroundColor();
+        }
+#endif
+
         const QColor activeColor = KColorUtils::mix(
             deco->titleBarOpaqueBackgroundColor(),
             deco->titleBarForegroundColor(),
