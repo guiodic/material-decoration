@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Guido Iodice <guido[dot]iodice[at]gmail[dot]com>
+ * Copyright (C) 2026 Guido Iodice <guido[dot]iodice[at]gmail[dot]com>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
