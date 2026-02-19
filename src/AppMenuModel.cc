@@ -78,6 +78,12 @@ AppMenuModel::AppMenuModel(QObject *parent)
         if (serviceName == m_serviceName) {
             setMenuAvailable(false);
             stopCaching();
+            m_serviceName.clear();
+            m_menuObjectPath.clear();
+            if (m_importer) {
+                m_importer->deleteLater();
+                m_importer = nullptr;
+            }
             Q_EMIT modelNeedsUpdate();
         }
     });
@@ -130,8 +136,8 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     if (m_serviceName == serviceName && m_menuObjectPath == menuObjectPath) {
         if (m_importer) {
             QMetaObject::invokeMethod(m_importer, "updateMenu", Qt::QueuedConnection);
+            return;
         }
-        return;
     }
 
     m_serviceName = serviceName;
