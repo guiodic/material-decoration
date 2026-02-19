@@ -83,11 +83,11 @@ void boxBlurPass(const QImage &src, QImage &dst, int boxSize)
     const int radius = boxSizeToRadius(boxSize);
     const qreal invSize = 1.0 / boxSize;
 
-    const int dstStride = dst.width() * alphaStride;
+    const int dstStride = dst.bytesPerLine();
 
     for (int y = 0; y < src.height(); ++y) {
         const uchar *srcAlpha = src.scanLine(y);
-        uchar *dstAlpha = dst.scanLine(0);
+        uchar *dstAlpha = dst.bits();
 
         srcAlpha += alphaOffset;
         dstAlpha += alphaOffset + y * alphaStride;
