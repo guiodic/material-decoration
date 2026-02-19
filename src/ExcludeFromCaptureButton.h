@@ -25,6 +25,7 @@
 
 // KDecoration
 #include <KDecoration3/DecoratedWindow>
+#include <KDecoration3/ScaleHelpers>
 
 // Qt
 #include <QPainter>
