@@ -20,10 +20,12 @@
 // own
 #include "BuildConfig.h"
 #include "Button.h"
+#include "Decoration.h"
 #include "Material.h"
 
 // KDecoration
 #include <KDecoration3/DecoratedWindow>
+#include <KDecoration3/ScaleHelpers>
 
 // Qt
 #include <QPainter>
@@ -47,7 +49,11 @@ public:
     //--- copied from Breeze for now. Copyright goes to KDE Developers
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
         Q_UNUSED(iconRect)
-        button->setPenWidth(painter, 1.25);
+        const auto *deco = qobject_cast<Decoration *>(button->decoration());
+        if (!deco) {
+            return;
+        }
+        button->setPenWidth(painter, 1.25 * KDecoration3::pixelSize(deco->window()->scale()));
 
         // A spy hat (like view-private.svg icon)
         // Hat crown with dip/crease at top (filled)

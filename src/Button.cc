@@ -33,9 +33,11 @@
 #include "CloseButton.h"
 #include "MaximizeButton.h"
 #include "MinimizeButton.h"
+
 #if HAVE_EXCLUDE_FROM_CAPTURE
 #include "ExcludeFromCaptureButton.h"
 #endif
+
 #include "TextButton.h"
 
 // KDecoration
@@ -64,6 +66,21 @@
 namespace Material
 {
 
+namespace
+{
+
+KDecoration3::DecorationButtonType buttonTypeFromArgs(const QVariantList &args)
+{
+    return args.value(0).value<KDecoration3::DecorationButtonType>();
+}
+
+Decoration *decorationFromArgs(const QVariantList &args)
+{
+    return args.value(1).value<Decoration *>();
+}
+
+}   
+    
 Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, QObject *parent)
     : DecorationButton(type, decoration, parent)
     , m_animationEnabled(true)
@@ -76,6 +93,12 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
 {
     m_holdTimer->setSingleShot(true);
     connect(m_holdTimer, &QTimer::timeout, this, &Button::handleHoldTimeout);
+    
+    if (!decoration) {
+        qWarning() << "Button created without a valid decoration";
+        return;
+    }
+
 
     if (QCoreApplication::applicationName() == QStringLiteral("kded6")) {
         // See: https://github.com/Zren/material-decoration/issues/22
@@ -137,10 +160,16 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     
     connect(this, &Button::enabledChanged, this, [this]() {
         UPDATE_GEOM();
+        //if (auto *deco = qobject_cast<Decoration *>(this->decoration())) {
+        //    QTimer::singleShot(0, this, [deco]() { deco->updateButtonsGeometry(); });
+        //}
     }); 
     
     connect(this, &Button::geometryChanged, this, [this]() {
-        UPDATE_GEOM();
+        UPDATE_GEOM();     
+        if (auto *deco = qobject_cast<Decoration *>(this->decoration())) {
+            QTimer::singleShot(0, this, [deco]() { deco->updateButtonsGeometry(); });
+        }
     });
     
     
@@ -236,8 +265,11 @@ KDecoration3::DecorationButton* Button::create(KDecoration3::DecorationButtonTyp
 }
 
 Button::Button(QObject *parent, const QVariantList &args)
-    : Button(args.at(0).value<KDecoration3::DecorationButtonType>(), args.at(1).value<Decoration*>(), parent)
+    : Button(buttonTypeFromArgs(args), decorationFromArgs(args), parent)
 {
+    if (args.size() < 2) {
+        qWarning() << "Button constructor received too few arguments:" << args;
+    }
 }
 
 void Button::mouseReleaseEvent(QMouseEvent *event)
@@ -260,7 +292,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 {
     Q_UNUSED(repaintRegion)
     
-    const auto *deco = qobject_cast<Decoration *>(decoration());
+    const auto *deco = qobject_cast<Decoration *>(this->decoration());
        
     if (!deco) {
         return;
@@ -277,12 +309,11 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->setPen(Qt::NoPen);
     painter->setBrush(bgColor);
     const qreal radius = deco->cornerRadius();
-    const QRectF snappedGeometry = KDecoration3::snapToPixelGrid(geometry(), deco->window()->scale());
 
     //const qreal offset = (static_cast<int>(m_isRightmost) - static_cast<int>(m_isLeftmost));   // -0.5 for left; +0.5 for right
 
     // Smart way to draw a rectangle with the right rounded/squared corner
-    painter->drawPath(deco->getRoundedPath(snappedGeometry, radius-Material::cornerRadiusAdjustment, m_isLeftmost && deco->leftBorderVisible(), m_isRightmost && deco->rightBorderVisible(), false, false));
+    painter->drawPath(deco->getRoundedPath(geometry(), radius-Material::cornerRadiusAdjustment, m_isLeftmost && deco->leftBorderVisible(), m_isRightmost && deco->rightBorderVisible(), false, false));
     //painter->fillRect(geometry().toAlignedRect(), bgColor); //.adjusted(-1, -1, 1, 1)
 
     // Foreground.
@@ -417,7 +448,7 @@ void Button::setPenWidth(QPainter *painter, const qreal scale)
 
 QColor Button::backgroundColor() const
 {
-    const auto *deco = qobject_cast<Decoration *>(decoration());
+    const auto *deco = qobject_cast<Decoration *>(this->decoration());
     if (!deco) {
         return {};
     }
@@ -506,7 +537,7 @@ QColor Button::backgroundColor() const
 
 QColor Button::foregroundColor() const
 {
-    const auto *deco = qobject_cast<Decoration *>(decoration());
+    const auto *deco = qobject_cast<Decoration *>(this->decoration());
     if (!deco) {
         return {};
     }

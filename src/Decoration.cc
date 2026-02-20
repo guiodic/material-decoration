@@ -528,14 +528,11 @@ void Decoration::updateButtonsGeometry()
     updateButtonHeight();
 
     // Left
-    m_leftButtons->setPos(KDecoration3::snapToPixelGrid(QPointF(left, top), window()->scale()));
+    m_leftButtons->setPos(QPointF(left, top));
     m_leftButtons->setSpacing(0);
 
     // Right
-    m_rightButtons->setPos(KDecoration3::snapToPixelGrid(QPointF(
-        size().width() - right - m_rightButtons->geometry().width(),
-        top
-    ), window()->scale()));
+    m_rightButtons->setPos(QPointF(size().width() - right - m_rightButtons->geometry().width(), top));
     m_rightButtons->setSpacing(0);
 
     // Menu
@@ -547,15 +544,13 @@ void Decoration::updateButtonsGeometry()
             -captionOffset,
             top
         );
-        const QPointF snappedTopLeft = KDecoration3::snapToPixelGrid(availableRect.topLeft(), window()->scale());
+        const QPointF topLeft = availableRect.topLeft();
 
         setButtonGroupHorzPadding(m_menuButtons, m_internalSettings->menuButtonHorzPadding());
-        m_menuButtons->setPos(snappedTopLeft);
+        m_menuButtons->setPos(topLeft);
         m_menuButtons->setSpacing(0);
 
-        // Use a rect with the snapped position but the original size for the overflow check.
-        // This prevents rounding errors from shrinking the available width.
-        m_menuButtons->updateOverflow(QRectF(snappedTopLeft, availableRect.size()));
+        m_menuButtons->updateOverflow(QRectF(topLeft, availableRect.size()));
     }
 
     updatePaths();
@@ -1123,7 +1118,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     const qreal offset = topOffset();
     captionRect.adjust(0, offset, 0, offset);
 
-    painter->drawText(KDecoration3::snapToPixelGrid(captionRect, window()->scale()), alignment, caption);
+    painter->drawText(captionRect, alignment, caption);
 
     painter->restore();
 }
@@ -1172,7 +1167,7 @@ void Decoration::updateCornerRadius()
 
 void Decoration::updatePaths()
 {
-    m_framePath = getRoundedPath(KDecoration3::snapToPixelGrid(rect(), window()->scale()),
+    m_framePath = getRoundedPath(rect(),
                                  m_cornerRadius,
                                  leftBorderVisible(),
                                  rightBorderVisible(),
@@ -1185,7 +1180,7 @@ void Decoration::updatePaths()
     const qreal right = rightOffset();
     const QRectF titleBarBackgroundRect(left, top, size().width() - left - right, titleBarHeight() + 1);
     
-    m_titleBarPath = getRoundedPath(KDecoration3::snapToPixelGrid(titleBarBackgroundRect, window()->scale()),
+    m_titleBarPath = getRoundedPath(titleBarBackgroundRect,
                                     m_cornerRadius,
                                     leftBorderVisible(),
                                     rightBorderVisible(),

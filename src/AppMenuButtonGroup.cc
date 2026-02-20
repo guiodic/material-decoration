@@ -317,6 +317,8 @@ void AppMenuButtonGroup::resetButtons()
     }
     setCurrentIndex(-1);
     m_currentMenu = nullptr;
+    m_lastResults.clear();
+    m_lastSearchQuery.clear();
 
     if (m_overflowMenu) {
         m_overflowMenu->deleteLater();
@@ -480,6 +482,10 @@ void AppMenuButtonGroup::updateAppMenuModel()
                         textButton->setVisible(true);
                     }
                 }
+            }
+
+            if (wasSearchOpen && !m_lastSearchQuery.isEmpty()) {
+                filterMenu(m_lastSearchQuery);
             }
         } else {
             resetButtons();
@@ -938,6 +944,10 @@ void AppMenuButtonGroup::onMenuAboutToHide()
     if (auto navMenu = qobject_cast<NavigableMenu *>(menu)) {
         disconnect(navMenu, &NavigableMenu::hitLeft, this, &AppMenuButtonGroup::onHitLeft);
         disconnect(navMenu, &NavigableMenu::hitRight, this, &AppMenuButtonGroup::onHitRight);
+    }
+
+    if (menu != m_searchMenu) {
+        menu->removeEventFilter(this);
     }
 
     if (menu == m_searchMenu && m_searchLineEdit) {
