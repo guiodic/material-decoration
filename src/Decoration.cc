@@ -774,20 +774,21 @@ qreal Decoration::bottomBorderSize() const {
         case KDecoration3::BorderSize::None:
             return 0;
         case KDecoration3::BorderSize::NoSides:
+            return std::max(4.0, baseSize + 5);
         case KDecoration3::BorderSize::Tiny:
-            return 1; // Breeze: max(4, baseSize)
+            return std::max(4.0, baseSize);
         case KDecoration3::BorderSize::Normal:
-            return baseSize; // Breeze: baseSize*2
+            return baseSize*2;
         case KDecoration3::BorderSize::Large:
-            return baseSize*2; // Breeze: baseSize*3
+            return baseSize*3;
         case KDecoration3::BorderSize::VeryLarge:
-            return baseSize*3; // Breeze: ...
+            return baseSize*4; 
         case KDecoration3::BorderSize::Huge:
-            return baseSize*4;
-        case KDecoration3::BorderSize::VeryHuge:
             return baseSize*5;
+        case KDecoration3::BorderSize::VeryHuge:
+            return baseSize*6;
         case KDecoration3::BorderSize::Oversized:
-            return baseSize*10; // Same as Breeze
+            return baseSize*10; 
     }
 }
 
@@ -949,7 +950,7 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
 
     painter->fillRect(rect(), Qt::transparent); 
     
-    if (settings()->borderSize() != KDecoration3::BorderSize::None) {
+    if (!hasNoBorders()) {
         painter->setRenderHint(QPainter::Antialiasing);
         painter->setPen(Qt::NoPen);        
         painter->setBrush(borderColor());
@@ -957,6 +958,11 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
     }
     
     painter->restore();
+}
+
+bool Decoration::hasNoBorders() const
+{
+        return settings()->borderSize() == KDecoration3::BorderSize::None;
 }
 
 QColor Decoration::borderColor() const
@@ -1158,8 +1164,8 @@ void Decoration::updateCornerRadius()
         m_cornerRadius = m_internalSettings->cornerRadius();
     }
     
-    const qreal bottomRightCornerRadius = (rightBorderVisible() && bottomBorderVisible()) ? m_cornerRadius : 0.0;
-    const qreal bottomLeftCornerRadius = (leftBorderVisible() && bottomBorderVisible()) ? m_cornerRadius : 0.0;
+    const qreal bottomRightCornerRadius = (rightBorderVisible() && bottomBorderVisible() && hasNoBorders()) ? m_cornerRadius : 0.0;
+    const qreal bottomLeftCornerRadius = (leftBorderVisible() && bottomBorderVisible() && hasNoBorders()) ? m_cornerRadius : 0.0;
     
     const auto radius = KDecoration3::BorderRadius(0.0, 0.0, m_bottomCornersFlag ? bottomRightCornerRadius : 0.0, m_bottomCornersFlag ? bottomLeftCornerRadius : 0.0);
     setBorderRadius(radius);
