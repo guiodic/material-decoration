@@ -33,9 +33,11 @@
 #include "CloseButton.h"
 #include "MaximizeButton.h"
 #include "MinimizeButton.h"
+
 #if HAVE_EXCLUDE_FROM_CAPTURE
 #include "ExcludeFromCaptureButton.h"
 #endif
+
 #include "TextButton.h"
 
 // KDecoration
@@ -64,6 +66,21 @@
 namespace Material
 {
 
+namespace
+{
+
+KDecoration3::DecorationButtonType buttonTypeFromArgs(const QVariantList &args)
+{
+    return args.value(0).value<KDecoration3::DecorationButtonType>();
+}
+
+Decoration *decorationFromArgs(const QVariantList &args)
+{
+    return args.value(1).value<Decoration *>();
+}
+
+}   
+    
 Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, QObject *parent)
     : DecorationButton(type, decoration, parent)
     , m_animationEnabled(true)
@@ -76,6 +93,12 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
 {
     m_holdTimer->setSingleShot(true);
     connect(m_holdTimer, &QTimer::timeout, this, &Button::handleHoldTimeout);
+    
+    if (!decoration) {
+        qWarning() << "Button created without a valid decoration";
+        return;
+    }
+
 
     if (QCoreApplication::applicationName() == QStringLiteral("kded6")) {
         // See: https://github.com/Zren/material-decoration/issues/22
@@ -242,8 +265,11 @@ KDecoration3::DecorationButton* Button::create(KDecoration3::DecorationButtonTyp
 }
 
 Button::Button(QObject *parent, const QVariantList &args)
-    : Button(args.at(0).value<KDecoration3::DecorationButtonType>(), args.at(1).value<Decoration*>(), parent)
+    : Button(buttonTypeFromArgs(args), decorationFromArgs(args), parent)
 {
+    if (args.size() < 2) {
+        qWarning() << "Button constructor received too few arguments:" << args;
+    }
 }
 
 void Button::mouseReleaseEvent(QMouseEvent *event)
