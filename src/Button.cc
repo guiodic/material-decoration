@@ -137,10 +137,16 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     
     connect(this, &Button::enabledChanged, this, [this]() {
         UPDATE_GEOM();
+        if (auto *deco = qobject_cast<Decoration *>(this->decoration())) {
+            QTimer::singleShot(0, this, [deco]() { deco->updateButtonsGeometry(); });
+        }
     }); 
     
     connect(this, &Button::geometryChanged, this, [this]() {
         UPDATE_GEOM();
+        if (auto *deco = qobject_cast<Decoration *>(this->decoration())) {
+            QTimer::singleShot(0, this, [deco]() { deco->updateButtonsGeometry(); });
+        }
     });
     
     
@@ -260,7 +266,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 {
     Q_UNUSED(repaintRegion)
     
-    const auto *deco = qobject_cast<Decoration *>(decoration());
+    const auto *deco = qobject_cast<Decoration *>(this->decoration());
        
     if (!deco) {
         return;
@@ -417,7 +423,7 @@ void Button::setPenWidth(QPainter *painter, const qreal scale)
 
 QColor Button::backgroundColor() const
 {
-    const auto *deco = qobject_cast<Decoration *>(decoration());
+    const auto *deco = qobject_cast<Decoration *>(this->decoration());
     if (!deco) {
         return {};
     }
@@ -506,7 +512,7 @@ QColor Button::backgroundColor() const
 
 QColor Button::foregroundColor() const
 {
-    const auto *deco = qobject_cast<Decoration *>(decoration());
+    const auto *deco = qobject_cast<Decoration *>(this->decoration());
     if (!deco) {
         return {};
     }
