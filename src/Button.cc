@@ -283,12 +283,11 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->setPen(Qt::NoPen);
     painter->setBrush(bgColor);
     const qreal radius = deco->cornerRadius();
-    const QRectF snappedGeometry = KDecoration3::snapToPixelGrid(geometry(), deco->window()->scale());
 
     //const qreal offset = (static_cast<int>(m_isRightmost) - static_cast<int>(m_isLeftmost));   // -0.5 for left; +0.5 for right
 
     // Smart way to draw a rectangle with the right rounded/squared corner
-    painter->drawPath(deco->getRoundedPath(snappedGeometry, radius-Material::cornerRadiusAdjustment, m_isLeftmost && deco->leftBorderVisible(), m_isRightmost && deco->rightBorderVisible(), false, false));
+    painter->drawPath(deco->getRoundedPath(geometry(), radius-Material::cornerRadiusAdjustment, m_isLeftmost && deco->leftBorderVisible(), m_isRightmost && deco->rightBorderVisible(), false, false));
     //painter->fillRect(geometry().toAlignedRect(), bgColor); //.adjusted(-1, -1, 1, 1)
 
     // Foreground.
