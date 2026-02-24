@@ -246,11 +246,13 @@ void AppMenuModel::stopCaching()
 {
     if (!m_isCachingEverything) {
         m_pendingMenuUpdates = 0; // Ensure consistency
+        m_nextMenuToProcess = 0;
         m_seenMenus.clear();
         return;
     }
 
     m_menusToDeepCache.clear();
+    m_nextMenuToProcess = 0;
     m_seenMenus.clear();
     m_staggerTimer->stop();
     m_isCachingEverything = false;
@@ -267,6 +269,7 @@ void AppMenuModel::startDeepCaching()
 
     m_isCachingEverything = true;
     m_menusToDeepCache.clear();
+    m_nextMenuToProcess = 0;
     m_seenMenus.clear();
 
     if (!m_menu) {
@@ -296,6 +299,7 @@ void AppMenuModel::processNext()
         // We are done processing all submenus.
         m_isCachingEverything = false;
         m_deepCacheStarted = false;
+        m_nextMenuToProcess = 0;
         m_seenMenus.clear();
         
         // If there are no pending DBus updates, the menu is ready for search.
@@ -305,7 +309,14 @@ void AppMenuModel::processNext()
         return;
     }
 
-    QPointer<QMenu> menuToProcessPtr = m_menusToDeepCache.takeFirst();
+    if (m_nextMenuToProcess >= m_menusToDeepCache.size()) {
+        m_menusToDeepCache.clear();
+        m_nextMenuToProcess = 0;
+        processNext();
+        return;
+    }
+
+    QPointer<QMenu> menuToProcessPtr = m_menusToDeepCache.at(m_nextMenuToProcess++);
     QMenu *menuToProcess = menuToProcessPtr.data();
 
     if (menuToProcess) {
