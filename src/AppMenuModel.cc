@@ -312,7 +312,7 @@ void AppMenuModel::processNext()
     if (m_nextMenuToProcess >= m_menusToDeepCache.size()) {
         m_menusToDeepCache.clear();
         m_nextMenuToProcess = 0;
-        processNext();
+        processNext(); // not a real recursion: we call again this function only to clear member variables and emit menuReadyForSearch()
         return;
     }
 
