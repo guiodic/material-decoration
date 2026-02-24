@@ -54,16 +54,18 @@ inline int boxSizeToRadius(int boxSize)
 QVector<int> computeBoxSizes(int radius, int numIterations)
 {
     const qreal sigma = radiusToSigma(radius);
+    const qreal sigmaSquared = sigma * sigma;
 
     // Box sizes are computed according to the "Fast Almost-Gaussian Filtering"
     // paper by Peter Kovesi.
-    int lower = std::floor(std::sqrt(12 * std::pow(sigma, 2) / numIterations + 1));
+    int lower = std::floor(std::sqrt(12 * sigmaSquared / numIterations + 1));
     if (lower % 2 == 0) {
         lower--;
     }
 
     const int upper = lower + 2;
-    const int threshold = std::round((12 * std::pow(sigma, 2) - numIterations * std::pow(lower, 2)
+    const int lowerSquared = lower * lower;
+    const int threshold = std::round((12 * sigmaSquared - numIterations * lowerSquared
         - 4 * numIterations * lower - 3 * numIterations) / (-4 * lower - 4));
 
     QVector<int> boxSizes;
