@@ -25,7 +25,7 @@ of appearance and behaviour. For example, you can transform it into a hamburger
 menu, disable the search function, and even decide whether to include inactive
 actions (those that are greyed out) in the search results.
 
-Note: if you confugure the decoration to use Opacity < 100%, 
+Note: if you configure the decoration to use Opacity < 100%, 
 [Better Blur effect](https://github.com/xarblu/kwin-effects-better-blur-dx) is
 strongly recommended on Wayland.
 
