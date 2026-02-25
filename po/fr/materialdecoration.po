@@ -207,3 +207,6 @@ msgstr "Espace minimum réservé"
 
 msgid "Ignore top-level menu labels"
 msgstr "Ignorer les étiquettes de menu de premier niveau"
+
+msgid "Also ignore submenu labels"
+msgstr "Ignorer également les étiquettes des sous-menus"

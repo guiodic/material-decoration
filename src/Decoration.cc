@@ -705,6 +705,11 @@ bool Decoration::searchIgnoreTopLevel() const
     return m_internalSettings->searchIgnoreTopLevel();
 }
 
+bool Decoration::searchIgnoreSubMenus() const
+{
+    return m_internalSettings->searchIgnoreSubMenus();
+}
+
 bool Decoration::animationsEnabled() const
 {
     return m_internalSettings->animationsEnabled();
