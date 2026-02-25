@@ -19,8 +19,6 @@
 
 // Qt
 #include <QLoggingCategory>
-#include <QWidget>
-#include <QDebug>
 
 
 namespace Material

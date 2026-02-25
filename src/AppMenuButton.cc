@@ -19,19 +19,12 @@
 
 // own
 #include "AppMenuButton.h"
-#include "Material.h"
-#include "Button.h"
 #include "Decoration.h"
 #include "AppMenuButtonGroup.h"
-
-// KDecoration
-#include <KDecoration3/DecoratedWindow>
 
 // KF
 #include <KColorUtils>
 
-// Qt
-#include <QDebug>
 
 
 namespace Material

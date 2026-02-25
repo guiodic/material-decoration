@@ -19,18 +19,9 @@
 
 // own
 #include "TextButton.h"
-#include "Material.h"
-#include "AppMenuButton.h"
 #include "Decoration.h"
 
-// KDecoration
-#include <KDecoration3/DecoratedWindow>
-#include <KDecoration3/DecorationSettings>
-
 // Qt
-#include <QDebug>
-#include <QAction>
-#include <QFontMetrics>
 #include <QPainter>
 
 

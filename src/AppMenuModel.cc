@@ -28,19 +28,14 @@
 // own
 #include "AppMenuModel.h"
 #include "Material.h"
-#include "BuildConfig.h"
 #include "NavigableMenu.h"
 
 // Qt
 #include <QAction>
-#include <QDebug>
-#include <QLoggingCategory>
 #include <QMenu>
 
 #include <QDBusConnection>
-#include <QDBusConnectionInterface>
 #include <QDBusServiceWatcher>
-#include <QGuiApplication>
 
 // libdbusmenuqt
 #include <dbusmenuimporter.h>

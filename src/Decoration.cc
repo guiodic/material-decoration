@@ -257,30 +257,31 @@ bool Decoration::init()
 
     setupMenu();
 
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::sizeChanged,
+            this, &Decoration::onSizeChanged);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged,
             this, &Decoration::updateTitleBar);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged,
             this, &Decoration::updateButtonsGeometry);
+    
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
             this, &Decoration::updateButtonsGeometry);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
-            this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedHorizontallyChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedVerticallyChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::shadedChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::sizeChanged,
-        this, &Decoration::onSizeChanged);
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::captionChanged,
             this, repaintTitleBar);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
             this, [this] { update(); });
-
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
+            this, &Decoration::updateBordersCornersBlurShadow);
+    
     updateBordersCornersBlurShadow();
     updateResizeBorders();
     updateTitleBar();
