@@ -997,6 +997,8 @@ QColor Decoration::borderColor() const
 
 QColor Decoration::titleBarBackgroundColor() const
 {
+    if (!hasNoBorders()) return Qt::transparent;
+
     const auto *decoratedClient = window();
     const auto group = decoratedClient->isActive()
         ? KDecoration3::ColorGroup::Active
@@ -1039,7 +1041,6 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
     painter->drawPath(m_titleBarPath);
 
     painter->restore();
-
 }
 
 void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) const
