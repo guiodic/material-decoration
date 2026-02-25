@@ -207,3 +207,6 @@ msgstr "最小保留空间"
 
 msgid "Ignore top-level menu labels"
 msgstr "忽略顶级菜单标签"
+
+msgid "Also ignore submenu labels"
+msgstr "同时也忽略子菜单标签"

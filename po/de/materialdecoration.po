@@ -207,3 +207,6 @@ msgstr "Minimal reservierter Platz"
 
 msgid "Ignore top-level menu labels"
 msgstr "Top-Level-Menübeschriftungen ignorieren"
+
+msgid "Also ignore submenu labels"
+msgstr "Auch Untermenü-Beschriftungen ignorieren"

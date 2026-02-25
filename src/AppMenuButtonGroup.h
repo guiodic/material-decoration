@@ -137,13 +137,14 @@ private:
     struct ActionInfo {
         QString path;
         QString searchablePath;
+        QString label;
         bool isEffectivelyEnabled;
     };
 
     void resetButtons();
     void setupSearchMenu();
     void repositionSearchMenu();
-    void searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results, QSet<QMenu *> &visited, bool ignoreTopLevel);
+    void searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus);
     ActionInfo getActionPath(QAction *action) const;
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
 

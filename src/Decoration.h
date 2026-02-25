@@ -120,6 +120,7 @@ private:
     bool searchEnabled() const;
     bool showDisabledActions() const;
     bool searchIgnoreTopLevel() const;
+    bool searchIgnoreSubMenus() const;
     bool animationsEnabled() const;
     int animationsDuration() const;
     bool dragFromButtonsEnabled() const;
