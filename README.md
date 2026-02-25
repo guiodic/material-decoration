@@ -25,11 +25,15 @@ of appearance and behaviour. For example, you can transform it into a hamburger
 menu, disable the search function, and even decide whether to include inactive
 actions (those that are greyed out) in the search results.
 
+Note: if you confugure the decoration to use Opacity < 100%, 
+[Better Blur effect](https://github.com/xarblu/kwin-effects-better-blur-dx) is
+strongly recommended on Wayland.
+
 ### Actions on Press-and-Hold buttons
 
 Pressing and holding the “Close” button will minimize the window to the traybar
 if the [kwin-minimize2tray](https://github.com/luisbocanegra/kwin-minimize2tray)
-script is present and enabled (
+script is present and enabled ( 
 [AUR package](https://aur.archlinux.org/packages/kwin-minimize2tray-git)).
 
 On Plasma 6.6, pressing and holding the "Minimize" button will minimize ALL

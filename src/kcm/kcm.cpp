@@ -9,17 +9,13 @@
 
 #include <KLocalizedString>
 #include <KPluginFactory>
-#include <KSharedConfig>
-#include <kconfiggroup.h>
 
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QIcon>
 
-#include <QFormLayout>
-#include <QHBoxLayout>
 #include <QLabel>
-#include <QVBoxLayout>
+
 
 K_PLUGIN_CLASS_WITH_JSON(MaterialDecorationKCM, "materialdecoration_kcm.json")
 

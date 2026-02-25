@@ -18,16 +18,11 @@
 
 // own
 #include "MenuOverflowButton.h"
-#include "Material.h"
-#include "AppMenuButton.h"
 #include "Decoration.h"
 #include "ApplicationMenuButton.h"
 
-// KDecoration
-#include <KDecoration3/DecoratedWindow>
 
 // Qt
-#include <QDebug>
 #include <QPainter>
 
 

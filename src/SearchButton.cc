@@ -15,8 +15,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+// own
 #include "SearchButton.h"
-#include "Decoration.h"
+
+// Qt
 #include <QPainter>
 #include <QtMath>
 

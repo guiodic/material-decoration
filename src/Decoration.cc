@@ -257,30 +257,31 @@ bool Decoration::init()
 
     setupMenu();
 
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged,
-            this, &Decoration::updateTitleBar);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged,
-            this, &Decoration::updateButtonsGeometry);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
-            this, &Decoration::updateBordersCornersBlurShadow);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
-            this, &Decoration::updateButtonsGeometry);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
-            this, &Decoration::updateBordersCornersBlurShadow);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::sizeChanged,
+            this, &Decoration::onSizeChanged);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged, this, [this] {
+        updateTitleBar();
+        updateButtonsGeometry();
+    });
+    
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged, this, [this] {
+        updateBordersCornersBlurShadow();
+        updateButtonsGeometry();
+    });
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedHorizontallyChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedVerticallyChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::shadedChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::sizeChanged,
-        this, &Decoration::onSizeChanged);
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::captionChanged,
             this, repaintTitleBar);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
             this, [this] { update(); });
-
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
+            this, &Decoration::updateBordersCornersBlurShadow);
+    
     updateBordersCornersBlurShadow();
     updateResizeBorders();
     updateTitleBar();
@@ -290,23 +291,23 @@ bool Decoration::init()
             this, &Decoration::onSectionUnderMouseChanged);
     updateTitleBarHoverState();
 
-    connect(settings().get(), &KDecoration3::DecorationSettings::reconfigured,
-        this, &Decoration::reconfigure);
-    connect(settings().get(), &KDecoration3::DecorationSettings::alphaChannelSupportedChanged,
-        this, &Decoration::reconfigure);
-    connect(m_internalSettings.data(), &InternalSettings::configChanged,
-        this, &Decoration::reconfigure);
-    
+
     // Window Decoration KCM
     // The reconfigure signal will update active windows, but we need to hook
     // individual signals for the preview in the KCM.
+    connect(settings().get(), &KDecoration3::DecorationSettings::reconfigured,
+        this, &Decoration::reconfigure);
+    connect(m_internalSettings.data(), &InternalSettings::configChanged,
+        this, &Decoration::reconfigure);
+    connect(settings().get(), &KDecoration3::DecorationSettings::alphaChannelSupportedChanged,
+        this, &Decoration::reconfigure);
     connect(settings().get(), &KDecoration3::DecorationSettings::borderSizeChanged,
         this, &Decoration::updateBordersCornersBlurShadow);
     connect(settings().get(), &KDecoration3::DecorationSettings::fontChanged,
         this, &Decoration::updateBordersCornersBlurShadow);
     connect(settings().get(), &KDecoration3::DecorationSettings::spacingChanged,
         this, &Decoration::updateBordersCornersBlurShadow);
-    
+
     return true;
 }
 
@@ -996,6 +997,9 @@ QColor Decoration::borderColor() const
 
 QColor Decoration::titleBarBackgroundColor() const
 {
+    if (!hasNoBorders()) // && !m_internalSettings->useCustomBorderColors()) 
+        return Qt::transparent;
+
     const auto *decoratedClient = window();
     const auto group = decoratedClient->isActive()
         ? KDecoration3::ColorGroup::Active
