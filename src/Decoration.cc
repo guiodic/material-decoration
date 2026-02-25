@@ -291,23 +291,23 @@ bool Decoration::init()
             this, &Decoration::onSectionUnderMouseChanged);
     updateTitleBarHoverState();
 
-    connect(settings().get(), &KDecoration3::DecorationSettings::reconfigured,
-        this, &Decoration::reconfigure);
-    connect(settings().get(), &KDecoration3::DecorationSettings::alphaChannelSupportedChanged,
-        this, &Decoration::reconfigure);
-    connect(m_internalSettings.data(), &InternalSettings::configChanged,
-        this, &Decoration::reconfigure);
-    
+
     // Window Decoration KCM
     // The reconfigure signal will update active windows, but we need to hook
     // individual signals for the preview in the KCM.
+    connect(settings().get(), &KDecoration3::DecorationSettings::reconfigured,
+        this, &Decoration::reconfigure);
+    connect(m_internalSettings.data(), &InternalSettings::configChanged,
+        this, &Decoration::reconfigure);
+    connect(settings().get(), &KDecoration3::DecorationSettings::alphaChannelSupportedChanged,
+        this, &Decoration::updateBordersCornersBlurShadow);
     connect(settings().get(), &KDecoration3::DecorationSettings::borderSizeChanged,
         this, &Decoration::updateBordersCornersBlurShadow);
     connect(settings().get(), &KDecoration3::DecorationSettings::fontChanged,
         this, &Decoration::updateBordersCornersBlurShadow);
     connect(settings().get(), &KDecoration3::DecorationSettings::spacingChanged,
         this, &Decoration::updateBordersCornersBlurShadow);
-    
+
     return true;
 }
 
@@ -1039,6 +1039,7 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
     painter->drawPath(m_titleBarPath);
 
     painter->restore();
+
 }
 
 void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) const
