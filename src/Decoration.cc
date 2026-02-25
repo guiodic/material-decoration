@@ -259,15 +259,15 @@ bool Decoration::init()
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::sizeChanged,
             this, &Decoration::onSizeChanged);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged,
-            this, &Decoration::updateTitleBar);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged,
-            this, &Decoration::updateButtonsGeometry);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged, this, [this] {
+        updateTitleBar();
+        updateButtonsGeometry();
+    });
     
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
-            this, &Decoration::updateBordersCornersBlurShadow);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged,
-            this, &Decoration::updateButtonsGeometry);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged, this, [this] {
+        updateBordersCornersBlurShadow();
+        updateButtonsGeometry();
+    });
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedHorizontallyChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedVerticallyChanged,
@@ -997,7 +997,8 @@ QColor Decoration::borderColor() const
 
 QColor Decoration::titleBarBackgroundColor() const
 {
-    if (!hasNoBorders()) return Qt::transparent;
+    if (!hasNoBorders()) // && !m_internalSettings->useCustomBorderColors()) 
+        return Qt::transparent;
 
     const auto *decoratedClient = window();
     const auto group = decoratedClient->isActive()
