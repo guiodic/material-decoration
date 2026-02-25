@@ -300,7 +300,7 @@ bool Decoration::init()
     connect(m_internalSettings.data(), &InternalSettings::configChanged,
         this, &Decoration::reconfigure);
     connect(settings().get(), &KDecoration3::DecorationSettings::alphaChannelSupportedChanged,
-        this, &Decoration::updateBordersCornersBlurShadow);
+        this, &Decoration::reconfigure);
     connect(settings().get(), &KDecoration3::DecorationSettings::borderSizeChanged,
         this, &Decoration::updateBordersCornersBlurShadow);
     connect(settings().get(), &KDecoration3::DecorationSettings::fontChanged,
