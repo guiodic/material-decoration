@@ -301,7 +301,7 @@ bool Decoration::init()
         this, &Decoration::reconfigure);
     connect(settings().get(), &KDecoration3::DecorationSettings::alphaChannelSupportedChanged,
         this, &Decoration::reconfigure);
-    connect(settings().get(), &KDecoration3::DecorationSettings::borderSizeChanged,
+    connect(settings().get(), &KDecoration3::DecorationSettings::borderSizeChanged, 
         this, &Decoration::updateBordersCornersBlurShadow);
     connect(settings().get(), &KDecoration3::DecorationSettings::fontChanged,
         this, &Decoration::updateBordersCornersBlurShadow);
@@ -959,8 +959,8 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
     if (!hasNoBorders()) {
         painter->setRenderHint(QPainter::Antialiasing);
         painter->setPen(Qt::NoPen);        
-        painter->setBrush(borderColor());
-        painter->drawPath(m_framePath);
+        painter->setBrush(borderColor());        
+        painter->drawPath(m_framePath.subtracted(m_titleBarPath));
     }
     
     painter->restore();
@@ -997,8 +997,8 @@ QColor Decoration::borderColor() const
 
 QColor Decoration::titleBarBackgroundColor() const
 {
-    if (!hasNoBorders()) // && !m_internalSettings->useCustomBorderColors()) 
-        return Qt::transparent;
+    //if (!hasNoBorders()) // && !m_internalSettings->useCustomBorderColors()
+    //    return Qt::transparent;
 
     const auto *decoratedClient = window();
     const auto group = decoratedClient->isActive()
