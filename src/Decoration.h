@@ -111,7 +111,7 @@ private:
     void setButtonGroupAnimation(KDecoration3::DecorationButtonGroup *buttonGroup, bool enabled, int duration);
     void updateButtonAnimation();
     void updateShadow();
-    void updateCornerRadius();
+    void updateCornersAndOutline();
     void updatePaths();
 
     bool menuAlwaysShow() const;
@@ -150,7 +150,6 @@ private:
     void paintTitleBarBackground(QPainter *painter, const QRectF &repaintRegion) const;
     void paintCaption(QPainter *painter, const QRectF &repaintRegion) const;
     void paintButtons(QPainter *painter, const QRectF &repaintRegion) const;
-    void paintOutline(QPainter *painter, const QRectF &repaintRegion) const;
     QPainterPath getRoundedPath(const QRectF &rect, qreal radius, bool roundTopLeft = true, bool roundTopRight = true, bool roundBottomLeft = false, bool roundBottomRight = false) const;
 
     qreal cornerRadius() const;
