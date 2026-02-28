@@ -210,3 +210,6 @@ msgstr "Ignorer les étiquettes de menu de premier niveau"
 
 msgid "Also ignore submenu labels"
 msgstr "Ignorer également les étiquettes des sous-menus"
+
+msgid "Paint a thin outline around the window"
+msgstr "Dessiner un contour fin autour de la fenêtre"

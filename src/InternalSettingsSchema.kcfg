@@ -26,6 +26,10 @@
         <entry name="BottomCornerRadiusFlag" type="bool">
             <default>true</default>
         </entry>
+        
+        <entry name="OutlineActive" type="bool">
+            <default>false</default>
+        </entry>
 
         <!-- borders -->
         <entry name="UseCustomBorderColors" type="Bool">

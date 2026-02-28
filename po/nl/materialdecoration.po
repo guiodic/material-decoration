@@ -210,3 +210,6 @@ msgstr "Menu-labels op het hoogste niveau negeren"
 
 msgid "Also ignore submenu labels"
 msgstr "Ook labels van submenu's negeren"
+
+msgid "Paint a thin outline around the window"
+msgstr "Een dunne omtrek om het venster tekenen"
