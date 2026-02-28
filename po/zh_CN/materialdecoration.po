@@ -210,3 +210,6 @@ msgstr "忽略顶级菜单标签"
 
 msgid "Also ignore submenu labels"
 msgstr "同时也忽略子菜单标签"
+
+msgid "Paint a thin outline around the window"
+msgstr "在窗口周围绘制细轮廓"
