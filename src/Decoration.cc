@@ -319,16 +319,16 @@ void Decoration::reconfigure()
     resetDragMove();
     m_internalSettings->load();
     m_bottomCornersFlag = m_internalSettings->bottomCornerRadiusFlag();
-    
-    updateTitleBar();
 
     m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
     m_menuButtons->updateAppMenuModel();
     m_menuButtons->setAlwaysShow(menuAlwaysShow());
-
-    updateButtonsGeometry();
+    
     updateButtonAnimation();
     updateBordersCornersBlurShadow();
+    updateResizeBorders();
+    updateTitleBar();
+    QTimer::singleShot(0, this, &Decoration::updateButtonsGeometry); // avoid wrong geometry (for example Spectacle)
     update();
 }
 
