@@ -279,8 +279,8 @@ bool Decoration::init()
             this, repaintTitleBar);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
             this, [this] { 
-                updateCornersAndOutline();
-                update();
+                           updateCornerRadiusAndOutline();
+                           update(); 
             });
     connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
@@ -421,7 +421,7 @@ void Decoration::onSectionUnderMouseChanged(const Qt::WindowFrameSection value)
 
 void Decoration::updateBlur()
 {
-    setBlurRegion(QRegion(m_framePath.toFillPolygon().toPolygon()));
+    setBlurRegion(QRegion(0, 0, size().width(), size().height()));
 }
 
 void Decoration::updateBordersCornersBlurShadow()
@@ -432,7 +432,7 @@ void Decoration::updateBordersCornersBlurShadow()
     borders.setRight(rightOffset());
     borders.setBottom(bottomOffset());
     setBorders(borders);
-    updateCornersAndOutline();
+    updateCornerRadiusAndOutline();
     updatePaths();
     updateBlur();
     updateShadow();
@@ -962,7 +962,7 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
     if (!hasNoBorders()) {
         painter->setRenderHint(QPainter::Antialiasing);
         painter->setPen(Qt::NoPen);        
-        painter->setBrush(titleBarBackgroundColor());        
+        painter->setBrush(borderColor());        
         painter->drawPath(m_framePath.subtracted(m_titleBarPath));
     }
     
@@ -1145,8 +1145,7 @@ void Decoration::paintButtons(QPainter *painter, const QRectF &repaintRegion) co
     m_menuButtons->paint(painter, repaintRegion);
 }
 
-
-void Decoration::updateCornersAndOutline()
+void Decoration::updateCornerRadiusAndOutline()
 {    
     if (window()->isMaximized() || !settings()->isAlphaChannelSupported()) {
         m_cornerRadius = 0.0;
@@ -1163,9 +1162,16 @@ void Decoration::updateCornersAndOutline()
                                                    topRightCornerRadius, 
                                                    m_bottomCornersFlag ? bottomRightCornerRadius : 0.0, 
                                                    m_bottomCornersFlag ? bottomLeftCornerRadius : 0.0
-                                                   );
+                                                  );
     setBorderRadius(radius);
-    setBorderOutline(KDecoration3::BorderOutline(4.0, borderColor(), radius));
+    
+    //Outline
+    if (m_internalSettings->outlineActive()) {
+        QColor outlineColor = borderColor();
+        outlineColor.setAlphaF(1.0);
+        const qreal outlineThickness = std::max(KDecoration3::pixelSize(window()->scale()), KDecoration3::snapToPixelGrid(1, window()->scale()));
+        setBorderOutline(KDecoration3::BorderOutline(outlineThickness, outlineColor, radius));
+    }
 }
 
 void Decoration::updatePaths()

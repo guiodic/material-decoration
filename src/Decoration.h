@@ -111,7 +111,7 @@ private:
     void setButtonGroupAnimation(KDecoration3::DecorationButtonGroup *buttonGroup, bool enabled, int duration);
     void updateButtonAnimation();
     void updateShadow();
-    void updateCornersAndOutline();
+    void updateCornerRadiusAndOutline();
     void updatePaths();
 
     bool menuAlwaysShow() const;
