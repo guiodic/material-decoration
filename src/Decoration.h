@@ -127,7 +127,6 @@ private:
     bool hideCaptionWhenLimitedSpace() const;
     qreal buttonPadding() const;
     qreal titleBarHeight() const;
-    qreal appMenuButtonHorzPadding() const;
     qreal appMenuCaptionSpacing() const;
     qreal captionMinWidth() const;
 

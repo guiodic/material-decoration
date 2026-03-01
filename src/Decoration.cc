@@ -758,14 +758,6 @@ qreal Decoration::titleBarHeight() const
     return buttonPadding()*2 + fontMetrics.height();
 }
 
-qreal Decoration::appMenuButtonHorzPadding() const
-{
-    // Use gridUnit as base for horizontal padding to match Breeze's precision.
-    // Default setting of 4 results in exactly 1 gridUnit of padding.
-    static constexpr int PADDING_UNIT_DIVISOR = 4;
-    return settings()->gridUnit() * m_internalSettings->menuButtonHorzPadding() / PADDING_UNIT_DIVISOR;
-}
-
 qreal Decoration::appMenuCaptionSpacing() const
 {
     return settings()->largeSpacing() * 3;
@@ -1073,6 +1065,9 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     // --- Determine alignment and final drawing rectangle ---
+    const qreal captionPadding = m_internalSettings->menuButtonHorzPadding(); // reuse the same configurable padding for text buttons in appmenu 
+    availableRect.adjust(captionPadding, 0, -captionPadding, 0);
+
     QRectF captionRect;
     Qt::Alignment alignment;
     const qreal textWidth = fontMetrics.boundingRect(decoratedClient->caption()).width();

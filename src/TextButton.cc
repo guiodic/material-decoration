@@ -33,10 +33,6 @@ TextButton::TextButton(Decoration *decoration, const int buttonIndex, QObject *p
     , m_action(nullptr)
     , m_text(QStringLiteral("Menu"))
 {
-    const auto *deco = qobject_cast<Decoration *>(decoration);
-
-    setHorzPadding(deco->appMenuButtonHorzPadding());
-
     setVisible(true);
 }
 
