@@ -127,7 +127,6 @@ private:
     bool hideCaptionWhenLimitedSpace() const;
     qreal buttonPadding() const;
     qreal titleBarHeight() const;
-    qreal appMenuButtonHorzPadding() const;
     qreal appMenuCaptionSpacing() const;
     qreal captionMinWidth() const;
 
@@ -135,6 +134,7 @@ private:
 
     QFont menuFont() const;
     qreal getMenuTextWidth(const QString text, bool showMnemonic = false) const;
+    bool isMenuOnRight() const;
 
     void initDragMove(const QPoint pos);
     void resetDragMove();

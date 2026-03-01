@@ -33,10 +33,6 @@ TextButton::TextButton(Decoration *decoration, const int buttonIndex, QObject *p
     , m_action(nullptr)
     , m_text(QStringLiteral("Menu"))
 {
-    const auto *deco = qobject_cast<Decoration *>(decoration);
-
-    setHorzPadding(deco->appMenuButtonHorzPadding());
-
     setVisible(true);
 }
 
@@ -56,7 +52,7 @@ void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qrea
     // TODO: Use Qt::TextShowMnemonic when Alt is pressed
     const bool isAltPressed = false;
     const Qt::TextFlag mnemonicFlag = isAltPressed ? Qt::TextShowMnemonic : Qt::TextHideMnemonic;
-    painter->drawText(iconRect, mnemonicFlag | Qt::AlignCenter, m_text);
+    painter->drawText(iconRect.translated(1.0, 0.0), mnemonicFlag | Qt::AlignCenter, m_text); // translating 1 pixel seems the only way to perfetc centering the text.
 }
 
 QSizeF TextButton::getTextSize() const
