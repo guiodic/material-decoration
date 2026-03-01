@@ -513,19 +513,27 @@ void Decoration::updateButtonsGeometry()
     // Menu
     if (!m_menuButtons->buttons().isEmpty()) {
         const qreal captionOffset = captionMinWidth() + settings()->smallSpacing();
-        const QRectF availableRect = centerRect().adjusted(
-            0,
-            top,
-            -captionOffset,
-            top
-        );
-        const QPointF topLeft = availableRect.topLeft();
+        QRectF availableRect = centerRect();
+        if (isMenuOnRight()) {
+            availableRect.setLeft(availableRect.left() + captionOffset);
+        } else {
+            availableRect.setRight(availableRect.right() - captionOffset);
+        }
+        availableRect.translate(0, top);
 
         setButtonGroupHorzPadding(m_menuButtons, m_internalSettings->menuButtonHorzPadding());
-        m_menuButtons->setPos(topLeft);
-        m_menuButtons->setSpacing(0);
+        
+        m_menuButtons->updateOverflow(availableRect);
 
-        m_menuButtons->updateOverflow(QRectF(topLeft, availableRect.size()));
+        if (isMenuOnRight()) {
+            const QPointF topRight = availableRect.topRight();
+            m_menuButtons->setPos(QPointF(topRight.x() - m_menuButtons->visibleWidth(), topRight.y()));
+                           //setPos(QPointF(size().width() - right - m_rightButtons->geometry().width(), top));
+        } else {
+            m_menuButtons->setPos(availableRect.topLeft());
+        }
+        
+        m_menuButtons->setSpacing(0);
     }
     
     // Update leftmost/rightmost state for buttons across all groups
@@ -854,6 +862,12 @@ qreal Decoration::getMenuTextWidth(const QString text, bool showMnemonic) const
     return boundingRect.width();
 }
 
+bool Decoration::isMenuOnRight() const
+{
+    const auto buttonsRight = settings()->decorationButtonsRight();
+    return buttonsRight.contains(KDecoration3::DecorationButtonType::ApplicationMenu);
+}
+
 QPoint Decoration::windowPos() const
 {
 #if HAVE_X11
@@ -1062,7 +1076,11 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     QRectF availableRect = centerRect();
     if (appMenuVisible && m_menuButtons->alwaysShow()) {
         const qreal menuButtonsWidth = m_menuButtons->visibleWidth() + appMenuCaptionSpacing();
-        availableRect.setLeft(availableRect.left() + menuButtonsWidth);
+        if (isMenuOnRight()) {
+            availableRect.setRight(availableRect.right() - menuButtonsWidth);
+        } else {
+            availableRect.setLeft(availableRect.left() + menuButtonsWidth);
+        }
     }
 
     // Hide caption if there is not enough space

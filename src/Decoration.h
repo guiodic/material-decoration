@@ -134,6 +134,7 @@ private:
 
     QFont menuFont() const;
     qreal getMenuTextWidth(const QString text, bool showMnemonic = false) const;
+    bool isMenuOnRight() const;
 
     void initDragMove(const QPoint pos);
     void resetDragMove();
