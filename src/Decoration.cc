@@ -496,35 +496,6 @@ void Decoration::updateButtonHeight()
 
 void Decoration::updateButtonsGeometry()
 {
-    // Update leftmost/rightmost state for buttons
-    Button *leftmostButton = nullptr;
-    for (auto *decoButton : m_leftButtons->buttons()) {
-        if (auto *button = qobject_cast<Button *>(decoButton)) {
-            button->setIsLeftmost(false);
-            button->setIsRightmost(false);
-            if (!leftmostButton && button->isVisible()) {
-                leftmostButton = button;
-            }
-        }
-    }
-    if (leftmostButton) {
-        leftmostButton->setIsLeftmost(true);
-    }
-
-    Button *rightmostButton = nullptr;
-    for (auto *decoButton : m_rightButtons->buttons()) {
-        if (auto *button = qobject_cast<Button *>(decoButton)) {
-            button->setIsLeftmost(false);
-            button->setIsRightmost(false);
-            if (button->isVisible()) {
-                rightmostButton = button;
-            }
-        }
-    }
-    if (rightmostButton) {
-        rightmostButton->setIsRightmost(true);
-    }
-
     const qreal left = leftOffset();
     const qreal right = rightOffset();
     const qreal top = topOffset();
@@ -555,6 +526,41 @@ void Decoration::updateButtonsGeometry()
         m_menuButtons->setSpacing(0);
 
         m_menuButtons->updateOverflow(QRectF(topLeft, availableRect.size()));
+    }
+    
+    // Update leftmost/rightmost state for buttons across all groups
+    Button *leftmostButton = nullptr;
+    Button *rightmostButton = nullptr;
+
+    auto updateGroupFlags = [&](KDecoration3::DecorationButtonGroup *group) {
+        if (!group) {
+            return;
+        }
+        for (auto *decoButton : group->buttons()) {
+            if (auto *button = qobject_cast<Button *>(decoButton)) {
+                button->setIsLeftmost(false);
+                button->setIsRightmost(false);
+                if (button->isVisible()) {
+                    if (!leftmostButton || button->geometry().x() < leftmostButton->geometry().x()) {
+                        leftmostButton = button;
+                    }
+                    if (!rightmostButton || button->geometry().right() > rightmostButton->geometry().right()) {
+                        rightmostButton = button;
+                    }
+                }
+            }
+        }
+    };
+
+    updateGroupFlags(m_leftButtons);
+    updateGroupFlags(m_rightButtons);
+    updateGroupFlags(m_menuButtons);
+
+    if (leftmostButton) {
+        leftmostButton->setIsLeftmost(true);
+    }
+    if (rightmostButton) {
+        rightmostButton->setIsRightmost(true);
     }
 
     updatePaths();
