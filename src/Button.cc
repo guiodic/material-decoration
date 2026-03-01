@@ -306,7 +306,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     // Background
     const QColor bgColor = backgroundColor();
     painter->setRenderHints(QPainter::Antialiasing, m_isRightmost || m_isLeftmost);
-    painter->setPen(Qt::NoPen);
+    painter->setPen(Qt::red);
     painter->setBrush(bgColor);
     const qreal radius = deco->cornerRadius();
 
