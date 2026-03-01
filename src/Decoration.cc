@@ -210,13 +210,8 @@ QRectF Decoration::titleBarRect() const
 
 QRectF Decoration::centerRect() const
 {
-    const bool leftButtonsVisible = !m_leftButtons->buttons().isEmpty();
-    const qreal leftOffset = m_leftButtons->geometry().right()
-        + (leftButtonsVisible ? settings()->smallSpacing() : 0);
-
-    const bool rightButtonsVisible = !m_rightButtons->buttons().isEmpty();
-    const qreal rightOffset = m_rightButtons->geometry().width()
-        + (rightButtonsVisible ? settings()->smallSpacing() : 0);
+    const qreal leftOffset = m_leftButtons->geometry().right();
+    const qreal rightOffset = m_rightButtons->geometry().width();
 
     return titleBarRect().adjusted(
         leftOffset,
@@ -496,35 +491,6 @@ void Decoration::updateButtonHeight()
 
 void Decoration::updateButtonsGeometry()
 {
-    // Update leftmost/rightmost state for buttons
-    Button *leftmostButton = nullptr;
-    for (auto *decoButton : m_leftButtons->buttons()) {
-        if (auto *button = qobject_cast<Button *>(decoButton)) {
-            button->setIsLeftmost(false);
-            button->setIsRightmost(false);
-            if (!leftmostButton && button->isVisible()) {
-                leftmostButton = button;
-            }
-        }
-    }
-    if (leftmostButton) {
-        leftmostButton->setIsLeftmost(true);
-    }
-
-    Button *rightmostButton = nullptr;
-    for (auto *decoButton : m_rightButtons->buttons()) {
-        if (auto *button = qobject_cast<Button *>(decoButton)) {
-            button->setIsLeftmost(false);
-            button->setIsRightmost(false);
-            if (button->isVisible()) {
-                rightmostButton = button;
-            }
-        }
-    }
-    if (rightmostButton) {
-        rightmostButton->setIsRightmost(true);
-    }
-
     const qreal left = leftOffset();
     const qreal right = rightOffset();
     const qreal top = topOffset();
@@ -542,19 +508,62 @@ void Decoration::updateButtonsGeometry()
     // Menu
     if (!m_menuButtons->buttons().isEmpty()) {
         const qreal captionOffset = captionMinWidth() + settings()->smallSpacing();
-        const QRectF availableRect = centerRect().adjusted(
-            0,
-            top,
-            -captionOffset,
-            top
-        );
-        const QPointF topLeft = availableRect.topLeft();
+        QRectF availableRect = centerRect();
+        if (isMenuOnRight()) {
+            availableRect.setLeft(availableRect.left() + captionOffset);
+        } else {
+            availableRect.setRight(availableRect.right() - captionOffset);
+        }
+        availableRect.translate(0, top);
 
         setButtonGroupHorzPadding(m_menuButtons, m_internalSettings->menuButtonHorzPadding());
-        m_menuButtons->setPos(topLeft);
-        m_menuButtons->setSpacing(0);
+        
+        m_menuButtons->updateOverflow(availableRect);
 
-        m_menuButtons->updateOverflow(QRectF(topLeft, availableRect.size()));
+        if (isMenuOnRight()) {
+            const QPointF topRight = availableRect.topRight();
+            m_menuButtons->setPos(QPointF(topRight.x() - m_menuButtons->visibleWidth(), topRight.y()));
+                           //setPos(QPointF(size().width() - right - m_rightButtons->geometry().width(), top));
+        } else {
+            m_menuButtons->setPos(availableRect.topLeft());
+        }
+        
+        m_menuButtons->setSpacing(0);
+    }
+    
+    // Update leftmost/rightmost state for buttons across all groups
+    Button *leftmostButton = nullptr;
+    Button *rightmostButton = nullptr;
+
+    auto updateGroupFlags = [&](KDecoration3::DecorationButtonGroup *group) {
+        if (!group) {
+            return;
+        }
+        for (auto *decoButton : group->buttons()) {
+            if (auto *button = qobject_cast<Button *>(decoButton)) {
+                button->setIsLeftmost(false);
+                button->setIsRightmost(false);
+                if (button->isVisible()) {
+                    if (!leftmostButton || button->geometry().x() < leftmostButton->geometry().x()) {
+                        leftmostButton = button;
+                    }
+                    if (!rightmostButton || button->geometry().right() > rightmostButton->geometry().right()) {
+                        rightmostButton = button;
+                    }
+                }
+            }
+        }
+    };
+
+    updateGroupFlags(m_leftButtons);
+    updateGroupFlags(m_rightButtons);
+    updateGroupFlags(m_menuButtons);
+
+    if (leftmostButton) {
+        leftmostButton->setIsLeftmost(true);
+    }
+    if (rightmostButton) {
+        rightmostButton->setIsRightmost(true);
     }
 
     updatePaths();
@@ -758,14 +767,6 @@ qreal Decoration::titleBarHeight() const
     return buttonPadding()*2 + fontMetrics.height();
 }
 
-qreal Decoration::appMenuButtonHorzPadding() const
-{
-    // Use gridUnit as base for horizontal padding to match Breeze's precision.
-    // Default setting of 4 results in exactly 1 gridUnit of padding.
-    static constexpr int PADDING_UNIT_DIVISOR = 4;
-    return settings()->gridUnit() * m_internalSettings->menuButtonHorzPadding() / PADDING_UNIT_DIVISOR;
-}
-
 qreal Decoration::appMenuCaptionSpacing() const
 {
     return settings()->largeSpacing() * 3;
@@ -854,6 +855,12 @@ qreal Decoration::getMenuTextWidth(const QString text, bool showMnemonic) const
     // Use an unconstrained bounding rect to get the ideal width.
     const QRectF boundingRect = fontMetrics.boundingRect(QRectF(), flags, text);
     return boundingRect.width();
+}
+
+bool Decoration::isMenuOnRight() const
+{
+    const auto buttonsRight = settings()->decorationButtonsRight();
+    return buttonsRight.contains(KDecoration3::DecorationButtonType::ApplicationMenu);
 }
 
 QPoint Decoration::windowPos() const
@@ -1064,7 +1071,11 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     QRectF availableRect = centerRect();
     if (appMenuVisible && m_menuButtons->alwaysShow()) {
         const qreal menuButtonsWidth = m_menuButtons->visibleWidth() + appMenuCaptionSpacing();
-        availableRect.setLeft(availableRect.left() + menuButtonsWidth);
+        if (isMenuOnRight()) {
+            availableRect.setRight(availableRect.right() - menuButtonsWidth);
+        } else {
+            availableRect.setLeft(availableRect.left() + menuButtonsWidth);
+        }
     }
 
     // Hide caption if there is not enough space
@@ -1073,6 +1084,9 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     // --- Determine alignment and final drawing rectangle ---
+    const qreal captionPadding = m_internalSettings->menuButtonHorzPadding(); // reuse the same configurable padding for text buttons in appmenu 
+    availableRect.adjust(captionPadding, 0, -captionPadding, 0);
+
     QRectF captionRect;
     Qt::Alignment alignment;
     const qreal textWidth = fontMetrics.boundingRect(decoratedClient->caption()).width();
