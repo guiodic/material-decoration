@@ -220,6 +220,9 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     case KDecoration3::DecorationButtonType::Minimize:
         MinimizeButton::init(this, decoratedClient);
         break;
+        
+    case KDecoration3::DecorationButtonType::Spacer:
+        break;    
 
 #if HAVE_EXCLUDE_FROM_CAPTURE
     case KDecoration3::DecorationButtonType::ExcludeFromCapture:
@@ -254,6 +257,7 @@ KDecoration3::DecorationButton* Button::create(KDecoration3::DecorationButtonTyp
     case KDecoration3::DecorationButtonType::Close:
     case KDecoration3::DecorationButtonType::Maximize:
     case KDecoration3::DecorationButtonType::Minimize:
+    case KDecoration3::DecorationButtonType::Spacer:
 #if HAVE_EXCLUDE_FROM_CAPTURE
     case KDecoration3::DecorationButtonType::ExcludeFromCapture:
 #endif
@@ -396,6 +400,8 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         case KDecoration3::DecorationButtonType::Minimize:
             MinimizeButton::paintIcon(this, painter, iconRect, 0);
             break;
+        case KDecoration3::DecorationButtonType::Spacer:  
+            break;            
 
 #if HAVE_EXCLUDE_FROM_CAPTURE
         case KDecoration3::DecorationButtonType::ExcludeFromCapture:
