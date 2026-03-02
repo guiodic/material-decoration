@@ -1171,7 +1171,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     const QString caption = fontMetrics.elidedText(fullCaption, Qt::ElideMiddle, drawingRect.width());
     drawingRect.translate(0, offset);
 
-    painter->drawText(drawingRect, alignment | Qt::TextSingleLine, caption);
+    painter->drawText(drawingRect, alignment | Qt::TextSingleLine | Qt::AlignVCenter, caption);
     painter->restore();
 }
 
