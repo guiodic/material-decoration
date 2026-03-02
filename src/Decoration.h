@@ -171,6 +171,7 @@ private:
     mutable QRectF m_captionRect;
     mutable bool m_captionLimited = false;
     QPointF m_lastHoverPos;
+    bool m_titleBarHoverActive = false;
 
     friend class AppMenuButtonGroup;
     friend class Button;

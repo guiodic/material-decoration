@@ -467,7 +467,12 @@ void Decoration::updateTitleBarHoverState()
         }
     }
 
-    m_menuButtons->setHovered(isHovered);
+    if (m_titleBarHoverActive == isHovered) {
+        return;
+    }
+
+    m_titleBarHoverActive = isHovered;
+    m_menuButtons->setHovered(m_titleBarHoverActive);
 }
 
 void Decoration::setButtonGroupHeight(KDecoration3::DecorationButtonGroup *buttonGroup, qreal buttonHeight)
