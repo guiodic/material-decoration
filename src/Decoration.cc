@@ -396,6 +396,9 @@ void Decoration::hoverLeaveEvent(QHoverEvent *event)
 {
     KDecoration3::Decoration::hoverLeaveEvent(event);
 
+    m_lastHoverPos = QPointF(-1, -1);
+    m_menuButtons->setHovered(false);
+    m_menuButtons->updateShowing();
     resetDragMove();
 }
 
@@ -456,7 +459,6 @@ void Decoration::updateTitleBar()
 
 void Decoration::updateTitleBarHoverState()
 {
-    const bool wasHovered = m_menuButtons->hovered();
     bool isHovered = titleBarIsHovered();
 
     if (showCaptionOnHover() && m_captionLimited) {
@@ -465,15 +467,7 @@ void Decoration::updateTitleBarHoverState()
         }
     }
 
-    if (!wasHovered && isHovered) {
-        // HoverEnter
-        m_menuButtons->setHovered(true);
-    } else if (wasHovered && !isHovered) {
-        // HoverLeave
-        m_menuButtons->setHovered(false);
-    } else if (wasHovered && isHovered) {
-        // HoverMove
-    }
+    m_menuButtons->setHovered(isHovered);
 }
 
 void Decoration::setButtonGroupHeight(KDecoration3::DecorationButtonGroup *buttonGroup, qreal buttonHeight)
@@ -501,6 +495,8 @@ void Decoration::updateButtonHeight()
 
 void Decoration::updateButtonsGeometry()
 {
+    m_menuButtons->updateShowing();
+
     const qreal left = leftOffset();
     const qreal right = rightOffset();
     const qreal top = topOffset();

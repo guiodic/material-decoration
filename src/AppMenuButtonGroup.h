@@ -80,11 +80,11 @@ public slots:
     void setHamburgerMenu(bool value);
     void updateAppMenuModel();
     void updateOverflow(QRectF availableRect);
+    void updateShowing();
 
 private slots:
     void onMenuReadyForSearch();
     void triggerOverflow();
-    void updateShowing();
     void onMenuAboutToHide();
 
 private slots:
