@@ -331,7 +331,7 @@ void Decoration::mousePressEvent(QMouseEvent *event)
 {
     KDecoration3::Decoration::mousePressEvent(event);
 
-    const QPoint pos = event->pos();
+    const QPoint pos = event->position().toPoint();
 
     // Determine if the click occurred on any of the button groups.
     // Menu buttons always allow dragging, while 
@@ -361,12 +361,15 @@ void Decoration::mousePressEvent(QMouseEvent *event)
 void Decoration::hoverEnterEvent(QHoverEvent *event)
 {
     KDecoration3::Decoration::hoverEnterEvent(event);
+    m_lastHoverPos = event->position();
 }
 
 
 void Decoration::hoverMoveEvent(QHoverEvent *event)
 {
     KDecoration3::Decoration::hoverMoveEvent(event);
+    m_lastHoverPos = event->position();
+    updateTitleBarHoverState();
 
     const bool dragStarted = dragMoveTick(event->position().toPoint());
     if (dragStarted) {
@@ -393,6 +396,9 @@ void Decoration::hoverLeaveEvent(QHoverEvent *event)
 {
     KDecoration3::Decoration::hoverLeaveEvent(event);
 
+    m_lastHoverPos = QPointF(-1, -1);
+    m_menuButtons->setHovered(false);
+    m_menuButtons->updateShowing();
     resetDragMove();
 }
 
@@ -453,17 +459,20 @@ void Decoration::updateTitleBar()
 
 void Decoration::updateTitleBarHoverState()
 {
-    const bool wasHovered = m_menuButtons->hovered();
-    const bool isHovered = titleBarIsHovered();
-    if (!wasHovered && isHovered) {
-        // HoverEnter
-        m_menuButtons->setHovered(true);
-    } else if (wasHovered && !isHovered) {
-        // HoverLeave
-        m_menuButtons->setHovered(false);
-    } else if (wasHovered && isHovered) {
-        // HoverMove
+    bool isHovered = titleBarIsHovered();
+
+    if (showCaptionOnHover() && m_captionLimited) {
+        if (!m_captionRect.contains(m_lastHoverPos)) {
+            isHovered = false;
+        }
     }
+
+    if (m_titleBarHoverActive == isHovered) {
+        return;
+    }
+
+    m_titleBarHoverActive = isHovered;
+    m_menuButtons->setHovered(m_titleBarHoverActive);
 }
 
 void Decoration::setButtonGroupHeight(KDecoration3::DecorationButtonGroup *buttonGroup, qreal buttonHeight)
@@ -491,6 +500,8 @@ void Decoration::updateButtonHeight()
 
 void Decoration::updateButtonsGeometry()
 {
+    m_menuButtons->updateShowing();
+
     const qreal left = leftOffset();
     const qreal right = rightOffset();
     const qreal top = topOffset();
@@ -741,6 +752,11 @@ bool Decoration::dragFromButtonsEnabled() const
 bool Decoration::hideCaptionWhenLimitedSpace() const
 {
     return m_internalSettings->hideCaptionWhenLimitedSpace();
+}
+
+bool Decoration::showCaptionOnHover() const
+{
+    return m_internalSettings->showCaptionOnHover();
 }
 
 qreal Decoration::buttonPadding() const
@@ -1055,100 +1071,107 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
 {
     Q_UNUSED(repaintRegion)
 
+    // 1. Pre-checks and data gathering
     const auto *decoratedClient = window();
-    if (decoratedClient->hasApplicationMenu() && !m_menuButtons->menuLoadedOnce()) {
-        return;
-    }
+    const bool hasAppMenu = decoratedClient->hasApplicationMenu();
+    const bool appMenuVisible = !m_menuButtons->buttons().isEmpty();
+    const bool menuLoaded = m_menuButtons->menuLoadedOnce();
+    const bool isTitleHidden = m_internalSettings->titleAlignment() == InternalSettings::TitleHidden;
 
-    if (m_internalSettings->titleAlignment() == InternalSettings::TitleHidden) {
+    if ((hasAppMenu && !menuLoaded) || isTitleHidden) {
+        m_captionLimited = false;
+        m_captionRect = QRectF();
         return;
     }
 
     const QFontMetricsF fontMetrics = settings()->fontMetrics();
-    const bool appMenuVisible = !m_menuButtons->buttons().isEmpty();
+    const QString fullCaption = decoratedClient->caption();
+    const qreal textWidth = fontMetrics.boundingRect(fullCaption).width();
+    const qreal offset = topOffset();
 
-    // --- Calculate available geometry for the caption ---
-    QRectF availableRect = centerRect();
+    // 2. Baseline constrained geometry (used to determine if space is limited)
+    QRectF constrainedRect = centerRect();
     if (appMenuVisible && m_menuButtons->alwaysShow()) {
-        const qreal menuButtonsWidth = m_menuButtons->visibleWidth() + appMenuCaptionSpacing();
+        const qreal menuWidth = m_menuButtons->visibleWidth() + appMenuCaptionSpacing();
         if (isMenuOnRight()) {
-            availableRect.setRight(availableRect.right() - menuButtonsWidth);
+            constrainedRect.setRight(constrainedRect.right() - menuWidth);
         } else {
-            availableRect.setLeft(availableRect.left() + menuButtonsWidth);
+            constrainedRect.setLeft(constrainedRect.left() + menuWidth);
         }
     }
 
-    // Hide caption if there is not enough space
-    if (appMenuVisible && hideCaptionWhenLimitedSpace() && availableRect.width() < m_internalSettings->minWidthForCaption()) {
+    // 3. Cache state for interaction
+    const bool spaceLimited = appMenuVisible && hideCaptionWhenLimitedSpace() && constrainedRect.width() < m_internalSettings->minWidthForCaption();
+    const bool textElided = textWidth > constrainedRect.width();
+
+    m_captionLimited = spaceLimited || textElided;
+    m_captionRect = constrainedRect.translated(0, offset);
+
+    // 4. Reveal logic (show caption on hover if limited)
+    const bool isHovered = m_menuButtons->hovered();
+    const bool revealingOnHover = showCaptionOnHover() && m_captionLimited && isHovered;
+
+    if (spaceLimited && !revealingOnHover) {
         return;
     }
 
-    // --- Determine alignment and final drawing rectangle ---
-    const qreal captionPadding = m_internalSettings->menuButtonHorzPadding(); // reuse the same configurable padding for text buttons in appmenu 
-    availableRect.adjust(captionPadding, 0, -captionPadding, 0);
+    // 5. Final drawing geometry and alignment
+    QRectF availableRect = (revealingOnHover ? centerRect() : constrainedRect);
+    const qreal padding = m_internalSettings->menuButtonHorzPadding();
+    availableRect.adjust(padding, 0, -padding, 0);
 
-    QRectF captionRect;
+    QRectF drawingRect;
     Qt::Alignment alignment;
-    const qreal textWidth = fontMetrics.boundingRect(decoratedClient->caption()).width();
-    const QRectF idealTextRect((size().width() - textWidth) / 2.0, 0, textWidth, titleBarHeight());
+    const QRectF idealRect((size().width() - textWidth) / 2.0, 0, textWidth, titleBarHeight());
 
     switch (m_internalSettings->titleAlignment()) {
     case InternalSettings::AlignLeft:
-        captionRect = availableRect;
-        alignment = Qt::AlignLeft | Qt::AlignVCenter;
+        drawingRect = availableRect;
+        alignment = Qt::AlignLeft;
         break;
-
     case InternalSettings::AlignRight:
-        captionRect = availableRect;
-        alignment = Qt::AlignRight | Qt::AlignVCenter;
+        drawingRect = availableRect;
+        alignment = Qt::AlignRight;
         break;
-
     case InternalSettings::AlignCenter:
-        captionRect = availableRect;
+        drawingRect = availableRect;
         alignment = Qt::AlignCenter;
         break;
-
-    default:
     case InternalSettings::AlignCenterFullWidth:
-        if (idealTextRect.left() < availableRect.left()) {
-            captionRect = availableRect;
-            alignment = Qt::AlignLeft | Qt::AlignVCenter;
-        } else if (availableRect.right() < idealTextRect.right()) {
-            captionRect = availableRect;
-            alignment = Qt::AlignRight | Qt::AlignVCenter;
+    default:
+        if (idealRect.left() < availableRect.left()) {
+            drawingRect = availableRect;
+            alignment = Qt::AlignLeft;
+        } else if (availableRect.right() < idealRect.right()) {
+            drawingRect = availableRect;
+            alignment = Qt::AlignRight;
         } else {
-            captionRect = titleBarRect();
+            drawingRect = titleBarRect();
             alignment = Qt::AlignCenter;
         }
         break;
     }
 
-    if (captionRect.width() <= 0) {
+    if (drawingRect.width() <= 0) {
         return;
     }
 
-    // --- Elide text and set up painter ---
-    const QString caption = fontMetrics.elidedText(
-        decoratedClient->caption(), Qt::ElideMiddle, captionRect.width());
-
+    // 6. Painter setup and drawing
     painter->save();
     painter->setFont(settings()->font());
     painter->setPen(titleBarForegroundColor());
 
-    // --- Handle fading when menu is not always shown and is hovered ---
-    if (appMenuVisible && !m_menuButtons->alwaysShow()) {
-        // This handles the case where the entire caption fades out when the menu appears on hover.
-        const qreal textOpacity = 1.0 - m_menuButtons->opacity();
-        painter->setOpacity(textOpacity);
+    // Opacity logic
+    if (appMenuVisible) {
+        if (!m_menuButtons->alwaysShow() || revealingOnHover) {
+            painter->setOpacity(1.0 - m_menuButtons->opacity());
+        }
     }
 
-    // --- Draw text ---
+    const QString caption = fontMetrics.elidedText(fullCaption, Qt::ElideMiddle, drawingRect.width());
+    drawingRect.translate(0, offset);
 
-    const qreal offset = topOffset();
-    captionRect.adjust(0, offset, 0, offset);
-
-    painter->drawText(captionRect, alignment, caption);
-
+    painter->drawText(drawingRect, alignment | Qt::TextSingleLine | Qt::AlignVCenter, caption);
     painter->restore();
 }
 

@@ -213,3 +213,6 @@ msgstr "Ignorar también las etiquetas de los submenús"
 
 msgid "Paint a thin outline around the window"
 msgstr "Dibujar un contorno fino alrededor de la ventana"
+
+msgid "Show window title on mouse over"
+msgstr "Mostrar el título de la ventana al pasar el ratón"

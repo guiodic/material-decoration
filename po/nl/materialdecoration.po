@@ -213,3 +213,6 @@ msgstr "Ook labels van submenu's negeren"
 
 msgid "Paint a thin outline around the window"
 msgstr "Een dunne omtrek om het venster tekenen"
+
+msgid "Show window title on mouse over"
+msgstr "Venstertitel tonen bij aanwijzen met muis"
