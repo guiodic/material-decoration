@@ -78,7 +78,6 @@ void MaterialDecorationKCM::setupConnections()
         } else {
             m_ui->kcfg_ShowCaptionOnHover->setEnabled(true);
         }
-        updateChanged();
     });
     connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, m_ui->kcfg_ShowDisabledActions, &QCheckBox::setEnabled);
