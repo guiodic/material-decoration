@@ -1095,12 +1095,12 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     switch (m_internalSettings->titleAlignment()) {
     case InternalSettings::AlignLeft:
         captionRect = availableRect;
-        alignment = Qt::AlignLeft | Qt::AlignVCenter;
+        alignment = Qt::AlignLeft;
         break;
 
     case InternalSettings::AlignRight:
         captionRect = availableRect;
-        alignment = Qt::AlignRight | Qt::AlignVCenter;
+        alignment = Qt::AlignRight;
         break;
 
     case InternalSettings::AlignCenter:
@@ -1112,10 +1112,10 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     case InternalSettings::AlignCenterFullWidth:
         if (idealTextRect.left() < availableRect.left()) {
             captionRect = availableRect;
-            alignment = Qt::AlignLeft | Qt::AlignVCenter;
+            alignment = Qt::AlignLeft;
         } else if (availableRect.right() < idealTextRect.right()) {
             captionRect = availableRect;
-            alignment = Qt::AlignRight | Qt::AlignVCenter;
+            alignment = Qt::AlignRight;
         } else {
             captionRect = titleBarRect();
             alignment = Qt::AlignCenter;
@@ -1147,7 +1147,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     const qreal offset = topOffset();
     captionRect.adjust(0, offset, 0, offset);
 
-    painter->drawText(captionRect, alignment, caption);
+    painter->drawText(captionRect, alignment | Qt::TextSingleLine | Qt::AlignVCenter, caption);
 
     painter->restore();
 }
