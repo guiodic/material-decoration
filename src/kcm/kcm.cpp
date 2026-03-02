@@ -71,6 +71,15 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_ActiveBorderColor, &KColorButton::changed, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_InactiveBorderColor, &KColorButton::changed, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_MenuAlwaysShow, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_MenuAlwaysShow, &QCheckBox::toggled, this, [this](bool checked) {
+        if (!checked) {
+            m_ui->kcfg_ShowCaptionOnHover->setChecked(false);
+            m_ui->kcfg_ShowCaptionOnHover->setEnabled(false);
+        } else {
+            m_ui->kcfg_ShowCaptionOnHover->setEnabled(true);
+        }
+        updateChanged();
+    });
     connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, m_ui->kcfg_ShowDisabledActions, &QCheckBox::setEnabled);
     connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, m_ui->kcfg_SearchIgnoreTopLevel, &QCheckBox::setEnabled);
@@ -112,6 +121,7 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_HideCaptionWhenLimitedSpace, &QCheckBox::toggled, m_ui->kcfg_MinWidthForCaption, &QSpinBox::setEnabled);
     connect(m_ui->kcfg_HideCaptionWhenLimitedSpace, &QCheckBox::toggled, m_ui->label_minWidthForCaption, &QLabel::setEnabled);
     connect(m_ui->kcfg_MinWidthForCaption, qOverload<int>(&QSpinBox::valueChanged), this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_ShowCaptionOnHover, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
 
     connect(m_ui->kcfg_LongPressEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_LongPressEnabled, &QCheckBox::toggled, m_ui->kcfg_LongPressDuration, &QSpinBox::setEnabled);
@@ -141,6 +151,8 @@ void MaterialDecorationKCM::updateUI()
     m_ui->kcfg_ActiveBorderColor->setEnabled(useCustom);
     m_ui->kcfg_InactiveBorderColor->setEnabled(useCustom);
     m_ui->kcfg_MenuAlwaysShow->setChecked(m_settings->menuAlwaysShow());
+    m_ui->kcfg_ShowCaptionOnHover->setChecked(m_settings->showCaptionOnHover());
+    m_ui->kcfg_ShowCaptionOnHover->setEnabled(m_settings->menuAlwaysShow());
     m_ui->kcfg_SearchEnabled->setChecked(m_settings->searchEnabled());
     m_ui->kcfg_ShowDisabledActions->setEnabled(m_settings->searchEnabled());
     m_ui->kcfg_SearchIgnoreTopLevel->setEnabled(m_settings->searchEnabled());
@@ -181,6 +193,7 @@ void MaterialDecorationKCM::save()
     m_settings->setActiveBorderColor(m_ui->kcfg_ActiveBorderColor->color());
     m_settings->setInactiveBorderColor(m_ui->kcfg_InactiveBorderColor->color());
     m_settings->setMenuAlwaysShow(m_ui->kcfg_MenuAlwaysShow->isChecked());
+    m_settings->setShowCaptionOnHover(m_ui->kcfg_ShowCaptionOnHover->isChecked());
     m_settings->setSearchEnabled(m_ui->kcfg_SearchEnabled->isChecked());
     m_settings->setHamburgerMenu(m_ui->kcfg_HamburgerMenu->isChecked());
     m_settings->setShowDisabledActions(m_ui->kcfg_ShowDisabledActions->isChecked());
@@ -228,6 +241,8 @@ void MaterialDecorationKCM::defaults()
     m_ui->kcfg_ActiveBorderColor->setEnabled(useCustom);
     m_ui->kcfg_InactiveBorderColor->setEnabled(useCustom);
     m_ui->kcfg_MenuAlwaysShow->setChecked(s.menuAlwaysShow());
+    m_ui->kcfg_ShowCaptionOnHover->setChecked(s.showCaptionOnHover());
+    m_ui->kcfg_ShowCaptionOnHover->setEnabled(s.menuAlwaysShow());
     m_ui->kcfg_SearchEnabled->setChecked(s.searchEnabled());
     m_ui->kcfg_ShowDisabledActions->setEnabled(s.searchEnabled());
     m_ui->kcfg_SearchIgnoreTopLevel->setEnabled(s.searchEnabled());
@@ -269,6 +284,7 @@ bool MaterialDecorationKCM::isChanged() const
     if (m_ui->kcfg_ActiveBorderColor->color() != m_settings->activeBorderColor()) return true;
     if (m_ui->kcfg_InactiveBorderColor->color() != m_settings->inactiveBorderColor()) return true;
     if (m_ui->kcfg_MenuAlwaysShow->isChecked() != m_settings->menuAlwaysShow()) return true;
+    if (m_ui->kcfg_ShowCaptionOnHover->isChecked() != m_settings->showCaptionOnHover()) return true;
     if (m_ui->kcfg_SearchEnabled->isChecked() != m_settings->searchEnabled()) return true;
     if (m_ui->kcfg_HamburgerMenu->isChecked() != m_settings->hamburgerMenu()) return true;
     if (m_ui->kcfg_ShowDisabledActions->isChecked() != m_settings->showDisabledActions()) return true;

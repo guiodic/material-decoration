@@ -932,7 +932,12 @@ void AppMenuButtonGroup::unPressAllButtons()
 
 void AppMenuButtonGroup::updateShowing()
 {
-    setShowing(m_alwaysShow || m_hovered || isMenuOpen());
+    auto *deco = qobject_cast<Decoration *>(decoration());
+    if (m_alwaysShow && deco && deco->showCaptionOnHover() && deco->m_captionLimited) {
+        setShowing(!m_hovered || isMenuOpen());
+    } else {
+        setShowing(m_alwaysShow || m_hovered || isMenuOpen());
+    }
 }
 
 void AppMenuButtonGroup::onMenuAboutToHide()

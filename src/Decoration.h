@@ -125,6 +125,7 @@ private:
     int animationsDuration() const;
     bool dragFromButtonsEnabled() const;
     bool hideCaptionWhenLimitedSpace() const;
+    bool showCaptionOnHover() const;
     qreal buttonPadding() const;
     qreal titleBarHeight() const;
     qreal appMenuCaptionSpacing() const;
@@ -166,6 +167,10 @@ private:
 
     QPainterPath m_framePath;
     QPainterPath m_titleBarPath;
+
+    mutable QRectF m_captionRect;
+    mutable bool m_captionLimited = false;
+    QPointF m_lastHoverPos;
 
     friend class AppMenuButtonGroup;
     friend class Button;

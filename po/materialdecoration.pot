@@ -186,3 +186,6 @@ msgstr ""
 
 msgid "Paint a thin outline around the window"
 msgstr ""
+
+msgid "Show window title on mouse over"
+msgstr ""

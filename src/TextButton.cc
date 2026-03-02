@@ -52,7 +52,7 @@ void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qrea
     // TODO: Use Qt::TextShowMnemonic when Alt is pressed
     const bool isAltPressed = false;
     const Qt::TextFlag mnemonicFlag = isAltPressed ? Qt::TextShowMnemonic : Qt::TextHideMnemonic;
-    painter->drawText(iconRect.translated(1.0, 0.0), mnemonicFlag | Qt::AlignCenter | Qt::AlignVCenter | Qt::TextSingleLine, m_text); // translating 1 pixel seems the only way to perfect centering the text.
+    painter->drawText(iconRect.translated(1.0, 0.0), mnemonicFlag | Qt::AlignCenter | Qt::TextSingleLine, m_text); // translating 1 pixel seems the only way to perfect centering the text.
 }
 
 QSizeF TextButton::getTextSize() const

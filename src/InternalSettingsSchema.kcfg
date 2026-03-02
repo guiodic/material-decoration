@@ -57,6 +57,9 @@
         <entry name="HideCaptionWhenLimitedSpace" type="Bool">
             <default>true</default>
         </entry>
+        <entry name="ShowCaptionOnHover" type="Bool">
+            <default>false</default>
+        </entry>
         <entry name="MinWidthForCaption" type="Int">
             <default>250</default>
             <min>0</min>
