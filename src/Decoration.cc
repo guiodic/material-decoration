@@ -331,7 +331,7 @@ void Decoration::mousePressEvent(QMouseEvent *event)
 {
     KDecoration3::Decoration::mousePressEvent(event);
 
-    const QPoint pos = event->pos();
+    const QPoint pos = event->position().toPoint();
 
     // Determine if the click occurred on any of the button groups.
     // Menu buttons always allow dragging, while 
