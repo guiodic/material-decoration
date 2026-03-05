@@ -608,13 +608,12 @@ void Decoration::updateShadow()
     const QColor shadowColor = m_internalSettings->shadowColor();
     const int shadowStrengthInt = m_internalSettings->shadowStrength();
     const int shadowSizePreset = m_internalSettings->shadowSize();
-    const qreal cornerRadius = m_internalSettings->cornerRadius();
 
     if (s_cachedShadow
         && s_shadowColor == shadowColor
         && s_shadowSizePreset == shadowSizePreset
         && s_shadowStrength == shadowStrengthInt
-        && s_cornerRadius == cornerRadius
+        && s_cornerRadius == m_cornerRadius
     ) {
         setShadow(s_cachedShadow);
         return;
@@ -623,7 +622,7 @@ void Decoration::updateShadow()
     s_shadowColor = shadowColor;
     s_shadowStrength = shadowStrengthInt;
     s_shadowSizePreset = shadowSizePreset;
-    s_cornerRadius = cornerRadius;
+    s_cornerRadius = m_cornerRadius;
 
     auto withOpacity = [] (const QColor &color, qreal opacity) -> QColor {
         QColor c(color);
@@ -675,19 +674,19 @@ void Decoration::updateShadow()
         shadowSize - params.offset.y(),
         shadowSize + params.offset.x(),
         shadowSize + params.offset.y());
-    const QRect innerRect = rect - padding;
+    QRect innerRect = rect - padding;
+    
+    // From Breeze: Push the shadow slightly under the window, which helps avoiding glitches with fractional scaling
+    // TODO fix this more properly
+    innerRect.adjust(1, 1, -1, -1);
 
     // Mask out window+titlebar from shadow
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
-
-    painter.drawPath(getRoundedPath(innerRect,
-                                    cornerRadius,
-                                    true,
-                                    true,
-                                    true,
-                                    true));
+    
+    
+    painter.drawRoundedRect(innerRect, m_cornerRadius + 4, m_cornerRadius + 4);
 
     painter.end();
 
@@ -1187,7 +1186,8 @@ void Decoration::updateCornerRadiusAndOutline()
     if (window()->isMaximized() || !settings()->isAlphaChannelSupported()) {
         m_cornerRadius = 0.0;
     } else {
-        m_cornerRadius = m_internalSettings->cornerRadius();
+        // m_cornerRadius = m_internalSettings->cornerRadius();
+        m_cornerRadius = KDecoration3::snapToPixelGrid(m_internalSettings->cornerRadius(), window()->nextScale());
     }
     
     const qreal topLeftCornerRadius = leftBorderVisible() ? m_cornerRadius : 0.0;
