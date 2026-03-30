@@ -931,8 +931,16 @@ qreal Decoration::cornerRadius() const
 QPainterPath Decoration::getRoundedPath(const QRectF &rect, qreal radius, bool roundTopLeft, bool roundTopRight, bool roundBottomLeft, bool roundBottomRight) const
 {
     QPainterPath path;
+    
+    // Returns a patch containing a simple rectangle if the parameters require a rectangle
     if (radius <= 0 || (roundTopLeft + roundTopRight + roundBottomLeft + roundBottomRight) == 0) {
         path.addRect(rect);
+        return path;
+    }
+    
+    // Returns a rounded rectangle if the parameters specify a simple rounded rectangle (the default for windows)
+    if (radius > 0 && (roundTopLeft + roundTopRight + roundBottomLeft + roundBottomRight) == 4) {
+        path.addRoundedRect(rect, radius, radius);
         return path;
     }
 
