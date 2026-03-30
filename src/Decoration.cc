@@ -944,35 +944,41 @@ QPainterPath Decoration::getRoundedPath(const QRectF &rect, qreal radius, bool r
         return path;
     }
 
-    path.moveTo(rect.topRight() - QPointF(radius, 0));
+    const qreal r = std::min({radius, rect.width() / 2.0, rect.height() / 2.0});
+
+    if (roundTopRight) {
+        path.moveTo(rect.topRight() - QPointF(r, 0));
+    } else {
+        path.moveTo(rect.topRight());
+    }
 
     // Top-right corner
     if (roundTopRight) {
-        path.arcTo(QRectF(rect.topRight() - QPointF(2 * radius, 0), QSizeF(2 * radius, 2 * radius)), 90, -90);
+        path.arcTo(QRectF(rect.topRight() - QPointF(2 * r, 0), QSizeF(2 * r, 2 * r)), 90, -90);
     } else {
         path.lineTo(rect.topRight());
     }
 
     // Bottom-right corner
     if (roundBottomRight) {
-        path.lineTo(rect.bottomRight() - QPointF(0, radius));
-        path.arcTo(QRectF(rect.bottomRight() - QPointF(2 * radius, 2 * radius), QSizeF(2 * radius, 2 * radius)), 0, -90);
+        path.lineTo(rect.bottomRight() - QPointF(0, r));
+        path.arcTo(QRectF(rect.bottomRight() - QPointF(2 * r, 2 * r), QSizeF(2 * r, 2 * r)), 0, -90);
     } else {
         path.lineTo(rect.bottomRight());
     }
 
     // Bottom-left corner
     if (roundBottomLeft) {
-        path.lineTo(rect.bottomLeft() + QPointF(radius, 0));
-        path.arcTo(QRectF(rect.bottomLeft() - QPointF(0, 2 * radius), QSizeF(2 * radius, 2 * radius)), 270, -90);
+        path.lineTo(rect.bottomLeft() + QPointF(r, 0));
+        path.arcTo(QRectF(rect.bottomLeft() - QPointF(0, 2 * r), QSizeF(2 * r, 2 * r)), 270, -90);
     } else {
         path.lineTo(rect.bottomLeft());
     }
 
     // Top-left corner
     if (roundTopLeft) {
-        path.lineTo(rect.topLeft() + QPointF(0, radius));
-        path.arcTo(QRectF(rect.topLeft(), QSizeF(2 * radius, 2 * radius)), 180, -90);
+        path.lineTo(rect.topLeft() + QPointF(0, r));
+        path.arcTo(QRectF(rect.topLeft(), QSizeF(2 * r, 2 * r)), 180, -90);
     } else {
         path.lineTo(rect.topLeft());
     }
