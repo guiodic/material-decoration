@@ -554,8 +554,7 @@ QColor Button::foregroundColor() const
     const QColor titleBarForegroundColor = deco->titleBarForegroundColor();
     const QColor titleBarBackgroundColor = deco->titleBarBackgroundColor();
     const QColor titleBarOpaqueBackgroundColor = deco->titleBarOpaqueBackgroundColor();
-    
-    
+
     //--- Checked
     if (isChecked() && type() != KDecoration3::DecorationButtonType::Maximize) {
 #if HAVE_EXCLUDE_FROM_CAPTURE
@@ -563,7 +562,7 @@ QColor Button::foregroundColor() const
             return titleBarOpaqueBackgroundColor;
         }
 #endif
-        
+
         const QColor activeColor = KColorUtils::mix(
             titleBarOpaqueBackgroundColor,
             titleBarForegroundColor,
