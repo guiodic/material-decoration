@@ -143,9 +143,10 @@ private:
     void unPressAllButtons();
 
     QColor borderColor() const;
-    QColor titleBarBackgroundColor() const;
-    QColor titleBarOpaqueBackgroundColor() const;
-    QColor titleBarForegroundColor() const;
+    void updateColors();
+    QColor titleBarBackgroundColor() const { return m_titleBarBackgroundColor; }
+    QColor titleBarOpaqueBackgroundColor() const { return m_titleBarOpaqueBackgroundColor; }
+    QColor titleBarForegroundColor() const { return m_titleBarForegroundColor; }
 
     void paintFrameBackground(QPainter *painter, const QRectF &repaintRegion) const;
     void paintTitleBarBackground(QPainter *painter, const QRectF &repaintRegion) const;
@@ -167,6 +168,10 @@ private:
 
     QPainterPath m_framePath;
     QPainterPath m_titleBarPath;
+
+    QColor m_titleBarBackgroundColor;
+    QColor m_titleBarOpaqueBackgroundColor;
+    QColor m_titleBarForegroundColor;
 
     mutable QRectF m_captionRect;
     mutable bool m_captionLimited = false;

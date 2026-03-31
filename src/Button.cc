@@ -465,6 +465,9 @@ QColor Button::backgroundColor() const
         return Qt::transparent;
     }
 
+    const QColor titleBarBg = deco->titleBarBackgroundColor();
+    const QColor titleBarFg = deco->titleBarForegroundColor();
+
     //--- CloseButton
     if (type() == KDecoration3::DecorationButtonType::Close) {
         auto *decoratedClient = deco->window();
@@ -501,19 +504,19 @@ QColor Button::backgroundColor() const
 
     //--- Checked
     if (isChecked() && type() != KDecoration3::DecorationButtonType::Maximize) {
-        const QColor normalColor = deco->titleBarForegroundColor();
+        const QColor normalColor = titleBarFg;
 
         if (isPressed()) {
             const QColor pressedColor = KColorUtils::mix(
-                deco->titleBarBackgroundColor(),
-                deco->titleBarForegroundColor(),
+                titleBarBg,
+                titleBarFg,
                 0.7);
             return KColorUtils::mix(normalColor, pressedColor, m_transitionValue);
         }
         if (isHovered()) {
             const QColor hoveredColor = KColorUtils::mix(
-                deco->titleBarBackgroundColor(),
-                deco->titleBarForegroundColor(),
+                titleBarBg,
+                titleBarFg,
                 0.8);
             return KColorUtils::mix(normalColor, hoveredColor, m_transitionValue);
         }
@@ -522,16 +525,16 @@ QColor Button::backgroundColor() const
 
     //--- Normal
     const QColor hoveredColor = KColorUtils::mix(
-        deco->titleBarBackgroundColor(),
-        deco->titleBarForegroundColor(),
+        titleBarBg,
+        titleBarFg,
         0.2);
     QColor normalColor = QColor(hoveredColor);
     normalColor.setAlphaF(0);
 
     if (isPressed()) {
         const QColor pressedColor = KColorUtils::mix(
-            deco->titleBarBackgroundColor(),
-            deco->titleBarForegroundColor(),
+            titleBarBg,
+            titleBarFg,
             0.3);
         return KColorUtils::mix(normalColor, pressedColor, m_transitionValue);
     }
@@ -548,23 +551,27 @@ QColor Button::foregroundColor() const
         return {};
     }
 
+    const QColor titleBarBg = deco->titleBarBackgroundColor();
+    const QColor titleBarOpaqueBg = deco->titleBarOpaqueBackgroundColor();
+    const QColor titleBarFg = deco->titleBarForegroundColor();
+
     //--- Checked
     if (isChecked() && type() != KDecoration3::DecorationButtonType::Maximize) {
 #if HAVE_EXCLUDE_FROM_CAPTURE
         if (type() == KDecoration3::DecorationButtonType::ExcludeFromCapture) {
-            return deco->titleBarOpaqueBackgroundColor();
+            return titleBarOpaqueBg;
         }
 #endif
 
         const QColor activeColor = KColorUtils::mix(
-            deco->titleBarOpaqueBackgroundColor(),
-            deco->titleBarForegroundColor(),
+            titleBarOpaqueBg,
+            titleBarFg,
             0.2);
 
         if (isPressed() || isHovered()) {
             return KColorUtils::mix(
                 activeColor,
-                deco->titleBarOpaqueBackgroundColor(),
+                titleBarOpaqueBg,
                 m_transitionValue);
         }
         return activeColor;
@@ -572,8 +579,8 @@ QColor Button::foregroundColor() const
 
     //--- Normal
     const QColor normalColor = KColorUtils::mix(
-        deco->titleBarBackgroundColor(),
-        deco->titleBarForegroundColor(),
+        titleBarBg,
+        titleBarFg,
         0.8);
 
     if (isPressed() || isHovered()) {
@@ -587,14 +594,14 @@ QColor Button::foregroundColor() const
                 KDecoration3::ColorRole::Foreground
             );
         } else if (m_isGtkButton && (type() == KDecoration3::DecorationButtonType::Maximize || type() == KDecoration3::DecorationButtonType::Minimize)) {
-            const int grayValue = qGray(deco->titleBarBackgroundColor().rgb());
+            const int grayValue = qGray(titleBarBg.rgb());
             if (grayValue < 128) { // Dark Bg
-                hoveredColor = KColorUtils::mix(deco->titleBarForegroundColor(), Qt::black, 0.5); 
+                hoveredColor = KColorUtils::mix(titleBarFg, Qt::black, 0.5); 
             } else { // Light Bg
-                hoveredColor = KColorUtils::mix(deco->titleBarForegroundColor(), Qt::white, 0.6); 
+                hoveredColor = KColorUtils::mix(titleBarFg, Qt::white, 0.6); 
             }
         } else {
-            hoveredColor = deco->titleBarForegroundColor();
+            hoveredColor = titleBarFg;
         }
 
         return KColorUtils::mix(

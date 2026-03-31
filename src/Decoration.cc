@@ -274,12 +274,14 @@ bool Decoration::init()
             this, repaintTitleBar);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
             this, [this] { 
+                           updateColors();
                            updateCornerRadiusAndOutline();
                            update(); 
             });
     connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
     
+    updateColors();
     updateBordersCornersBlurShadow();
     updateResizeBorders();
     updateTitleBar();
@@ -319,6 +321,7 @@ void Decoration::reconfigure()
     m_menuButtons->updateAppMenuModel();
     m_menuButtons->setAlwaysShow(menuAlwaysShow());
     
+    updateColors();
     updateButtonAnimation();
     updateBordersCornersBlurShadow();
     updateResizeBorders();
@@ -1044,7 +1047,7 @@ QColor Decoration::borderColor() const
     return color;
 }
 
-QColor Decoration::titleBarBackgroundColor() const
+void Decoration::updateColors()
 {
     const auto *decoratedClient = window();
     const auto group = decoratedClient->isActive()
@@ -1053,27 +1056,11 @@ QColor Decoration::titleBarBackgroundColor() const
     const qreal opacity = decoratedClient->isActive()
         ? m_internalSettings->activeOpacity()
         : m_internalSettings->inactiveOpacity();
-    QColor color = decoratedClient->color(group, KDecoration3::ColorRole::TitleBar);
-    color.setAlphaF(opacity);
-    return color;
-}
 
-QColor Decoration::titleBarOpaqueBackgroundColor() const
-{
-    const auto *decoratedClient = window();
-    const auto group = decoratedClient->isActive()
-        ? KDecoration3::ColorGroup::Active
-        : KDecoration3::ColorGroup::Inactive;
-    return decoratedClient->color(group, KDecoration3::ColorRole::TitleBar);
-}
-
-QColor Decoration::titleBarForegroundColor() const
-{
-    const auto *decoratedClient = window();
-    const auto group = decoratedClient->isActive()
-        ? KDecoration3::ColorGroup::Active
-        : KDecoration3::ColorGroup::Inactive;
-    return decoratedClient->color(group, KDecoration3::ColorRole::Foreground);
+    m_titleBarOpaqueBackgroundColor = decoratedClient->color(group, KDecoration3::ColorRole::TitleBar);
+    m_titleBarBackgroundColor = m_titleBarOpaqueBackgroundColor;
+    m_titleBarBackgroundColor.setAlphaF(opacity);
+    m_titleBarForegroundColor = decoratedClient->color(group, KDecoration3::ColorRole::Foreground);
 }
 
 void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repaintRegion) const
