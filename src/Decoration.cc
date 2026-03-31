@@ -274,12 +274,14 @@ bool Decoration::init()
             this, repaintTitleBar);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
             this, [this] { 
+                           updateColors();
                            updateCornerRadiusAndOutline();
                            update(); 
             });
     connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
     
+    updateColors();
     updateBordersCornersBlurShadow();
     updateResizeBorders();
     updateTitleBar();
@@ -319,6 +321,7 @@ void Decoration::reconfigure()
     m_menuButtons->updateAppMenuModel();
     m_menuButtons->setAlwaysShow(menuAlwaysShow());
     
+    updateColors();
     updateButtonAnimation();
     updateBordersCornersBlurShadow();
     updateResizeBorders();
@@ -951,48 +954,45 @@ QPainterPath Decoration::getRoundedPath(const QRectF &rect,
         return path;
     }
 
-    // radius clamp
-    const qreal r = std::min({radius, rect.width() / 2.0, rect.height() / 2.0});
-
     // === START: top-right ===
-    path.moveTo(rect.topRight() - QPointF(roundTopRight ? r : 0, 0));
+    path.moveTo(rect.topRight() - QPointF(roundTopRight ? radius : 0, 0));
 
     // --- Top edge → to top-left ---
-    path.lineTo(rect.topLeft() + QPointF(roundTopLeft ? r : 0, 0));
+    path.lineTo(rect.topLeft() + QPointF(roundTopLeft ? radius : 0, 0));
 
     // Top-left corner
     if (roundTopLeft) {
-        path.arcTo(QRectF(rect.topLeft(), QSizeF(2 * r, 2 * r)),
+        path.arcTo(QRectF(rect.topLeft(), QSizeF(2 * radius, 2 * radius)),
                    90, 90);
     }
 
     // --- Left edge → to bottom-left ---
-    path.lineTo(rect.bottomLeft() + QPointF(0, -(roundBottomLeft ? r : 0)));
+    path.lineTo(rect.bottomLeft() + QPointF(0, -(roundBottomLeft ? radius : 0)));
 
     // Bottom-left corner
     if (roundBottomLeft) {
-        path.arcTo(QRectF(rect.bottomLeft() - QPointF(0, 2 * r),
-                          QSizeF(2 * r, 2 * r)),
+        path.arcTo(QRectF(rect.bottomLeft() - QPointF(0, 2 * radius),
+                          QSizeF(2 * radius, 2 * radius)),
                    180, 90);
     }
 
     // --- Bottom edge → to bottom-right ---
-    path.lineTo(rect.bottomRight() - QPointF(roundBottomRight ? r : 0, 0));
+    path.lineTo(rect.bottomRight() - QPointF(roundBottomRight ? radius : 0, 0));
 
     // Bottom-right corner
     if (roundBottomRight) {
-        path.arcTo(QRectF(rect.bottomRight() - QPointF(2 * r, 2 * r),
-                          QSizeF(2 * r, 2 * r)),
+        path.arcTo(QRectF(rect.bottomRight() - QPointF(2 * radius, 2 * radius),
+                          QSizeF(2 * radius, 2 * radius)),
                    270, 90);
     }
 
     // --- Right edge → to top-right ---
-    path.lineTo(rect.topRight() - QPointF(0, -(roundTopRight ? r : 0)));
+    path.lineTo(rect.topRight() - QPointF(0, -(roundTopRight ? radius : 0)));
 
     // Top-right corner
     if (roundTopRight) {
-        path.arcTo(QRectF(rect.topRight() - QPointF(2 * r, 0),
-                          QSizeF(2 * r, 2 * r)),
+        path.arcTo(QRectF(rect.topRight() - QPointF(2 * radius, 0),
+                          QSizeF(2 * radius, 2 * radius)),
                    0, 90);
     }
 
@@ -1047,7 +1047,7 @@ QColor Decoration::borderColor() const
     return color;
 }
 
-QColor Decoration::titleBarBackgroundColor() const
+void Decoration::updateColors()
 {
     const auto *decoratedClient = window();
     const auto group = decoratedClient->isActive()
@@ -1056,27 +1056,11 @@ QColor Decoration::titleBarBackgroundColor() const
     const qreal opacity = decoratedClient->isActive()
         ? m_internalSettings->activeOpacity()
         : m_internalSettings->inactiveOpacity();
-    QColor color = decoratedClient->color(group, KDecoration3::ColorRole::TitleBar);
-    color.setAlphaF(opacity);
-    return color;
-}
 
-QColor Decoration::titleBarOpaqueBackgroundColor() const
-{
-    const auto *decoratedClient = window();
-    const auto group = decoratedClient->isActive()
-        ? KDecoration3::ColorGroup::Active
-        : KDecoration3::ColorGroup::Inactive;
-    return decoratedClient->color(group, KDecoration3::ColorRole::TitleBar);
-}
-
-QColor Decoration::titleBarForegroundColor() const
-{
-    const auto *decoratedClient = window();
-    const auto group = decoratedClient->isActive()
-        ? KDecoration3::ColorGroup::Active
-        : KDecoration3::ColorGroup::Inactive;
-    return decoratedClient->color(group, KDecoration3::ColorRole::Foreground);
+    m_titleBarOpaqueBackgroundColor = decoratedClient->color(group, KDecoration3::ColorRole::TitleBar);
+    m_titleBarBackgroundColor = m_titleBarOpaqueBackgroundColor;
+    m_titleBarBackgroundColor.setAlphaF(opacity);
+    m_titleBarForegroundColor = decoratedClient->color(group, KDecoration3::ColorRole::Foreground);
 }
 
 void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repaintRegion) const
