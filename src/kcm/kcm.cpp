@@ -67,6 +67,7 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_InactiveOpacity, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_CornerRadius, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_OutlineActive, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_UseSystemColors, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_UseCustomBorderColors, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_ActiveBorderColor, &KColorButton::changed, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_InactiveBorderColor, &KColorButton::changed, this, &MaterialDecorationKCM::updateChanged);
@@ -143,6 +144,7 @@ void MaterialDecorationKCM::updateUI()
     m_ui->kcfg_ActiveOpacity->setValue(qRound(m_settings->activeOpacity() * 100));
     m_ui->kcfg_InactiveOpacity->setValue(qRound(m_settings->inactiveOpacity() * 100));
     m_ui->kcfg_CornerRadius->setValue(m_settings->cornerRadius());
+    m_ui->kcfg_UseSystemColors->setChecked(m_settings->useSystemColors());
     m_ui->kcfg_UseCustomBorderColors->setChecked(m_settings->useCustomBorderColors());
     m_ui->kcfg_ActiveBorderColor->setColor(m_settings->activeBorderColor());
     m_ui->kcfg_InactiveBorderColor->setColor(m_settings->inactiveBorderColor());
@@ -188,6 +190,7 @@ void MaterialDecorationKCM::save()
     m_settings->setActiveOpacity(static_cast<double>(m_ui->kcfg_ActiveOpacity->value()) / 100.0);
     m_settings->setInactiveOpacity(static_cast<double>(m_ui->kcfg_InactiveOpacity->value()) / 100.0);
     m_settings->setCornerRadius(m_ui->kcfg_CornerRadius->value());
+    m_settings->setUseSystemColors(m_ui->kcfg_UseSystemColors->isChecked());
     m_settings->setUseCustomBorderColors(m_ui->kcfg_UseCustomBorderColors->isChecked());
     m_settings->setActiveBorderColor(m_ui->kcfg_ActiveBorderColor->color());
     m_settings->setInactiveBorderColor(m_ui->kcfg_InactiveBorderColor->color());
@@ -233,6 +236,7 @@ void MaterialDecorationKCM::defaults()
     m_ui->kcfg_ActiveOpacity->setValue(qRound(s.activeOpacity() * 100));
     m_ui->kcfg_InactiveOpacity->setValue(qRound(s.inactiveOpacity() * 100));
     m_ui->kcfg_CornerRadius->setValue(s.cornerRadius());
+    m_ui->kcfg_UseSystemColors->setChecked(s.useSystemColors());
     m_ui->kcfg_UseCustomBorderColors->setChecked(s.useCustomBorderColors());
     m_ui->kcfg_ActiveBorderColor->setColor(s.activeBorderColor());
     m_ui->kcfg_InactiveBorderColor->setColor(s.inactiveBorderColor());
@@ -279,6 +283,7 @@ bool MaterialDecorationKCM::isChanged() const
     if (m_ui->kcfg_ActiveOpacity->value() != qRound(m_settings->activeOpacity() * 100)) return true;
     if (m_ui->kcfg_InactiveOpacity->value() != qRound(m_settings->inactiveOpacity() * 100)) return true;
     if (m_ui->kcfg_CornerRadius->value() != m_settings->cornerRadius()) return true;
+    if (m_ui->kcfg_UseSystemColors->isChecked() != m_settings->useSystemColors()) return true;
     if (m_ui->kcfg_UseCustomBorderColors->isChecked() != m_settings->useCustomBorderColors()) return true;
     if (m_ui->kcfg_ActiveBorderColor->color() != m_settings->activeBorderColor()) return true;
     if (m_ui->kcfg_InactiveBorderColor->color() != m_settings->inactiveBorderColor()) return true;

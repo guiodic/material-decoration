@@ -31,6 +31,10 @@
             <default>false</default>
         </entry>
 
+        <entry name="UseSystemColors" type="bool">
+            <default>false</default>
+        </entry>
+
         <!-- borders -->
         <entry name="UseCustomBorderColors" type="Bool">
             <default>false</default>

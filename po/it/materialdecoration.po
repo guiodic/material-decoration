@@ -173,6 +173,9 @@ msgstr "Arrotonda gli angoli inferiori"
 msgid "Hide window title when space is limited"
 msgstr "Nascondi il titolo della finestra quando lo spazio è limitato"
 
+msgid "Use system colors"
+msgstr "Usa i colori di sistema"
+
 msgid "Button Options"
 msgstr "Opzioni dei Bottoni"
 

@@ -173,6 +173,9 @@ msgstr "Untere Ecken abrunden"
 msgid "Hide window title when space is limited"
 msgstr "Fenstertitel ausblenden, wenn der Platz begrenzt ist"
 
+msgid "Use system colors"
+msgstr "Systemfarben verwenden"
+
 msgid "Button Options"
 msgstr "Schaltflächen-Optionen"
 
