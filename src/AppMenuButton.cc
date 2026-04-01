@@ -70,13 +70,11 @@ QColor AppMenuButton::backgroundColor() const
         }
         
         if (deco->m_internalSettings->useSystemColors()) {
-            
-            
             if (this->isHovered() && !this->isChecked()) {
                 return KColorUtils::mix(
-                    qApp->palette().color(QPalette::Highlight),
-                                        deco->titleBarBackgroundColor(),
-                                        0.7);
+                    qApp->palette().color(QPalette::Highlight), 
+                    deco->titleBarBackgroundColor(), 
+                    0.7);
             }   
             
             auto *decoratedClient = deco->window();
