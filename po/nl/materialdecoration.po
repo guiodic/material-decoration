@@ -173,6 +173,9 @@ msgstr "Onderste hoeken afronden"
 msgid "Hide window title when space is limited"
 msgstr "Venstertitel verbergen wanneer de ruimte beperkt is"
 
+msgid "Use system colors"
+msgstr "Systeemkleuren gebruiken"
+
 msgid "Button Options"
 msgstr "Knopopties"
 

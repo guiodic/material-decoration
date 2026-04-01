@@ -22,9 +22,14 @@
 #include "Decoration.h"
 #include "AppMenuButtonGroup.h"
 
+// QT
+#include <QApplication>
+
 // KF
 #include <KColorUtils>
 
+// KDecoration3
+#include <KDecoration3/DecoratedWindow>
 
 
 namespace Material
@@ -59,6 +64,29 @@ QColor AppMenuButton::backgroundColor() const
     ) {
         return Qt::transparent;
     } else {
+        auto *deco = qobject_cast<Decoration *>(decoration());
+        if (!deco) {
+            return {};
+        }
+        
+        if (deco->m_internalSettings->useSystemColors()) {
+            if (this->isHovered() && !this->isChecked()) {
+                return KColorUtils::mix(
+                    qApp->palette().color(QPalette::Highlight), 
+                    deco->titleBarBackgroundColor(), 
+                    0.7);
+            }   
+            
+            auto *decoratedClient = deco->window();
+            if (!decoratedClient) {
+                return {};
+            }
+            
+            if (decoratedClient->isActive() && this->isChecked()) {
+                return qApp->palette().color(QPalette::Highlight);
+            }
+        }
+        
         return Button::backgroundColor();
     }
 }
@@ -66,19 +94,27 @@ QColor AppMenuButton::backgroundColor() const
 QColor AppMenuButton::foregroundColor() const
 {
     const auto *buttonGroup = qobject_cast<AppMenuButtonGroup *>(parent());
+    
+    const auto *deco = qobject_cast<Decoration *>(decoration());
+        if (!deco) {
+            return {};
+        }
+    
     if (buttonGroup
         && buttonGroup->isMenuOpen()
         && buttonGroup->currentIndex() != m_buttonIndex
     ) {
-        const auto *deco = qobject_cast<Decoration *>(decoration());
-        if (!deco) {
-            return {};
-        }
         return KColorUtils::mix(
             deco->titleBarBackgroundColor(),
             deco->titleBarForegroundColor(),
             0.8);
     } else {
+        if (deco->m_internalSettings->useSystemColors()) {
+            if (this->isChecked()) {
+                return qApp->palette().color(QPalette::HighlightedText);
+            }  
+        }
+        
         return Button::foregroundColor();
     }
 }

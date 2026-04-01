@@ -173,6 +173,9 @@ msgstr "圆润底角"
 msgid "Hide window title when space is limited"
 msgstr "当空间有限时隐藏窗口标题"
 
+msgid "Use system colors"
+msgstr "使用系统颜色"
+
 msgid "Button Options"
 msgstr "按钮选项"
 

@@ -175,6 +175,9 @@ msgstr ""
 msgid "Hide window title when space is limited"
 msgstr ""
 
+msgid "Use system colors"
+msgstr ""
+
 msgid "Button Options"
 msgstr ""
 
