@@ -588,8 +588,8 @@ QColor Button::foregroundColor() const
         // Breeze GTK has huge margins around the button. It looks better
         // when we just change the fgColor on hover instead of the bgColor.
         QColor hoveredColor;
+        auto *decoratedClient = deco->window();
         if (m_isGtkButton && type() == KDecoration3::DecorationButtonType::Close) {
-            auto *decoratedClient = deco->window();
             hoveredColor = decoratedClient->color(
                 KDecoration3::ColorGroup::Warning,
                 KDecoration3::ColorRole::Foreground
@@ -601,7 +601,7 @@ QColor Button::foregroundColor() const
                 hoveredColor = KColorUtils::mix(titleBarFg, Qt::white, 0.6); 
             }
         } else {
-            if (type() == KDecoration3::DecorationButtonType::Close && !isBgDark) {
+            if (type() == KDecoration3::DecorationButtonType::Close && !isBgDark && decoratedClient->isActive()) {
               hoveredColor = titleBarBg;
             } else {    
               hoveredColor = titleBarFg;
