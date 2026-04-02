@@ -554,12 +554,13 @@ QColor Button::foregroundColor() const
     const QColor titleBarBg = deco->titleBarBackgroundColor();
     const QColor titleBarOpaqueBg = deco->titleBarOpaqueBackgroundColor();
     const QColor titleBarFg = deco->titleBarForegroundColor();
+    const bool isBgDark = qGray(titleBarBg.rgb()) < 128;
 
     //--- Checked
     if (isChecked() && type() != KDecoration3::DecorationButtonType::Maximize) {
 #if HAVE_EXCLUDE_FROM_CAPTURE
         if (type() == KDecoration3::DecorationButtonType::ExcludeFromCapture) {
-            return titleBarOpaqueBg;
+            return isBgDark ? titleBarFg : titleBarOpaqueBg;
         }
 #endif
 
@@ -594,14 +595,17 @@ QColor Button::foregroundColor() const
                 KDecoration3::ColorRole::Foreground
             );
         } else if (m_isGtkButton && (type() == KDecoration3::DecorationButtonType::Maximize || type() == KDecoration3::DecorationButtonType::Minimize)) {
-            const int grayValue = qGray(titleBarBg.rgb());
-            if (grayValue < 128) { // Dark Bg
+            if (isBgDark) { // Dark Bg
                 hoveredColor = KColorUtils::mix(titleBarFg, Qt::black, 0.5); 
             } else { // Light Bg
                 hoveredColor = KColorUtils::mix(titleBarFg, Qt::white, 0.6); 
             }
         } else {
-            hoveredColor = titleBarFg;
+            if (type() == KDecoration3::DecorationButtonType::Close && !isBgDark) {
+              hoveredColor = titleBarBg;
+            } else {    
+              hoveredColor = titleBarFg;
+            }
         }
 
         return KColorUtils::mix(

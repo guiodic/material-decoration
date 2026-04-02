@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2026 Guido Iodice <guido[dot]iodice[at]gmail[dot]com>
  * Copyright (C) 2020 Chris Holland <zrenfire@gmail.com>
  * Copyright (C) 2016 Kai Uwe Broulik <kde@privat.broulik.de>
  * Copyright (C) 2014 by Hugo Pereira Da Costa <hugo.pereira@free.fr>
