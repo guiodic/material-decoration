@@ -554,7 +554,7 @@ QColor Button::foregroundColor() const
     const QColor titleBarBg = deco->titleBarBackgroundColor();
     const QColor titleBarOpaqueBg = deco->titleBarOpaqueBackgroundColor();
     const QColor titleBarFg = deco->titleBarForegroundColor();
-    const bool isBgDark = qGray(titleBarBg.rgb()) < 128 ? true : false;
+    const bool isBgDark = qGray(titleBarBg.rgb()) < 128;
 
     //--- Checked
     if (isChecked() && type() != KDecoration3::DecorationButtonType::Maximize) {
