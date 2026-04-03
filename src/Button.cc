@@ -471,7 +471,7 @@ QColor Button::backgroundColor() const
     //--- CloseButton
     if (type() == KDecoration3::DecorationButtonType::Close) {
         auto *decoratedClient = deco->window();
-        const QColor hoveredColor = decoratedClient->color(
+        QColor hoveredColor = decoratedClient->color(
             KDecoration3::ColorGroup::Warning,
             KDecoration3::ColorRole::Foreground
         );
@@ -487,7 +487,11 @@ QColor Button::backgroundColor() const
         }
 
         if (isHovered()) {
-            return KColorUtils::mix(normalColor, hoveredColor, m_transitionValue);
+            if (!decoratedClient->isActive()) {  
+                hoveredColor = KColorUtils::mix(titleBarBg, hoveredColor,0.7);
+            }    
+                
+            return KColorUtils::mix(normalColor, hoveredColor, m_transitionValue); 
         }
     }
 
@@ -601,10 +605,10 @@ QColor Button::foregroundColor() const
                 hoveredColor = KColorUtils::mix(titleBarFg, Qt::white, 0.6); 
             }
         } else {
-            if (type() == KDecoration3::DecorationButtonType::Close && !isBgDark && decoratedClient->isActive()) {
-              hoveredColor = titleBarBg;
-            } else {    
-              hoveredColor = titleBarFg;
+            if (type() == KDecoration3::DecorationButtonType::Close && !(decoratedClient->isActive() && isBgDark)) {
+                hoveredColor = titleBarBg;
+            } else {
+                hoveredColor = titleBarFg;
             }
         }
 
