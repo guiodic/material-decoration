@@ -179,7 +179,7 @@ private:
     mutable struct {
         QString fullCaption;
         qreal availableWidth = -1.0;
-        Qt::Alignment alignment = Qt::AlignLeft;
+        Qt::Alignment alignment = Qt::AlignCenter;
         QString elidedCaption;
         QFont font;
     } m_captionCache;
