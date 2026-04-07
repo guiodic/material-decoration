@@ -633,7 +633,6 @@ void Decoration::updateShadow()
         return c;
     };
 
-    const qreal shadowStrength = static_cast<qreal>(shadowStrengthInt) / 255.0;
     const CompositeShadowParams params = lookupShadowParams(shadowSizePreset);
 
     if (params.isNone()) { // InternalSettings::ShadowNone
@@ -641,6 +640,8 @@ void Decoration::updateShadow()
         setShadow(s_cachedShadow);
         return;
     }
+    
+    const qreal shadowStrength = static_cast<qreal>(shadowStrengthInt) / 255.0;
 
     // In order to properly render a box shadow with a given radius `shadowSize`,
     // the box size should be at least `2 * QSize(shadowSize, shadowSize)`.
