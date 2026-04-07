@@ -627,78 +627,65 @@ void Decoration::updateShadow()
     s_shadowSizePreset = shadowSizePreset;
     s_cornerRadius = m_cornerRadius;
 
-    auto withOpacity = [] (const QColor &color, qreal opacity) -> QColor {
+    s_cachedShadow = createShadowObject(1.0);
+    setShadow(s_cachedShadow);
+}
+
+std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(const float strengthScale)
+{
+    CompositeShadowParams params = lookupShadowParams(m_internalSettings->shadowSize());
+    if (params.isNone()) {
+        return nullptr;
+    }
+
+    auto withOpacity = [](const QColor &color, qreal opacity) -> QColor {
         QColor c(color);
         c.setAlphaF(opacity);
         return c;
     };
 
-    const qreal shadowStrength = static_cast<qreal>(shadowStrengthInt) / 255.0;
-    const CompositeShadowParams params = lookupShadowParams(shadowSizePreset);
+    const QSize boxSize =
+        BoxShadowRenderer::calculateMinimumBoxSize(params.shadow1.radius).expandedTo(BoxShadowRenderer::calculateMinimumBoxSize(params.shadow2.radius));
 
-    if (params.isNone()) { // InternalSettings::ShadowNone
-        s_cachedShadow.reset();
-        setShadow(s_cachedShadow);
-        return;
-    }
+    BoxShadowRenderer shadowRenderer;
+    shadowRenderer.setBorderRadius(m_cornerRadius + 0.5);
+    shadowRenderer.setBoxSize(boxSize);
 
-    // In order to properly render a box shadow with a given radius `shadowSize`,
-    // the box size should be at least `2 * QSize(shadowSize, shadowSize)`.
-    const int shadowSize = qMax(params.shadow1.radius, params.shadow2.radius);
-    const QSize boxSize = QSize(1, 1) + QSize(shadowSize*2, shadowSize*2);
-    const QRect box(QPoint(shadowSize, shadowSize), boxSize);
-    const QRect rect = box.adjusted(-shadowSize, -shadowSize, shadowSize, shadowSize);
+    const qreal strength = m_internalSettings->shadowStrength() / 255.0 * strengthScale;
+    shadowRenderer.addShadow(params.shadow1.offset, params.shadow1.radius, withOpacity(m_internalSettings->shadowColor(), params.shadow1.opacity * strength));
+    shadowRenderer.addShadow(params.shadow2.offset, params.shadow2.radius, withOpacity(m_internalSettings->shadowColor(), params.shadow2.opacity * strength));
 
-    QImage shadowTexture(rect.size(), QImage::Format_ARGB32_Premultiplied);
-    shadowTexture.fill(Qt::transparent);
+    QImage shadowTexture = shadowRenderer.render();
 
     QPainter painter(&shadowTexture);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    // Draw the "shape" shadow.
-    BoxShadowHelper::boxShadow(
-        &painter,
-        box,
-        params.shadow1.offset,
-        params.shadow1.radius,
-        withOpacity(shadowColor, params.shadow1.opacity * shadowStrength));
+    const QRectF outerRect = shadowTexture.rect();
 
-    // Draw the "contrast" shadow.
-    BoxShadowHelper::boxShadow(
-        &painter,
-        box,
-        params.shadow2.offset,
-        params.shadow2.radius,
-        withOpacity(shadowColor, params.shadow2.opacity * shadowStrength));
+    QRectF boxRect(QPoint(0, 0), boxSize);
+    boxRect.moveCenter(outerRect.center());
 
     // Mask out inner rect.
-    const QMargins padding = QMargins(
-        shadowSize - params.offset.x(),
-        shadowSize - params.offset.y(),
-        shadowSize + params.offset.x(),
-        shadowSize + params.offset.y());
-    QRect innerRect = rect - padding;
-    
-    // From Breeze: Push the shadow slightly under the window, which helps avoiding glitches with fractional scaling
-    // TODO fix this more properly
-    innerRect.adjust(1, 1, -1, -1);
+    const QMarginsF padding = QMarginsF(boxRect.left() - outerRect.left() - params.offset.x(),
+                                        boxRect.top() - outerRect.top() - params.offset.y(),
+                                        outerRect.right() - boxRect.right() + params.offset.x(),
+                                        outerRect.bottom() - boxRect.bottom() + params.offset.y());
+    QRectF innerRect = outerRect - padding;
+    // Push the shadow slightly under the window, which helps avoiding glitches with fractional scaling
+    innerRect.adjust(2, 2, -2, -2);
 
-    // Mask out window+titlebar from shadow
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
-    
-    
-    painter.drawRoundedRect(innerRect, m_cornerRadius + 4, m_cornerRadius + 4);
+    painter.drawRoundedRect(innerRect, m_cornerRadius + 0.5, m_cornerRadius + 0.5);
 
     painter.end();
 
-    s_cachedShadow = std::make_shared<KDecoration3::DecorationShadow>();
-    s_cachedShadow->setPadding(padding);
-    s_cachedShadow->setInnerShadowRect(QRect(shadowTexture.rect().center(), QSize(1, 1)));
-    s_cachedShadow->setShadow(shadowTexture);
-
-    setShadow(s_cachedShadow);
+    auto ret = std::make_shared<KDecoration3::DecorationShadow>();
+    ret->setPadding(padding);
+    ret->setInnerShadowRect(QRectF(outerRect.center(), QSizeF(1, 1)));
+    ret->setShadow(shadowTexture);
+    return ret;
 }
 
 bool Decoration::menuAlwaysShow() const

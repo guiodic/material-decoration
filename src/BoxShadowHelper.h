@@ -19,17 +19,76 @@
 
 // Qt
 #include <QColor>
-#include <QPainter>
+#include <QImage>
 #include <QPoint>
-#include <QRect>
+#include <QSize>
+#include <QVector>
 
 namespace Material
 {
-namespace BoxShadowHelper
+class BoxShadowRenderer
 {
+public:
+    // Compiler generated constructors & destructor are fine.
 
-void boxShadow(QPainter *p, const QRect &box, const QPoint &offset,
-               int radius, const QColor &color);
+    /**
+     * Set the size of the box.
+     * @param size The size of the box.
+     **/
+    void setBoxSize(const QSizeF &size);
 
-} // namespace BoxShadowHelper
+    /**
+     * Set the radius of box' corners.
+     * @param radius The border radius, in pixels.
+     **/
+    void setBorderRadius(qreal radius);
+
+    /**
+     * Add a shadow.
+     * @param offset The offset of the shadow.
+     * @param radius The blur radius.
+     * @param color The color of the shadow.
+     **/
+    void addShadow(const QPointF &offset, double radius, const QColor &color);
+
+    /**
+     * Render the shadow.
+     **/
+    QImage render() const;
+
+    /**
+     * Calculate the minimum size of the box.
+     *
+     * This helper computes the minimum size of the box so the shadow behind it has
+     * full its strength.
+     *
+     * @param radius The blur radius of the shadow.
+     **/
+    static QSize calculateMinimumBoxSize(int radius);
+
+    /**
+     * Calculate the minimum size of the shadow texture.
+     *
+     * This helper computes the minimum size of the resulting texture so the shadow
+     * is not clipped.
+     *
+     * @param boxSize The size of the box.
+     * @param radius The blur radius.
+     * @param offset The offset of the shadow.
+     **/
+    static QSizeF calculateMinimumShadowTextureSize(const QSizeF &boxSize, double radius, const QPointF &offset);
+
+private:
+    QSizeF m_boxSize;
+    qreal m_borderRadius = 0.0;
+
+    struct Shadow {
+        QPointF offset;
+        double radius;
+        QColor color;
+    };
+
+    QVector<Shadow> m_shadows;
+};
+
 } // namespace Material
