@@ -321,6 +321,7 @@ void Decoration::reconfigure()
     m_menuButtons->updateAppMenuModel();
     m_menuButtons->setAlwaysShow(menuAlwaysShow());
     
+    invalidateCaptionCache();
     updateColors();
     updateButtonAnimation();
     updateBordersCornersBlurShadow();
@@ -458,6 +459,7 @@ void Decoration::updateResizeBorders()
 void Decoration::updateTitleBar()
 {
     setTitleBar(titleBarRect());
+    invalidateCaptionCache();
 }
 
 void Decoration::updateTitleBarHoverState()
@@ -501,8 +503,15 @@ void Decoration::updateButtonHeight()
     setButtonGroupHeight(m_menuButtons, buttonHeight);
 }
 
+void Decoration::invalidateCaptionCache() const
+{
+    m_captionCache.availableWidth = -1.0;
+    m_captionCache.textWidth = -1.0;
+}
+
 void Decoration::updateButtonsGeometry()
 {
+    invalidateCaptionCache();
     m_menuButtons->updateShowing();
 
     const qreal left = leftOffset();
@@ -1081,9 +1090,9 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
         return;
     }
 
-    const QFontMetricsF fontMetrics = settings()->fontMetrics();
+    const QFont font = settings()->font();
+    const QFontMetricsF fontMetrics(font);
     const QString fullCaption = decoratedClient->caption();
-    const qreal textWidth = fontMetrics.boundingRect(fullCaption).width();
     const qreal offset = topOffset();
 
     // 2. Baseline constrained geometry (used to determine if space is limited)
@@ -1098,6 +1107,13 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     // 3. Cache state for interaction
+    if (m_captionCache.textWidth < 0 || m_captionCache.fullCaption != fullCaption || m_captionCache.font != font) {
+        m_captionCache.fullCaption = fullCaption;
+        m_captionCache.font = font;
+        m_captionCache.textWidth = fontMetrics.boundingRect(fullCaption).width();
+        m_captionCache.availableWidth = -1.0;
+    }
+    const qreal textWidth = m_captionCache.textWidth;
     const bool spaceLimited = appMenuVisible && hideCaptionWhenLimitedSpace() && constrainedRect.width() < m_internalSettings->minWidthForCaption();
     const bool textElided = textWidth > constrainedRect.width();
 
@@ -1155,7 +1171,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
 
     // 6. Painter setup and drawing
     painter->save();
-    painter->setFont(settings()->font());
+    painter->setFont(font);
     painter->setPen(titleBarForegroundColor());
 
     // Opacity logic
@@ -1165,10 +1181,14 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
         }
     }
 
-    const QString caption = fontMetrics.elidedText(fullCaption, Qt::ElideMiddle, drawingRect.width());
+    if (m_captionCache.availableWidth != drawingRect.width() || m_captionCache.alignment != alignment) {
+        m_captionCache.availableWidth = drawingRect.width();
+        m_captionCache.alignment = alignment;
+        m_captionCache.elidedCaption = fontMetrics.elidedText(fullCaption, Qt::ElideMiddle, drawingRect.width());
+    }    
     drawingRect.translate(0, offset);
 
-    painter->drawText(drawingRect, alignment | Qt::TextSingleLine | Qt::AlignVCenter, caption);
+    painter->drawText(drawingRect, alignment | Qt::TextSingleLine | Qt::AlignVCenter, m_captionCache.elidedCaption);
     painter->restore();
 }
 
@@ -1238,6 +1258,7 @@ void Decoration::onSizeChanged()
 {
     updatePaths();
     updateBlur();
+    invalidateCaptionCache();
 }
 
 
