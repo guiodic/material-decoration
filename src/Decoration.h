@@ -108,6 +108,7 @@ private:
 
     void updateButtonHeight();
     void updateButtonsGeometry();
+    void invalidateCaptionCache();
     void setButtonGroupAnimation(KDecoration3::DecorationButtonGroup *buttonGroup, bool enabled, int duration);
     void updateButtonAnimation();
     void updateShadow();
@@ -177,8 +178,8 @@ private:
     mutable bool m_captionLimited = false;
     mutable struct {
         QString fullCaption;
-        qreal availableWidth;
-        Qt::Alignment alignment;
+        qreal availableWidth = -1.0;
+        Qt::Alignment alignment = Qt::AlignLeft;
         QString elidedCaption;
         QFont font;
     } m_captionCache;

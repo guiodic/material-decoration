@@ -321,6 +321,7 @@ void Decoration::reconfigure()
     m_menuButtons->updateAppMenuModel();
     m_menuButtons->setAlwaysShow(menuAlwaysShow());
     
+    invalidateCaptionCache();
     updateColors();
     updateButtonAnimation();
     updateBordersCornersBlurShadow();
@@ -458,6 +459,7 @@ void Decoration::updateResizeBorders()
 void Decoration::updateTitleBar()
 {
     setTitleBar(titleBarRect());
+    invalidateCaptionCache();
 }
 
 void Decoration::updateTitleBarHoverState()
@@ -501,8 +503,14 @@ void Decoration::updateButtonHeight()
     setButtonGroupHeight(m_menuButtons, buttonHeight);
 }
 
+void Decoration::invalidateCaptionCache()
+{
+    m_captionCache.availableWidth = -1.0;
+}
+
 void Decoration::updateButtonsGeometry()
 {
+    invalidateCaptionCache();
     m_menuButtons->updateShowing();
 
     const qreal left = leftOffset();
@@ -1262,6 +1270,7 @@ void Decoration::onSizeChanged()
 {
     updatePaths();
     updateBlur();
+    invalidateCaptionCache();
 }
 
 
