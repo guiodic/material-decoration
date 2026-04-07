@@ -175,6 +175,14 @@ private:
 
     mutable QRectF m_captionRect;
     mutable bool m_captionLimited = false;
+    mutable struct {
+        QString fullCaption;
+        qreal availableWidth;
+        Qt::Alignment alignment;
+        QString elidedCaption;
+        QFont font;
+    } m_captionCache;
+    
     QPointF m_lastHoverPos;
     bool m_titleBarHoverActive = false;
 

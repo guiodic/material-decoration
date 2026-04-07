@@ -1094,9 +1094,9 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
         return;
     }
 
-    const QFontMetricsF fontMetrics = settings()->fontMetrics();
+    const QFont font = settings()->font();
+    const QFontMetricsF fontMetrics(font);
     const QString fullCaption = decoratedClient->caption();
-    const qreal textWidth = fontMetrics.boundingRect(fullCaption).width();
     const qreal offset = topOffset();
 
     // 2. Baseline constrained geometry (used to determine if space is limited)
@@ -1111,6 +1111,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     // 3. Cache state for interaction
+    const qreal textWidth = fontMetrics.boundingRect(fullCaption).width();
     const bool spaceLimited = appMenuVisible && hideCaptionWhenLimitedSpace() && constrainedRect.width() < m_internalSettings->minWidthForCaption();
     const bool textElided = textWidth > constrainedRect.width();
 
@@ -1168,7 +1169,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
 
     // 6. Painter setup and drawing
     painter->save();
-    painter->setFont(settings()->font());
+    painter->setFont(font);
     painter->setPen(titleBarForegroundColor());
 
     // Opacity logic
@@ -1178,10 +1179,20 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
         }
     }
 
-    const QString caption = fontMetrics.elidedText(fullCaption, Qt::ElideMiddle, drawingRect.width());
+    if (m_captionCache.fullCaption != fullCaption ||
+        m_captionCache.availableWidth != drawingRect.width() ||
+        m_captionCache.alignment != alignment ||
+        m_captionCache.font != font) {
+        
+        m_captionCache.fullCaption = fullCaption;
+        m_captionCache.availableWidth = drawingRect.width();
+        m_captionCache.alignment = alignment;
+        m_captionCache.font = font;
+        m_captionCache.elidedCaption = fontMetrics.elidedText(fullCaption, Qt::ElideMiddle, drawingRect.width());
+    }    
     drawingRect.translate(0, offset);
 
-    painter->drawText(drawingRect, alignment | Qt::TextSingleLine | Qt::AlignVCenter, caption);
+    painter->drawText(drawingRect, alignment | Qt::TextSingleLine | Qt::AlignVCenter, m_captionCache.elidedCaption);
     painter->restore();
 }
 
