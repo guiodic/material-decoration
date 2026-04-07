@@ -1033,7 +1033,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     }
 
     // Find results
-    QList<QAction *> results;
+    QList<SearchResult> results;
     if (m_appMenuModel) {
         QMenu *rootMenu = m_appMenuModel->menu();
         if (rootMenu) {
@@ -1070,20 +1070,19 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     }
 
     int resultCount = 0;
-    for (QAction *action : results) {
+    for (const SearchResult &result : results) {
         if (resultCount >= MAX_SEARCH_RESULTS) { // stop after 100 results
             break;
         }
 
-        const ActionInfo info = getActionPath(action);
-        if (!info.isEffectivelyEnabled && !deco->showDisabledActions()) {
+        if (!result.info.isEffectivelyEnabled && !deco->showDisabledActions()) {
             continue;
         }
-        QAction *newAction = new QAction(action->icon(), info.path, m_searchMenu);
-        newAction->setEnabled(info.isEffectivelyEnabled);
-        newAction->setCheckable(action->isCheckable());
-        newAction->setChecked(action->isChecked());
-        QPointer<QAction> safeAction = action;
+        QAction *newAction = new QAction(result.action->icon(), result.info.path, m_searchMenu);
+        newAction->setEnabled(result.info.isEffectivelyEnabled);
+        newAction->setCheckable(result.action->isCheckable());
+        newAction->setChecked(result.action->isChecked());
+        QPointer<QAction> safeAction = result.action;
         connect(newAction, &QAction::triggered, this, [safeAction, this]() {
             if (safeAction) {
                 safeAction->trigger();
@@ -1135,7 +1134,14 @@ void AppMenuButtonGroup::onSearchTimerTimeout()
     }
 }
 
-void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus)
+void AppMenuButtonGroup::searchMenu(QMenu *menu,
+                                    const QString &text,
+                                    QList<SearchResult> &results,
+                                    QSet<QMenu *> &visited,
+                                    bool ignoreTopLevel,
+                                    bool ignoreSubMenus,
+                                    const QStringList &pathPrefix,
+                                    bool parentEnabled)
 {
     if (!menu || visited.contains(menu)) {
         return;
@@ -1146,20 +1152,32 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<QAct
         if (action->isSeparator()) {
             continue;
         }
+
+        const QString label = action->text().trimmed().remove(QLatin1Char('&'));
+        QStringList currentPath = pathPrefix;
+        if (!label.isEmpty()) {
+            currentPath.append(label);
+        }
+        const bool effectivelyEnabled = parentEnabled && action->isEnabled();
+
         if (action->menu()) {
-            searchMenu(action->menu(), text, results, visited, ignoreTopLevel, ignoreSubMenus);
+            searchMenu(action->menu(), text, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath, effectivelyEnabled);
         } else {
-            const ActionInfo info = getActionPath(action);
+            const QString fullPath = currentPath.join(QStringLiteral(" » "));
+            const QString searchablePath = currentPath.mid(1).join(QStringLiteral(" » "));
+
             QString pathToSearch;
             if (ignoreSubMenus) {
-                pathToSearch = info.label;
+                pathToSearch = label;
             } else if (ignoreTopLevel) {
-                pathToSearch = info.searchablePath;
+                pathToSearch = searchablePath;
             } else {
-                pathToSearch = info.path;
+                pathToSearch = fullPath;
             }
+
             if (pathToSearch.contains(text, Qt::CaseInsensitive)) {
-                results.append(action);
+                ActionInfo info = { fullPath, searchablePath, label, effectivelyEnabled };
+                results.append({ action, info });
             }
         }
     }

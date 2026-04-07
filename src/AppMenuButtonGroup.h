@@ -141,10 +141,25 @@ private:
         bool isEffectivelyEnabled;
     };
 
+    struct SearchResult {
+        QAction *action;
+        ActionInfo info;
+        bool operator==(const SearchResult &other) const {
+            return action == other.action;
+        }
+    };
+
     void resetButtons();
     void setupSearchMenu();
     void repositionSearchMenu();
-    void searchMenu(QMenu *menu, const QString &text, QList<QAction *> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus);
+    void searchMenu(QMenu *menu,
+                    const QString &text,
+                    QList<SearchResult> &results,
+                    QSet<QMenu *> &visited,
+                    bool ignoreTopLevel,
+                    bool ignoreSubMenus,
+                    const QStringList &pathPrefix = {},
+                    bool parentEnabled = true);
     ActionInfo getActionPath(QAction *action) const;
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
 
@@ -185,7 +200,7 @@ private:
     bool m_menuReadyForSearch = false;
     bool m_menuLoadedOnce = false;
     QString m_lastSearchQuery;
-    QList<QAction *> m_lastResults;
+    QList<SearchResult> m_lastResults;
 
     QPointer<KDecoration3::DecorationButton> m_hoveredButton = nullptr;
 
