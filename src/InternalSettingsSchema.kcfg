@@ -32,7 +32,7 @@
         </entry>
 
         <entry name="UseSystemColors" type="bool">
-            <default>false</default>
+            <default>true</default>
         </entry>
 
         <!-- borders -->
@@ -40,10 +40,10 @@
             <default>false</default>
         </entry>
         <entry name="ActiveBorderColor" type="Color">
-            <default>55, 125, 255</default>
+            <default>61, 174, 233</default>
         </entry>
         <entry name="InactiveBorderColor" type="Color">
-            <default>200, 200, 200</default>
+            <default>239, 240, 241</default>
         </entry>
 
         <!-- title alignment -->
