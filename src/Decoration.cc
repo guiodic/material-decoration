@@ -503,7 +503,7 @@ void Decoration::updateButtonHeight()
     setButtonGroupHeight(m_menuButtons, buttonHeight);
 }
 
-void Decoration::invalidateCaptionCache()
+void Decoration::invalidateCaptionCache() const
 {
     m_captionCache.availableWidth = -1.0;
 }
