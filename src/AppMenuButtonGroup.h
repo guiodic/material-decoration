@@ -149,8 +149,8 @@ private:
             return action == other.action
             && info.isEffectivelyEnabled == other.info.isEffectivelyEnabled
             && info.path == other.info.path
-            && action->isChecked() == other.action->isChecked()
-            && action->isCheckable() == other.action->isCheckable();
+            && (!action || (action->isChecked() == other.action->isChecked()
+            && action->isCheckable() == other.action->isCheckable()));
         }
     };
 
