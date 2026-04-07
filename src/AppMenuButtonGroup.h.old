@@ -162,7 +162,6 @@ private:
                     QSet<QMenu *> &visited,
                     bool ignoreTopLevel,
                     bool ignoreSubMenus,
-                    bool showDisabledActions,
                     QStringList &pathPrefix,
                     bool parentEnabled = true);
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
@@ -205,6 +204,7 @@ private:
     bool m_menuLoadedOnce = false;
     QString m_lastSearchQuery;
     QList<SearchResult> m_lastResults;
+    bool m_lastShowDisabledActions = false;
 
     QPointer<KDecoration3::DecorationButton> m_hoveredButton = nullptr;
 
