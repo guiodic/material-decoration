@@ -162,7 +162,7 @@ private:
                     QSet<QMenu *> &visited,
                     bool ignoreTopLevel,
                     bool ignoreSubMenus,
-                    const QStringList &pathPrefix = {},
+                    QStringList pathPrefix = {},
                     bool parentEnabled = true);
     ActionInfo getActionPath(QAction *action) const;
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;

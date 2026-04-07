@@ -1140,7 +1140,7 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu,
                                     QSet<QMenu *> &visited,
                                     bool ignoreTopLevel,
                                     bool ignoreSubMenus,
-                                    const QStringList &pathPrefix,
+                                    QStringList pathPrefix,
                                     bool parentEnabled)
 {
     if (!menu || visited.contains(menu)) {
@@ -1154,31 +1154,36 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu,
         }
 
         const QString label = action->text().trimmed().remove(QLatin1Char('&'));
-        QStringList currentPath = pathPrefix;
-        if (!label.isEmpty()) {
-            currentPath.append(label);
-        }
         const bool effectivelyEnabled = parentEnabled && action->isEnabled();
 
-        if (action->menu()) {
-            searchMenu(action->menu(), text, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath, effectivelyEnabled);
-        } else {
-            const QString fullPath = currentPath.join(QStringLiteral(" » "));
-            const QString searchablePath = currentPath.mid(1).join(QStringLiteral(" » "));
+        bool pushed = false;
+        if (!label.isEmpty()) {
+            pathPrefix.append(label);
+            pushed = true;
+        }
 
+        if (action->menu()) {
+            searchMenu(action->menu(), text, results, visited, ignoreTopLevel, ignoreSubMenus, pathPrefix, effectivelyEnabled);
+        } else {
             QString pathToSearch;
             if (ignoreSubMenus) {
                 pathToSearch = label;
             } else if (ignoreTopLevel) {
-                pathToSearch = searchablePath;
+                pathToSearch = pathPrefix.mid(1).join(QStringLiteral(" » "));
             } else {
-                pathToSearch = fullPath;
+                pathToSearch = pathPrefix.join(QStringLiteral(" » "));
             }
 
             if (pathToSearch.contains(text, Qt::CaseInsensitive)) {
+                const QString fullPath = (ignoreSubMenus || ignoreTopLevel) ? pathPrefix.join(QStringLiteral(" » ")) : pathToSearch;
+                const QString searchablePath = (ignoreSubMenus || !ignoreTopLevel) ? pathPrefix.mid(1).join(QStringLiteral(" » ")) : pathToSearch;
                 ActionInfo info = { fullPath, searchablePath, label, effectivelyEnabled };
                 results.append({ action, info });
             }
+        }
+
+        if (pushed) {
+            pathPrefix.removeLast();
         }
     }
 }
