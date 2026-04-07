@@ -23,7 +23,7 @@
 // Qt
 #include <QPainter>
 #include <QtMath>
-#include <QScopedPointer>
+#include <QScopedArrayPointer>
 
 // std
 #include <cmath>
@@ -194,7 +194,7 @@ static inline void boxBlurAlpha(QImage &image, int radius, const QRect &rect = {
     const int pixelStride = image.depth() >> 3;
 
     const int bufferStride = qMax(width, height) * pixelStride;
-    QScopedPointer<uint8_t, QScopedPointerArrayDeleter<uint8_t>> buf(new uint8_t[2 * bufferStride]);
+    QScopedArrayPointer<uint8_t> buf(new uint8_t[2 * bufferStride]);
     uint8_t *buf1 = buf.data();
     uint8_t *buf2 = buf1 + bufferStride;
 
@@ -237,7 +237,7 @@ static inline void mirrorTopLeftQuadrant(QImage &image)
 
     for (int y = 0; y < centerY; ++y) {
         const uint8_t *in = image.scanLine(y) + alphaOffset;
-        uint8_t *out = image.scanLine(width - y - 1) + alphaOffset;
+        uint8_t *out = image.scanLine(height - y - 1) + alphaOffset;
 
         for (int x = 0; x < width; ++x, in += stride, out += stride) {
             *out = *in;
@@ -272,8 +272,8 @@ static void renderShadow(QPainter *painter, const QRectF &rect, qreal borderRadi
 
     // Because the shadow texture is symmetrical, that's enough to blur
     // only the top-left quadrant and then mirror it.
-    const QRect blurRect(0, 0, std::ceil(shadow.width() * 0.5), std::ceil(shadow.height() * 0.5));
-    const int scaledRadius = std::round(radius * dpr);
+    const QRect blurRect(0, 0, qCeil(shadow.width() * 0.5), qCeil(shadow.height() * 0.5));
+    const int scaledRadius = qRound(radius * dpr);
     boxBlurAlpha(shadow, scaledRadius, blurRect);
     mirrorTopLeftQuadrant(shadow);
 
