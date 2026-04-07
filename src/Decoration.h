@@ -178,6 +178,7 @@ private:
     mutable bool m_captionLimited = false;
     mutable struct {
         QString fullCaption;
+        qreal textWidth = -1.0;
         qreal availableWidth = -1.0;
         Qt::Alignment alignment = Qt::AlignCenter;
         QString elidedCaption;

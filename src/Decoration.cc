@@ -1119,7 +1119,11 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     // 3. Cache state for interaction
-    const qreal textWidth = fontMetrics.boundingRect(fullCaption).width();
+    if (m_captionCache.textWidth < 0 || m_captionCache.fullCaption != fullCaption || m_captionCache.font != font) {
+        m_captionCache.textWidth = fontMetrics.boundingRect(fullCaption).width();
+        m_captionCache.availableWidth = -1.0;
+    }
+    const qreal textWidth = m_captionCache.textWidth;
     const bool spaceLimited = appMenuVisible && hideCaptionWhenLimitedSpace() && constrainedRect.width() < m_internalSettings->minWidthForCaption();
     const bool textElided = textWidth > constrainedRect.width();
 
