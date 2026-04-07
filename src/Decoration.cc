@@ -506,7 +506,7 @@ void Decoration::updateButtonHeight()
 void Decoration::invalidateCaptionCache() const
 {
     m_captionCache.availableWidth = -1.0;
-    m_captionCache.textWidth = -1.0
+    m_captionCache.textWidth = -1.0;
 }
 
 void Decoration::updateButtonsGeometry()
