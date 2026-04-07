@@ -1120,6 +1120,8 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
 
     // 3. Cache state for interaction
     if (m_captionCache.textWidth < 0 || m_captionCache.fullCaption != fullCaption || m_captionCache.font != font) {
+        m_captionCache.fullCaption = fullCaption;
+        m_captionCache.font = font;
         m_captionCache.textWidth = fontMetrics.boundingRect(fullCaption).width();
         m_captionCache.availableWidth = -1.0;
     }
@@ -1191,15 +1193,9 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
         }
     }
 
-    if (m_captionCache.fullCaption != fullCaption ||
-        m_captionCache.availableWidth != drawingRect.width() ||
-        m_captionCache.alignment != alignment ||
-        m_captionCache.font != font) {
-        
-        m_captionCache.fullCaption = fullCaption;
+    if (m_captionCache.availableWidth != drawingRect.width() || m_captionCache.alignment != alignment) {
         m_captionCache.availableWidth = drawingRect.width();
         m_captionCache.alignment = alignment;
-        m_captionCache.font = font;
         m_captionCache.elidedCaption = fontMetrics.elidedText(fullCaption, Qt::ElideMiddle, drawingRect.width());
     }    
     drawingRect.translate(0, offset);
