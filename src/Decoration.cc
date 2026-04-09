@@ -53,6 +53,11 @@
 #include <QSharedPointer>
 #include <QWheelEvent>
 #include <QTimer>
+#include <QDBusConnection>
+#include <QDBusMessage>
+#include <QDBusPendingCallWatcher>
+#include <QDBusPendingReply>
+#include <QDBusVariant>
 
 namespace Material
 {
@@ -254,8 +259,6 @@ bool Decoration::init()
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::sizeChanged,
             this, &Decoration::onSizeChanged);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::nextScaleChanged,
-            this, &Decoration::onNextScaleChanged);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged, this, [this] {
         updateTitleBar();
         updateButtonsGeometry();
@@ -293,6 +296,37 @@ bool Decoration::init()
             this, &Decoration::onSectionUnderMouseChanged);
     updateTitleBarHoverState();
 
+
+    // use DBus connection to update on global configuration change
+    auto dbus = QDBusConnection::sessionBus();
+    dbus.connect(QString(),
+                 QStringLiteral("/KGlobalSettings"),
+                 QStringLiteral("org.kde.KGlobalSettings"),
+                 QStringLiteral("notifyChange"),
+                 this,
+                 SLOT(reconfigure()));
+
+    dbus.connect(QStringLiteral("org.kde.KWin"),
+                 QStringLiteral("/org/kde/KWin"),
+                 QStringLiteral("org.kde.KWin.TabletModeManager"),
+                 QStringLiteral("tabletModeChanged"),
+                 QStringLiteral("b"),
+                 this,
+                 SLOT(onTabletModeChanged(bool)));
+
+    auto message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.KWin"),
+                                                  QStringLiteral("/org/kde/KWin"),
+                                                  QStringLiteral("org.freedesktop.DBus.Properties"),
+                                                  QStringLiteral("Get"));
+    message.setArguments({QStringLiteral("org.kde.KWin.TabletModeManager"), QStringLiteral("tabletMode")});
+    auto call = new QDBusPendingCallWatcher(dbus.asyncCall(message), this);
+    connect(call, &QDBusPendingCallWatcher::finished, this, [this, call]() {
+        QDBusPendingReply<QDBusVariant> reply = *call;
+        if (!reply.isError()) {
+            onTabletModeChanged(reply.value().variant().toBool());
+        }
+        call->deleteLater();
+    });
 
     // Window Decoration KCM
     // The reconfigure signal will update active windows, but we need to hook
@@ -761,7 +795,7 @@ bool Decoration::showCaptionOnHover() const
 
 qreal Decoration::buttonPadding() const
 {
-    const qreal baseUnit = settings()->gridUnit();
+    const qreal baseUnit = m_tabletMode ? settings()->gridUnit() * 2 : settings()->gridUnit();
     switch (m_internalSettings->buttonSize()) {
     case InternalSettings::ButtonTiny:
         return baseUnit * 0.2;
@@ -1263,13 +1297,17 @@ void Decoration::onSizeChanged()
     invalidateCaptionCache();
 }
 
-void Decoration::onNextScaleChanged()
+void Decoration::onTabletModeChanged(bool mode)
 {
+    if (m_tabletMode == mode) {
+        return;
+    }
+    m_tabletMode = mode;
     updateBordersCornersBlurShadow();
     updateResizeBorders();
     updateTitleBar();
-    updateButtonsGeometry();
+    QTimer::singleShot(0, this, &Decoration::updateButtonsGeometry);
+    update();
 }
-
 
 } // namespace Material
