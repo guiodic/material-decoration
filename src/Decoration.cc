@@ -880,17 +880,17 @@ qreal Decoration::bottomBorderSize() const {
         case KDecoration3::BorderSize::Tiny:
             return KDecoration3::snapToPixelGrid(std::max(4.0, baseSize), scale);
         case KDecoration3::BorderSize::Normal:
-            return KDecoration3::snapToPixelGrid(baseSize * 2, scale);
+            return baseSize * 2;
         case KDecoration3::BorderSize::Large:
-            return KDecoration3::snapToPixelGrid(baseSize * 3, scale);
+            return baseSize * 3;
         case KDecoration3::BorderSize::VeryLarge:
-            return KDecoration3::snapToPixelGrid(baseSize * 4, scale);
+            return baseSize * 4;
         case KDecoration3::BorderSize::Huge:
-            return KDecoration3::snapToPixelGrid(baseSize * 5, scale);
+            return baseSize * 5;
         case KDecoration3::BorderSize::VeryHuge:
-            return KDecoration3::snapToPixelGrid(baseSize * 6, scale);
+            return baseSize * 6;
         case KDecoration3::BorderSize::Oversized:
-            return KDecoration3::snapToPixelGrid(baseSize * 10, scale);
+            return baseSize * 10;
     }
 }
 
