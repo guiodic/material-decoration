@@ -1000,7 +1000,9 @@ QPainterPath Decoration::getRoundedPath(const QRectF &rect,
 
 void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRegion) const
 {
-    Q_UNUSED(repaintRegion)
+    if (!rect().intersects(repaintRegion)) {
+        return;
+    }
     
     painter->save();   
 
@@ -1063,7 +1065,9 @@ void Decoration::updateColors()
 
 void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repaintRegion) const
 {
-    Q_UNUSED(repaintRegion)
+    if (!m_titleBarPath.boundingRect().intersects(repaintRegion)) {
+        return;
+    }
 
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
@@ -1077,8 +1081,6 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
 
 void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) const
 {
-    Q_UNUSED(repaintRegion)
-
     // 1. Pre-checks and data gathering
     const auto *decoratedClient = window();
     const bool hasAppMenu = decoratedClient->hasApplicationMenu();
@@ -1171,6 +1173,12 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
         return;
     }
 
+    drawingRect.translate(0, offset);
+
+    if (!drawingRect.intersects(repaintRegion)) {
+        return;
+    }
+
     // 6. Painter setup and drawing
     painter->save();
     painter->setFont(font);
@@ -1188,7 +1196,6 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
         m_captionCache.alignment = alignment;
         m_captionCache.elidedCaption = fontMetrics.elidedText(fullCaption, Qt::ElideMiddle, drawingRect.width());
     }    
-    drawingRect.translate(0, offset);
 
     painter->drawText(drawingRect, alignment | Qt::TextSingleLine | Qt::AlignVCenter, m_captionCache.elidedCaption);
     painter->restore();
