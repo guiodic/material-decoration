@@ -755,7 +755,7 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
                                         outerRect.bottom() - boxRect.bottom() + params.offset.y());
     QRectF innerRect = outerRect - padding;
     // Push the shadow slightly under the window, which helps avoiding glitches with fractional scaling
-    innerRect.adjust(2, 2, -2, -2);
+    //innerRect.adjust(2, 2, -2, -2);
 
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::black);
