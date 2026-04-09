@@ -73,6 +73,7 @@ protected:
 private slots:
     void onSectionUnderMouseChanged(const Qt::WindowFrameSection value);
     void onSizeChanged();
+    void onNextScaleChanged();
 
 private:
     QRectF titleBarRect() const;

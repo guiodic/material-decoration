@@ -254,6 +254,8 @@ bool Decoration::init()
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::sizeChanged,
             this, &Decoration::onSizeChanged);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::nextScaleChanged,
+            this, &Decoration::onNextScaleChanged);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged, this, [this] {
         updateTitleBar();
         updateButtonsGeometry();
@@ -1259,6 +1261,14 @@ void Decoration::onSizeChanged()
     updatePaths();
     updateBlur();
     invalidateCaptionCache();
+}
+
+void Decoration::onNextScaleChanged()
+{
+    updateBordersCornersBlurShadow();
+    updateResizeBorders();
+    updateTitleBar();
+    updateButtonsGeometry();
 }
 
 
