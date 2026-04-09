@@ -73,6 +73,7 @@ protected:
 private slots:
     void onSectionUnderMouseChanged(const Qt::WindowFrameSection value);
     void onSizeChanged();
+    void onNextScaleChanged();
     void onTabletModeChanged(bool mode);
 
 private:
@@ -109,6 +110,7 @@ private:
 
     void updateButtonHeight();
     void updateButtonsGeometry();
+    void updateButtonsGeometryDelayed();
     void invalidateCaptionCache() const;
     void setButtonGroupAnimation(KDecoration3::DecorationButtonGroup *buttonGroup, bool enabled, int duration);
     void updateButtonAnimation();
