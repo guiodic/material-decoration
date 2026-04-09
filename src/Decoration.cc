@@ -516,7 +516,8 @@ void Decoration::updateResizeBorders()
 {
     QMarginsF borders;
 
-    const qreal extender = settings()->largeSpacing();
+    const qreal scale = window()->nextScale();
+    const qreal extender = KDecoration3::snapToPixelGrid(settings()->largeSpacing(), scale);
     borders.setLeft(extender);
     borders.setTop(extender);
     borders.setRight(extender);
@@ -866,27 +867,30 @@ qreal Decoration::captionMinWidth() const
 }
 
 qreal Decoration::bottomBorderSize() const {
-    const qreal baseSize = settings()->smallSpacing();
+    const qreal scale = window()->nextScale();
+    const qreal pixel = KDecoration3::pixelSize(scale);
+    const qreal baseSize = std::max(pixel, KDecoration3::snapToPixelGrid(settings()->smallSpacing(), scale));
+    
     switch (settings()->borderSize()) {
         default:
         case KDecoration3::BorderSize::None:
             return 0;
         case KDecoration3::BorderSize::NoSides:
-            return std::max(4.0, baseSize + 5);
+            return KDecoration3::snapToPixelGrid(std::max(4.0, baseSize + 5), scale);
         case KDecoration3::BorderSize::Tiny:
-            return std::max(4.0, baseSize);
+            return KDecoration3::snapToPixelGrid(std::max(4.0, baseSize), scale);
         case KDecoration3::BorderSize::Normal:
-            return baseSize*2;
+            return baseSize * 2;
         case KDecoration3::BorderSize::Large:
-            return baseSize*3;
+            return baseSize * 3;
         case KDecoration3::BorderSize::VeryLarge:
-            return baseSize*4; 
+            return baseSize * 4;
         case KDecoration3::BorderSize::Huge:
-            return baseSize*5;
+            return baseSize * 5;
         case KDecoration3::BorderSize::VeryHuge:
-            return baseSize*6;
+            return baseSize * 6;
         case KDecoration3::BorderSize::Oversized:
-            return baseSize*10; 
+            return baseSize * 10;
     }
 }
 
