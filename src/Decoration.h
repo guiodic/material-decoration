@@ -110,6 +110,7 @@ private:
 
     void updateButtonHeight();
     void updateButtonsGeometry();
+    void updateButtonsGeometryDelayed();
     void invalidateCaptionCache() const;
     void setButtonGroupAnimation(KDecoration3::DecorationButtonGroup *buttonGroup, bool enabled, int duration);
     void updateButtonAnimation();

@@ -261,38 +261,61 @@ bool Decoration::init()
             this, &Decoration::onSizeChanged);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::nextScaleChanged,
             this, &Decoration::onNextScaleChanged);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged, this, [this] {
-        updateTitleBar();
-        updateButtonsGeometry();
-    });
     
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged, this, [this] {
-        updateBordersCornersBlurShadow();
-        updateButtonsGeometry();
-    });
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged,
+        this, &Decoration::updateTitleBar);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged,
+        this, &Decoration::updateButtonsGeometry);
+    
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged, 
+        this, &Decoration::updateBordersCornersBlurShadow);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged, 
+        this, &Decoration::updateButtonsGeometry);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged, 
+        this, &Decoration::updateTitleBar);
+    //connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged, 
+    //    this, &Decoration::setOpaque);
+    
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedHorizontallyChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedVerticallyChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::shadedChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::shadedChanged,
+            this, &Decoration::updateButtonsGeometry);
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::captionChanged,
             this, repaintTitleBar);
+    
     connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
-            this, [this] { 
-                           updateColors();
-                           updateCornerRadiusAndOutline();
-                           update(); 
-            });
+        this, &Decoration::updateColors);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
+        this, &Decoration::updateCornerRadiusAndOutline);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
+        this, static_cast<void (Decoration::*)()>(&Decoration::update));
+
     connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
+            this, &Decoration::updateTitleBar);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
+            this, &Decoration::updateButtonsGeometry);
+    
+    connect(this, &KDecoration3::Decoration::bordersChanged, 
+            this, &Decoration::updateTitleBar);
+    
+    
+
+    
+    
+    
     
     updateColors();
     updateBordersCornersBlurShadow();
     updateResizeBorders();
     updateTitleBar();
-    QTimer::singleShot(0, this, &Decoration::updateButtonsGeometry); // avoid wrong geometry (for example Spectacle)
+    updateButtonsGeometryDelayed(); // avoid wrong geometry (for example Spectacle)
 
     connect(this, &KDecoration3::Decoration::sectionUnderMouseChanged,
             this, &Decoration::onSectionUnderMouseChanged);
@@ -345,6 +368,14 @@ bool Decoration::init()
         this, &Decoration::updateBordersCornersBlurShadow);
     connect(settings().get(), &KDecoration3::DecorationSettings::spacingChanged,
         this, &Decoration::updateBordersCornersBlurShadow);
+    connect(settings().get(), &KDecoration3::DecorationSettings::spacingChanged,
+        this, &Decoration::updateButtonsGeometryDelayed);
+    connect(settings().get(), &KDecoration3::DecorationSettings::decorationButtonsLeftChanged,
+        this, &Decoration::updateButtonsGeometryDelayed);
+    connect(settings().get(), &KDecoration3::DecorationSettings::decorationButtonsRightChanged,
+        this, &Decoration::updateButtonsGeometryDelayed);
+    
+    
 
     return true;
 }
@@ -365,7 +396,7 @@ void Decoration::reconfigure()
     updateBordersCornersBlurShadow();
     updateResizeBorders();
     updateTitleBar();
-    QTimer::singleShot(0, this, &Decoration::updateButtonsGeometry); // avoid wrong geometry (for example Spectacle)
+    updateButtonsGeometryDelayed(); // avoid wrong geometry (for example Spectacle)
     update();
 }
 
@@ -630,6 +661,11 @@ void Decoration::updateButtonsGeometry()
     updatePaths();
     updateBlur();
     update();
+}
+
+void Decoration::updateButtonsGeometryDelayed()
+{
+    QTimer::singleShot(0, this, &Decoration::updateButtonsGeometry);
 }
 
 void Decoration::setButtonGroupAnimation(KDecoration3::DecorationButtonGroup *buttonGroup, bool enabled, int duration)
@@ -1323,7 +1359,7 @@ void Decoration::onTabletModeChanged(bool mode)
     updateBordersCornersBlurShadow();
     updateResizeBorders();
     updateTitleBar();
-    QTimer::singleShot(0, this, &Decoration::updateButtonsGeometry);
+    updateButtonsGeometryDelayed();
     update();
 }
 
