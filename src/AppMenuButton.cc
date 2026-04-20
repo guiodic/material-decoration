@@ -71,11 +71,14 @@ QColor AppMenuButton::backgroundColor() const
         }
         
         if (deco->m_internalSettings->useSystemColors()) {
-            if (this->isHovered() && !this->isChecked()) {
-                return KColorUtils::mix(
+            if (!this->isChecked() && this->isHovered()) {
+                QColor hoveredColor = KColorUtils::mix(
                     qApp->palette().color(QPalette::Highlight), 
                     deco->titleBarBackgroundColor(), 
                     0.7);
+                QColor normalColor = QColor(hoveredColor);
+                normalColor.setAlphaF(0);
+                return KColorUtils::mix(normalColor, hoveredColor, transitionValue());
             }   
             
             auto *decoratedClient = deco->window();
