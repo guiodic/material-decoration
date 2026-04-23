@@ -1166,9 +1166,10 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     const bool appMenuVisible = !m_menuButtons->buttons().isEmpty();
     const bool isWaitingForMenu = m_menuButtons->isWaitingForMenu();
     const bool menuLoadedOnce = m_menuButtons->menuLoadedOnce();
+    const bool hasAppMenu = decoratedClient->hasApplicationMenu();
     const bool isTitleHidden = m_internalSettings->titleAlignment() == InternalSettings::TitleHidden;
 
-    if (isTitleHidden || (!menuLoadedOnce && isWaitingForMenu)) {
+    if (isTitleHidden || (!menuLoadedOnce && (isWaitingForMenu || hasAppMenu))) {
         m_captionLimited = false;
         m_captionRect = QRectF();
         return;
@@ -1277,9 +1278,6 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
         m_captionCache.elidedCaption = fontMetrics.elidedText(fullCaption, Qt::ElideMiddle, drawingRect.width());
     }    
     
-    //qCDebug(category) << "Caption:     :" << decoratedClient->caption();
-    //qCDebug(category) << "   hasAppMenu: " << hasAppMenu;
-    //qCDebug(category) << "   menuLoaded: " << menuLoaded;
 
     painter->drawText(drawingRect, alignment | Qt::TextSingleLine | Qt::AlignVCenter, m_captionCache.elidedCaption);
     painter->restore();

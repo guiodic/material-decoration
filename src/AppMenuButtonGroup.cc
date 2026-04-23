@@ -370,8 +370,10 @@ void AppMenuButtonGroup::onMenuReadyForSearch()
 void AppMenuButtonGroup::onHasApplicationMenuChanged(bool hasMenu)
 {
     if (hasMenu) {
+        m_resetTimer->stop();
         m_menuLoadedOnce = false;
         m_menuLoadFallbackTimer->start(750);
+        Q_EMIT menuUpdated();
 
         if (m_isMenuUpdateThrottled) {
             m_pendingMenuUpdate = true;
@@ -388,7 +390,7 @@ void AppMenuButtonGroup::onHasApplicationMenuChanged(bool hasMenu)
 
         // Defer reset to avoid flicker during window closure
         m_resetTimer->start();
-        m_menuLoadedOnce = true;
+        m_menuLoadedOnce = false;
         Q_EMIT menuUpdated();
     }
 }
