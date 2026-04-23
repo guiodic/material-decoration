@@ -1276,6 +1276,10 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
         m_captionCache.alignment = alignment;
         m_captionCache.elidedCaption = fontMetrics.elidedText(fullCaption, Qt::ElideMiddle, drawingRect.width());
     }    
+    
+    //qCDebug(category) << "Caption:     :" << decoratedClient->caption();
+    //qCDebug(category) << "   hasAppMenu: " << hasAppMenu;
+    //qCDebug(category) << "   menuLoaded: " << menuLoaded;
 
     painter->drawText(drawingRect, alignment | Qt::TextSingleLine | Qt::AlignVCenter, m_captionCache.elidedCaption);
     painter->restore();

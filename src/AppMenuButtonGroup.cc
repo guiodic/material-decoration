@@ -89,6 +89,22 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     m_delayedCacheTimer->setInterval(200);
     m_delayedCacheTimer->setSingleShot(true);
     connect(m_delayedCacheTimer, &QTimer::timeout, this, &AppMenuButtonGroup::onDelayedCacheTimerTimeout);
+
+    m_resetTimer = new QTimer(this);
+    m_resetTimer->setInterval(250);
+    m_resetTimer->setSingleShot(true);
+    connect(m_resetTimer, &QTimer::timeout, this, &AppMenuButtonGroup::resetButtons);
+
+    m_menuLoadFallbackTimer = new QTimer(this);
+    m_menuLoadFallbackTimer->setInterval(2000);
+    m_menuLoadFallbackTimer->setSingleShot(true);
+    connect(m_menuLoadFallbackTimer, &QTimer::timeout, this, [this]() {
+        if (!m_menuLoadedOnce) {
+            m_menuLoadedOnce = true;
+            Q_EMIT menuUpdated();
+        }
+    });
+
     // Assign showing and opacity before we bind the onShowingChanged animation
     // so that new windows do not animate.
     setAlwaysShow(decoration->menuAlwaysShow());
@@ -350,6 +366,10 @@ void AppMenuButtonGroup::onMenuReadyForSearch()
 void AppMenuButtonGroup::onHasApplicationMenuChanged(bool hasMenu)
 {
     if (hasMenu) {
+        if (!m_menuLoadedOnce) {
+            m_menuLoadFallbackTimer->start();
+        }
+
         if (m_isMenuUpdateThrottled) {
             m_pendingMenuUpdate = true;
             return;
@@ -361,7 +381,10 @@ void AppMenuButtonGroup::onHasApplicationMenuChanged(bool hasMenu)
         m_menuUpdateDebounceTimer->stop();
         m_isMenuUpdateThrottled = false;
         m_pendingMenuUpdate = false;
-        resetButtons();
+        m_menuLoadFallbackTimer->stop();
+
+        // Defer reset to avoid flicker during window closure
+        m_resetTimer->start();
         m_menuLoadedOnce = false;
     }
 }
@@ -410,14 +433,13 @@ void AppMenuButtonGroup::performDebouncedMenuUpdate()
         if (!serviceName.isEmpty() && !menuObjectPath.isEmpty()) {
             m_appMenuModel->updateApplicationMenu(serviceName, menuObjectPath);
         } else {
-            resetButtons();
+            m_resetTimer->start();
         }
     }
 }
 
 void AppMenuButtonGroup::updateAppMenuModel()
 {
-    m_menuLoadedOnce = true;
     auto *deco = qobject_cast<Decoration *>(decoration());
     if (!deco) {
         return;
@@ -426,12 +448,13 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
     // Don't display AppMenu in modal windows.
     if (decoratedClient->isModal()) {
-        resetButtons();
+        m_resetTimer->start();
         return;
     }
 
     if (!decoratedClient->hasApplicationMenu()) {
-        resetButtons();
+        // Defer reset to avoid flicker during window closure
+        m_resetTimer->start();
         return;
     }
 
@@ -440,9 +463,14 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
         QMenu *menu = m_appMenuModel->menu();
         if (!menu) {
-            resetButtons();
+            // Defer reset to avoid flicker during window closure
+            m_resetTimer->start();
             return;
         }
+
+        m_resetTimer->stop();
+        m_menuLoadFallbackTimer->stop();
+        m_menuLoadedOnce = true;
 
         const auto actions = menu->actions();
         const int menuActionCount = actions.count();
@@ -488,7 +516,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
                 filterMenu(m_lastSearchQuery);
             }
         } else {
-            resetButtons();
+            resetButtons(); // Immediate reset is intended here for structural changes
 
             // Populate
             for (int i = 0; i < menuActionCount; ++i) {

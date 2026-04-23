@@ -187,8 +187,9 @@ private:
     QPointer<QLineEdit> m_searchLineEdit;
     QTimer *m_searchDebounceTimer;
     QTimer *m_menuUpdateDebounceTimer;
-
     QTimer *m_delayedCacheTimer;
+    QTimer *m_resetTimer;
+    QTimer *m_menuLoadFallbackTimer;
 
     bool m_searchUiVisible = false;
 
