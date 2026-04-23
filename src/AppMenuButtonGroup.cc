@@ -417,7 +417,6 @@ void AppMenuButtonGroup::performDebouncedMenuUpdate()
 
 void AppMenuButtonGroup::updateAppMenuModel()
 {
-    m_menuLoadedOnce = true;
     auto *deco = qobject_cast<Decoration *>(decoration());
     if (!deco) {
         return;
@@ -440,9 +439,10 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
         QMenu *menu = m_appMenuModel->menu();
         if (!menu) {
-            resetButtons();
+            //resetButtons();
             return;
         }
+        m_menuLoadedOnce = true;
 
         const auto actions = menu->actions();
         const int menuActionCount = actions.count();
