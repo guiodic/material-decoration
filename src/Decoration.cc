@@ -1163,12 +1163,12 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
 {
     // 1. Pre-checks and data gathering
     const auto *decoratedClient = window();
-    const bool hasAppMenu = decoratedClient->hasApplicationMenu();
     const bool appMenuVisible = !m_menuButtons->buttons().isEmpty();
-    const bool menuLoaded = m_menuButtons->menuLoadedOnce();
+    const bool isWaitingForMenu = m_menuButtons->isWaitingForMenu();
+    const bool menuLoadedOnce = m_menuButtons->menuLoadedOnce();
     const bool isTitleHidden = m_internalSettings->titleAlignment() == InternalSettings::TitleHidden;
 
-    if ((hasAppMenu && !menuLoaded) || isTitleHidden) {
+    if (isTitleHidden || (!menuLoadedOnce && isWaitingForMenu)) {
         m_captionLimited = false;
         m_captionRect = QRectF();
         return;

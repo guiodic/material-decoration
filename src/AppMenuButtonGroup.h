@@ -73,6 +73,7 @@ public:
     qreal visibleWidth() const;
 
     bool menuLoadedOnce() const;
+    bool isWaitingForMenu() const;
 
     void handleHoverMove(const QPointF &pos);
 
