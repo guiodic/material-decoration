@@ -96,7 +96,7 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     connect(m_resetTimer, &QTimer::timeout, this, &AppMenuButtonGroup::resetButtons);
 
     m_menuLoadFallbackTimer = new QTimer(this);
-    m_menuLoadFallbackTimer->setInterval(2000);
+    m_menuLoadFallbackTimer->setInterval(750);
     m_menuLoadFallbackTimer->setSingleShot(true);
     connect(m_menuLoadFallbackTimer, &QTimer::timeout, this, [this]() {
         if (!m_menuLoadedOnce) {
@@ -371,7 +371,7 @@ void AppMenuButtonGroup::onHasApplicationMenuChanged(bool hasMenu)
 {
     if (hasMenu) {
         m_menuLoadedOnce = false;
-        m_menuLoadFallbackTimer->start(2000);
+        m_menuLoadFallbackTimer->start(750);
 
         if (m_isMenuUpdateThrottled) {
             m_pendingMenuUpdate = true;
