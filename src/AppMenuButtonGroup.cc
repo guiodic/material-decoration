@@ -96,7 +96,7 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     connect(m_resetTimer, &QTimer::timeout, this, &AppMenuButtonGroup::resetButtons);
 
     m_menuLoadFallbackTimer = new QTimer(this);
-    m_menuLoadFallbackTimer->setInterval(2000);
+    m_menuLoadFallbackTimer->setInterval(750);
     m_menuLoadFallbackTimer->setSingleShot(true);
     connect(m_menuLoadFallbackTimer, &QTimer::timeout, this, [this]() {
         if (!m_menuLoadedOnce) {
@@ -148,6 +148,10 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
 
     if (decoratedClient->hasApplicationMenu()) {
         onHasApplicationMenuChanged(true);
+    } else {
+        // Initial wait to see if a menu appears later during startup.
+        // This avoids the title appearing and then shifting.
+        m_menuLoadFallbackTimer->start(500);
     }
 }
 
@@ -366,9 +370,10 @@ void AppMenuButtonGroup::onMenuReadyForSearch()
 void AppMenuButtonGroup::onHasApplicationMenuChanged(bool hasMenu)
 {
     if (hasMenu) {
-        if (!m_menuLoadedOnce) {
-            m_menuLoadFallbackTimer->start();
-        }
+        m_resetTimer->stop();
+        m_menuLoadedOnce = false;
+        m_menuLoadFallbackTimer->start(750);
+        Q_EMIT menuUpdated();
 
         if (m_isMenuUpdateThrottled) {
             m_pendingMenuUpdate = true;
@@ -386,6 +391,7 @@ void AppMenuButtonGroup::onHasApplicationMenuChanged(bool hasMenu)
         // Defer reset to avoid flicker during window closure
         m_resetTimer->start();
         m_menuLoadedOnce = false;
+        Q_EMIT menuUpdated();
     }
 }
 
@@ -467,10 +473,6 @@ void AppMenuButtonGroup::updateAppMenuModel()
             m_resetTimer->start();
             return;
         }
-
-        m_resetTimer->stop();
-        m_menuLoadFallbackTimer->stop();
-        m_menuLoadedOnce = true;
 
         const auto actions = menu->actions();
         const int menuActionCount = actions.count();
@@ -564,6 +566,12 @@ void AppMenuButtonGroup::updateAppMenuModel()
             if (auto *b = buttons().value(m_currentIndex)) {
                 b->setChecked(true);
             }
+        }
+
+        if (menuActionCount > 0) {
+            m_resetTimer->stop();
+            m_menuLoadFallbackTimer->stop();
+            m_menuLoadedOnce = true;
         }
 
         Q_EMIT menuUpdated();
@@ -680,6 +688,11 @@ qreal AppMenuButtonGroup::visibleWidth() const
 bool AppMenuButtonGroup::menuLoadedOnce() const
 {
     return m_menuLoadedOnce;
+}
+
+bool AppMenuButtonGroup::isWaitingForMenu() const
+{
+    return m_menuLoadFallbackTimer && m_menuLoadFallbackTimer->isActive();
 }
 
 void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
