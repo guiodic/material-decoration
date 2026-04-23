@@ -228,7 +228,11 @@ QRectF Decoration::centerRect() const
 
 void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 {
-    paintFrameBackground(painter, repaintRegion);
+    auto *decoratedClient = window();
+
+    if (!decoratedClient->isShaded()) {
+        paintFrameBackground(painter, repaintRegion);
+    }
     paintTitleBarBackground(painter, repaintRegion);
     paintButtons(painter, repaintRegion);
     paintCaption(painter, repaintRegion);
