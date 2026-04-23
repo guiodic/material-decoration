@@ -93,10 +93,14 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     m_resetTimer = new QTimer(this);
     m_resetTimer->setInterval(250);
     m_resetTimer->setSingleShot(true);
-    connect(m_resetTimer, &QTimer::timeout, this, &AppMenuButtonGroup::resetButtons);
+    connect(m_resetTimer, &QTimer::timeout, this, [this]() {
+        resetButtons();
+        m_menuLoadedOnce = true;
+        Q_EMIT menuUpdated();
+    });
 
     m_menuLoadFallbackTimer = new QTimer(this);
-    m_menuLoadFallbackTimer->setInterval(500);
+    m_menuLoadFallbackTimer->setInterval(0);
     m_menuLoadFallbackTimer->setSingleShot(true);
     connect(m_menuLoadFallbackTimer, &QTimer::timeout, this, [this]() {
         if (!m_menuLoadedOnce) {
@@ -149,9 +153,12 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     if (decoratedClient->hasApplicationMenu()) {
         onHasApplicationMenuChanged(true);
     } else {
-        // Initial wait to see if a menu appears later during startup.
-        // This avoids the title appearing and then shifting.
-        m_menuLoadFallbackTimer->start(500);
+        // Wait the next loop if not modal.
+        if (decoratedClient->isModal()) {
+            m_menuLoadedOnce = true;
+        } else {
+            m_menuLoadFallbackTimer->start();
+        }
     }
 }
 
@@ -692,7 +699,7 @@ bool AppMenuButtonGroup::menuLoadedOnce() const
 
 bool AppMenuButtonGroup::isWaitingForMenu() const
 {
-    return m_menuLoadFallbackTimer && m_menuLoadFallbackTimer->isActive();
+    return (m_menuLoadFallbackTimer && m_menuLoadFallbackTimer->isActive()) || (m_resetTimer && m_resetTimer->isActive());
 }
 
 void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
