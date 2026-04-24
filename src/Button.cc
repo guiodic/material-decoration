@@ -479,18 +479,21 @@ QColor Button::backgroundColor() const
         normalColor.setAlphaF(0);
 
         if (isPressed()) {
+            if (qFuzzyCompare(m_transitionValue, 0.0)) return normalColor;
             const QColor pressedColor = decoratedClient->color(
                 KDecoration3::ColorGroup::Warning,
                 KDecoration3::ColorRole::Foreground
             ).lighter();
+            if (qFuzzyCompare(m_transitionValue, 1.0)) return pressedColor;
             return KColorUtils::mix(normalColor, pressedColor, m_transitionValue);
         }
 
         if (isHovered()) {
+            if (qFuzzyCompare(m_transitionValue, 0.0)) return normalColor;
             if (!decoratedClient->isActive()) {  
                 hoveredColor = KColorUtils::mix(titleBarBg, hoveredColor,0.7);
             }    
-                
+            if (qFuzzyCompare(m_transitionValue, 1.0)) return hoveredColor;
             return KColorUtils::mix(normalColor, hoveredColor, m_transitionValue); 
         }
     }
@@ -536,13 +539,17 @@ QColor Button::backgroundColor() const
     normalColor.setAlphaF(0);
 
     if (isPressed()) {
+        if (qFuzzyCompare(m_transitionValue, 0.0)) return normalColor;
         const QColor pressedColor = KColorUtils::mix(
             titleBarBg,
             titleBarFg,
             0.3);
+        if (qFuzzyCompare(m_transitionValue, 1.0)) return pressedColor;
         return KColorUtils::mix(normalColor, pressedColor, m_transitionValue);
     }
     if (isHovered()) {
+        if (qFuzzyCompare(m_transitionValue, 0.0)) return normalColor;
+        if (qFuzzyCompare(m_transitionValue, 1.0)) return hoveredColor;
         return KColorUtils::mix(normalColor, hoveredColor, m_transitionValue);
     }
     return normalColor;
@@ -574,6 +581,8 @@ QColor Button::foregroundColor() const
             0.2);
 
         if (isPressed() || isHovered()) {
+            if (qFuzzyCompare(m_transitionValue, 0.0)) return activeColor;
+            if (qFuzzyCompare(m_transitionValue, 1.0)) return titleBarOpaqueBg;
             return KColorUtils::mix(
                 activeColor,
                 titleBarOpaqueBg,
@@ -589,6 +598,7 @@ QColor Button::foregroundColor() const
         0.8);
 
     if (isPressed() || isHovered()) {
+        if (qFuzzyCompare(m_transitionValue, 0.0)) return normalColor;
         // Breeze GTK has huge margins around the button. It looks better
         // when we just change the fgColor on hover instead of the bgColor.
         QColor hoveredColor;
@@ -612,6 +622,7 @@ QColor Button::foregroundColor() const
             }
         }
 
+        if (qFuzzyCompare(m_transitionValue, 1.0)) return hoveredColor;
         return KColorUtils::mix(
             normalColor,
             hoveredColor,

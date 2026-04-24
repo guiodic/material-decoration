@@ -1176,24 +1176,41 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<Sear
         if (action->menu()) {
             searchMenu(action->menu(), text, results, visited, ignoreTopLevel, ignoreSubMenus, nextPath, isCurrentEnabled);
         } else {
-            QStringList fullPathList = nextPath;
-            fullPathList.append(action->text().trimmed().remove(QLatin1Char('&')));
-            
-            ActionInfo info;
-            info.path = fullPathList.join(QStringLiteral(" » "));
-            info.searchablePath = fullPathList.mid(1).join(QStringLiteral(" » "));
-            info.label = fullPathList.isEmpty() ? QString() : fullPathList.last();
-            info.isEffectivelyEnabled = isCurrentEnabled && action->isEnabled();
+            const QString actionText = action->text().trimmed().remove(QLatin1Char('&'));
+            bool match = false;
 
-            QString pathToSearch;
             if (ignoreSubMenus) {
-                pathToSearch = info.label;
-            } else if (ignoreTopLevel) {
-                pathToSearch = info.searchablePath;
+                match = actionText.contains(text, Qt::CaseInsensitive);
             } else {
-                pathToSearch = info.path;
+                // Check the text of the action
+                if (!ignoreTopLevel || !nextPath.isEmpty()) {
+                    if (actionText.contains(text, Qt::CaseInsensitive)) {
+                        match = true;
+                    }
+                }
+
+                if (!match) {
+                    // Check if a part of the parent path matches 
+                    const int startIdx = ignoreTopLevel ? 1 : 0;
+                    for (int i = startIdx; i < nextPath.size(); ++i) {
+                        if (nextPath.at(i).contains(text, Qt::CaseInsensitive)) {
+                            match = true;
+                            break;
+                        }
+                    }
+                }
             }
-            if (pathToSearch.contains(text, Qt::CaseInsensitive)) {
+
+            if (match) {
+                ActionInfo info;
+                info.label = actionText;
+                info.isEffectivelyEnabled = isCurrentEnabled && action->isEnabled();
+
+                QStringList fullPathList = nextPath;
+                fullPathList.append(actionText);
+                info.path = fullPathList.join(QStringLiteral(" » "));
+                info.searchablePath = (fullPathList.size() > 1) ? fullPathList.mid(1).join(QStringLiteral(" » ")) : actionText;
+
                 results.append({action, info});
             }
         }
