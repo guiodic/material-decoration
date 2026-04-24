@@ -1183,10 +1183,14 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<Sear
                 match = actionText.contains(text, Qt::CaseInsensitive);
             } else {
                 // Check the text of the action
-                if (actionText.contains(text, Qt::CaseInsensitive)) {
-                    match = true;
-                } else {
-                    // Check if a part of the up patch matches 
+                if (!ignoreTopLevel || !nextPath.isEmpty()) {
+                    if (actionText.contains(text, Qt::CaseInsensitive)) {
+                        match = true;
+                    }
+                }
+
+                if (!match) {
+                    // Check if a part of the parent path matches 
                     const int startIdx = ignoreTopLevel ? 1 : 0;
                     for (int i = startIdx; i < nextPath.size(); ++i) {
                         if (nextPath.at(i).contains(text, Qt::CaseInsensitive)) {
