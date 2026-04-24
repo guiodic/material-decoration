@@ -326,9 +326,11 @@ void AppMenuModel::processNext()
                 }
                 continue; // Process next item immediately
             }
-
+            
             m_pendingMenuUpdates++;
-            m_importer->updateMenu(menuToProcess);
+            if (m_importer) {
+                m_importer->updateMenu(menuToProcess);
+            }
             m_staggerTimer->start();
             return; // Wait for async update
         }
