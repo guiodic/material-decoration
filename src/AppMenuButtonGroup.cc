@@ -317,8 +317,8 @@ void AppMenuButtonGroup::setOpacity(qreal value)
     if (m_opacity != value) {
         m_opacity = value;
 
-        for (auto *tb : m_textButtons) {
-            tb->setOpacity(m_opacity);
+        for (auto &tb : m_textButtons) {
+            if (tb) tb->setOpacity(m_opacity);
         }
         if (m_overflowButton) {
             m_overflowButton->setOpacity(m_opacity);
@@ -333,8 +333,8 @@ void AppMenuButtonGroup::setOpacity(qreal value)
 
 KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(QPoint pos) const
 {
-    for (auto *tb : m_textButtons) {
-        if (tb->isVisible() && tb->geometry().contains(pos)) {
+    for (auto &tb : m_textButtons) {
+        if (tb && tb->isVisible() && tb->geometry().contains(pos)) {
             return tb;
         }
     }
@@ -349,20 +349,13 @@ KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(QPoint pos) const
 
 void AppMenuButtonGroup::resetButtons()
 {
-    if (m_textButtons.isEmpty() && m_overflowButton.isNull() && m_searchButton.isNull()) {
+    if (buttons().isEmpty()) {
         return;
     }
     setCurrentIndex(-1);
     m_currentMenu = nullptr;
     m_lastResults.clear();
     m_lastSearchQuery.clear();
-    
-    // Create a copy of the button pointers before clearing caches and removing from group.
-    QList<KDecoration3::DecorationButton *> allButtons;
-    for (auto *b : m_textButtons) allButtons.append(b);
-    if (m_overflowButton) allButtons.append(m_overflowButton);
-    if (m_searchButton) allButtons.append(m_searchButton);
-
     m_textButtons.clear();
     m_overflowButton = nullptr;
     m_searchButton = nullptr;
@@ -370,6 +363,9 @@ void AppMenuButtonGroup::resetButtons()
     if (m_overflowMenu) {
         m_overflowMenu->deleteLater();
     }
+    
+    // Create a copy of the button pointers before removing them from the group.
+    const auto allButtons = buttons();
 
     // This removes all buttons with the "Custom" type from the group's list,
     // but does not delete the button widgets themselves.
@@ -511,7 +507,11 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
         if (m_textButtons.count() == menuActionCount && !m_textButtons.isEmpty() && searchStateMatches) {
             int actionIdx = 0;
-            for (auto *textButton : m_textButtons) {
+            for (auto &textButton : m_textButtons) {
+                if (!textButton) {
+                    actionIdx++;
+                    continue;
+                }
                 QAction *itemAction = actions.at(actionIdx++);
                 textButton->setAction(itemAction);
                 textButton->setText(itemAction->text().trimmed());
@@ -578,16 +578,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
             setCurrentIndex(indexToRestore);
             m_currentMenu = previousMenu;
             
-            AppMenuButton *b = nullptr;
-            if (m_currentIndex == m_searchIndex) {
-                b = m_searchButton;
-            } else if (m_currentIndex == m_overflowIndex) {
-                b = m_overflowButton;
-            } else if (m_currentIndex >= 0 && m_currentIndex < m_textButtons.count()) {
-                b = m_textButtons.at(m_currentIndex);
-            }
-
-            if (b) {
+            if (AppMenuButton *b = getAppMenuButton(m_currentIndex)) {
                 b->setChecked(true);
             }
         }
@@ -622,16 +613,16 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
     bool showOverflow = m_hamburgerMenu;
 
     if (m_hamburgerMenu) {
-        for (TextButton *tb : m_textButtons) {
-            tb->setVisible(false);
+        for (auto &tb : m_textButtons) {
+            if (tb) tb->setVisible(false);
         }
         showOverflow = true;
     } else {
         // First pass: check if all enabled text buttons fit without overflow button
         qreal totalTextWidth = 0;
         int enabledCount = 0;
-        for (TextButton *tb : m_textButtons) {
-            if (tb->isEnabled()) {
+        for (auto &tb : m_textButtons) {
+            if (tb && tb->isEnabled()) {
                 totalTextWidth += tb->geometry().width();
                 enabledCount++;
             } else {
@@ -641,8 +632,8 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 
         if (enabledCount > 0 && fixedWidth + totalTextWidth <= availableWidth) {
             showOverflow = false;
-            for (TextButton *tb : m_textButtons) {
-                if (tb->isEnabled()) {
+            for (auto &tb : m_textButtons) {
+                if (tb && tb->isEnabled()) {
                     tb->setVisible(true);
                 }
             }
@@ -652,8 +643,8 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
             qreal remainingWidth = availableWidth - fixedWidth - overflowBtnWidth;
 
             bool fits = true;
-            for (TextButton *tb : m_textButtons) {
-                if (!tb->isEnabled()) {
+            for (auto &tb : m_textButtons) {
+                if (!tb || !tb->isEnabled()) {
                     continue;
                 }
 
@@ -678,8 +669,8 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 
     // calculate visible width
     qreal currentVisibleWidth = 0;
-    for (auto *tb : m_textButtons) {
-        if (tb->isVisible()) {
+    for (auto &tb : m_textButtons) {
+        if (tb && tb->isVisible()) {
             currentVisibleWidth += tb->geometry().width();
         }
     }
@@ -717,29 +708,14 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
     m_appMenuModel->stopCaching();
 
     auto *deco = qobject_cast<Decoration *>(decoration());
-    
-    AppMenuButton *button = nullptr;
-    if (buttonIndex == m_searchIndex) {
-        button = m_searchButton;
-    } else if (buttonIndex == m_overflowIndex) {
-        button = m_overflowButton;
-    } else if (buttonIndex >= 0 && buttonIndex < m_textButtons.count()) {
-        button = m_textButtons.at(buttonIndex);
-    }
+    AppMenuButton *button = getAppMenuButton(buttonIndex);
 
     if (!menu || !deco || !button) {
         return;
     }
 
     QPointer<QMenu> oldMenu = m_currentMenu;
-    AppMenuButton *oldButton = nullptr;
-    if (m_currentIndex == m_searchIndex) {
-        oldButton = m_searchButton;
-    } else if (m_currentIndex == m_overflowIndex) {
-        oldButton = m_overflowButton;
-    } else if (m_currentIndex >= 0 && m_currentIndex < m_textButtons.count()) {
-        oldButton = m_textButtons.at(m_currentIndex);
-    }
+    AppMenuButton *oldButton = getAppMenuButton(m_currentIndex);
 
     // 1. Set the new internal state. This must happen before popup for positioning.
     setCurrentIndex(buttonIndex);
@@ -853,8 +829,8 @@ void AppMenuButtonGroup::handleOverflowTrigger()
     if (m_appMenuModel && m_appMenuModel->menu()) {
         int overflowStartsAt = 0;
         // Find the first non-visible button to determine where the overflow starts
-        for (auto *textButton : m_textButtons) {
-            if (textButton->isEnabled() && !textButton->isVisible()) {
+        for (auto &textButton : m_textButtons) {
+            if (textButton && textButton->isEnabled() && !textButton->isVisible()) {
                 overflowStartsAt = textButton->buttonIndex();
                 break;
             }
@@ -873,14 +849,7 @@ void AppMenuButtonGroup::trigger(int buttonIndex)
 {
     // The button is checked in popupMenu, but we need to check it here
     // for the case where the menu is not yet loaded.
-    AppMenuButton *button = nullptr;
-    if (buttonIndex == m_searchIndex) {
-        button = m_searchButton;
-    } else if (buttonIndex == m_overflowIndex) {
-        button = m_overflowButton;
-    } else if (buttonIndex >= 0 && buttonIndex < m_textButtons.count()) {
-        button = m_textButtons.at(buttonIndex);
-    }
+    AppMenuButton *button = getAppMenuButton(buttonIndex);
 
     if (!button) {
         return;
@@ -960,8 +929,8 @@ bool AppMenuButtonGroup::isMenuOpen() const
 
 void AppMenuButtonGroup::unPressAllButtons()
 {
-    for (auto *tb : m_textButtons) {
-        tb->forceUnpress();
+    for (auto &tb : m_textButtons) {
+        if (tb) tb->forceUnpress();
     }
     if (m_overflowButton) {
         m_overflowButton->forceUnpress();
@@ -1004,16 +973,7 @@ void AppMenuButtonGroup::onMenuAboutToHide()
         m_lastSearchQuery.clear();
     }
 
-    AppMenuButton *currentButton = nullptr;
-    if (m_currentIndex == m_searchIndex) {
-        currentButton = m_searchButton;
-    } else if (m_currentIndex == m_overflowIndex) {
-        currentButton = m_overflowButton;
-    } else if (m_currentIndex >= 0 && m_currentIndex < m_textButtons.count()) {
-        currentButton = m_textButtons.at(m_currentIndex);
-    }
-
-    if (currentButton) {
+    if (AppMenuButton *currentButton = getAppMenuButton(m_currentIndex)) {
         currentButton->setChecked(false);
     }
     setCurrentIndex(-1);
@@ -1238,14 +1198,26 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<Sear
     }
 }
 
+AppMenuButton *AppMenuButtonGroup::getAppMenuButton(int index) const
+{
+    if (index == m_searchIndex) {
+        return m_searchButton;
+    } else if (index == m_overflowIndex) {
+        return m_overflowButton;
+    } else if (index >= 0 && index < m_textButtons.count()) {
+        return m_textButtons.at(index);
+    }
+    return nullptr;
+}
+
 int AppMenuButtonGroup::findNextVisibleButtonIndex(int currentIndex, bool forward) const
 {
     // The button list in this group is composed of: m_textButtons + m_overflowButton + m_searchButton.
     // However, for navigation, we should still respect the underlying group order.
     // Since we only ever have one group of buttons in this class, we can use our caches.
     
-    QList<AppMenuButton *> allButtons;
-    for (auto *b : m_textButtons) allButtons.append(b);
+    QList<QPointer<AppMenuButton>> allButtons;
+    for (auto &b : m_textButtons) allButtons.append(b);
     if (m_overflowButton) allButtons.append(m_overflowButton);
     if (m_searchButton) allButtons.append(m_searchButton);
 
@@ -1268,7 +1240,7 @@ int AppMenuButtonGroup::findNextVisibleButtonIndex(int currentIndex, bool forwar
             newIndex = 0;
         }
 
-        const auto *button = allButtons.value(newIndex);
+        const auto &button = allButtons.value(newIndex);
         if (button && button->isVisible() && button->isEnabled()) {
             return newIndex;
         }
@@ -1292,8 +1264,8 @@ void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
 
         if (m_hoveredButton) {
             // All buttons in this group are AppMenuButtons
-            auto *appMenuButton = static_cast<AppMenuButton *>(m_hoveredButton.data());
-            if (m_currentIndex != appMenuButton->buttonIndex()
+            auto *appMenuButton = qobject_cast<AppMenuButton *>(m_hoveredButton.data());
+            if (appMenuButton && m_currentIndex != appMenuButton->buttonIndex()
                 && appMenuButton->isVisible()
                 && appMenuButton->isEnabled()
             ) {

@@ -20,6 +20,7 @@
 
 // own
 #include "AppMenuModel.h"
+#include "AppMenuButton.h"
 
 // KDecoration
 #include <KDecoration3/DecorationButton>
@@ -163,6 +164,7 @@ private:
     void setupSearchMenu();
     void repositionSearchMenu();
     void searchMenu(QMenu *menu, const QString &text, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, const QStringList &currentPath = QStringList(), bool isParentEnabled = true);
+    AppMenuButton *getAppMenuButton(int index) const;
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
 
     void popupMenu(QMenu *menu, int buttonIndex);
@@ -205,7 +207,7 @@ private:
     QString m_lastSearchQuery;
     QList<SearchResult> m_lastResults;
 
-    QList<TextButton *> m_textButtons;
+    QList<QPointer<TextButton>> m_textButtons;
     QPointer<MenuOverflowButton> m_overflowButton;
     QPointer<SearchButton> m_searchButton;
 
