@@ -93,7 +93,7 @@ AppMenuModel::AppMenuModel(QObject *parent)
 
     m_staggerTimer = new QTimer(this);
     m_staggerTimer->setSingleShot(true);
-    m_staggerTimer->setInterval(16); // ~ 60fps
+    m_staggerTimer->setInterval(8); 
     connect(m_staggerTimer, &QTimer::timeout, this, &AppMenuModel::processNext);
 }
 
@@ -291,7 +291,7 @@ void AppMenuModel::startDeepCaching()
 
 void AppMenuModel::processNext()
 {
-    QDeadlineTimer deadline(std::chrono::milliseconds(16)); // ~ 60 fps
+    QDeadlineTimer deadline(std::chrono::milliseconds(8));
 
     while (!m_menusToDeepCache.isEmpty()) {
         if (m_nextMenuToProcess >= m_menusToDeepCache.size()) {
