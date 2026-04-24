@@ -215,6 +215,10 @@ QRectF Decoration::titleBarRect() const
 
 QRectF Decoration::centerRect() const
 {
+    if (!m_leftButtons || !m_rightButtons) {
+        return titleBarRect();
+    }
+
     const qreal leftOffset = m_leftButtons->geometry().right();
     const qreal rightOffset = m_rightButtons->geometry().width();
 
