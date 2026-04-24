@@ -359,6 +359,8 @@ void AppMenuButtonGroup::resetButtons()
     m_textButtons.clear();
     m_overflowButton = nullptr;
     m_searchButton = nullptr;
+    m_overflowIndex = -1;
+    m_searchIndex = -1;
 
     if (m_overflowMenu) {
         m_overflowMenu->deleteLater();
@@ -1212,16 +1214,11 @@ AppMenuButton *AppMenuButtonGroup::getAppMenuButton(int index) const
 
 int AppMenuButtonGroup::findNextVisibleButtonIndex(int currentIndex, bool forward) const
 {
-    // The button list in this group is composed of: m_textButtons + m_overflowButton + m_searchButton.
-    // However, for navigation, we should still respect the underlying group order.
-    // Since we only ever have one group of buttons in this class, we can use our caches.
-    
-    QList<QPointer<AppMenuButton>> allButtons;
-    for (auto &b : m_textButtons) allButtons.append(b);
-    if (m_overflowButton) allButtons.append(m_overflowButton);
-    if (m_searchButton) allButtons.append(m_searchButton);
+    int maxIndex = m_textButtons.count() - 1;
+    if (m_overflowIndex > maxIndex) maxIndex = m_overflowIndex;
+    if (m_searchIndex > maxIndex) maxIndex = m_searchIndex;
 
-    if (allButtons.isEmpty()) {
+    if (maxIndex < 0) {
         return -1;
     }
 
@@ -1232,17 +1229,18 @@ int AppMenuButtonGroup::findNextVisibleButtonIndex(int currentIndex, bool forwar
     // Start from the next button, not the current one
     int newIndex = currentIndex + step;
 
-    for (int i = 0; i < allButtons.length(); ++i) {
+    for (int i = 0; i <= maxIndex; ++i) {
         // Wrap around logic
         if (newIndex < 0) {
-            newIndex = allButtons.length() - 1;
-        } else if (newIndex >= allButtons.length()) {
+            newIndex = maxIndex;
+        } else if (newIndex > maxIndex) {
             newIndex = 0;
         }
 
-        const auto &button = allButtons.value(newIndex);
-        if (button && button->isVisible() && button->isEnabled()) {
-            return newIndex;
+        if (AppMenuButton *button = getAppMenuButton(newIndex)) {
+            if (button->isVisible() && button->isEnabled()) {
+                return newIndex;
+            }
         }
 
         newIndex += step;
