@@ -33,6 +33,7 @@
 // Qt
 #include <QAction>
 #include <QMenu>
+#include <QDeadlineTimer>
 
 #include <QDBusConnection>
 #include <QDBusServiceWatcher>
@@ -92,7 +93,7 @@ AppMenuModel::AppMenuModel(QObject *parent)
 
     m_staggerTimer = new QTimer(this);
     m_staggerTimer->setSingleShot(true);
-    m_staggerTimer->setInterval(10);
+    m_staggerTimer->setInterval(16); // ~ 60fps
     connect(m_staggerTimer, &QTimer::timeout, this, &AppMenuModel::processNext);
 }
 
@@ -290,6 +291,8 @@ void AppMenuModel::startDeepCaching()
 
 void AppMenuModel::processNext()
 {
+    QDeadlineTimer deadline(std::chrono::milliseconds(16)); // ~ 60 fps
+
     while (!m_menusToDeepCache.isEmpty()) {
         if (m_nextMenuToProcess >= m_menusToDeepCache.size()) {
             m_menusToDeepCache.clear();
@@ -316,6 +319,10 @@ void AppMenuModel::processNext()
                             m_menusToDeepCache.append(QPointer(subMenu));
                         }
                     }
+                }
+                if (deadline.hasExpired()) {
+                    m_staggerTimer->start();
+                    return;
                 }
                 continue; // Process next item immediately
             }
