@@ -290,55 +290,50 @@ void AppMenuModel::startDeepCaching()
 
 void AppMenuModel::processNext()
 {
-    if (m_menusToDeepCache.isEmpty()) {
-        // We are done processing all submenus.
-        m_isCachingEverything = false;
-        m_deepCacheStarted = false;
-        m_nextMenuToProcess = 0;
-        m_seenMenus.clear();
-        
-        // If there are no pending DBus updates, the menu is ready for search.
-        if (m_pendingMenuUpdates == 0) {
-            Q_EMIT menuReadyForSearch();
-        }
-        return;
-    }
-
-    if (m_nextMenuToProcess >= m_menusToDeepCache.size()) {
-        m_menusToDeepCache.clear();
-        m_nextMenuToProcess = 0;
-        processNext(); // not a real recursion: we call again this function only to clear member variables and emit menuReadyForSearch()
-        return;
-    }
-
-    QPointer<QMenu> menuToProcessPtr = m_menusToDeepCache.at(m_nextMenuToProcess++);
-    QMenu *menuToProcess = menuToProcessPtr.data();
-
-    if (menuToProcess) {
-        if (!menuToProcess->actions().isEmpty()) {
-            // This menu is already loaded. We can skip the DBus call and
-            // immediately add its children to the queue to continue the traversal.
-            const auto actions = menuToProcess->actions();
-            for (QAction *a : actions) {
-                if (auto subMenu = a->menu()) {
-                    if (!m_seenMenus.contains(subMenu)) {
-                        m_seenMenus.insert(subMenu);
-                        m_menusToDeepCache.append(QPointer(subMenu));
-                    }
-                }
+    while (!m_menusToDeepCache.isEmpty()) {
+        if (m_nextMenuToProcess >= m_menusToDeepCache.size()) {
+            m_menusToDeepCache.clear();
+            m_nextMenuToProcess = 0;
+            m_isCachingEverything = false;
+            m_deepCacheStarted = false;
+            m_seenMenus.clear();
+            if (m_pendingMenuUpdates == 0) {
+                Q_EMIT menuReadyForSearch();
             }
-            // Move to the next item immediately.
-            m_staggerTimer->start();
             return;
         }
 
-        m_pendingMenuUpdates++;
-        m_importer->updateMenu(menuToProcess);
+        QPointer<QMenu> menuToProcessPtr = m_menusToDeepCache.at(m_nextMenuToProcess++);
+        QMenu *menuToProcess = menuToProcessPtr.data();
+
+        if (menuToProcess) {
+            if (!menuToProcess->actions().isEmpty()) {
+                const auto actions = menuToProcess->actions();
+                for (QAction *a : actions) {
+                    if (auto subMenu = a->menu()) {
+                        if (!m_seenMenus.contains(subMenu)) {
+                            m_seenMenus.insert(subMenu);
+                            m_menusToDeepCache.append(QPointer(subMenu));
+                        }
+                    }
+                }
+                continue; // Process next item immediately
+            }
+
+            m_pendingMenuUpdates++;
+            m_importer->updateMenu(menuToProcess);
+            m_staggerTimer->start();
+            return; // Wait for async update
+        }
     }
 
-    // Schedule the next item to be processed. The interval yields to the
-    // event loop, preventing the UI from freezing.
-    m_staggerTimer->start();
+    m_isCachingEverything = false;
+    m_deepCacheStarted = false;
+    m_nextMenuToProcess = 0;
+    m_seenMenus.clear();
+    if (m_pendingMenuUpdates == 0) {
+        Q_EMIT menuReadyForSearch();
+    }
 }
 
 
