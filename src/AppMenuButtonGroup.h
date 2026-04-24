@@ -20,6 +20,7 @@
 
 // own
 #include "AppMenuModel.h"
+#include "AppMenuButton.h"
 
 // KDecoration
 #include <KDecoration3/DecorationButton>
@@ -28,6 +29,7 @@
 // Qt
 #include <QMenu>
 #include <QLineEdit>
+#include <QPointer>
 
 class QTimer;
 class QVariantAnimation;
@@ -36,6 +38,9 @@ namespace Material
 {
 
 class Decoration;
+class TextButton;
+class MenuOverflowButton;
+class SearchButton;
 
 class AppMenuButtonGroup : public KDecoration3::DecorationButtonGroup
 {
@@ -159,6 +164,7 @@ private:
     void setupSearchMenu();
     void repositionSearchMenu();
     void searchMenu(QMenu *menu, const QString &text, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, const QStringList &currentPath = QStringList(), bool isParentEnabled = true);
+    AppMenuButton *getAppMenuButton(int index) const;
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
 
     void popupMenu(QMenu *menu, int buttonIndex);
@@ -200,6 +206,10 @@ private:
     bool m_menuLoadedOnce = false;
     QString m_lastSearchQuery;
     QList<SearchResult> m_lastResults;
+
+    QList<QPointer<TextButton>> m_textButtons;
+    QPointer<MenuOverflowButton> m_overflowButton;
+    QPointer<SearchButton> m_searchButton;
 
     QPointer<KDecoration3::DecorationButton> m_hoveredButton = nullptr;
 
