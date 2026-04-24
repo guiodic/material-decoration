@@ -1319,7 +1319,7 @@ void Decoration::updateCornerRadiusAndOutline()
     if (m_internalSettings->outlineActive()) {
         QColor outlineColor = borderColor();
         outlineColor.setAlphaF(1.0);
-        const qreal outlineThickness = std::max(KDecoration3::pixelSize(window()->scale()), KDecoration3::snapToPixelGrid(1, window()->scale()));
+        const qreal outlineThickness = std::max(KDecoration3::pixelSize(window()->nextScale()), KDecoration3::snapToPixelGrid(1, window()->nextScale()));
         setBorderOutline(KDecoration3::BorderOutline(outlineThickness, outlineColor, radius));
     } else {
         setBorderOutline(KDecoration3::BorderOutline());
