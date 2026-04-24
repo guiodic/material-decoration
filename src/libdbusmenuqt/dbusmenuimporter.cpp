@@ -443,7 +443,6 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
             if (QMenu *menuAction = action->menu()) {
                 connect(menuAction, &QMenu::aboutToShow, this, &DBusMenuImporter::slotMenuAboutToShow, Qt::UniqueConnection);
             }
-            connect(menu, &QMenu::aboutToHide, this, &DBusMenuImporter::slotMenuAboutToHide, Qt::UniqueConnection);
         }
 
         // Ensure correct position.
@@ -463,14 +462,15 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
             if (menu) {
                 menu->removeAction(action);
             }
-            action->deleteLater();
-            if (action->menu()) {
-                action->menu()->deleteLater();
+            if (QMenu *subMenu = action->menu()) {
+                subMenu->deleteLater();
             }
+            action->deleteLater();
             d->m_actionForId.remove(id);
         }
     }
 
+    connect(menu, &QMenu::aboutToHide, this, &DBusMenuImporter::slotMenuAboutToHide, Qt::UniqueConnection);
     menu->setUpdatesEnabled(true);
     // qCDebug(category) << "[DBUSMENUIMPORTER] Emitting menuUpdated(" << menu << ")";
     Q_EMIT menuUpdated(menu);
