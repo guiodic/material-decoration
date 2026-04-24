@@ -28,6 +28,7 @@
 // Qt
 #include <QMenu>
 #include <QLineEdit>
+#include <QPointer>
 
 class QTimer;
 class QVariantAnimation;
@@ -36,6 +37,9 @@ namespace Material
 {
 
 class Decoration;
+class TextButton;
+class MenuOverflowButton;
+class SearchButton;
 
 class AppMenuButtonGroup : public KDecoration3::DecorationButtonGroup
 {
@@ -200,6 +204,10 @@ private:
     bool m_menuLoadedOnce = false;
     QString m_lastSearchQuery;
     QList<SearchResult> m_lastResults;
+
+    QList<TextButton *> m_textButtons;
+    QPointer<MenuOverflowButton> m_overflowButton;
+    QPointer<SearchButton> m_searchButton;
 
     QPointer<KDecoration3::DecorationButton> m_hoveredButton = nullptr;
 
