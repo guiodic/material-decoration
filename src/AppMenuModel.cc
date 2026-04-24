@@ -290,7 +290,49 @@ void AppMenuModel::startDeepCaching()
 
 void AppMenuModel::processNext()
 {
+    QDeadlineTimer deadline(16); // Aim for ~60 FPS responsiveness
     while (!m_menusToDeepCache.isEmpty()) {
+        if (m_nextMenuToProcess >= m_menusToDeepCache.size()) {
+            m_menusToDeepCache.clear();
+            m_nextMenuToProcess = 0;
+            m_isCachingEverything = false;
+            m_deepCacheStarted = false;
+            m_seenMenus.clear();
+            if (m_pendingMenuUpdates == 0) {
+                Q_EMIT menuReadyForSearch();
+            }
+            return;
+        }
+
+        QPointer<QMenu> menuToProcessPtr = m_menusToDeepCache.at(m_nextMenuToProcess++);
+        QMenu *menuToProcess = menuToProcessPtr.data();
+
+        if (menuToProcess) {
+            if (!menuToProcess->actions().isEmpty()) {
+                const auto actions = menuToProcess->actions();
+                for (QAction *a : actions) {
+                    if (auto subMenu = a->menu()) {
+                        if (!m_seenMenus.contains(subMenu)) {
+                            m_seenMenus.insert(subMenu);
+                            m_menusToDeepCache.append(QPointer(subMenu));
+                        }
+                    }
+                }
+                if (!deadline.hasExpired()) {
+                    continue;
+                }
+            } else {
+                m_pendingMenuUpdates++;
+                m_importer->updateMenu(menuToProcess);
+                m_staggerTimer->start();
+                return; // Wait for async update
+            }
+        }
+        
+        // Yield to event loop
+        m_staggerTimer->start();
+        return;
+    }
         if (m_nextMenuToProcess >= m_menusToDeepCache.size()) {
             m_menusToDeepCache.clear();
             m_nextMenuToProcess = 0;
