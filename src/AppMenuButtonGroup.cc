@@ -613,6 +613,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
     }
 
     bool showOverflow = m_hamburgerMenu;
+    qreal currentVisibleWidth = fixedWidth;
 
     if (m_hamburgerMenu) {
         for (auto &tb : m_textButtons) {
@@ -637,6 +638,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
             for (auto &tb : m_textButtons) {
                 if (tb && tb->isEnabled()) {
                     tb->setVisible(true);
+                    currentVisibleWidth += tb->geometry().width();
                 }
             }
         } else if (enabledCount > 0) {
@@ -653,6 +655,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
                 const qreal w = tb->geometry().width();
                 if (fits && w <= remainingWidth) {
                     tb->setVisible(true);
+                    currentVisibleWidth += w;
                     remainingWidth -= w;
                 } else {
                     fits = false;
@@ -666,22 +669,11 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 
     if (m_overflowButton) {
         m_overflowButton->setVisible(showOverflow);
-    }
-    setOverflowing(showOverflow);
-
-    // calculate visible width
-    qreal currentVisibleWidth = 0;
-    for (auto &tb : m_textButtons) {
-        if (tb && tb->isVisible()) {
-            currentVisibleWidth += tb->geometry().width();
+        if (showOverflow) {
+            currentVisibleWidth += m_overflowButton->geometry().width();
         }
     }
-    if (m_overflowButton && m_overflowButton->isVisible()) {
-        currentVisibleWidth += m_overflowButton->geometry().width();
-    }
-    if (m_searchButton && m_searchButton->isVisible()) {
-        currentVisibleWidth += m_searchButton->geometry().width();
-    }
+    setOverflowing(showOverflow);
 
     if (m_visibleWidth != currentVisibleWidth) {
         m_visibleWidth = currentVisibleWidth;
