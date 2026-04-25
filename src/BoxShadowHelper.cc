@@ -26,7 +26,9 @@
 #include <QScopedArrayPointer>
 
 // std
+#include <cstdint>
 #include <cmath>
+#include <cstring>
 #include <utility>
 
 namespace Material
@@ -220,28 +222,38 @@ static inline void mirrorTopLeftQuadrant(QImage &image)
     const int width = image.width();
     const int height = image.height();
 
-    const int centerX = qCeil(width * 0.5);
     const int centerY = qCeil(height * 0.5);
 
-    const int alphaOffset = QSysInfo::ByteOrder == QSysInfo::BigEndian ? 0 : 3;
     const int stride = image.depth() >> 3;
 
-    for (int y = 0; y < centerY; ++y) {
-        uint8_t *in = image.scanLine(y) + alphaOffset;
-        uint8_t *out = in + (width - 1) * stride;
+    if (stride == 4) {
+        for (int y = 0; y < centerY; ++y) {
+            uint32_t *row = reinterpret_cast<uint32_t *>(image.scanLine(y));
+            uint32_t *in = row;
+            uint32_t *out = row + width - 1;
 
-        for (int x = 0; x < centerX; ++x, in += stride, out -= stride) {
-            *out = *in;
+            for (int x = 0; x < width / 2; ++x, ++in, --out) {
+                *out = *in;
+            }
+        }
+    } else {
+        for (int y = 0; y < centerY; ++y) {
+            uint8_t *row = image.scanLine(y);
+            uint8_t *in = row;
+            uint8_t *out = row + (width - 1) * stride;
+
+            for (int x = 0; x < width / 2; ++x, in += stride, out -= stride) {
+                std::memcpy(out, in, stride);
+            }
         }
     }
 
-    for (int y = 0; y < centerY; ++y) {
-        const uint8_t *in = image.scanLine(y) + alphaOffset;
-        uint8_t *out = image.scanLine(height - y - 1) + alphaOffset;
-
-        for (int x = 0; x < width; ++x, in += stride, out += stride) {
-            *out = *in;
-        }
+    const int bpl = image.bytesPerLine();
+    const int halfHeight = height / 2;
+    for (int y = 0; y < halfHeight; ++y) {
+        const uint8_t *in = image.scanLine(y);
+        uint8_t *out = image.scanLine(height - y - 1);
+        std::memcpy(out, in, bpl);
     }
 }
 
