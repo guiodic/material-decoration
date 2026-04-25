@@ -221,7 +221,6 @@ static inline void mirrorTopLeftQuadrant(QImage &image)
     const int width = image.width();
     const int height = image.height();
 
-    const int centerX = qCeil(width * 0.5);
     const int centerY = qCeil(height * 0.5);
 
     const int alphaOffset = QSysInfo::ByteOrder == QSysInfo::BigEndian ? 0 : 3;
@@ -233,7 +232,7 @@ static inline void mirrorTopLeftQuadrant(QImage &image)
             uint32_t *in = row;
             uint32_t *out = row + width - 1;
 
-            for (int x = 0; x < centerX; ++x, ++in, --out) {
+            for (int x = 0; x < width / 2; ++x, ++in, --out) {
                 *out = *in;
             }
         }
@@ -242,14 +241,15 @@ static inline void mirrorTopLeftQuadrant(QImage &image)
             uint8_t *in = image.scanLine(y) + alphaOffset;
             uint8_t *out = in + (width - 1) * stride;
 
-            for (int x = 0; x < centerX; ++x, in += stride, out -= stride) {
+            for (int x = 0; x < width / 2; ++x, in += stride, out -= stride) {
                 *out = *in;
             }
         }
     }
 
     const int bpl = image.bytesPerLine();
-    for (int y = 0; y < centerY; ++y) {
+    const int halfHeight = height / 2;
+    for (int y = 0; y < halfHeight; ++y) {
         const uint8_t *in = image.scanLine(y);
         uint8_t *out = image.scanLine(height - y - 1);
         std::memcpy(out, in, bpl);
