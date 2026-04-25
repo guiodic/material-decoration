@@ -26,6 +26,7 @@
 #include <QScopedArrayPointer>
 
 // std
+#include <cstdint>
 #include <cmath>
 #include <cstring>
 #include <utility>
