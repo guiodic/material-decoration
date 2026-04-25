@@ -27,6 +27,7 @@
 
 // std
 #include <cmath>
+#include <cstring>
 #include <utility>
 
 namespace Material
@@ -226,22 +227,32 @@ static inline void mirrorTopLeftQuadrant(QImage &image)
     const int alphaOffset = QSysInfo::ByteOrder == QSysInfo::BigEndian ? 0 : 3;
     const int stride = image.depth() >> 3;
 
-    for (int y = 0; y < centerY; ++y) {
-        uint8_t *in = image.scanLine(y) + alphaOffset;
-        uint8_t *out = in + (width - 1) * stride;
+    if (stride == 4) {
+        for (int y = 0; y < centerY; ++y) {
+            uint32_t *row = reinterpret_cast<uint32_t *>(image.scanLine(y));
+            uint32_t *in = row;
+            uint32_t *out = row + width - 1;
 
-        for (int x = 0; x < centerX; ++x, in += stride, out -= stride) {
-            *out = *in;
+            for (int x = 0; x < centerX; ++x, ++in, --out) {
+                *out = *in;
+            }
+        }
+    } else {
+        for (int y = 0; y < centerY; ++y) {
+            uint8_t *in = image.scanLine(y) + alphaOffset;
+            uint8_t *out = in + (width - 1) * stride;
+
+            for (int x = 0; x < centerX; ++x, in += stride, out -= stride) {
+                *out = *in;
+            }
         }
     }
 
+    const int bpl = image.bytesPerLine();
     for (int y = 0; y < centerY; ++y) {
-        const uint8_t *in = image.scanLine(y) + alphaOffset;
-        uint8_t *out = image.scanLine(height - y - 1) + alphaOffset;
-
-        for (int x = 0; x < width; ++x, in += stride, out += stride) {
-            *out = *in;
-        }
+        const uint8_t *in = image.scanLine(y);
+        uint8_t *out = image.scanLine(height - y - 1);
+        std::memcpy(out, in, bpl);
     }
 }
 
