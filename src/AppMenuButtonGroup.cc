@@ -1155,7 +1155,7 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<Sear
         if (!menuAction->isEnabled()) {
             isCurrentEnabled = false;
         }
-        const QString menuText = menuAction->text().trimmed().remove(QLatin1Char('&'));
+        const QString menuText = KLocalizedString::removeAcceleratorMarker(menuAction->text().trimmed());
         if (!menuText.isEmpty()) {
             nextPath.append(menuText);
         }
@@ -1168,7 +1168,7 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<Sear
         if (action->menu()) {
             searchMenu(action->menu(), text, results, visited, ignoreTopLevel, ignoreSubMenus, nextPath, isCurrentEnabled);
         } else {
-            const QString actionText = action->text().trimmed().remove(QLatin1Char('&'));
+            const QString actionText = KLocalizedString::removeAcceleratorMarker(action->text().trimmed());
             bool match = false;
 
             if (ignoreSubMenus) {
