@@ -416,7 +416,8 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
 
     // 1. Synchronize existing actions and add new ones
     auto currentActions = menu->actions();
-    for (int i = 0; i < rootItem.children.count(); ++i) {
+    const int childCount = rootItem.children.count();
+    for (int i = 0; i < childCount; ++i) {
         const DBusMenuLayoutItem &dbusMenuItem = rootItem.children.at(i);
         QAction *action = d->m_actionForId.value(dbusMenuItem.id);
 
