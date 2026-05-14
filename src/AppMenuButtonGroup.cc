@@ -165,7 +165,7 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
 AppMenuButtonGroup::~AppMenuButtonGroup()
 {
     if (m_searchMenu) {
-        delete m_searchMenu.data();
+        m_searchMenu->deleteLater();
     }
     
     // explicit destruction even 
@@ -173,7 +173,7 @@ AppMenuButtonGroup::~AppMenuButtonGroup()
     // deal whit the corner-case in which the window 
     // is closed while the m_overflowMenu is open
     if (m_overflowMenu) { 
-        delete m_overflowMenu.data();
+        m_overflowMenu->deleteLater();
     }
 }
 
