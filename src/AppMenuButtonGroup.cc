@@ -51,6 +51,8 @@
 #include <QVariantAnimation>
 #include <QWidgetAction>
 
+#include <utility>
+
 static constexpr int MAX_SEARCH_RESULTS = 100;
 
 namespace Material
@@ -317,7 +319,7 @@ void AppMenuButtonGroup::setOpacity(qreal value)
     if (m_opacity != value) {
         m_opacity = value;
 
-        for (auto &tb : m_textButtons) {
+        for (auto &tb : std::as_const(m_textButtons)) {
             if (tb) tb->setOpacity(m_opacity);
         }
         if (m_overflowButton) {
@@ -333,7 +335,7 @@ void AppMenuButtonGroup::setOpacity(qreal value)
 
 KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(QPoint pos) const
 {
-    for (auto &tb : m_textButtons) {
+    for (auto &tb : std::as_const(m_textButtons)) {
         if (tb && tb->isVisible() && tb->geometry().contains(pos)) {
             return tb;
         }
@@ -509,7 +511,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
         if (m_textButtons.count() == menuActionCount && !m_textButtons.isEmpty() && searchStateMatches) {
             int actionIdx = 0;
-            for (auto &textButton : m_textButtons) {
+            for (auto &textButton : std::as_const(m_textButtons)) {
                 if (!textButton) {
                     actionIdx++;
                     continue;
@@ -616,7 +618,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
     qreal currentVisibleWidth = fixedWidth;
 
     if (m_hamburgerMenu) {
-        for (auto &tb : m_textButtons) {
+        for (auto &tb : std::as_const(m_textButtons)) {
             if (tb) tb->setVisible(false);
         }
         showOverflow = true;
@@ -624,7 +626,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
         // First pass: check if all enabled text buttons fit without overflow button
         qreal totalTextWidth = 0;
         int enabledCount = 0;
-        for (auto &tb : m_textButtons) {
+        for (auto &tb : std::as_const(m_textButtons)) {
             if (tb && tb->isEnabled()) {
                 totalTextWidth += tb->geometry().width();
                 enabledCount++;
@@ -635,7 +637,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 
         if (enabledCount > 0 && fixedWidth + totalTextWidth <= availableWidth) {
             showOverflow = false;
-            for (auto &tb : m_textButtons) {
+            for (auto &tb : std::as_const(m_textButtons)) {
                 if (tb && tb->isEnabled()) {
                     tb->setVisible(true);
                     currentVisibleWidth += tb->geometry().width();
@@ -647,7 +649,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
             qreal remainingWidth = availableWidth - fixedWidth - overflowBtnWidth;
 
             bool fits = true;
-            for (auto &tb : m_textButtons) {
+            for (auto &tb : std::as_const(m_textButtons)) {
                 if (!tb || !tb->isEnabled()) {
                     continue;
                 }
@@ -823,7 +825,7 @@ void AppMenuButtonGroup::handleOverflowTrigger()
     if (m_appMenuModel && m_appMenuModel->menu()) {
         int overflowStartsAt = 0;
         // Find the first non-visible button to determine where the overflow starts
-        for (auto &textButton : m_textButtons) {
+        for (auto &textButton : std::as_const(m_textButtons)) {
             if (textButton && textButton->isEnabled() && !textButton->isVisible()) {
                 overflowStartsAt = textButton->buttonIndex();
                 break;
@@ -923,7 +925,7 @@ bool AppMenuButtonGroup::isMenuOpen() const
 
 void AppMenuButtonGroup::unPressAllButtons()
 {
-    for (auto &tb : m_textButtons) {
+    for (auto &tb : std::as_const(m_textButtons)) {
         if (tb) tb->forceUnpress();
     }
     if (m_overflowButton) {
