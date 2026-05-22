@@ -8,59 +8,68 @@
 
 // Qt
 #include <QKeySequence>
+#include <QStringTokenizer>
+
+// STL
+#include <utility>
 
 static const int QT_COLUMN = 0;
 static const int DM_COLUMN = 1;
 
-static void processKeyTokens(QStringList *tokens, int srcCol, int dstCol)
-{
-    struct Row {
-        const char *zero;
-        const char *one;
-        const char *operator[](int col) const
-        {
-            return col == 0 ? zero : one;
-        }
-    };
-    static const Row table[] = {{"Meta", "Super"},
-                                {"Ctrl", "Control"},
-                                // Special cases for compatibility with libdbusmenu-glib which uses
-                                // "plus" for "+" and "minus" for "-".
-                                // cf https://bugs.launchpad.net/libdbusmenu-qt/+bug/712565
-                                {"+", "plus"},
-                                {"-", "minus"},
-                                {nullptr, nullptr}};
+struct Row {
+    const char *zero;
+    const char *one;
+};
 
-    for (QString &token : *tokens) {
-        const Row *ptr = table;
-        for (; ptr->zero != nullptr; ++ptr) {
-            const char *from = (*ptr)[srcCol];
-            const char *to = (*ptr)[dstCol];
-            if (token == QLatin1String(from)) {
-                token = QLatin1String(to);
-                break;
-            }
+static const Row table[] = {{"Meta", "Super"},
+                            {"Ctrl", "Control"},
+                            // Special cases for compatibility with libdbusmenu-glib which uses
+                            // "plus" for "+" and "minus" for "-".
+                            // cf https://bugs.launchpad.net/libdbusmenu-qt/+bug/712565
+                            {"+", "plus"},
+                            {"-", "minus"},
+                            {nullptr, nullptr}};
+
+static QString translate(QStringView token, int srcCol, int dstCol)
+{
+    for (const Row *ptr = table; ptr->zero != nullptr; ++ptr) {
+        const char *from = (srcCol == QT_COLUMN ? ptr->zero : ptr->one);
+        if (token == QLatin1String(from)) {
+            const char *to = (dstCol == QT_COLUMN ? ptr->zero : ptr->one);
+            return QLatin1String(to);
         }
     }
+    return {};
 }
 
 DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
 {
-    QString string = sequence.toString();
+    const QString string = sequence.toString();
     DBusMenuShortcut shortcut;
-    const QStringList tokens = string.split(QLatin1String(", "));
-    for (QString token : tokens) {
+    for (auto token : QStringTokenizer{string, QLatin1String(", ")}) {
         if (token == QLatin1String("+")) {
-            shortcut << (QStringList() << QLatin1String("plus"));
+            shortcut.append({QLatin1String("plus")});
             continue;
         }
+
         // Hack: Qt::CTRL | Qt::Key_Plus is turned into the string "Ctrl++",
         // but we don't want the call to token.split() to consider the
-        // second '+' as a separator so we replace it with its final value.
-        token.replace(QLatin1String("++"), QLatin1String("+plus"));
-        QStringList keyTokens = token.split(QLatin1Char('+'));
-        processKeyTokens(&keyTokens, QT_COLUMN, DM_COLUMN);
-        shortcut << keyTokens;
+        // second '+' as a separator so we handle it by checking if the token
+        // ends with "++".
+        const bool endsWithPlusPlus = token.endsWith(QLatin1String("++"));
+        const auto subToken = endsWithPlusPlus ? token.left(token.size() - 2) : token;
+
+        QStringList keyTokens;
+        for (auto kt : QStringTokenizer{subToken, QLatin1Char('+')}) {
+            const QString t = translate(kt, QT_COLUMN, DM_COLUMN);
+            keyTokens.append(t.isNull() ? kt.toString() : t);
+        }
+
+        if (endsWithPlusPlus) {
+            keyTokens.append(QLatin1String("plus"));
+        }
+
+        shortcut.append(std::move(keyTokens));
     }
     return shortcut;
 }
@@ -68,11 +77,15 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
 QKeySequence DBusMenuShortcut::toKeySequence() const
 {
     QStringList tmp;
-    for (const QStringList &keyTokens_ : std::as_const(*this)) {
-        QStringList keyTokens = keyTokens_;
-        processKeyTokens(&keyTokens, DM_COLUMN, QT_COLUMN);
-        tmp << keyTokens.join(QLatin1Char('+'));
+    tmp.reserve(size());
+    for (const QStringList &keyTokens : std::as_const(*this)) {
+        QStringList translatedTokens;
+        translatedTokens.reserve(keyTokens.size());
+        for (const QString &token : keyTokens) {
+            const QString t = translate(token, DM_COLUMN, QT_COLUMN);
+            translatedTokens.append(t.isNull() ? token : t);
+        }
+        tmp.append(translatedTokens.join(QLatin1Char('+')));
     }
-    QString string = tmp.join(QLatin1String(", "));
-    return QKeySequence::fromString(string);
+    return QKeySequence::fromString(tmp.join(QLatin1String(", ")));
 }
