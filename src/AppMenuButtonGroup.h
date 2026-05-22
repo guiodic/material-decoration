@@ -30,6 +30,7 @@
 #include <QMenu>
 #include <QLineEdit>
 #include <QPointer>
+#include <QHash>
 
 class QTimer;
 class QVariantAnimation;
@@ -161,6 +162,7 @@ private:
     };
 
     void resetButtons();
+    QString getActionText(QAction *action) const;
     void setupSearchMenu();
     void repositionSearchMenu();
     void searchMenu(QMenu *menu, const QString &text, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, const QStringList &currentPath = QStringList(), bool isParentEnabled = true);
@@ -210,6 +212,8 @@ private:
     QList<QPointer<TextButton>> m_textButtons;
     QPointer<MenuOverflowButton> m_overflowButton;
     QPointer<SearchButton> m_searchButton;
+
+    mutable QHash<QAction *, QString> m_actionTextCache;
 
     QPointer<KDecoration3::DecorationButton> m_hoveredButton = nullptr;
 

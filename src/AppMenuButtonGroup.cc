@@ -358,6 +358,7 @@ void AppMenuButtonGroup::resetButtons()
     m_currentMenu = nullptr;
     m_lastResults.clear();
     m_lastSearchQuery.clear();
+    m_actionTextCache.clear();
     m_textButtons.clear();
     m_overflowButton = nullptr;
     m_searchButton = nullptr;
@@ -510,6 +511,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
         const bool searchStateMatches = (m_searchButton.isNull() == !deco->searchEnabled());
 
         if (m_textButtons.count() == menuActionCount && !m_textButtons.isEmpty() && searchStateMatches) {
+            m_actionTextCache.clear();
             int actionIdx = 0;
             for (auto &textButton : std::as_const(m_textButtons)) {
                 if (!textButton) {
@@ -1142,6 +1144,17 @@ void AppMenuButtonGroup::onSearchTimerTimeout()
     }
 }
 
+QString AppMenuButtonGroup::getActionText(QAction *action) const
+{
+    auto it = m_actionTextCache.find(action);
+    if (it != m_actionTextCache.end()) {
+        return it.value();
+    }
+    const QString cleanedText = KLocalizedString::removeAcceleratorMarker(action->text().trimmed());
+    m_actionTextCache.insert(action, cleanedText);
+    return cleanedText;
+}
+
 void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, const QStringList &currentPath, bool isParentEnabled)
 {
     if (!menu || visited.contains(menu)) {
@@ -1157,7 +1170,7 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<Sear
         if (!menuAction->isEnabled()) {
             isCurrentEnabled = false;
         }
-        const QString menuText = KLocalizedString::removeAcceleratorMarker(menuAction->text().trimmed());
+        const QString menuText = getActionText(menuAction);
         if (!menuText.isEmpty()) {
             nextPath.append(menuText);
         }
@@ -1170,7 +1183,7 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<Sear
         if (action->menu()) {
             searchMenu(action->menu(), text, results, visited, ignoreTopLevel, ignoreSubMenus, nextPath, isCurrentEnabled);
         } else {
-            const QString actionText = KLocalizedString::removeAcceleratorMarker(action->text().trimmed());
+            const QString actionText = getActionText(action);
             bool match = false;
 
             if (ignoreSubMenus) {
