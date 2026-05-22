@@ -34,12 +34,12 @@ static QString translate(QStringView token, int srcCol, int dstCol)
 {
     for (const Row *ptr = table; ptr->zero != nullptr; ++ptr) {
         const char *from = (srcCol == QT_COLUMN ? ptr->zero : ptr->one);
-        const char *to = (dstCol == QT_COLUMN ? ptr->zero : ptr->one);
         if (token == QLatin1String(from)) {
+            const char *to = (dstCol == QT_COLUMN ? ptr->zero : ptr->one);
             return QLatin1String(to);
         }
     }
-    return token.toString();
+    return {};
 }
 
 DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
@@ -60,15 +60,17 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
         if (token.endsWith(QLatin1String("++"))) {
             const auto subToken = token.left(token.size() - 2);
             for (auto kt : QStringTokenizer{subToken, QLatin1Char('+')}) {
-                keyTokens.append(translate(kt, QT_COLUMN, DM_COLUMN));
+                const QString t = translate(kt, QT_COLUMN, DM_COLUMN);
+                keyTokens.append(t.isNull() ? kt.toString() : t);
             }
             keyTokens.append(QLatin1String("plus"));
         } else {
             for (auto kt : QStringTokenizer{token, QLatin1Char('+')}) {
-                keyTokens.append(translate(kt, QT_COLUMN, DM_COLUMN));
+                const QString t = translate(kt, QT_COLUMN, DM_COLUMN);
+                keyTokens.append(t.isNull() ? kt.toString() : t);
             }
         }
-        shortcut.append(keyTokens);
+        shortcut.append(std::move(keyTokens));
     }
     return shortcut;
 }
@@ -76,11 +78,13 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
 QKeySequence DBusMenuShortcut::toKeySequence() const
 {
     QStringList tmp;
+    tmp.reserve(size());
     for (const QStringList &keyTokens : std::as_const(*this)) {
         QStringList translatedTokens;
         translatedTokens.reserve(keyTokens.size());
         for (const QString &token : keyTokens) {
-            translatedTokens.append(translate(token, DM_COLUMN, QT_COLUMN));
+            const QString t = translate(token, DM_COLUMN, QT_COLUMN);
+            translatedTokens.append(t.isNull() ? token : t);
         }
         tmp.append(translatedTokens.join(QLatin1Char('+')));
     }
