@@ -1150,12 +1150,13 @@ QString AppMenuButtonGroup::getActionText(QAction *action) const
     if (!action) {
         return QString();
     }
-    auto it = m_actionTextCache.find(action);
+    const QString rawText = action->text();
+    auto it = m_actionTextCache.find(rawText);
     if (it != m_actionTextCache.end()) {
         return it.value();
     }
-    const QString cleanedText = KLocalizedString::removeAcceleratorMarker(action->text().trimmed());
-    m_actionTextCache.insert(action, cleanedText);
+    const QString cleanedText = KLocalizedString::removeAcceleratorMarker(rawText.trimmed());
+    m_actionTextCache.insert(rawText, cleanedText);
     return cleanedText;
 }
 

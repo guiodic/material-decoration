@@ -213,7 +213,7 @@ private:
     QPointer<MenuOverflowButton> m_overflowButton;
     QPointer<SearchButton> m_searchButton;
 
-    mutable QHash<QAction *, QString> m_actionTextCache;
+    mutable QHash<QString, QString> m_actionTextCache;
 
     QPointer<KDecoration3::DecorationButton> m_hoveredButton = nullptr;
 
