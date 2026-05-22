@@ -52,24 +52,23 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
             continue;
         }
 
-        QStringList keyTokens;
         // Hack: Qt::CTRL | Qt::Key_Plus is turned into the string "Ctrl++",
         // but we don't want the call to token.split() to consider the
         // second '+' as a separator so we handle it by checking if the token
         // ends with "++".
-        if (token.endsWith(QLatin1String("++"))) {
-            const auto subToken = token.left(token.size() - 2);
-            for (auto kt : QStringTokenizer{subToken, QLatin1Char('+')}) {
-                const QString t = translate(kt, QT_COLUMN, DM_COLUMN);
-                keyTokens.append(t.isNull() ? kt.toString() : t);
-            }
-            keyTokens.append(QLatin1String("plus"));
-        } else {
-            for (auto kt : QStringTokenizer{token, QLatin1Char('+')}) {
-                const QString t = translate(kt, QT_COLUMN, DM_COLUMN);
-                keyTokens.append(t.isNull() ? kt.toString() : t);
-            }
+        const bool endsWithPlusPlus = token.endsWith(QLatin1String("++"));
+        const auto subToken = endsWithPlusPlus ? token.left(token.size() - 2) : token;
+
+        QStringList keyTokens;
+        for (auto kt : QStringTokenizer{subToken, QLatin1Char('+')}) {
+            const QString t = translate(kt, QT_COLUMN, DM_COLUMN);
+            keyTokens.append(t.isNull() ? kt.toString() : t);
         }
+
+        if (endsWithPlusPlus) {
+            keyTokens.append(QLatin1String("plus"));
+        }
+
         shortcut.append(std::move(keyTokens));
     }
     return shortcut;
