@@ -31,11 +31,16 @@ static void processKeyTokens(QStringList *tokens, int srcCol, int dstCol)
                                 {"-", "minus"},
                                 {nullptr, nullptr}};
 
-    const Row *ptr = table;
-    for (; ptr->zero != nullptr; ++ptr) {
-        const char *from = (*ptr)[srcCol];
-        const char *to = (*ptr)[dstCol];
-        tokens->replaceInStrings(from, to);
+    for (QString &token : *tokens) {
+        const Row *ptr = table;
+        for (; ptr->zero != nullptr; ++ptr) {
+            const char *from = (*ptr)[srcCol];
+            const char *to = (*ptr)[dstCol];
+            if (token == QLatin1String(from)) {
+                token = QLatin1String(to);
+                break;
+            }
+        }
     }
 }
 
@@ -43,13 +48,13 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
 {
     QString string = sequence.toString();
     DBusMenuShortcut shortcut;
-    const QStringList tokens = string.split(", ");
+    const QStringList tokens = string.split(QLatin1String(", "));
     for (QString token : tokens) {
         // Hack: Qt::CTRL | Qt::Key_Plus is turned into the string "Ctrl++",
         // but we don't want the call to token.split() to consider the
         // second '+' as a separator so we replace it with its final value.
         token.replace(QLatin1String("++"), QLatin1String("+plus"));
-        QStringList keyTokens = token.split('+');
+        QStringList keyTokens = token.split(QLatin1Char('+'));
         processKeyTokens(&keyTokens, QT_COLUMN, DM_COLUMN);
         shortcut << keyTokens;
     }
@@ -59,10 +64,10 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
 QKeySequence DBusMenuShortcut::toKeySequence() const
 {
     QStringList tmp;
-    for (const QStringList& keyTokens_ : std::as_const(*this)) {
+    for (const QStringList &keyTokens_ : std::as_const(*this)) {
         QStringList keyTokens = keyTokens_;
         processKeyTokens(&keyTokens, DM_COLUMN, QT_COLUMN);
-        tmp << keyTokens.join(QLatin1String("+"));
+        tmp << keyTokens.join(QLatin1Char('+'));
     }
     QString string = tmp.join(QLatin1String(", "));
     return QKeySequence::fromString(string);
