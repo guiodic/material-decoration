@@ -1110,6 +1110,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
 void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
 {
+    m_actionTextCache.clear();
     if (m_buttonIndexWaitingForPopup == -1 || !m_appMenuModel || !m_appMenuModel->menu()) {
         return;
     }
@@ -1146,6 +1147,9 @@ void AppMenuButtonGroup::onSearchTimerTimeout()
 
 QString AppMenuButtonGroup::getActionText(QAction *action) const
 {
+    if (!action) {
+        return QString();
+    }
     auto it = m_actionTextCache.find(action);
     if (it != m_actionTextCache.end()) {
         return it.value();
