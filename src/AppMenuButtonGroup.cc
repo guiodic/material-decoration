@@ -181,6 +181,10 @@ AppMenuButtonGroup::~AppMenuButtonGroup()
 
 void AppMenuButtonGroup::setupSearchMenu()
 {
+    if (m_searchMenu) {
+        m_searchMenu->deleteLater();
+    }
+
     m_searchMenu = new NavigableMenu(nullptr);
     m_searchLineEdit = new QLineEdit(m_searchMenu);
     m_searchLineEdit->setMinimumWidth(200);
