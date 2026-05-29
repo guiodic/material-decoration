@@ -232,13 +232,13 @@ void AppMenuButtonGroup::cleanupOverflowMenu()
         return;
     }
 
+    m_overflowMenu->disconnect(this);
     m_overflowMenu->hide();
     if (m_currentMenu == m_overflowMenu) {
         m_currentMenu = nullptr;
     }
 
     m_overflowMenu->removeEventFilter(this);
-    m_overflowMenu->disconnect(this);
     m_overflowMenu->deleteLater();
     m_overflowMenu = nullptr;
 }
