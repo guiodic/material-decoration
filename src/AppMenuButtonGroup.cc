@@ -166,21 +166,21 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
 
 AppMenuButtonGroup::~AppMenuButtonGroup()
 {
-    if (m_searchMenu) {
-        m_searchMenu->deleteLater();
-    }
-    
-    // explicit destruction even 
+    cleanupSearchMenu();
+
+    // explicit destruction even
     // if it already is Qt::WA_DeleteOnClose,
-    // deal whit the corner-case in which the window 
+    // deal with the corner-case in which the window
     // is closed while the m_overflowMenu is open
-    if (m_overflowMenu) { 
-        m_overflowMenu->deleteLater();
-    }
+    cleanupOverflowMenu();
 }
 
 void AppMenuButtonGroup::setupSearchMenu()
 {
+    if (m_searchMenu) {
+        return;
+    }
+
     m_searchMenu = new NavigableMenu(nullptr);
     m_searchLineEdit = new QLineEdit(m_searchMenu);
     m_searchLineEdit->setMinimumWidth(200);
@@ -198,6 +198,46 @@ void AppMenuButtonGroup::setupSearchMenu()
     m_searchLineEdit->setFocusPolicy(Qt::StrongFocus);
     m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu","Search")+QStringLiteral("…"));
     m_searchLineEdit->setClearButtonEnabled(false);
+}
+
+void AppMenuButtonGroup::cleanupSearchMenu()
+{
+    if (!m_searchMenu) {
+        return;
+    }
+
+    m_searchDebounceTimer->stop();
+
+    if (m_currentMenu == m_searchMenu) {
+        m_currentMenu = nullptr;
+    }
+
+    if (m_searchLineEdit) {
+        m_searchLineEdit->removeEventFilter(this);
+    }
+
+    m_searchMenu->removeEventFilter(this);
+    m_searchMenu->disconnect(this);
+    m_searchMenu->deleteLater();
+    m_searchMenu = nullptr;
+    m_searchLineEdit = nullptr;
+    m_searchUiVisible = false;
+}
+
+void AppMenuButtonGroup::cleanupOverflowMenu()
+{
+    if (!m_overflowMenu) {
+        return;
+    }
+
+    if (m_currentMenu == m_overflowMenu) {
+        m_currentMenu = nullptr;
+    }
+
+    m_overflowMenu->removeEventFilter(this);
+    m_overflowMenu->disconnect(this);
+    m_overflowMenu->deleteLater();
+    m_overflowMenu = nullptr;
 }
 
 void AppMenuButtonGroup::repositionSearchMenu()
@@ -365,9 +405,8 @@ void AppMenuButtonGroup::resetButtons()
     m_overflowIndex = -1;
     m_searchIndex = -1;
 
-    if (m_overflowMenu) {
-        m_overflowMenu->deleteLater();
-    }
+    cleanupOverflowMenu();
+    cleanupSearchMenu();
     
     // Create a copy of the button pointers before removing them from the group.
     const auto allButtons = buttons();
@@ -816,9 +855,7 @@ void AppMenuButtonGroup::handleOverflowTrigger()
         return;
     }
 
-    if (m_overflowMenu) {
-        m_overflowMenu->deleteLater();
-    }
+    cleanupOverflowMenu();
 
     auto *actionMenu = new NavigableMenu();
     actionMenu->setAttribute(Qt::WA_DeleteOnClose);
