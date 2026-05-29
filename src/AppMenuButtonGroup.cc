@@ -418,6 +418,8 @@ void AppMenuButtonGroup::resetButtons()
     m_searchButton = nullptr;
     m_overflowIndex = -1;
     m_searchIndex = -1;
+    m_buttonIndexWaitingForPopup = -1;
+    m_buttonIndexOfMenuToCache = -1;
 
     cleanupOverflowMenu();
     cleanupSearchMenu();
