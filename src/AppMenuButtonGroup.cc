@@ -204,9 +204,10 @@ void AppMenuButtonGroup::cleanupSearchMenu()
 {
     if (!m_searchMenu) {
         return;
+    if (!m_searchMenu) {
+        return;
     }
 
-    m_searchMenu->disconnect(this);
     m_searchMenu->hide();
     m_searchDebounceTimer->stop();
 
