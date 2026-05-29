@@ -183,6 +183,7 @@ void AppMenuButtonGroup::setupSearchMenu()
 {
     if (m_searchMenu) {
         m_searchMenu->deleteLater();
+        m_searchMenu = nullptr;
     }
 
     m_searchMenu = new NavigableMenu(nullptr);
@@ -371,6 +372,13 @@ void AppMenuButtonGroup::resetButtons()
 
     if (m_overflowMenu) {
         m_overflowMenu->deleteLater();
+        m_overflowMenu = nullptr;
+    }
+
+    if (m_searchMenu) {
+        m_searchMenu->deleteLater();
+        m_searchMenu = nullptr;
+        m_searchLineEdit = nullptr;
     }
     
     // Create a copy of the button pointers before removing them from the group.
@@ -822,6 +830,7 @@ void AppMenuButtonGroup::handleOverflowTrigger()
 
     if (m_overflowMenu) {
         m_overflowMenu->deleteLater();
+        m_overflowMenu = nullptr;
     }
 
     auto *actionMenu = new NavigableMenu();
