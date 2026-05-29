@@ -8,6 +8,8 @@
 
 #include "debug.h"
 
+#include <utility>
+
 // Qt
 #include <QActionGroup>
 #include <QCoreApplication>
@@ -147,7 +149,7 @@ public:
      */
     void updateAction(QAction *action, const QVariantMap &map)
     {
-        for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
+        for (auto it = std::as_const(map).constBegin(); it != std::as_const(map).constEnd(); ++it) {
             const QString &key = it.key();
             if (key == QLatin1String("type") || key == QLatin1String("toggle-type") || key == QLatin1String("children-display")) {
                 continue;
@@ -331,7 +333,7 @@ QMenu *DBusMenuImporter::menu() const
 void DBusMenuImporterPrivate::slotItemsPropertiesUpdated(const DBusMenuItemList &updatedList, const DBusMenuItemKeysList &removedList)
 {
     bool needLayoutUpdate = false;
-    for (const DBusMenuItem &item : updatedList) {
+    for (const DBusMenuItem &item : std::as_const(updatedList)) {
         QAction *action = m_actionForId.value(item.id);
         if (!action) {
             // We don't know this action. It probably is in a menu we haven't fetched yet.
@@ -340,13 +342,12 @@ void DBusMenuImporterPrivate::slotItemsPropertiesUpdated(const DBusMenuItemList 
             continue;
         }
 
-        QVariantMap::ConstIterator it = item.properties.constBegin(), end = item.properties.constEnd();
-        for (; it != end; ++it) {
+        for (auto it = std::as_const(item.properties).constBegin(); it != std::as_const(item.properties).constEnd(); ++it) {
             updateActionProperty(action, it.key(), it.value());
         }
     }
 
-    for (const DBusMenuItemKeys &item : removedList) {
+    for (const DBusMenuItemKeys &item : std::as_const(removedList)) {
         QAction *action = m_actionForId.value(item.id);
         if (!action) {
             // We don't know this action. It probably is in a menu we haven't fetched yet.
@@ -354,8 +355,7 @@ void DBusMenuImporterPrivate::slotItemsPropertiesUpdated(const DBusMenuItemList 
             continue;
         }
 
-        const auto properties{item.properties};
-        for (const QString &key : properties) {
+        for (const QString &key : std::as_const(item.properties)) {
             updateActionProperty(action, key, QVariant());
         }
     }
