@@ -206,6 +206,13 @@ void AppMenuButtonGroup::cleanupSearchMenu(bool immediate)
         return;
     }
 
+    m_searchMenu->disconnect(this);
+    m_searchMenu->removeEventFilter(this);
+
+    if (m_searchLineEdit) {
+        m_searchLineEdit->removeEventFilter(this);
+    }
+
     m_searchMenu->hide();
     m_searchDebounceTimer->stop();
     m_delayedCacheTimer->stop();
@@ -217,14 +224,8 @@ void AppMenuButtonGroup::cleanupSearchMenu(bool immediate)
         m_currentMenu = nullptr;
     }
 
-    if (m_searchLineEdit) {
-        m_searchLineEdit->removeEventFilter(this);
-    }
-
-    m_searchMenu->removeEventFilter(this);
-    m_searchMenu->disconnect(this);
     if (immediate) {
-        delete m_searchMenu;
+        delete m_searchMenu.data();
     } else {
         m_searchMenu->deleteLater();
     }
@@ -239,15 +240,16 @@ void AppMenuButtonGroup::cleanupOverflowMenu(bool immediate)
         return;
     }
 
+    m_overflowMenu->disconnect(this);
+    m_overflowMenu->removeEventFilter(this);
+
     m_overflowMenu->hide();
     if (m_currentMenu == m_overflowMenu) {
         m_currentMenu = nullptr;
     }
 
-    m_overflowMenu->removeEventFilter(this);
-    m_overflowMenu->disconnect(this);
     if (immediate) {
-        delete m_overflowMenu;
+        delete m_overflowMenu.data();
     } else {
         m_overflowMenu->deleteLater();
     }
