@@ -1008,7 +1008,6 @@ void AppMenuButtonGroup::onMenuAboutToHide()
     }
 
     if (menu == m_searchMenu && m_searchLineEdit) {
-        
         m_delayedCacheTimer->stop();
         m_buttonIndexOfMenuToCache = -1;
         if (m_appMenuModel) {
