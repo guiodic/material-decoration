@@ -1025,6 +1025,7 @@ void AppMenuButtonGroup::onMenuAboutToHide()
         }
         
         m_searchLineEdit->clear();
+        m_searchDebounceTimer->stop();
         m_searchUiVisible = false;
         m_lastResults.clear();
         m_lastSearchQuery.clear();
