@@ -232,6 +232,9 @@ void AppMenuButtonGroup::cleanupSearchMenu(bool immediate)
     m_searchMenu = nullptr;
     m_searchLineEdit = nullptr;
     m_searchUiVisible = false;
+    m_lastResults.clear();
+    m_lastSearchQuery.clear();
+    m_buttonIndexOfMenuToCache = -1;
 }
 
 void AppMenuButtonGroup::cleanupOverflowMenu(bool immediate)
