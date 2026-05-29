@@ -208,6 +208,10 @@ void AppMenuButtonGroup::cleanupSearchMenu()
 
     m_searchMenu->hide();
     m_searchDebounceTimer->stop();
+    m_delayedCacheTimer->stop();
+    if (m_appMenuModel) {
+        m_appMenuModel->stopCaching();
+    }
 
     if (m_currentMenu == m_searchMenu) {
         m_currentMenu = nullptr;
