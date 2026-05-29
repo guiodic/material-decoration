@@ -206,6 +206,7 @@ void AppMenuButtonGroup::cleanupSearchMenu()
         return;
     }
 
+    m_searchMenu->hide();
     m_searchDebounceTimer->stop();
 
     if (m_currentMenu == m_searchMenu) {
@@ -230,6 +231,7 @@ void AppMenuButtonGroup::cleanupOverflowMenu()
         return;
     }
 
+    m_overflowMenu->hide();
     if (m_currentMenu == m_overflowMenu) {
         m_currentMenu = nullptr;
     }
