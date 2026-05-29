@@ -1008,6 +1008,13 @@ void AppMenuButtonGroup::onMenuAboutToHide()
     }
 
     if (menu == m_searchMenu && m_searchLineEdit) {
+        
+        m_delayedCacheTimer->stop();
+        m_buttonIndexOfMenuToCache = -1;
+        if (m_appMenuModel) {
+            m_appMenuModel->stopCaching();
+        }
+        
         m_searchLineEdit->clear();
         m_searchUiVisible = false;
         m_lastResults.clear();
