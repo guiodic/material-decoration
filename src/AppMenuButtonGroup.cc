@@ -181,7 +181,12 @@ AppMenuButtonGroup::~AppMenuButtonGroup()
 
 void AppMenuButtonGroup::setupSearchMenu()
 {
-    m_searchMenu = new NavigableMenu(nullptr);
+    if (m_searchMenu) {
+        m_searchMenu->deleteLater();
+    }
+
+    m_searchMenu = new NavigableMenu();
+    m_searchMenu->QObject::setParent(this);
     m_searchLineEdit = new QLineEdit(m_searchMenu);
     m_searchLineEdit->setMinimumWidth(200);
 
@@ -821,6 +826,7 @@ void AppMenuButtonGroup::handleOverflowTrigger()
     }
 
     auto *actionMenu = new NavigableMenu();
+    actionMenu->QObject::setParent(this);
     actionMenu->setAttribute(Qt::WA_DeleteOnClose);
     m_overflowMenu = actionMenu;
 
