@@ -376,10 +376,13 @@ void AppMenuButtonGroup::resetButtons()
 
     if (m_overflowMenu) {
         m_overflowMenu->deleteLater();
+        m_overflowMenu->disconnect(this);
         m_overflowMenu = nullptr;
     }
 
     if (m_searchMenu) {
+        m_searchDebounceTimer->stop();
+        m_searchMenu->disconnect(this);
         m_searchMenu->deleteLater();
         m_searchMenu = nullptr;
         m_searchLineEdit = nullptr;
