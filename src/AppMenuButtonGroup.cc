@@ -166,13 +166,13 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
 
 AppMenuButtonGroup::~AppMenuButtonGroup()
 {
-    cleanupSearchMenu();
+    cleanupSearchMenu(true);
 
     // explicit destruction even
     // if it already is Qt::WA_DeleteOnClose,
     // deal with the corner-case in which the window
     // is closed while the m_overflowMenu is open
-    cleanupOverflowMenu();
+    cleanupOverflowMenu(true);
 }
 
 void AppMenuButtonGroup::setupSearchMenu()
@@ -200,7 +200,7 @@ void AppMenuButtonGroup::setupSearchMenu()
     m_searchLineEdit->setClearButtonEnabled(false);
 }
 
-void AppMenuButtonGroup::cleanupSearchMenu()
+void AppMenuButtonGroup::cleanupSearchMenu(bool immediate)
 {
     if (!m_searchMenu) {
         return;
@@ -223,13 +223,17 @@ void AppMenuButtonGroup::cleanupSearchMenu()
 
     m_searchMenu->removeEventFilter(this);
     m_searchMenu->disconnect(this);
-    m_searchMenu->deleteLater();
+    if (immediate) {
+        delete m_searchMenu;
+    } else {
+        m_searchMenu->deleteLater();
+    }
     m_searchMenu = nullptr;
     m_searchLineEdit = nullptr;
     m_searchUiVisible = false;
 }
 
-void AppMenuButtonGroup::cleanupOverflowMenu()
+void AppMenuButtonGroup::cleanupOverflowMenu(bool immediate)
 {
     if (!m_overflowMenu) {
         return;
@@ -242,7 +246,11 @@ void AppMenuButtonGroup::cleanupOverflowMenu()
 
     m_overflowMenu->removeEventFilter(this);
     m_overflowMenu->disconnect(this);
-    m_overflowMenu->deleteLater();
+    if (immediate) {
+        delete m_overflowMenu;
+    } else {
+        m_overflowMenu->deleteLater();
+    }
     m_overflowMenu = nullptr;
 }
 

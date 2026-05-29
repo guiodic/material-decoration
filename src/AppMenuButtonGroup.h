@@ -164,8 +164,8 @@ private:
     void resetButtons();
     QString getActionText(QAction *action) const;
     void setupSearchMenu();
-    void cleanupSearchMenu();
-    void cleanupOverflowMenu();
+    void cleanupSearchMenu(bool immediate = false);
+    void cleanupOverflowMenu(bool immediate = false);
     void repositionSearchMenu();
     void searchMenu(QMenu *menu, const QString &text, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, const QStringList &currentPath = QStringList(), bool isParentEnabled = true);
     AppMenuButton *getAppMenuButton(int index) const;
