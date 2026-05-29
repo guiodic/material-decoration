@@ -182,6 +182,8 @@ AppMenuButtonGroup::~AppMenuButtonGroup()
 void AppMenuButtonGroup::setupSearchMenu()
 {
     if (m_searchMenu) {
+        m_searchDebounceTimer->stop();
+        m_searchMenu->disconnect(this);
         m_searchMenu->deleteLater();
         m_searchMenu = nullptr;
         m_searchLineEdit = nullptr;
@@ -833,6 +835,7 @@ void AppMenuButtonGroup::handleOverflowTrigger()
 
     if (m_overflowMenu) {
         m_overflowMenu->deleteLater();
+        m_overflowMenu->disconnect(this);
         m_overflowMenu = nullptr;
     }
 
