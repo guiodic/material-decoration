@@ -184,6 +184,8 @@ void AppMenuButtonGroup::setupSearchMenu()
     if (m_searchMenu) {
         m_searchMenu->deleteLater();
         m_searchMenu = nullptr;
+        m_searchLineEdit = nullptr;
+        m_searchUiVisible = false;
     }
 
     m_searchMenu = new NavigableMenu(nullptr);
@@ -379,6 +381,7 @@ void AppMenuButtonGroup::resetButtons()
         m_searchMenu->deleteLater();
         m_searchMenu = nullptr;
         m_searchLineEdit = nullptr;
+        m_searchUiVisible = false;
     }
     
     // Create a copy of the button pointers before removing them from the group.
