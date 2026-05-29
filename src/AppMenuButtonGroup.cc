@@ -206,6 +206,7 @@ void AppMenuButtonGroup::cleanupSearchMenu()
         return;
     }
 
+    m_searchMenu->disconnect(this);
     m_searchMenu->hide();
     m_searchDebounceTimer->stop();
 
@@ -218,7 +219,6 @@ void AppMenuButtonGroup::cleanupSearchMenu()
     }
 
     m_searchMenu->removeEventFilter(this);
-    m_searchMenu->disconnect(this);
     m_searchMenu->deleteLater();
     m_searchMenu = nullptr;
     m_searchLineEdit = nullptr;
