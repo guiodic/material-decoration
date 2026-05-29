@@ -375,8 +375,8 @@ void AppMenuButtonGroup::resetButtons()
     m_searchIndex = -1;
 
     if (m_overflowMenu) {
-        m_overflowMenu->deleteLater();
         m_overflowMenu->disconnect(this);
+        m_overflowMenu->deleteLater();
         m_overflowMenu = nullptr;
     }
 
@@ -837,8 +837,8 @@ void AppMenuButtonGroup::handleOverflowTrigger()
     }
 
     if (m_overflowMenu) {
-        m_overflowMenu->deleteLater();
         m_overflowMenu->disconnect(this);
+        m_overflowMenu->deleteLater();
         m_overflowMenu = nullptr;
     }
 
