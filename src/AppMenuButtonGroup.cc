@@ -1015,7 +1015,7 @@ void AppMenuButtonGroup::onMenuAboutToHide()
         menu->removeEventFilter(this);
     }
 
-    if (menu == m_searchMenu && m_searchLineEdit) {
+    if (m_searchLineEdit) {
         m_delayedCacheTimer->stop();
         m_buttonIndexOfMenuToCache = -1;
         if (m_appMenuModel) {
