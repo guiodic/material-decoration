@@ -57,13 +57,18 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
         // second '+' as a separator so we handle it by checking if the token
         // ends with "++".
         const bool endsWithPlusPlus = token.endsWith(QLatin1String("++"));
-        const auto subToken = endsWithPlusPlus ? token.left(token.size() - 2) : token;
+        const QStringView subToken = endsWithPlusPlus ? token.sliced(0, token.size() - 2) : token;
 
         QStringList keyTokens;
-        for (auto kt : QStringTokenizer{subToken, QLatin1Char('+')}) {
+        qsizetype start = 0;
+        qsizetype next = -1;
+        do {
+            next = subToken.indexOf(QLatin1Char('+'), start);
+            const auto kt = (next != -1) ? subToken.sliced(start, next - start) : subToken.sliced(start);
             const QString t = translate(kt, QT_COLUMN, DM_COLUMN);
             keyTokens.append(t.isNull() ? kt.toString() : t);
-        }
+            start = next + 1;
+        } while (next != -1);
 
         if (endsWithPlusPlus) {
             keyTokens.append(QLatin1String("plus"));
