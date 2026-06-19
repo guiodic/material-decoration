@@ -26,9 +26,9 @@
 #include <QScopedArrayPointer>
 
 // std
-#include <cstdint>
+#include <algorithm>
 #include <cmath>
-#include <cstring>
+#include <cstdint>
 #include <utility>
 
 namespace Material
@@ -239,11 +239,11 @@ static inline void mirrorTopLeftQuadrant(QImage &image)
     } else {
         for (int y = 0; y < centerY; ++y) {
             uint8_t *row = image.scanLine(y);
-            uint8_t *in = row;
+            const uint8_t *in = row;
             uint8_t *out = row + (width - 1) * stride;
 
             for (int x = 0; x < width / 2; ++x, in += stride, out -= stride) {
-                std::memcpy(out, in, stride);
+                std::copy_n(in, stride, out);
             }
         }
     }
@@ -251,9 +251,9 @@ static inline void mirrorTopLeftQuadrant(QImage &image)
     const int bpl = image.bytesPerLine();
     const int halfHeight = height / 2;
     for (int y = 0; y < halfHeight; ++y) {
-        const uint8_t *in = image.scanLine(y);
+        const uint8_t *in = image.constScanLine(y);
         uint8_t *out = image.scanLine(height - y - 1);
-        std::memcpy(out, in, bpl);
+        std::copy_n(in, bpl, out);
     }
 }
 
