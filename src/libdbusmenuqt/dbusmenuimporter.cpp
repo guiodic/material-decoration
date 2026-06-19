@@ -20,7 +20,6 @@
 #include <QMenu>
 #include <QPointer>
 #include <QSet>
-#include <utility>
 #include <QTime>
 #include <QTimer>
 #include <QToolButton>
@@ -314,8 +313,8 @@ void DBusMenuImporter::slotLayoutUpdated(uint revision, int parentId)
 
 void DBusMenuImporter::processPendingLayoutUpdates()
 {
-    const QSet<int> ids = std::move(d->m_pendingLayoutUpdates);
-    d->m_pendingLayoutUpdates.clear();
+    QSet<int> ids;
+    ids.swap(d->m_pendingLayoutUpdates);
     for (int id : ids) {
         d->refresh(id);
     }

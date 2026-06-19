@@ -12,7 +12,6 @@
 // Qt
 #include <QDBusArgument>
 #include <QDBusMetaType>
-#include <utility>
 
 //// DBusMenuItem
 QDBusArgument &operator<<(QDBusArgument &argument, const DBusMenuItem &obj)
@@ -85,10 +84,8 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, DBusMenuLayoutIte
 QDBusArgument &operator<<(QDBusArgument &argument, const DBusMenuShortcut &obj)
 {
     argument.beginArray(qMetaTypeId<QStringList>());
-    auto it = obj.constBegin();
-    const auto end = obj.constEnd();
-    for (; it != end; ++it)
-        argument << *it;
+    for (const QStringList &shortcut : obj)
+        argument << shortcut;
     argument.endArray();
     return argument;
 }
