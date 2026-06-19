@@ -313,8 +313,8 @@ void DBusMenuImporter::slotLayoutUpdated(uint revision, int parentId)
 
 void DBusMenuImporter::processPendingLayoutUpdates()
 {
-    const QSet<int> ids = d->m_pendingLayoutUpdates;
-    d->m_pendingLayoutUpdates.clear();
+    QSet<int> ids;
+    ids.swap(d->m_pendingLayoutUpdates);
     for (int id : ids) {
         d->refresh(id);
     }
@@ -340,7 +340,8 @@ void DBusMenuImporterPrivate::slotItemsPropertiesUpdated(const DBusMenuItemList 
             continue;
         }
 
-        QVariantMap::ConstIterator it = item.properties.constBegin(), end = item.properties.constEnd();
+        auto it = item.properties.constBegin();
+        const auto end = item.properties.constEnd();
         for (; it != end; ++it) {
             updateActionProperty(action, it.key(), it.value());
         }
@@ -354,8 +355,7 @@ void DBusMenuImporterPrivate::slotItemsPropertiesUpdated(const DBusMenuItemList 
             continue;
         }
 
-        const auto properties{item.properties};
-        for (const QString &key : properties) {
+        for (const QString &key : item.properties) {
             updateActionProperty(action, key, QVariant());
         }
     }
