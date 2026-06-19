@@ -948,7 +948,7 @@ QFont Decoration::menuFont() const
     return useSystemMenuFont() ? QApplication::font("QMenu") : settings()->font();
 }
 
-qreal Decoration::getMenuTextWidth(const QString text, bool showMnemonic) const
+qreal Decoration::getMenuTextWidth(const QString &text, bool showMnemonic) const
 {
     const QFontMetricsF fontMetrics(menuFont());
     int flags = showMnemonic ? Qt::TextShowMnemonic : Qt::TextHideMnemonic;
