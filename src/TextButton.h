@@ -46,7 +46,7 @@ public:
     void setAction(QAction *set);
 
     QString text() const;
-    void setText(const QString set);
+    void setText(const QString &set);
 
     void setHeight(qreal buttonHeight) override;
 

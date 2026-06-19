@@ -86,7 +86,7 @@ QString TextButton::text() const
     return m_text;
 }
 
-void TextButton::setText(const QString set)
+void TextButton::setText(const QString &set)
 {
     if (m_text != set) {
         m_text = set;
