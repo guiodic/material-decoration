@@ -74,7 +74,9 @@ private slots:
     void onSectionUnderMouseChanged(const Qt::WindowFrameSection value);
     void onSizeChanged();
     void onNextScaleChanged();
+#if HAVE_WAYLAND
     void onTabletModeChanged(bool mode);
+#endif
 
 private:
     QRectF titleBarRect() const;
