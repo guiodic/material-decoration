@@ -20,6 +20,7 @@
 #include <QMenu>
 #include <QPointer>
 #include <QSet>
+#include <utility>
 #include <QTime>
 #include <QTimer>
 #include <QToolButton>
@@ -147,7 +148,7 @@ public:
      */
     void updateAction(QAction *action, const QVariantMap &map)
     {
-        for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
+        for (auto it = std::as_const(map).constBegin(); it != std::as_const(map).constEnd(); ++it) {
             const QString &key = it.key();
             if (key == QLatin1String("type") || key == QLatin1String("toggle-type") || key == QLatin1String("children-display")) {
                 continue;
@@ -313,9 +314,9 @@ void DBusMenuImporter::slotLayoutUpdated(uint revision, int parentId)
 
 void DBusMenuImporter::processPendingLayoutUpdates()
 {
-    const QSet<int> ids = d->m_pendingLayoutUpdates;
+    const QSet<int> ids = std::move(d->m_pendingLayoutUpdates);
     d->m_pendingLayoutUpdates.clear();
-    for (int id : ids) {
+    for (int id : std::as_const(ids)) {
         d->refresh(id);
     }
 }
@@ -331,7 +332,7 @@ QMenu *DBusMenuImporter::menu() const
 void DBusMenuImporterPrivate::slotItemsPropertiesUpdated(const DBusMenuItemList &updatedList, const DBusMenuItemKeysList &removedList)
 {
     bool needLayoutUpdate = false;
-    for (const DBusMenuItem &item : updatedList) {
+    for (const DBusMenuItem &item : std::as_const(updatedList)) {
         QAction *action = m_actionForId.value(item.id);
         if (!action) {
             // We don't know this action. It probably is in a menu we haven't fetched yet.
@@ -340,13 +341,14 @@ void DBusMenuImporterPrivate::slotItemsPropertiesUpdated(const DBusMenuItemList 
             continue;
         }
 
-        QVariantMap::ConstIterator it = item.properties.constBegin(), end = item.properties.constEnd();
+        auto it = std::as_const(item.properties).constBegin();
+        const auto end = std::as_const(item.properties).constEnd();
         for (; it != end; ++it) {
             updateActionProperty(action, it.key(), it.value());
         }
     }
 
-    for (const DBusMenuItemKeys &item : removedList) {
+    for (const DBusMenuItemKeys &item : std::as_const(removedList)) {
         QAction *action = m_actionForId.value(item.id);
         if (!action) {
             // We don't know this action. It probably is in a menu we haven't fetched yet.
@@ -354,8 +356,7 @@ void DBusMenuImporterPrivate::slotItemsPropertiesUpdated(const DBusMenuItemList 
             continue;
         }
 
-        const auto properties{item.properties};
-        for (const QString &key : properties) {
+        for (const QString &key : std::as_const(item.properties)) {
             updateActionProperty(action, key, QVariant());
         }
     }
@@ -457,7 +458,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     }
 
     // 2. Remove actions no longer present
-    for (QAction *action : actions) {
+    for (QAction *action : std::as_const(actions)) {
         int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
         if (!newIds.contains(id)) {
             if (menu) {

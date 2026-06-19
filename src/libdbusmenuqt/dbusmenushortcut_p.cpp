@@ -81,7 +81,7 @@ QKeySequence DBusMenuShortcut::toKeySequence() const
     for (const QStringList &keyTokens : std::as_const(*this)) {
         QStringList translatedTokens;
         translatedTokens.reserve(keyTokens.size());
-        for (const QString &token : keyTokens) {
+        for (const QString &token : std::as_const(keyTokens)) {
             const QString t = translate(token, DM_COLUMN, QT_COLUMN);
             translatedTokens.append(t.isNull() ? token : t);
         }
