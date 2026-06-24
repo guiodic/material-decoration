@@ -10,7 +10,6 @@ on:
   push:
     branches:
       - master
-      - x11
     paths:
       - '.github/workflows/force-x11-smoke.yml'
       - 'CMakeLists.txt'
