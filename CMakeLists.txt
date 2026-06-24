@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_definitions (-Wall -Werror)
 
+option(FORCE_X11 "Force compilation for X11 only" OFF)
+
 include (FeatureSummary)
 find_package (ECM 0.0.9 REQUIRED NO_MODULE)
 

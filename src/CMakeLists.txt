@@ -23,27 +23,29 @@ find_package (KF6 REQUIRED COMPONENTS
     #KCMUtils
 )
 
-find_package(KWin REQUIRED)
-find_package(KWinX11 QUIET)
-
-# X11
-find_package(X11 QUIET)
-find_package(XCB MODULE QUIET COMPONENTS
-    XCB
-    # RANDR
-)
-
-if(KWinX11_FOUND AND X11_FOUND AND XCB_FOUND)
+if(FORCE_X11)
+    set(HAVE_WAYLAND OFF)
+    find_package(KWinX11 REQUIRED)
+    find_package(X11 REQUIRED)
+    find_package(XCB MODULE REQUIRED COMPONENTS XCB)
     set(HAVE_X11 ON)
-    #include_directories(/usr/include/kwin-x11)
-    #include_directories(materialdecoration PRIVATE
-    #     $<TARGET_PROPERTY:KWinX11::kwin,INTERFACE_INCLUDE_DIRECTORIES>
-    #)
     set(X11_LIBRARIES XCB::XCB)
-    message(STATUS "Building with X11 support")
+    message(STATUS "Forcing X11 support, disabling Wayland")
 else()
-    set(HAVE_X11 OFF)
-    message(STATUS "Building without X11 support")
+    find_package(KWin REQUIRED)
+    set(HAVE_WAYLAND ON)
+    find_package(KWinX11 QUIET)
+    find_package(X11 QUIET)
+    find_package(XCB MODULE QUIET COMPONENTS XCB)
+
+    if(KWinX11_FOUND AND X11_FOUND AND XCB_FOUND)
+        set(HAVE_X11 ON)
+        set(X11_LIBRARIES XCB::XCB)
+        message(STATUS "Building with X11 support")
+    else()
+        set(HAVE_X11 OFF)
+        message(STATUS "Building without X11 support")
+    endif()
 endif()
 
 #set(HAVE_KDecoration3_5_25 ON)
@@ -73,6 +75,8 @@ add_library (materialdecoration MODULE
     ${decoration_SRCS}
 )
 
+target_include_directories(materialdecoration PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+
 target_link_libraries (materialdecoration
     PUBLIC
         dbusmenuqt
@@ -96,8 +100,11 @@ target_link_libraries (materialdecoration
 
     PRIVATE
         KDecoration3::KDecoration
-        KWin::kwin
 )
+
+if(KWin_FOUND)
+    target_link_libraries(materialdecoration PRIVATE KWin::kwin)
+endif()
 
 if(KWinX11_FOUND)
     #target_link_libraries(materialdecoration PRIVATE KWinX11::kwin)

@@ -339,6 +339,7 @@ bool Decoration::init()
                  this,
                  SLOT(reconfigure()));
 
+#if HAVE_WAYLAND
     dbus.connect(QStringLiteral("org.kde.KWin"),
                  QStringLiteral("/org/kde/KWin"),
                  QStringLiteral("org.kde.KWin.TabletModeManager"),
@@ -360,6 +361,7 @@ bool Decoration::init()
         }
         call->deleteLater();
     });
+#endif
 
     // Window Decoration KCM
     // The reconfigure signal will update active windows, but we need to hook
@@ -1364,6 +1366,7 @@ void Decoration::onNextScaleChanged()
     updateButtonsGeometry();
 }
 
+#if HAVE_WAYLAND
 void Decoration::onTabletModeChanged(bool mode)
 {
     if (m_tabletMode == mode) {
@@ -1376,5 +1379,6 @@ void Decoration::onTabletModeChanged(bool mode)
     updateButtonsGeometryDelayed();
     update();
 }
+#endif
 
 } // namespace Material
