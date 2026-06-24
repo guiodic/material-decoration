@@ -1,0 +1,61 @@
+name: force-x11-smoke
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/force-x11-smoke.yml'
+      - 'CMakeLists.txt'
+      - 'src/**'
+      - 'po/**'
+  push:
+    branches:
+      - master
+      - x11
+    paths:
+      - '.github/workflows/force-x11-smoke.yml'
+      - 'CMakeLists.txt'
+      - 'src/**'
+      - 'po/**'
+  workflow_dispatch:
+
+jobs:
+  force-x11-smoke:
+    runs-on: ubuntu-26.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            ninja-build \
+            extra-cmake-modules \
+            qt6-base-dev \
+            qt6-tools-dev \
+            libkf6config-dev \
+            libkf6configwidgets-dev \
+            libkf6coreaddons-dev \
+            libkf6guiaddons-dev \
+            libkf6i18n-dev \
+            libkf6iconthemes-dev \
+            libkf6kcmutils-dev \
+            libkf6service-dev \
+            libkf6windowsystem-dev \
+            kwin-dev \
+            libx11-dev \
+            libxcb1-dev \
+            xorg-dev
+
+      - name: Configure with FORCE_X11=ON
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DQT_MAJOR_VERSION=6 -DQT_VERSION_MAJOR=6 \
+            -DFORCE_X11=ON
+
+      - name: Build smoke targets
+        run: |
+          cmake --build build --target materialdecoration materialdecoration_core materialdecoration_kcm -j"$(nproc)"
