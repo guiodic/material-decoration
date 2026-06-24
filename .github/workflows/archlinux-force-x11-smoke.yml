@@ -1,0 +1,67 @@
+name: archlinux-smoke
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/archlinux-smoke.yml'
+      - 'CMakeLists.txt'
+      - 'src/**'
+      - 'po/**'
+  push:
+    branches:
+      - master
+      - x11
+    paths:
+      - '.github/workflows/archlinux-smoke.yml'
+      - 'CMakeLists.txt'
+      - 'src/**'
+      - 'po/**'
+  workflow_dispatch:
+
+jobs:
+  archlinux-smoke:
+    runs-on: ubuntu-24.04
+    container:
+      image: archlinux:latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Update package databases
+        run: |
+          pacman -Syu --noconfirm
+
+      - name: Install build dependencies
+        run: |
+          pacman -S --noconfirm --needed \
+            base-devel \
+            cmake \
+            ninja \
+            extra-cmake-modules \
+            qt6-base \
+            qt6-tools \
+            kconfig \
+            kconfigwidgets \
+            kcoreaddons \
+            kguiaddons \
+            ki18n \
+            kiconthemes \
+            kservice \
+            kwindowsystem \
+            kdecoration \
+            kwin \
+            libx11 \
+            libxcb \
+            xorgproto \
+            xcb-proto
+
+      - name: Configure with FORCE_X11=ON
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DQT_MAJOR_VERSION=6 -DQT_VERSION_MAJOR=6 \
+            -DFORCE_X11=ON
+
+      - name: Build smoke targets
+        run: |
+          cmake --build build --target materialdecoration materialdecoration_core materialdecoration_kcm -j"$(nproc)"
