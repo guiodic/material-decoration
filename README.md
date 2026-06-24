@@ -49,7 +49,7 @@ git clone https://github.com/guiodic/material-decoration.git
 cd material-decoration
 mkdir build
 cd build
-cmake .. -DQT_MAJOR_VERSION=6 -DQT_VERSION_MAJOR=6 # addo this for SonicDE: -DFORCE_X11=ON
+cmake .. -DQT_MAJOR_VERSION=6 -DQT_VERSION_MAJOR=6 # add this for SonicDE: -DFORCE_X11=ON
 make
 sudo make install
 ```
