@@ -45,7 +45,8 @@ jobs:
             libkf6kcmutils-dev \
             libkf6service-dev \
             libkf6windowsystem-dev \
-            kwin-dev \
+            libkdecorations3-dev \
+            kwin-x11-dev \
             libx11-dev \
             libxcb1-dev \
             xorg-dev
