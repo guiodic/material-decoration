@@ -165,7 +165,7 @@ private:
     QString getActionText(QAction *action) const;
     void setupSearchMenu();
     void repositionSearchMenu();
-    void searchMenu(QMenu *menu, const QString &text, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, const QStringList &currentPath = QStringList(), bool isParentEnabled = true);
+    void searchMenu(QMenu *menu, const QString &text, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled = true);
     AppMenuButton *getAppMenuButton(int index) const;
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
 

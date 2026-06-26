@@ -1058,7 +1058,8 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
             const auto *deco = qobject_cast<const Decoration *>(decoration());
             const bool ignoreTopLevel = deco && deco->searchIgnoreTopLevel();
             const bool ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
-            searchMenu(rootMenu, text, results, visited, ignoreTopLevel, ignoreSubMenus);
+            QStringList currentPath;
+            searchMenu(rootMenu, text, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath);
         }
     }
 
@@ -1169,7 +1170,7 @@ QString AppMenuButtonGroup::getActionText(QAction *action) const
     return cleanedText;
 }
 
-void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, const QStringList &currentPath, bool isParentEnabled)
+void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled)
 {
     if (!menu || visited.contains(menu)) {
         return;
@@ -1177,16 +1178,17 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<Sear
     visited.insert(menu);
 
     QAction *menuAction = menu->menuAction();
-    QStringList nextPath = currentPath;
     bool isCurrentEnabled = isParentEnabled;
-    
+    bool addedToPath = false;
+
     if (menuAction) {
         if (!menuAction->isEnabled()) {
             isCurrentEnabled = false;
         }
         const QString menuText = getActionText(menuAction);
         if (!menuText.isEmpty()) {
-            nextPath.append(menuText);
+            currentPath.append(menuText);
+            addedToPath = true;
         }
     }
 
@@ -1195,7 +1197,7 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<Sear
             continue;
         }
         if (action->menu()) {
-            searchMenu(action->menu(), text, results, visited, ignoreTopLevel, ignoreSubMenus, nextPath, isCurrentEnabled);
+            searchMenu(action->menu(), text, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath, isCurrentEnabled);
         } else {
             const QString actionText = getActionText(action);
             bool match = false;
@@ -1204,17 +1206,17 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<Sear
                 match = actionText.contains(text, Qt::CaseInsensitive);
             } else {
                 // Check the text of the action
-                if (!ignoreTopLevel || !nextPath.isEmpty()) {
+                if (!ignoreTopLevel || !currentPath.isEmpty()) {
                     if (actionText.contains(text, Qt::CaseInsensitive)) {
                         match = true;
                     }
                 }
 
                 if (!match) {
-                    // Check if a part of the parent path matches 
+                    // Check if a part of the parent path matches
                     const int startIdx = ignoreTopLevel ? 1 : 0;
-                    for (int i = startIdx; i < nextPath.size(); ++i) {
-                        if (nextPath.at(i).contains(text, Qt::CaseInsensitive)) {
+                    for (int i = startIdx; i < currentPath.size(); ++i) {
+                        if (currentPath.at(i).contains(text, Qt::CaseInsensitive)) {
                             match = true;
                             break;
                         }
@@ -1227,14 +1229,18 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<Sear
                 info.label = actionText;
                 info.isEffectivelyEnabled = isCurrentEnabled && action->isEnabled();
 
-                QStringList fullPathList = nextPath;
-                fullPathList.append(actionText);
-                info.path = fullPathList.join(QStringLiteral(" » "));
-                info.searchablePath = (fullPathList.size() > 1) ? fullPathList.mid(1).join(QStringLiteral(" » ")) : actionText;
+                currentPath.append(actionText);
+                info.path = currentPath.join(QStringLiteral(" » "));
+                info.searchablePath = (currentPath.size() > 1) ? currentPath.mid(1).join(QStringLiteral(" » ")) : actionText;
+                currentPath.removeLast();
 
                 results.append({action, info});
             }
         }
+    }
+
+    if (addedToPath) {
+        currentPath.removeLast();
     }
 }
 
