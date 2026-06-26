@@ -654,15 +654,17 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
             bool fits = true;
             for (auto &tb : std::as_const(m_textButtons)) {
                 if (tb) {
-                    const qreal w = tb->geometry().width();
-                    if (tb->isEnabled() && fits && w <= remainingWidth) {
-                        tb->setVisible(true);
-                        currentVisibleWidth += w;
-                        remainingWidth -= w;
-                    } else {
-                        if (tb->isEnabled() && fits) {
+                    if (tb->isEnabled()) {
+                        const qreal w = tb->geometry().width();
+                        if (fits && w <= remainingWidth) {
+                            tb->setVisible(true);
+                            currentVisibleWidth += w;
+                            remainingWidth -= w;
+                        } else {
                             fits = false;
+                            tb->setVisible(false);
                         }
+                    } else {
                         tb->setVisible(false);
                     }
                 }
