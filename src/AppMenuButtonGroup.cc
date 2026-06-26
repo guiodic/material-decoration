@@ -629,14 +629,19 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
         // We perform this pass without side effects to avoid layout thrashing in Qt.
         qreal totalTextWidth = 0;
         int enabledCount = 0;
+        bool allFit = true;
         for (auto &tb : std::as_const(m_textButtons)) {
             if (tb && tb->isEnabled()) {
                 totalTextWidth += tb->geometry().width();
                 enabledCount++;
+                if (fixedWidth + totalTextWidth > availableWidth) {
+                    allFit = false;
+                    break;
+                }
             }
         }
 
-        if (enabledCount > 0 && fixedWidth + totalTextWidth <= availableWidth) {
+        if (allFit && enabledCount > 0) {
             showOverflow = false;
             currentVisibleWidth += totalTextWidth;
             // Second pass: apply visibility
@@ -654,19 +659,17 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
             bool fits = true;
             for (auto &tb : std::as_const(m_textButtons)) {
                 if (tb) {
-                    if (tb->isEnabled()) {
+                    if (fits && tb->isEnabled()) {
                         const qreal w = tb->geometry().width();
-                        if (fits && w <= remainingWidth) {
+                        if (w <= remainingWidth) {
                             tb->setVisible(true);
                             currentVisibleWidth += w;
                             remainingWidth -= w;
-                        } else {
-                            fits = false;
-                            tb->setVisible(false);
+                            continue;
                         }
-                    } else {
-                        tb->setVisible(false);
+                        fits = false;
                     }
+                    tb->setVisible(false);
                 }
             }
         } else {
