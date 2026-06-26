@@ -38,6 +38,7 @@
 
 // Qt
 #include <QAction>
+#include <QActionGroup>
 #include <QApplication>
 #include <QDebug>
 #include <QEvent>
@@ -1103,6 +1104,13 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         newAction->setEnabled(info.isEffectivelyEnabled);
         newAction->setCheckable(action->isCheckable());
         newAction->setChecked(action->isChecked());
+
+        if (action->actionGroup() && action->actionGroup()->isExclusive()) {
+            auto *group = new QActionGroup(newAction);
+            group->setExclusive(true);
+            group->addAction(newAction);
+        }
+
         QPointer<QAction> safeAction = action;
         connect(newAction, &QAction::triggered, this, [safeAction, this]() {
             if (safeAction) {
