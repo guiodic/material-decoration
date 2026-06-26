@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <new>
 #include <utility>
 
 namespace Material
@@ -192,11 +193,33 @@ static inline void boxBlurAlpha(QImage &image, int radius, const QRect &rect = {
     const int alphaOffset = QSysInfo::ByteOrder == QSysInfo::BigEndian ? 0 : 3;
     const int width = blurRect.width();
     const int height = blurRect.height();
+
+    // Limit dimensions to prevent excessive memory usage or overflow.
+    // 10000x10000 is much larger than any reasonable shadow.
+    if (width <= 0 || height <= 0 || width > 10000 || height > 10000) {
+        return;
+    }
+
     const int rowStride = image.bytesPerLine();
     const int pixelStride = image.depth() >> 3;
 
-    const int bufferStride = qMax(width, height) * pixelStride;
-    QScopedArrayPointer<uint8_t> buf(new uint8_t[2 * bufferStride]);
+    size_t bufferStride;
+    if (__builtin_mul_overflow(static_cast<size_t>(qMax(width, height)),
+                               static_cast<size_t>(pixelStride),
+                               &bufferStride)) {
+        return;
+    }
+
+    size_t totalSize;
+    if (__builtin_mul_overflow(static_cast<size_t>(2), bufferStride, &totalSize)) {
+        return;
+    }
+
+    QScopedArrayPointer<uint8_t> buf(new (std::nothrow) uint8_t[totalSize]);
+    if (!buf) {
+        return;
+    }
+
     uint8_t *buf1 = buf.data();
     uint8_t *buf2 = buf1 + bufferStride;
 
