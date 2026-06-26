@@ -625,44 +625,53 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
         }
         showOverflow = true;
     } else {
-        // First pass: optimistically try to fit all enabled text buttons
+        // First pass: check if all enabled text buttons fit without overflow button.
+        // We perform this pass without side effects to avoid layout thrashing in Qt.
         qreal totalTextWidth = 0;
         int enabledCount = 0;
         for (auto &tb : std::as_const(m_textButtons)) {
             if (tb && tb->isEnabled()) {
-                tb->setVisible(true);
                 totalTextWidth += tb->geometry().width();
                 enabledCount++;
-            } else if (tb) {
-                tb->setVisible(false);
             }
         }
 
         if (enabledCount > 0 && fixedWidth + totalTextWidth <= availableWidth) {
             showOverflow = false;
             currentVisibleWidth += totalTextWidth;
+            // Second pass: apply visibility
+            for (auto &tb : std::as_const(m_textButtons)) {
+                if (tb) {
+                    tb->setVisible(tb->isEnabled());
+                }
+            }
         } else if (enabledCount > 0) {
             showOverflow = true;
             const qreal overflowBtnWidth = m_overflowButton ? m_overflowButton->geometry().width() : 0;
             qreal remainingWidth = availableWidth - fixedWidth - overflowBtnWidth;
 
+            // Second pass: apply visibility and calculate final width
             bool fits = true;
             for (auto &tb : std::as_const(m_textButtons)) {
-                if (!tb || !tb->isEnabled()) {
-                    continue;
-                }
-
-                const qreal w = tb->geometry().width();
-                if (fits && w <= remainingWidth) {
-                    currentVisibleWidth += w;
-                    remainingWidth -= w;
-                } else {
-                    fits = false;
-                    tb->setVisible(false);
+                if (tb) {
+                    const qreal w = tb->geometry().width();
+                    if (tb->isEnabled() && fits && w <= remainingWidth) {
+                        tb->setVisible(true);
+                        currentVisibleWidth += w;
+                        remainingWidth -= w;
+                    } else {
+                        if (tb->isEnabled() && fits) {
+                            fits = false;
+                        }
+                        tb->setVisible(false);
+                    }
                 }
             }
         } else {
             showOverflow = false;
+            for (auto &tb : std::as_const(m_textButtons)) {
+                if (tb) tb->setVisible(false);
+            }
         }
     }
 
