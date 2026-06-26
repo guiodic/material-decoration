@@ -625,26 +625,22 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
         }
         showOverflow = true;
     } else {
-        // First pass: check if all enabled text buttons fit without overflow button
+        // First pass: optimistically try to fit all enabled text buttons
         qreal totalTextWidth = 0;
         int enabledCount = 0;
         for (auto &tb : std::as_const(m_textButtons)) {
             if (tb && tb->isEnabled()) {
+                tb->setVisible(true);
                 totalTextWidth += tb->geometry().width();
                 enabledCount++;
-            } else {
+            } else if (tb) {
                 tb->setVisible(false);
             }
         }
 
         if (enabledCount > 0 && fixedWidth + totalTextWidth <= availableWidth) {
             showOverflow = false;
-            for (auto &tb : std::as_const(m_textButtons)) {
-                if (tb && tb->isEnabled()) {
-                    tb->setVisible(true);
-                    currentVisibleWidth += tb->geometry().width();
-                }
-            }
+            currentVisibleWidth += totalTextWidth;
         } else if (enabledCount > 0) {
             showOverflow = true;
             const qreal overflowBtnWidth = m_overflowButton ? m_overflowButton->geometry().width() : 0;
@@ -658,7 +654,6 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 
                 const qreal w = tb->geometry().width();
                 if (fits && w <= remainingWidth) {
-                    tb->setVisible(true);
                     currentVisibleWidth += w;
                     remainingWidth -= w;
                 } else {
