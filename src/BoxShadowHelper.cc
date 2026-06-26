@@ -203,15 +203,19 @@ static inline void boxBlurAlpha(QImage &image, int radius, const QRect &rect = {
     const int rowStride = image.bytesPerLine();
     const int pixelStride = image.depth() >> 3;
 
+    if (pixelStride <= 0 || pixelStride > 32) {
+        return;
+    }
+
     size_t bufferStride;
-    if (__builtin_mul_overflow(static_cast<size_t>(qMax(width, height)),
-                               static_cast<size_t>(pixelStride),
-                               &bufferStride)) {
+    if (qMulOverflow(static_cast<size_t>(qMax(width, height)),
+                     static_cast<size_t>(pixelStride),
+                     &bufferStride)) {
         return;
     }
 
     size_t totalSize;
-    if (__builtin_mul_overflow(static_cast<size_t>(2), bufferStride, &totalSize)) {
+    if (qMulOverflow(static_cast<size_t>(2), bufferStride, &totalSize)) {
         return;
     }
 
