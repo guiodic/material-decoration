@@ -11,47 +11,63 @@
 
 QString swapMnemonicChar(const QString &in, const char src, const char dst)
 {
+    const int len = in.length();
+    if (len == 0) {
+        return in;
+    }
+
+    const QChar qsrc = QLatin1Char(src);
+    const QChar qdst = QLatin1Char(dst);
+
+    // Optimization: find first character that needs processing
+    int first = 0;
+    const QChar *const data = in.constData();
+    while (first < len && data[first] != qsrc && data[first] != qdst) {
+        ++first;
+    }
+
+    if (first == len) {
+        return in;
+    }
+
     QString out;
-    out.reserve(in.length());
+    out.reserve(len + 4);
+    out.append(in.constData(), first);
+
     bool mnemonicFound = false;
 
-    for (int pos = 0; pos < in.length();) {
-        QChar ch = in[pos];
-        if (ch == src) {
-            if (pos == in.length() - 1) {
+    for (int pos = first; pos < len; ++pos) {
+        const QChar ch = data[pos];
+        if (ch == qsrc) {
+            if (pos == len - 1) {
                 // 'src' at the end of string, keep it
-                out += src;
-                ++pos;
-            } else if (in[pos + 1] == src) {
+                out.append(qsrc);
+            } else if (data[pos + 1] == qsrc) {
                 // A real 'src'
-                out += src;
-                pos += 2;
+                out.append(qsrc);
+                ++pos;
             } else {
                 bool isMnemonic = !mnemonicFound;
 
                 // Heuristic: if followed by a digit and preceded by an alphanumeric char,
                 // it's probably part of an identifier (like video_1) rather than a mnemonic.
-                if (isMnemonic && in[pos + 1].isDigit() && pos > 0 && in[pos - 1].isLetterOrNumber()) {
+                if (isMnemonic && data[pos + 1].isDigit() && pos > 0 && data[pos - 1].isLetterOrNumber()) {
                     isMnemonic = false;
                 }
 
                 if (isMnemonic) {
                     mnemonicFound = true;
-                    out += dst;
-                    ++pos;
+                    out.append(qdst);
                 } else {
-                    out += src;
-                    ++pos;
+                    out.append(qsrc);
                 }
             }
-        } else if (ch == dst) {
+        } else if (ch == qdst) {
             // Escape 'dst'
-            out += dst;
-            out += dst;
-            ++pos;
+            out.append(qdst);
+            out.append(qdst);
         } else {
-            out += ch;
-            ++pos;
+            out.append(ch);
         }
     }
 
