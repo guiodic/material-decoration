@@ -1230,13 +1230,12 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &searchText, QLis
 
             if (match) {
                 ActionInfo info;
-                const QString actionText = getActionText(action);
-                info.label = actionText;
+                info.label = itemText;
                 info.isEffectivelyEnabled = isCurrentEnabled && action->isEnabled();
 
-                currentPath.append(actionText);
+                currentPath.append(itemText);
                 info.path = currentPath.join(QStringLiteral(" » "));
-                info.searchablePath = (currentPath.size() > 1) ? currentPath.mid(1).join(QStringLiteral(" » ")) : actionText;
+                info.searchablePath = (currentPath.size() > 1) ? currentPath.mid(1).join(QStringLiteral(" » ")) : itemText;
                 currentPath.removeLast();
 
                 results.append({action, info});
