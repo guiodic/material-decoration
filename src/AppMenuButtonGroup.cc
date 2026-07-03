@@ -1201,7 +1201,7 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &searchText, QLis
             addedToPath = true;
 
             if (!currentMatched && (!ignoreTopLevel || currentPath.size() > 1)) {
-                if (getActionText(menuAction).contains(searchText, Qt::CaseInsensitive)) {
+                if (menuText.contains(searchText, Qt::CaseInsensitive)) {
                     currentMatched = true;
                 }
             }
