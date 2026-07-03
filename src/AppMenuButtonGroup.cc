@@ -360,7 +360,6 @@ void AppMenuButtonGroup::resetButtons()
     m_lastResults.clear();
     m_lastSearchQuery.clear();
     m_actionTextCache.clear();
-    m_actionTextLowerCache.clear();
     m_textButtons.clear();
     m_overflowButton = nullptr;
     m_searchButton = nullptr;
@@ -514,7 +513,6 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
         if (m_textButtons.count() == menuActionCount && !m_textButtons.isEmpty() && searchStateMatches) {
             m_actionTextCache.clear();
-            m_actionTextLowerCache.clear();
             int actionIdx = 0;
             for (auto &textButton : std::as_const(m_textButtons)) {
                 if (!textButton) {
@@ -1063,8 +1061,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
             const bool ignoreTopLevel = deco && deco->searchIgnoreTopLevel();
             const bool ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
             QStringList currentPath;
-            const QString lowerText = text.toLower();
-            searchMenu(rootMenu, lowerText, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath);
+            searchMenu(rootMenu, text, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath);
         }
     }
 
@@ -1133,7 +1130,6 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
 {
     m_actionTextCache.clear();
-    m_actionTextLowerCache.clear();
     if (m_buttonIndexWaitingForPopup == -1 || !m_appMenuModel || !m_appMenuModel->menu()) {
         return;
     }
@@ -1183,22 +1179,7 @@ QString AppMenuButtonGroup::getActionText(QAction *action) const
     return cleanedText;
 }
 
-QString AppMenuButtonGroup::getActionTextLower(QAction *action) const
-{
-    if (!action) {
-        return QString();
-    }
-    const QString rawText = action->text();
-    auto it = m_actionTextLowerCache.find(rawText);
-    if (it != m_actionTextLowerCache.end()) {
-        return it.value();
-    }
-    const QString lowerCleanedText = getActionText(action).toLower();
-    m_actionTextLowerCache.insert(rawText, lowerCleanedText);
-    return lowerCleanedText;
-}
-
-void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &lowerText, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled, bool parentMatched)
+void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &searchText, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled, bool parentMatched)
 {
     if (!menu || visited.contains(menu)) {
         return;
@@ -1220,7 +1201,7 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &lowerText, QList
             addedToPath = true;
 
             if (!currentMatched && (!ignoreTopLevel || currentPath.size() > 1)) {
-                if (getActionTextLower(menuAction).contains(lowerText)) {
+                if (menuText.contains(searchText, Qt::CaseInsensitive)) {
                     currentMatched = true;
                 }
             }
@@ -1232,16 +1213,16 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &lowerText, QList
             continue;
         }
         if (action->menu()) {
-            searchMenu(action->menu(), lowerText, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath, isCurrentEnabled, currentMatched);
+            searchMenu(action->menu(), searchText, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath, isCurrentEnabled, currentMatched);
         } else {
+            const QString itemText = getActionText(action);
             bool match = currentMatched;
-
             if (ignoreSubMenus) {
-                match = getActionTextLower(action).contains(lowerText);
+                match = itemText.contains(searchText, Qt::CaseInsensitive);
             } else {
                 // Check the text of the action
                 if (!match && (!ignoreTopLevel || !currentPath.isEmpty())) {
-                    if (getActionTextLower(action).contains(lowerText)) {
+                    if (itemText.contains(searchText, Qt::CaseInsensitive)) {
                         match = true;
                     }
                 }
@@ -1249,13 +1230,12 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &lowerText, QList
 
             if (match) {
                 ActionInfo info;
-                const QString actionText = getActionText(action);
-                info.label = actionText;
+                info.label = itemText;
                 info.isEffectivelyEnabled = isCurrentEnabled && action->isEnabled();
 
-                currentPath.append(actionText);
+                currentPath.append(itemText);
                 info.path = currentPath.join(QStringLiteral(" » "));
-                info.searchablePath = (currentPath.size() > 1) ? currentPath.mid(1).join(QStringLiteral(" » ")) : actionText;
+                info.searchablePath = (currentPath.size() > 1) ? currentPath.mid(1).join(QStringLiteral(" » ")) : itemText;
                 currentPath.removeLast();
 
                 results.append({action, info});
