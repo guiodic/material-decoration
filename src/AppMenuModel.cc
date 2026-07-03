@@ -41,6 +41,9 @@
 // libdbusmenuqt
 #include <dbusmenuimporter.h>
 
+//std
+#include <utility>
+
 namespace Material
 {
 
