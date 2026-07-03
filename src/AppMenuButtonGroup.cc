@@ -1046,8 +1046,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         m_searchLineEdit->setClearButtonEnabled(true);
     }
 
-    if (!m_appMenuModel || !m_menuReadyForSearch) {
-        // Menu is not ready yet, search will be re-triggered later
+    if (!m_appMenuModel) {
         return;
     }
 
@@ -1130,6 +1129,11 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
 {
     m_actionTextCache.clear();
+
+    if (m_searchUiVisible && !m_lastSearchQuery.isEmpty()) {
+        m_searchDebounceTimer->start();
+    }
+
     if (m_buttonIndexWaitingForPopup == -1 || !m_appMenuModel || !m_appMenuModel->menu()) {
         return;
     }
