@@ -165,7 +165,7 @@ private:
     QString getActionText(QAction *action) const;
     void setupSearchMenu();
     void repositionSearchMenu();
-    void searchMenu(QMenu *menu, const QString &lowerText, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled = true, bool parentMatched = false);
+    void searchMenu(QMenu *menu, const QString &searchText, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled = true, bool parentMatched = false);
     AppMenuButton *getAppMenuButton(int index) const;
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
 
@@ -173,8 +173,6 @@ private:
     void handleSearchTrigger();
     void handleOverflowTrigger();
     void handleMenuButtonTrigger(int buttonIndex);
-
-    QString getActionTextLower(QAction *action) const;
 
     AppMenuModel *m_appMenuModel;
     int m_currentIndex;
@@ -216,7 +214,6 @@ private:
     QPointer<SearchButton> m_searchButton;
 
     mutable QHash<QString, QString> m_actionTextCache;
-    mutable QHash<QString, QString> m_actionTextLowerCache;
 
     QPointer<KDecoration3::DecorationButton> m_hoveredButton = nullptr;
 
