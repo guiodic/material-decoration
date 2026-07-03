@@ -360,6 +360,7 @@ void AppMenuButtonGroup::resetButtons()
     m_lastResults.clear();
     m_lastSearchQuery.clear();
     m_actionTextCache.clear();
+    m_actionTextLowerCache.clear();
     m_textButtons.clear();
     m_overflowButton = nullptr;
     m_searchButton = nullptr;
@@ -513,6 +514,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
         if (m_textButtons.count() == menuActionCount && !m_textButtons.isEmpty() && searchStateMatches) {
             m_actionTextCache.clear();
+            m_actionTextLowerCache.clear();
             int actionIdx = 0;
             for (auto &textButton : std::as_const(m_textButtons)) {
                 if (!textButton) {
@@ -1061,7 +1063,8 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
             const bool ignoreTopLevel = deco && deco->searchIgnoreTopLevel();
             const bool ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
             QStringList currentPath;
-            searchMenu(rootMenu, text, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath);
+            const QString lowerText = text.toLower();
+            searchMenu(rootMenu, lowerText, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath);
         }
     }
 
@@ -1130,6 +1133,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
 {
     m_actionTextCache.clear();
+    m_actionTextLowerCache.clear();
     if (m_buttonIndexWaitingForPopup == -1 || !m_appMenuModel || !m_appMenuModel->menu()) {
         return;
     }
@@ -1179,7 +1183,22 @@ QString AppMenuButtonGroup::getActionText(QAction *action) const
     return cleanedText;
 }
 
-void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled)
+QString AppMenuButtonGroup::getActionTextLower(QAction *action) const
+{
+    if (!action) {
+        return QString();
+    }
+    const QString rawText = action->text();
+    auto it = m_actionTextLowerCache.find(rawText);
+    if (it != m_actionTextLowerCache.end()) {
+        return it.value();
+    }
+    const QString lowerCleanedText = getActionText(action).toLower();
+    m_actionTextLowerCache.insert(rawText, lowerCleanedText);
+    return lowerCleanedText;
+}
+
+void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &lowerText, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled, bool parentMatched)
 {
     if (!menu || visited.contains(menu)) {
         return;
@@ -1189,6 +1208,7 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<Sear
     QAction *menuAction = menu->menuAction();
     bool isCurrentEnabled = isParentEnabled;
     bool addedToPath = false;
+    bool currentMatched = parentMatched;
 
     if (menuAction) {
         if (!menuAction->isEnabled()) {
@@ -1198,6 +1218,12 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<Sear
         if (!menuText.isEmpty()) {
             currentPath.append(menuText);
             addedToPath = true;
+
+            if (!currentMatched && (!ignoreTopLevel || currentPath.size() > 1)) {
+                if (getActionTextLower(menuAction).contains(lowerText)) {
+                    currentMatched = true;
+                }
+            }
         }
     }
 
@@ -1206,35 +1232,24 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &text, QList<Sear
             continue;
         }
         if (action->menu()) {
-            searchMenu(action->menu(), text, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath, isCurrentEnabled);
+            searchMenu(action->menu(), lowerText, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath, isCurrentEnabled, currentMatched);
         } else {
-            const QString actionText = getActionText(action);
-            bool match = false;
+            bool match = currentMatched;
 
             if (ignoreSubMenus) {
-                match = actionText.contains(text, Qt::CaseInsensitive);
+                match = getActionTextLower(action).contains(lowerText);
             } else {
                 // Check the text of the action
-                if (!ignoreTopLevel || !currentPath.isEmpty()) {
-                    if (actionText.contains(text, Qt::CaseInsensitive)) {
+                if (!match && (!ignoreTopLevel || !currentPath.isEmpty())) {
+                    if (getActionTextLower(action).contains(lowerText)) {
                         match = true;
-                    }
-                }
-
-                if (!match) {
-                    // Check if a part of the parent path matches
-                    const int startIdx = ignoreTopLevel ? 1 : 0;
-                    for (int i = startIdx; i < currentPath.size(); ++i) {
-                        if (currentPath.at(i).contains(text, Qt::CaseInsensitive)) {
-                            match = true;
-                            break;
-                        }
                     }
                 }
             }
 
             if (match) {
                 ActionInfo info;
+                const QString actionText = getActionText(action);
                 info.label = actionText;
                 info.isEffectivelyEnabled = isCurrentEnabled && action->isEnabled();
 
