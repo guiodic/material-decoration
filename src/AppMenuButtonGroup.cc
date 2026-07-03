@@ -387,7 +387,6 @@ void AppMenuButtonGroup::resetButtons()
 
 void AppMenuButtonGroup::onMenuReadyForSearch()
 {
-    m_menuReadyForSearch = true;
     if (!m_lastSearchQuery.isEmpty() && m_searchUiVisible) {
         filterMenu(m_lastSearchQuery);
     }
@@ -491,8 +490,6 @@ void AppMenuButtonGroup::updateAppMenuModel()
     }
 
     if (m_appMenuModel) {
-        m_menuReadyForSearch = false;
-
         QMenu *menu = m_appMenuModel->menu();
         if (!menu) {
             // Defer reset to avoid flicker during window closure

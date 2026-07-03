@@ -204,7 +204,6 @@ private:
 
     bool m_isMenuUpdateThrottled = false;
     bool m_pendingMenuUpdate = false;
-    bool m_menuReadyForSearch = false;
     bool m_menuLoadedOnce = false;
     QString m_lastSearchQuery;
     QList<SearchResult> m_lastResults;

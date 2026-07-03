@@ -250,6 +250,9 @@ void AppMenuModel::startDeepCaching()
                  continue;
              }
             m_seenMenus.insert(subMenu);
+            connect(subMenu, &QObject::destroyed, this, [this, subMenu]() {
+                m_seenMenus.remove(subMenu);
+            });
             m_menusToDeepCache.append(QPointer(subMenu));
         }
     }
@@ -273,6 +276,9 @@ void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
                 continue;
             }
             m_seenMenus.insert(subMenu);
+            connect(subMenu, &QObject::destroyed, this, [this, subMenu]() {
+                m_seenMenus.remove(subMenu);
+            });
             m_menusToDeepCache.append(QPointer(subMenu));
         }
     }
@@ -310,6 +316,9 @@ void AppMenuModel::processNext()
                     if (auto subMenu = a->menu()) {
                         if (!m_seenMenus.contains(subMenu)) {
                             m_seenMenus.insert(subMenu);
+                            connect(subMenu, &QObject::destroyed, this, [this, subMenu]() {
+                                m_seenMenus.remove(subMenu);
+                            });
                             m_menusToDeepCache.append(QPointer(subMenu));
                         }
                     }
