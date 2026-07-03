@@ -30,16 +30,15 @@ static const Row table[] = {{"Meta", "Super"},
                             {"-", "minus"},
                             {nullptr, nullptr}};
 
-static QString translate(QStringView token, int srcCol, int dstCol)
+static const char *translate(QStringView token, int srcCol, int dstCol)
 {
     for (const Row *ptr = table; ptr->zero != nullptr; ++ptr) {
         const char *from = (srcCol == QT_COLUMN ? ptr->zero : ptr->one);
         if (token == QLatin1String(from)) {
-            const char *to = (dstCol == QT_COLUMN ? ptr->zero : ptr->one);
-            return QLatin1String(to);
+            return (dstCol == QT_COLUMN ? ptr->zero : ptr->one);
         }
     }
-    return {};
+    return nullptr;
 }
 
 DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
@@ -57,12 +56,12 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
         // second '+' as a separator so we handle it by checking if the token
         // ends with "++".
         const bool endsWithPlusPlus = token.endsWith(QLatin1String("++"));
-        const auto subToken = endsWithPlusPlus ? token.left(token.size() - 2) : token;
+        const auto subToken = endsWithPlusPlus ? token.chopped(2) : token;
 
         QStringList keyTokens;
         for (auto kt : QStringTokenizer{subToken, QLatin1Char('+')}) {
-            const QString t = translate(kt, QT_COLUMN, DM_COLUMN);
-            keyTokens.append(t.isNull() ? kt.toString() : t);
+            const char *t = translate(kt, QT_COLUMN, DM_COLUMN);
+            keyTokens.append(t == nullptr ? kt.toString() : QLatin1String(t));
         }
 
         if (endsWithPlusPlus) {
@@ -76,16 +75,28 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
 
 QKeySequence DBusMenuShortcut::toKeySequence() const
 {
-    QStringList tmp;
-    tmp.reserve(size());
+    QString res;
+    // Heuristic: estimate size to minimize reallocations.
+    // Each shortcut part is at least a few chars, plus separators.
+    res.reserve(size() * 16);
+
     for (const QStringList &keyTokens : std::as_const(*this)) {
-        QStringList translatedTokens;
-        translatedTokens.reserve(keyTokens.size());
-        for (const QString &token : keyTokens) {
-            const QString t = translate(token, DM_COLUMN, QT_COLUMN);
-            translatedTokens.append(t.isNull() ? token : t);
+        if (!res.isEmpty()) {
+            res += QLatin1String(", ");
         }
-        tmp.append(translatedTokens.join(QLatin1Char('+')));
+        bool first = true;
+        for (const QString &token : keyTokens) {
+            if (!first) {
+                res += QLatin1Char('+');
+            }
+            first = false;
+            const char *t = translate(token, DM_COLUMN, QT_COLUMN);
+            if (t == nullptr) {
+                res += token;
+            } else {
+                res += QLatin1String(t);
+            }
+        }
     }
-    return QKeySequence::fromString(tmp.join(QLatin1String(", ")));
+    return QKeySequence::fromString(res);
 }
