@@ -299,6 +299,9 @@ void AppMenuModel::processNext()
             if (m_pendingMenuUpdates > 0) {
                 return; // Wait for pending updates to finish and potentially add more items
             }
+            for (QMenu *subMenu : std::as_const(m_seenMenus)) {
+                disconnect(subMenu, nullptr, this, nullptr);
+            }
             m_menusToDeepCache.clear();
             m_nextMenuToProcess = 0;
             m_isCachingEverything = false;
@@ -333,6 +336,9 @@ void AppMenuModel::processNext()
     m_isCachingEverything = false;
     m_deepCacheStarted = false;
     m_nextMenuToProcess = 0;
+    for (QMenu *subMenu : std::as_const(m_seenMenus)) {
+        disconnect(subMenu, nullptr, this, nullptr);
+    }
     m_seenMenus.clear();
     if (m_pendingMenuUpdates == 0) {
         Q_EMIT menuReadyForSearch();
