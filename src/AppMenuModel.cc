@@ -212,10 +212,9 @@ void AppMenuModel::loadSubMenu(QMenu *menu)
 
 void AppMenuModel::stopCaching()
 {
-    for (const auto &conn : m_destroyedConnections) {
-        disconnect(conn);
+    for (QMenu *subMenu : std::as_const(m_seenMenus)) {
+        disconnect(subMenu, nullptr, this, nullptr);
     }
-    m_destroyedConnections.clear();
 
     if (!m_isCachingEverything) {
         m_pendingMenuUpdates = 0; // Ensure consistency
@@ -267,10 +266,9 @@ void AppMenuModel::registerSubMenus(QMenu *menu)
         if (auto subMenu = a->menu()) {
             if (!m_seenMenus.contains(subMenu)) {
                 m_seenMenus.insert(subMenu);
-                auto conn = connect(subMenu, &QObject::destroyed, this, [this, subMenu]() {
+                connect(subMenu, &QObject::destroyed, this, [this, subMenu]() {
                     m_seenMenus.remove(subMenu);
                 });
-                m_destroyedConnections.append(conn);
                 m_menusToDeepCache.append(QPointer(subMenu));
             }
         }

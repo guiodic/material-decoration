@@ -89,8 +89,6 @@ private:
     int m_pendingMenuUpdates = 0;
     bool m_updatePending = false;
 
-    QList<QMetaObject::Connection> m_destroyedConnections;
-
     QPointer<QMenu> m_menu;
 
     QDBusServiceWatcher *m_serviceWatcher;
