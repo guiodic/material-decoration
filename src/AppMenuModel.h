@@ -74,6 +74,7 @@ private Q_SLOTS:
     void processNext();
 
 private:
+    void registerSubMenus(QMenu *menu);
     void resumeDeepCacheIfIdle(QMenu *menu);
     bool menuAvailable() const;
     void setMenuAvailable(bool set);
@@ -87,6 +88,8 @@ private:
     bool m_deepCacheStarted = false;
     int m_pendingMenuUpdates = 0;
     bool m_updatePending = false;
+
+    QList<QMetaObject::Connection> m_destroyedConnections;
 
     QPointer<QMenu> m_menu;
 

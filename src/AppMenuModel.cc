@@ -97,7 +97,10 @@ AppMenuModel::AppMenuModel(QObject *parent)
     connect(m_staggerTimer, &QTimer::timeout, this, &AppMenuModel::processNext);
 }
 
-AppMenuModel::~AppMenuModel() = default;
+AppMenuModel::~AppMenuModel()
+{
+    stopCaching();
+}
 
 bool AppMenuModel::menuAvailable() const
 {
@@ -209,6 +212,11 @@ void AppMenuModel::loadSubMenu(QMenu *menu)
 
 void AppMenuModel::stopCaching()
 {
+    for (const auto &conn : m_destroyedConnections) {
+        disconnect(conn);
+    }
+    m_destroyedConnections.clear();
+
     if (!m_isCachingEverything) {
         m_pendingMenuUpdates = 0; // Ensure consistency
         m_nextMenuToProcess = 0;
@@ -243,22 +251,30 @@ void AppMenuModel::startDeepCaching()
 
     // Populate the queue with the first level of submenus.
     // The recursive loading will happen as each menu is processed.
-    const auto actions = m_menu->actions();
-    for (QAction *a : actions) {
-        if (auto subMenu = a->menu()) {
-             if (m_seenMenus.contains(subMenu)) {
-                 continue;
-             }
-            m_seenMenus.insert(subMenu);
-            connect(subMenu, &QObject::destroyed, this, [this, subMenu]() {
-                m_seenMenus.remove(subMenu);
-            });
-            m_menusToDeepCache.append(QPointer(subMenu));
-        }
-    }
+    registerSubMenus(m_menu.data());
 
     // Start processing the queue.
     processNext();
+}
+
+void AppMenuModel::registerSubMenus(QMenu *menu)
+{
+    if (!menu) {
+        return;
+    }
+    const auto actions = menu->actions();
+    for (QAction *a : actions) {
+        if (auto subMenu = a->menu()) {
+            if (!m_seenMenus.contains(subMenu)) {
+                m_seenMenus.insert(subMenu);
+                auto conn = connect(subMenu, &QObject::destroyed, this, [this, subMenu]() {
+                    m_seenMenus.remove(subMenu);
+                });
+                m_destroyedConnections.append(conn);
+                m_menusToDeepCache.append(QPointer(subMenu));
+            }
+        }
+    }
 }
 
 void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
@@ -268,20 +284,8 @@ void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
     }
 
     const bool wasQueueFinished = (m_nextMenuToProcess >= m_menusToDeepCache.size());
-    
-    const auto actions = menu->actions();
-    for (QAction *a : actions) {
-        if (auto subMenu = a->menu()) {
-            if (m_seenMenus.contains(subMenu)) {
-                continue;
-            }
-            m_seenMenus.insert(subMenu);
-            connect(subMenu, &QObject::destroyed, this, [this, subMenu]() {
-                m_seenMenus.remove(subMenu);
-            });
-            m_menusToDeepCache.append(QPointer(subMenu));
-        }
-    }
+
+    registerSubMenus(menu);
 
     if (wasQueueFinished && m_nextMenuToProcess < m_menusToDeepCache.size()) {
         processNext();
@@ -311,18 +315,7 @@ void AppMenuModel::processNext()
 
         if (menuToProcess) {
             if (!menuToProcess->actions().isEmpty()) {
-                const auto actions = menuToProcess->actions();
-                for (QAction *a : actions) {
-                    if (auto subMenu = a->menu()) {
-                        if (!m_seenMenus.contains(subMenu)) {
-                            m_seenMenus.insert(subMenu);
-                            connect(subMenu, &QObject::destroyed, this, [this, subMenu]() {
-                                m_seenMenus.remove(subMenu);
-                            });
-                            m_menusToDeepCache.append(QPointer(subMenu));
-                        }
-                    }
-                }
+                registerSubMenus(menuToProcess);
                 if (deadline.hasExpired()) {
                     m_staggerTimer->start();
                     return;
