@@ -74,6 +74,7 @@ private Q_SLOTS:
     void processNext();
 
 private:
+    void resumeDeepCacheIfIdle(QMenu *menu);
     bool menuAvailable() const;
     void setMenuAvailable(bool set);
 

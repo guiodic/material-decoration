@@ -181,43 +181,12 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
 
         // Pre-fetching and deep caching are now handled on-demand.
         if (m_isCachingEverything) {
-            const bool wasQueueFinished = (m_nextMenuToProcess >= m_menusToDeepCache.size());
-            const auto actions = m_menu->actions();
-            for (QAction *a : actions) {
-                if (auto subMenu = a->menu()) {
-                    if (!m_seenMenus.contains(subMenu)) {
-                        m_seenMenus.insert(subMenu);
-                        m_menusToDeepCache.append(QPointer(subMenu));
-                    }
-                }
-            }
-
-            if (wasQueueFinished && m_nextMenuToProcess < m_menusToDeepCache.size()) {
-                processNext();
-            }
+            resumeDeepCacheIfIdle(m_menu.data());
         }
     } else { // This is an update for a submenu that was previously requested.
         Q_EMIT subMenuReady(menu);
-        const bool wasQueueFinished = (m_nextMenuToProcess >= m_menusToDeepCache.size());
         if (m_isCachingEverything) {
-            // The deep caching phase has begun. Add the children of the newly-loaded
-            // submenu to the processing queue.
-            const auto actions = menu->actions();
-            for (QAction *a : actions) {
-                if (auto subMenu = a->menu()) {
-                    if (m_seenMenus.contains(subMenu)) {
-                        continue;
-                    }
-                    m_seenMenus.insert(subMenu);
-                    m_menusToDeepCache.append(QPointer(subMenu));
-                }
-            }
-        }
-
-        // If the processing chain was idle and we've just added new items,
-        // we need to kick-start it again.
-        if (wasQueueFinished && m_nextMenuToProcess < m_menusToDeepCache.size()) {
-            processNext();
+            resumeDeepCacheIfIdle(menu);
         }
 
         // Track the number of pending submenu updates. When it reaches zero,
@@ -289,20 +258,43 @@ void AppMenuModel::startDeepCaching()
     processNext();
 }
 
+void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
+{
+    const bool wasQueueFinished = (m_nextMenuToProcess >= m_menusToDeepCache.size());
+    
+    if (!menu) return;
+
+    const auto actions = menu->actions();
+    for (QAction *a : actions) {
+        if (auto subMenu = a->menu()) {
+            if (m_seenMenus.contains(subMenu)) {
+                continue;
+            }
+            m_seenMenus.insert(subMenu);
+            m_menusToDeepCache.append(QPointer(subMenu));
+        }
+    }
+
+    if (wasQueueFinished && m_nextMenuToProcess < m_menusToDeepCache.size()) {
+        processNext();
+    }
+}
+
 void AppMenuModel::processNext()
 {
     QDeadlineTimer deadline(std::chrono::milliseconds(8));
 
     while (!m_menusToDeepCache.isEmpty()) {
         if (m_nextMenuToProcess >= m_menusToDeepCache.size()) {
+            if (m_pendingMenuUpdates > 0) {
+                return; // Wait for pending updates to finish and potentially add more items
+            }
             m_menusToDeepCache.clear();
             m_nextMenuToProcess = 0;
             m_isCachingEverything = false;
             m_deepCacheStarted = false;
             m_seenMenus.clear();
-            if (m_pendingMenuUpdates == 0) {
-                Q_EMIT menuReadyForSearch();
-            }
+            Q_EMIT menuReadyForSearch();
             return;
         }
 
