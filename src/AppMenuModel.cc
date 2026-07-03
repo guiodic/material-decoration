@@ -194,7 +194,7 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         if (m_pendingMenuUpdates > 0) {
             m_pendingMenuUpdates--;
             if (m_pendingMenuUpdates == 0 && m_nextMenuToProcess >= m_menusToDeepCache.size()) {
-                Q_EMIT menuReadyForSearch();
+                processNext();
             }
         }
     }
@@ -260,10 +260,12 @@ void AppMenuModel::startDeepCaching()
 
 void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
 {
+    if (!menu) {
+        return;
+    }
+
     const bool wasQueueFinished = (m_nextMenuToProcess >= m_menusToDeepCache.size());
     
-    if (!menu) return;
-
     const auto actions = menu->actions();
     for (QAction *a : actions) {
         if (auto subMenu = a->menu()) {
