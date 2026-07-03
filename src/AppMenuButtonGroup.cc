@@ -387,7 +387,6 @@ void AppMenuButtonGroup::resetButtons()
 
 void AppMenuButtonGroup::onMenuReadyForSearch()
 {
-    m_menuReadyForSearch = true;
     if (!m_lastSearchQuery.isEmpty() && m_searchUiVisible) {
         filterMenu(m_lastSearchQuery);
     }
@@ -491,8 +490,6 @@ void AppMenuButtonGroup::updateAppMenuModel()
     }
 
     if (m_appMenuModel) {
-        m_menuReadyForSearch = false;
-
         QMenu *menu = m_appMenuModel->menu();
         if (!menu) {
             // Defer reset to avoid flicker during window closure
@@ -1046,8 +1043,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         m_searchLineEdit->setClearButtonEnabled(true);
     }
 
-    if (!m_appMenuModel || !m_menuReadyForSearch) {
-        // Menu is not ready yet, search will be re-triggered later
+    if (!m_appMenuModel) {
         return;
     }
 
@@ -1130,6 +1126,13 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
 {
     m_actionTextCache.clear();
+
+    if (m_searchUiVisible && !m_lastSearchQuery.isEmpty()) {
+        if (!m_searchDebounceTimer->isActive()) {
+            m_searchDebounceTimer->start();
+        }
+    }
+
     if (m_buttonIndexWaitingForPopup == -1 || !m_appMenuModel || !m_appMenuModel->menu()) {
         return;
     }
