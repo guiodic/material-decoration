@@ -268,7 +268,7 @@ void AppMenuModel::registerSubMenus(QMenu *menu)
                     m_seenMenus.remove(subMenu);
                     if (m_pendingDeepCacheUpdates.remove(subMenu)) {
                         if (m_pendingDeepCacheUpdates.isEmpty() && m_nextMenuToProcess >= m_menusToDeepCache.size()) {
-                            QMetaObject::invokeMethod(this, "processNext", Qt::QueuedConnection);
+                            QMetaObject::invokeMethod(this, &AppMenuModel::processNext, Qt::QueuedConnection);
                         }
                     }
                 });
