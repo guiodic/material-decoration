@@ -189,12 +189,12 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         Q_EMIT modelNeedsUpdate();
 
         // Pre-fetching and deep caching are now handled on-demand.
-        if (m_isCachingEverything) {
+        if (m_deepCacheRequested) {
             resumeDeepCacheIfIdle(m_menu.data());
         }
     } else { // This is an update for a submenu that was previously requested.
         Q_EMIT subMenuReady(menu);
-        if (m_isCachingEverything) {
+        if (m_deepCacheRequested) {
             resumeDeepCacheIfIdle(menu);
         }
 
@@ -221,19 +221,12 @@ void AppMenuModel::stopCaching()
     for (QMenu *subMenu : std::as_const(m_seenMenus)) {
         disconnect(subMenu, nullptr, this, nullptr);
     }
-
-    if (!m_isCachingEverything) {
-        m_pendingMenuUpdates = 0; // Ensure consistency
-        m_nextMenuToProcess = 0;
-        m_seenMenus.clear();
-        return;
-    }
+    m_seenMenus.clear();
 
     m_menusToDeepCache.clear();
     m_nextMenuToProcess = 0;
-    m_seenMenus.clear();
     m_staggerTimer->stop();
-    m_isCachingEverything = false;
+    m_deepCacheRequested = false;
     m_deepCacheStarted = false;
     m_pendingMenuUpdates = 0;
 }
@@ -244,12 +237,13 @@ void AppMenuModel::startDeepCaching()
         return;
     }
 
+    m_deepCacheRequested = true;
+
     if (!m_menu) {
         return;
     }
 
     m_deepCacheStarted = true;
-    m_isCachingEverything = true;
     m_menusToDeepCache.clear();
     m_nextMenuToProcess = 0;
     m_seenMenus.clear();
@@ -283,7 +277,7 @@ void AppMenuModel::registerSubMenus(QMenu *menu)
 
 void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
 {
-    if (!menu) {
+    if (!menu || !m_deepCacheRequested) {
         return;
     }
 
@@ -291,7 +285,8 @@ void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
 
     registerSubMenus(menu);
 
-    if (wasQueueFinished && m_nextMenuToProcess < m_menusToDeepCache.size()) {
+    if (wasQueueFinished) {
+        m_deepCacheStarted = true;
         processNext();
     }
 }
@@ -310,7 +305,7 @@ void AppMenuModel::processNext()
             }
             m_menusToDeepCache.clear();
             m_nextMenuToProcess = 0;
-            m_isCachingEverything = false;
+            m_deepCacheRequested = false;
             m_deepCacheStarted = false;
             m_seenMenus.clear();
             Q_EMIT menuReadyForSearch();
@@ -339,7 +334,7 @@ void AppMenuModel::processNext()
         }
     }
 
-    m_isCachingEverything = false;
+    m_deepCacheRequested = false;
     m_deepCacheStarted = false;
     m_nextMenuToProcess = 0;
     for (QMenu *subMenu : std::as_const(m_seenMenus)) {

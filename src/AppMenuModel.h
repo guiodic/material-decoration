@@ -84,7 +84,7 @@ private:
     qsizetype m_nextMenuToProcess = 0;
     QSet<QMenu *> m_seenMenus;
     bool m_menuAvailable;
-    bool m_isCachingEverything = false;
+    bool m_deepCacheRequested = false;
     bool m_deepCacheStarted = false;
     int m_pendingMenuUpdates = 0;
     bool m_updatePending = false;
