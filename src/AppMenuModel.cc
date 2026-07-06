@@ -279,7 +279,7 @@ void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
 
     registerSubMenus(menu);
 
-    if (wasQueueFinished && m_nextMenuToProcess < m_menusToDeepCache.size()) {
+    if (wasQueueFinished) {
         processNext();
     }
 }
