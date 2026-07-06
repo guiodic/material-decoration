@@ -220,12 +220,6 @@ void AppMenuModel::stopCaching()
 {
     m_staggerTimer->stop();
 
-    for (const QPointer<QMenu> &subMenu : std::as_const(m_seenMenus)) {
-        if (subMenu) {
-            disconnect(subMenu.data(), nullptr, this, nullptr);
-        }
-    }
-
     m_menusToDeepCache.clear();
     m_nextMenuToProcess = 0;
     m_seenMenus.clear();
@@ -267,14 +261,7 @@ void AppMenuModel::registerSubMenus(QMenu *menu)
     const auto actions = menu->actions();
     for (QAction *a : actions) {
         if (auto subMenu = a->menu()) {
-            bool alreadySeen = false;
-            for (const QPointer<QMenu> &seen : std::as_const(m_seenMenus)) {
-                if (seen.data() == subMenu) {
-                    alreadySeen = true;
-                    break;
-                }
-            }
-            if (!alreadySeen) {
+            if (!m_seenMenus.contains(subMenu)) {
                 m_seenMenus.append(QPointer(subMenu));
                 m_menusToDeepCache.append(QPointer(subMenu));
             }
@@ -305,11 +292,6 @@ void AppMenuModel::processNext()
         if (m_nextMenuToProcess >= m_menusToDeepCache.size()) {
             if (m_pendingMenuUpdates > 0) {
                 return; // Wait for pending updates to finish and potentially add more items
-            }
-            for (const QPointer<QMenu> &subMenu : std::as_const(m_seenMenus)) {
-                if (subMenu) {
-                    disconnect(subMenu.data(), nullptr, this, nullptr);
-                }
             }
             m_menusToDeepCache.clear();
             m_nextMenuToProcess = 0;
@@ -345,11 +327,6 @@ void AppMenuModel::processNext()
     m_isCachingEverything = false;
     m_deepCacheStarted = false;
     m_nextMenuToProcess = 0;
-    for (const QPointer<QMenu> &subMenu : std::as_const(m_seenMenus)) {
-        if (subMenu) {
-            disconnect(subMenu.data(), nullptr, this, nullptr);
-        }
-    }
     m_seenMenus.clear();
     if (m_pendingMenuUpdates == 0) {
         Q_EMIT menuReadyForSearch();
