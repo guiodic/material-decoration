@@ -189,6 +189,13 @@ Decoration::~Decoration()
         s_shadowColor = QColor();
         s_cornerRadius = -1;
     }
+
+    delete m_leftButtons;
+    delete m_rightButtons;
+    delete m_menuButtons;
+    m_leftButtons = nullptr;
+    m_rightButtons = nullptr;
+    m_menuButtons = nullptr;
 }
 
 void Decoration::setupMenu()
@@ -462,7 +469,7 @@ void Decoration::hoverMoveEvent(QHoverEvent *event)
 
     // The platform check has been removed, and the logic is now unified.
     // The event is forwarded from AppMenuButtonGroup::eventFilter on X11.
-    if (m_menuButtons->geometry().contains(event->position())) {
+    if (m_menuButtons && m_menuButtons->geometry().contains(event->position())) {
         m_menuButtons->handleHoverMove(event->position());
     }
 }
@@ -480,8 +487,10 @@ void Decoration::hoverLeaveEvent(QHoverEvent *event)
     KDecoration3::Decoration::hoverLeaveEvent(event);
 
     m_lastHoverPos = QPointF(-1, -1);
-    m_menuButtons->setHovered(false);
-    m_menuButtons->updateShowing();
+    if (m_menuButtons) {
+        m_menuButtons->setHovered(false);
+        m_menuButtons->updateShowing();
+    }
     resetDragMove();
 }
 
@@ -490,7 +499,7 @@ void Decoration::wheelEvent(QWheelEvent *event)
 {
     const QPointF pos = event->position();
 
-    if (m_menuButtons->geometry().contains(pos)) {
+    if (m_menuButtons && m_menuButtons->geometry().contains(pos)) {
         // Skip
     } else {
         KDecoration3::Decoration::wheelEvent(event);
@@ -557,7 +566,9 @@ void Decoration::updateTitleBarHoverState()
     }
 
     m_titleBarHoverActive = isHovered;
-    m_menuButtons->setHovered(m_titleBarHoverActive);
+    if (m_menuButtons) {
+        m_menuButtons->setHovered(m_titleBarHoverActive);
+    }
 }
 
 void Decoration::setButtonGroupHeight(KDecoration3::DecorationButtonGroup *buttonGroup, qreal buttonHeight)
@@ -592,7 +603,9 @@ void Decoration::invalidateCaptionCache() const
 void Decoration::updateButtonsGeometry()
 {
     invalidateCaptionCache();
-    m_menuButtons->updateShowing();
+    if (m_menuButtons) {
+        m_menuButtons->updateShowing();
+    }
 
     const qreal left = leftOffset();
     const qreal right = rightOffset();
@@ -609,7 +622,7 @@ void Decoration::updateButtonsGeometry()
     m_rightButtons->setSpacing(0);
 
     // Menu
-    if (!m_menuButtons->buttons().isEmpty()) {
+    if (m_menuButtons && !m_menuButtons->buttons().isEmpty()) {
         const qreal captionOffset = captionMinWidth() + settings()->smallSpacing();
         QRectF availableRect = centerRect();
         if (isMenuOnRight()) {
@@ -696,8 +709,10 @@ void Decoration::updateButtonAnimation()
     setButtonGroupAnimation(m_menuButtons, enabled, duration);
 
     // Hover Animation
-    m_menuButtons->setAnimationEnabled(enabled);
-    m_menuButtons->setAnimationDuration(duration);
+    if (m_menuButtons) {
+        m_menuButtons->setAnimationEnabled(enabled);
+        m_menuButtons->setAnimationDuration(duration);
+    }
 }
 
 void Decoration::updateShadow()
@@ -1291,9 +1306,15 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
 
 void Decoration::paintButtons(QPainter *painter, const QRectF &repaintRegion) const
 {
-    m_leftButtons->paint(painter, repaintRegion);
-    m_rightButtons->paint(painter, repaintRegion);
-    m_menuButtons->paint(painter, repaintRegion);
+    if (m_leftButtons) {
+        m_leftButtons->paint(painter, repaintRegion);
+    }
+    if (m_rightButtons) {
+        m_rightButtons->paint(painter, repaintRegion);
+    }
+    if (m_menuButtons) {
+        m_menuButtons->paint(painter, repaintRegion);
+    }
 }
 
 void Decoration::updateCornerRadiusAndOutline()
