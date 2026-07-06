@@ -244,15 +244,15 @@ void AppMenuModel::startDeepCaching()
         return;
     }
 
-    if (!m_menu) {
-        return;
-    }
-
     m_deepCacheStarted = true;
     m_isCachingEverything = true;
     m_menusToDeepCache.clear();
     m_nextMenuToProcess = 0;
     m_seenMenus.clear();
+    
+    if (!m_menu) {
+        return;
+    }
 
     // Populate the queue with the first level of submenus.
     // The recursive loading will happen as each menu is processed.
