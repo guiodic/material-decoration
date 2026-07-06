@@ -294,10 +294,15 @@ static void renderShadow(QPainter *painter, const QRectF &rect, qreal borderRadi
         return;
     }
 
+    if (std::isnan(radius) || std::isinf(radius) || radius < 0 || radius > 512) {
+        return;
+    }
+
     const qreal dpr = painter->device()->devicePixelRatioF();
     if (rect.width() <= 0 || rect.height() <= 0 || rect.width() > 20000 || rect.height() > 20000) {
         return;
     }
+
     const QSize inflation = calculateBlurExtent(radius);
     const QSize pixelSize = ((rect.size() + 2 * inflation) * dpr).toSize();
     // Limit shadow dimensions to prevent excessive memory usage or overflow.
