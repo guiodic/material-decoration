@@ -182,7 +182,7 @@ static inline void boxBlurRowAlpha(const uint8_t *src,
  **/
 static inline void boxBlurAlpha(QImage &image, int radius, const QRect &rect = {})
 {
-    if (radius < 2 || radius > 100) {
+    if (radius < 2 || radius > 512) {
         return;
     }
 
@@ -295,9 +295,11 @@ static void renderShadow(QPainter *painter, const QRectF &rect, qreal borderRadi
     }
 
     const qreal dpr = painter->device()->devicePixelRatioF();
+    if (rect.width() <= 0 || rect.height() <= 0 || rect.width() > 20000 || rect.height() > 20000) {
+        return;
+    }
     const QSize inflation = calculateBlurExtent(radius);
     const QSize pixelSize = ((rect.size() + 2 * inflation) * dpr).toSize();
-
     // Limit shadow dimensions to prevent excessive memory usage or overflow.
     if (pixelSize.width() <= 0 || pixelSize.height() <= 0 || pixelSize.width() > 20000 || pixelSize.height() > 20000) {
         return;
