@@ -218,6 +218,8 @@ void AppMenuModel::loadSubMenu(QMenu *menu)
 
 void AppMenuModel::stopCaching()
 {
+    m_staggerTimer->stop();
+
     for (QMenu *subMenu : std::as_const(m_seenMenus)) {
         disconnect(subMenu, nullptr, this, nullptr);
     }
@@ -225,7 +227,7 @@ void AppMenuModel::stopCaching()
     m_menusToDeepCache.clear();
     m_nextMenuToProcess = 0;
     m_seenMenus.clear();
-    m_staggerTimer->stop();
+
     m_isCachingEverything = false;
     m_deepCacheStarted = false;
     m_pendingMenuUpdates = 0;
