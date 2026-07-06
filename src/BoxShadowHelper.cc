@@ -123,8 +123,8 @@ static inline void boxBlurRowAlpha(const uint8_t *src,
                                    bool transposeInput,
                                    bool transposeOutput)
 {
-    const int inputStep = transposeInput ? verticalStride : horizontalStride;
-    const int outputStep = transposeOutput ? verticalStride : horizontalStride;
+    const ptrdiff_t inputStep = transposeInput ? verticalStride : horizontalStride;
+    const ptrdiff_t outputStep = transposeOutput ? verticalStride : horizontalStride;
 
     const int boxSize = lobes.left + 1 + lobes.right;
     const int reciprocal = (1 << 24) / boxSize;
@@ -182,13 +182,13 @@ static inline void boxBlurRowAlpha(const uint8_t *src,
  **/
 static inline void boxBlurAlpha(QImage &image, int radius, const QRect &rect = {})
 {
-    if (radius < 2) {
+    if (radius < 2 || radius > 512) {
         return;
     }
 
     const QVector<BoxLobes> lobes = computeLobes(radius);
 
-    const QRect blurRect = rect.isNull() ? image.rect() : rect;
+    const QRect blurRect = (rect.isNull() ? image.rect() : rect).intersected(image.rect());
 
     const int alphaOffset = QSysInfo::ByteOrder == QSysInfo::BigEndian ? 0 : 3;
     const int width = blurRect.width();
@@ -246,6 +246,10 @@ static inline void boxBlurAlpha(QImage &image, int radius, const QRect &rect = {
 
 static inline void mirrorTopLeftQuadrant(QImage &image)
 {
+    if (image.isNull()) {
+        return;
+    }
+
     const int width = image.width();
     const int height = image.height();
 
@@ -286,9 +290,26 @@ static inline void mirrorTopLeftQuadrant(QImage &image)
 
 static void renderShadow(QPainter *painter, const QRectF &rect, qreal borderRadius, const QPointF &offset, double radius, const QColor &color)
 {
+    if (!painter->isActive()) {
+        return;
+    }
+
+    if (std::isnan(radius) || std::isinf(radius) || radius < 0 || radius > 512) {
+        return;
+    }
+
     const qreal dpr = painter->device()->devicePixelRatioF();
+    if (rect.width() <= 0 || rect.height() <= 0 || rect.width() > 20000 || rect.height() > 20000) {
+        return;
+    }
+
     const QSize inflation = calculateBlurExtent(radius);
     const QSize pixelSize = ((rect.size() + 2 * inflation) * dpr).toSize();
+    // Limit shadow dimensions to prevent excessive memory usage or overflow.
+    if (pixelSize.width() <= 0 || pixelSize.height() <= 0 || pixelSize.width() > 20000 || pixelSize.height() > 20000) {
+        return;
+    }
+
     const QSizeF size = QSizeF(pixelSize) / dpr;
 
     QImage shadow(pixelSize, QImage::Format_ARGB32_Premultiplied);
@@ -302,7 +323,9 @@ static void renderShadow(QPainter *painter, const QRectF &rect, qreal borderRadi
     const qreal yRadius = 2.0 * borderRadius / boxRect.height();
 
     QPainter shadowPainter;
-    shadowPainter.begin(&shadow);
+    if (!shadowPainter.begin(&shadow)) {
+        return;
+    }
     shadowPainter.setRenderHint(QPainter::Antialiasing);
     shadowPainter.setPen(Qt::NoPen);
     shadowPainter.setBrush(Qt::black);
