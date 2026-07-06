@@ -614,12 +614,16 @@ void Decoration::updateButtonsGeometry()
     updateButtonHeight();
 
     // Left
-    m_leftButtons->setPos(QPointF(left, top));
-    m_leftButtons->setSpacing(0);
+    if (m_leftButtons) {
+        m_leftButtons->setPos(QPointF(left, top));
+        m_leftButtons->setSpacing(0);
+    }
 
     // Right
-    m_rightButtons->setPos(QPointF(size().width() - right - m_rightButtons->geometry().width(), top));
-    m_rightButtons->setSpacing(0);
+    if (m_rightButtons) {
+        m_rightButtons->setPos(QPointF(size().width() - right - m_rightButtons->geometry().width(), top));
+        m_rightButtons->setSpacing(0);
+    }
 
     // Menu
     if (m_menuButtons && !m_menuButtons->buttons().isEmpty()) {
