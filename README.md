@@ -58,7 +58,6 @@ for Arch and derivatives, please install the AUR package
 NOTE: the master branch is aligned with the latest Plasma version. For earlier
 ones, see the other branches.
 
-NOTE 2: do not use -O3 to build the decoration, it introduces bugs.
 
 ....
 
