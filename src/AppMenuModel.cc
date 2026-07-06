@@ -133,7 +133,6 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
 {
     // A menu change means any in-progress caching is now invalid.
     stopCaching();
-    m_pendingDeepCacheUpdates.clear();
     
     if (m_serviceName == serviceName && m_menuObjectPath == menuObjectPath) {
         if (m_importer) {
@@ -269,7 +268,7 @@ void AppMenuModel::registerSubMenus(QMenu *menu)
                     m_seenMenus.remove(subMenu);
                     if (m_pendingDeepCacheUpdates.remove(subMenu)) {
                         if (m_pendingDeepCacheUpdates.isEmpty() && m_nextMenuToProcess >= m_menusToDeepCache.size()) {
-                            processNext();
+                            QMetaObject::invokeMethod(this, "processNext", Qt::QueuedConnection);
                         }
                     }
                 });
