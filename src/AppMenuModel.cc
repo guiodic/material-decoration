@@ -284,7 +284,7 @@ void AppMenuModel::registerSubMenus(QMenu *menu)
 
 void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
 {
-    if (!menu) {
+    if (!menu || !m_deepCacheRequested) {
         return;
     }
 
@@ -292,7 +292,7 @@ void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
 
     registerSubMenus(menu);
 
-    if (wasQueueFinished && m_nextMenuToProcess < m_menusToDeepCache.size()) {
+    if (wasQueueFinished) {
         m_deepCacheStarted = true;
         processNext();
     }
