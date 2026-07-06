@@ -221,17 +221,10 @@ void AppMenuModel::stopCaching()
     for (QMenu *subMenu : std::as_const(m_seenMenus)) {
         disconnect(subMenu, nullptr, this, nullptr);
     }
-
-    if (!m_deepCacheRequested) {
-        m_pendingMenuUpdates = 0; // Ensure consistency
-        m_nextMenuToProcess = 0;
-        m_seenMenus.clear();
-        return;
-    }
+    m_seenMenus.clear();
 
     m_menusToDeepCache.clear();
     m_nextMenuToProcess = 0;
-    m_seenMenus.clear();
     m_staggerTimer->stop();
     m_deepCacheRequested = false;
     m_deepCacheStarted = false;
