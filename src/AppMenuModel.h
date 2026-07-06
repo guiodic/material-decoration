@@ -86,7 +86,7 @@ private:
     bool m_menuAvailable;
     bool m_deepCacheRequested = false;
     bool m_deepCacheStarted = false;
-    int m_pendingMenuUpdates = 0;
+    QSet<QMenu *> m_pendingDeepCacheUpdates;
     bool m_updatePending = false;
 
     QPointer<QMenu> m_menu;

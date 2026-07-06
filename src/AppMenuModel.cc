@@ -133,7 +133,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
 {
     // A menu change means any in-progress caching is now invalid.
     stopCaching();
-    m_pendingMenuUpdates = 0;
+    m_pendingDeepCacheUpdates.clear();
     
     if (m_serviceName == serviceName && m_menuObjectPath == menuObjectPath) {
         if (m_importer) {
@@ -198,11 +198,10 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
             resumeDeepCacheIfIdle(menu);
         }
 
-        // Track the number of pending submenu updates. When it reaches zero,
-        // the entire menu tree has been fetched and is ready for searching.
-        if (m_pendingMenuUpdates > 0) {
-            m_pendingMenuUpdates--;
-            if (m_pendingMenuUpdates == 0 && m_nextMenuToProcess >= m_menusToDeepCache.size()) {
+        // Track the specific submenus being deep cached. When all pending
+        // updates are finished, the entire menu tree has been fetched.
+        if (m_pendingDeepCacheUpdates.remove(menu)) {
+            if (m_pendingDeepCacheUpdates.isEmpty() && m_nextMenuToProcess >= m_menusToDeepCache.size()) {
                 processNext();
             }
         }
@@ -228,7 +227,7 @@ void AppMenuModel::stopCaching()
     m_staggerTimer->stop();
     m_deepCacheRequested = false;
     m_deepCacheStarted = false;
-    m_pendingMenuUpdates = 0;
+    m_pendingDeepCacheUpdates.clear();
 }
 
 void AppMenuModel::startDeepCaching()
@@ -268,6 +267,11 @@ void AppMenuModel::registerSubMenus(QMenu *menu)
                 m_seenMenus.insert(subMenu);
                 connect(subMenu, &QObject::destroyed, this, [this, subMenu]() {
                     m_seenMenus.remove(subMenu);
+                    if (m_pendingDeepCacheUpdates.remove(subMenu)) {
+                        if (m_pendingDeepCacheUpdates.isEmpty() && m_nextMenuToProcess >= m_menusToDeepCache.size()) {
+                            processNext();
+                        }
+                    }
                 });
                 m_menusToDeepCache.append(QPointer(subMenu));
             }
@@ -297,7 +301,7 @@ void AppMenuModel::processNext()
 
     while (!m_menusToDeepCache.isEmpty()) {
         if (m_nextMenuToProcess >= m_menusToDeepCache.size()) {
-            if (m_pendingMenuUpdates > 0) {
+            if (!m_pendingDeepCacheUpdates.isEmpty()) {
                 return; // Wait for pending updates to finish and potentially add more items
             }
             for (QMenu *subMenu : std::as_const(m_seenMenus)) {
@@ -325,7 +329,7 @@ void AppMenuModel::processNext()
                 continue; // Process next item immediately
             }
             
-            m_pendingMenuUpdates++;
+            m_pendingDeepCacheUpdates.insert(menuToProcess);
             if (m_importer) {
                 m_importer->updateMenu(menuToProcess);
             }
@@ -341,7 +345,7 @@ void AppMenuModel::processNext()
         disconnect(subMenu, nullptr, this, nullptr);
     }
     m_seenMenus.clear();
-    if (m_pendingMenuUpdates == 0) {
+    if (m_pendingDeepCacheUpdates.isEmpty()) {
         Q_EMIT menuReadyForSearch();
     }
 }
