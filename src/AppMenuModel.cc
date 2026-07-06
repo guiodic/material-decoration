@@ -296,6 +296,10 @@ void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
 
 void AppMenuModel::processNext()
 {
+    if (!m_deepCacheRequested) {
+        return;
+    }
+    
     QDeadlineTimer deadline(std::chrono::milliseconds(8));
 
     while (!m_menusToDeepCache.isEmpty()) {
