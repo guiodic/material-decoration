@@ -55,8 +55,9 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
         // but we don't want the call to token.split() to consider the
         // second '+' as a separator so we handle it by checking if the token
         // ends with "++".
-        const bool endsWithPlusPlus = token.endsWith(QLatin1String("++"));
-        const QStringView subToken = endsWithPlusPlus ? QStringView(token).chopped(2) : QStringView(token);
+        const QStringView tokenView(token);
+        const bool endsWithPlusPlus = tokenView.endsWith(QLatin1StringView("++"));
+        const QStringView subToken = endsWithPlusPlus ? tokenView.chopped(2) : tokenView;
 
         QStringList keyTokens;
         for (auto kt : QStringTokenizer{subToken, QLatin1Char('+')}) {
@@ -88,7 +89,7 @@ QKeySequence DBusMenuShortcut::toKeySequence() const
             continue;
         }
         if (!res.isEmpty()) {
-            res += QLatin1String(", ");
+            res += QLatin1StringView(", ");
         }
         bool first = true;
         for (const QString &token : keyTokens) {
