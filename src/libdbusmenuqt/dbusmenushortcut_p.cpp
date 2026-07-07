@@ -30,13 +30,12 @@ static const Row table[] = {{"Meta", "Super"},
                             {"-", "minus"},
                             {nullptr, nullptr}};
 
-static QString translate(QStringView token, int srcCol, int dstCol)
+static inline QLatin1StringView translate(QStringView token, int srcCol, int dstCol)
 {
     for (const Row *ptr = table; ptr->zero != nullptr; ++ptr) {
         const char *from = (srcCol == QT_COLUMN ? ptr->zero : ptr->one);
-        if (token == QLatin1String(from)) {
-            const char *to = (dstCol == QT_COLUMN ? ptr->zero : ptr->one);
-            return QLatin1String(to);
+        if (token == QLatin1StringView(from)) {
+            return QLatin1StringView(dstCol == QT_COLUMN ? ptr->zero : ptr->one);
         }
     }
     return {};
@@ -46,8 +45,8 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
 {
     const QString string = sequence.toString();
     DBusMenuShortcut shortcut;
-    for (auto token : QStringTokenizer{string, QLatin1String(", ")}) {
-        if (token == QLatin1String("+")) {
+    for (auto token : QStringTokenizer{string, QLatin1StringView(", "), Qt::SkipEmptyParts}) {
+        if (token == QLatin1StringView("+")) {
             shortcut.append({QLatin1String("plus")});
             continue;
         }
@@ -56,13 +55,17 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
         // but we don't want the call to token.split() to consider the
         // second '+' as a separator so we handle it by checking if the token
         // ends with "++".
-        const bool endsWithPlusPlus = token.endsWith(QLatin1String("++"));
-        const auto subToken = endsWithPlusPlus ? token.left(token.size() - 2) : token;
+        const bool endsWithPlusPlus = token.endsWith(QLatin1StringView("++"));
+        const QStringView subToken = endsWithPlusPlus ? token.chopped(2) : token;
 
         QStringList keyTokens;
-        for (auto kt : QStringTokenizer{subToken, QLatin1Char('+')}) {
-            const QString t = translate(kt, QT_COLUMN, DM_COLUMN);
-            keyTokens.append(t.isNull() ? kt.toString() : t);
+        keyTokens.reserve(4);
+        for (auto kt : QStringTokenizer{subToken, QLatin1Char('+'), Qt::SkipEmptyParts}) {
+            if (const auto t = translate(kt, QT_COLUMN, DM_COLUMN); !t.isEmpty()) {
+                keyTokens.append(t);
+            } else {
+                keyTokens.append(kt.toString());
+            }
         }
 
         if (endsWithPlusPlus) {
@@ -76,16 +79,30 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
 
 QKeySequence DBusMenuShortcut::toKeySequence() const
 {
-    QStringList tmp;
-    tmp.reserve(size());
+    QString res;
+    // Heuristic: estimate size to minimize reallocations.
+    // Each shortcut part is at least a few chars, plus separators.
+    res.reserve(size() * 16);
+
     for (const QStringList &keyTokens : std::as_const(*this)) {
-        QStringList translatedTokens;
-        translatedTokens.reserve(keyTokens.size());
-        for (const QString &token : keyTokens) {
-            const QString t = translate(token, DM_COLUMN, QT_COLUMN);
-            translatedTokens.append(t.isNull() ? token : t);
+        if (keyTokens.isEmpty()) {
+            continue;
         }
-        tmp.append(translatedTokens.join(QLatin1Char('+')));
+        if (!res.isEmpty()) {
+            res += QLatin1StringView(", ");
+        }
+        bool first = true;
+        for (const QString &token : keyTokens) {
+            if (!first) {
+                res += QLatin1Char('+');
+            }
+            first = false;
+            if (const auto t = translate(token, DM_COLUMN, QT_COLUMN); !t.isEmpty()) {
+                res += t;
+            } else {
+                res += token;
+            }
+        }
     }
-    return QKeySequence::fromString(tmp.join(QLatin1String(", ")));
+    return QKeySequence::fromString(res);
 }
