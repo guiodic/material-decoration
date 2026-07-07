@@ -60,7 +60,7 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
 
         QStringList keyTokens;
         for (auto kt : QStringTokenizer{subToken, QLatin1Char('+')}) {
-            if (const auto t = translate(token, DM_COLUMN, QT_COLUMN); !t.isEmpty()) {
+            if (const auto t = translate(kt, QT_COLUMN, DM_COLUMN); !t.isEmpty()) {
                 keyTokens.append(QLatin1String(t));                 
             } else { 
                 keyTokens.append(kt.toString()); 
