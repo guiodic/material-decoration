@@ -30,12 +30,12 @@ static const Row table[] = {{"Meta", "Super"},
                             {"-", "minus"},
                             {nullptr, nullptr}};
 
-static const char *translate(QStringView token, int srcCol, int dstCol)
+static const QLatin1StringView translate(QStringView token, int srcCol, int dstCol)
 {
     for (const Row *ptr = table; ptr->zero != nullptr; ++ptr) {
         const char *from = (srcCol == QT_COLUMN ? ptr->zero : ptr->one);
         if (token == QLatin1String(from)) {
-            return (dstCol == QT_COLUMN ? ptr->zero : ptr->one);
+            return QLatin1StringView(dstCol == QT_COLUMN ? ptr->zero : ptr->one);
         }
     }
     return nullptr;
@@ -56,12 +56,15 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
         // second '+' as a separator so we handle it by checking if the token
         // ends with "++".
         const bool endsWithPlusPlus = token.endsWith(QLatin1String("++"));
-        const auto subToken = endsWithPlusPlus ? token.chopped(2) : token;
+        const QStringView subToken = endsWithPlusPlus ? QStringView(token).chopped(2) : QStringView(token);
 
         QStringList keyTokens;
         for (auto kt : QStringTokenizer{subToken, QLatin1Char('+')}) {
-            const char *t = translate(kt, QT_COLUMN, DM_COLUMN);
-            keyTokens.append(t == nullptr ? kt.toString() : QLatin1String(t));
+            if (const auto t = translate(token, DM_COLUMN, QT_COLUMN); !t.isEmpty()) {
+                keyTokens.append(QLatin1String(t));                 
+            } else { 
+                keyTokens.append(kt.toString()); 
+            }
         }
 
         if (endsWithPlusPlus) {
@@ -81,6 +84,9 @@ QKeySequence DBusMenuShortcut::toKeySequence() const
     res.reserve(size() * 16);
 
     for (const QStringList &keyTokens : std::as_const(*this)) {
+        if (keyTokens.isEmpty()) {
+            continue;
+        }
         if (!res.isEmpty()) {
             res += QLatin1String(", ");
         }
@@ -90,11 +96,10 @@ QKeySequence DBusMenuShortcut::toKeySequence() const
                 res += QLatin1Char('+');
             }
             first = false;
-            const char *t = translate(token, DM_COLUMN, QT_COLUMN);
-            if (t == nullptr) {
-                res += token;
-            } else {
+            if (const auto t = translate(token, DM_COLUMN, QT_COLUMN); !t.isEmpty()) {
                 res += QLatin1String(t);
+            } else {
+                res += token;
             }
         }
     }
