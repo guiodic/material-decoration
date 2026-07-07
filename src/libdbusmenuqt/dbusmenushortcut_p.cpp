@@ -30,7 +30,7 @@ static const Row table[] = {{"Meta", "Super"},
                             {"-", "minus"},
                             {nullptr, nullptr}};
 
-static const QLatin1StringView translate(QStringView token, int srcCol, int dstCol)
+static QLatin1StringView translate(QStringView token, int srcCol, int dstCol)
 {
     for (const Row *ptr = table; ptr->zero != nullptr; ++ptr) {
         const char *from = (srcCol == QT_COLUMN ? ptr->zero : ptr->one);
@@ -38,7 +38,7 @@ static const QLatin1StringView translate(QStringView token, int srcCol, int dstC
             return QLatin1StringView(dstCol == QT_COLUMN ? ptr->zero : ptr->one);
         }
     }
-    return nullptr;
+    return {};
 }
 
 DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
@@ -61,7 +61,7 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
         QStringList keyTokens;
         for (auto kt : QStringTokenizer{subToken, QLatin1Char('+')}) {
             if (const auto t = translate(kt, QT_COLUMN, DM_COLUMN); !t.isEmpty()) {
-                keyTokens.append(QLatin1String(t));                 
+                 keyTokens.append(t);  
             } else { 
                 keyTokens.append(kt.toString()); 
             }
@@ -97,7 +97,7 @@ QKeySequence DBusMenuShortcut::toKeySequence() const
             }
             first = false;
             if (const auto t = translate(token, DM_COLUMN, QT_COLUMN); !t.isEmpty()) {
-                res += QLatin1String(t);
+                res += t;
             } else {
                 res += token;
             }
