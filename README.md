@@ -48,16 +48,16 @@ directory `/usr/share/kwin-wayland/scripts/minimizeall` to `
 git clone https://github.com/guiodic/material-decoration.git
 cd material-decoration
 mkdir build
-cd build
-cmake .. -DQT_MAJOR_VERSION=6 -DQT_VERSION_MAJOR=6 # add this for SonicDE: -DFORCE_X11=ON
-make
-sudo make install
+cmake -B build . -DQT_MAJOR_VERSION=6 -DQT_VERSION_MAJOR=6 # add this for SonicDE: -DFORCE_X11=ON
+cmake --build build -j$(nproc)
+sudo cmake --install build
 ```
 for Arch and derivatives, please install the AUR package 
 [material-kwin-decoration-git](https://aur.archlinux.org/packages/material-kwin-decoration-git)
 
 NOTE: the master branch is aligned with the latest Plasma version. For earlier
 ones, see the other branches.
+
 
 ....
 

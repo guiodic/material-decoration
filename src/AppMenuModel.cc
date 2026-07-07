@@ -41,6 +41,9 @@
 // libdbusmenuqt
 #include <dbusmenuimporter.h>
 
+//std
+#include <utility>
+
 namespace Material
 {
 
@@ -97,7 +100,10 @@ AppMenuModel::AppMenuModel(QObject *parent)
     connect(m_staggerTimer, &QTimer::timeout, this, &AppMenuModel::processNext);
 }
 
-AppMenuModel::~AppMenuModel() = default;
+AppMenuModel::~AppMenuModel()
+{
+    stopCaching();
+}
 
 bool AppMenuModel::menuAvailable() const
 {
@@ -127,7 +133,6 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
 {
     // A menu change means any in-progress caching is now invalid.
     stopCaching();
-    m_pendingMenuUpdates = 0;
     
     if (m_serviceName == serviceName && m_menuObjectPath == menuObjectPath) {
         if (m_importer) {
@@ -140,6 +145,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     m_serviceWatcher->setWatchedServices(QStringList({m_serviceName}));
 
     m_menuObjectPath = menuObjectPath;
+    m_menu = nullptr;
 
     if (m_importer) {
         m_importer->disconnect(this);
@@ -150,6 +156,8 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     QMetaObject::invokeMethod(m_importer, "updateMenu", Qt::QueuedConnection);
 
     connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, &AppMenuModel::onMenuUpdated);
+
+    Q_EMIT modelNeedsUpdate();
 }
 
 void AppMenuModel::onActionChanged()
@@ -180,52 +188,20 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         Q_EMIT modelNeedsUpdate();
 
         // Pre-fetching and deep caching are now handled on-demand.
-        if (m_isCachingEverything) {
-            const bool wasQueueEmpty = m_menusToDeepCache.isEmpty();
-            const auto actions = m_menu->actions();
-            for (QAction *a : actions) {
-                if (auto subMenu = a->menu()) {
-                    if (!m_seenMenus.contains(subMenu)) {
-                        m_seenMenus.insert(subMenu);
-                        m_menusToDeepCache.append(QPointer(subMenu));
-                    }
-                }
-            }
-
-            if (wasQueueEmpty && !m_menusToDeepCache.isEmpty()) {
-                processNext();
-            }
+        if (m_deepCacheRequested) {
+            resumeDeepCacheIfIdle(m_menu.data());
         }
     } else { // This is an update for a submenu that was previously requested.
         Q_EMIT subMenuReady(menu);
-        const bool wasQueueEmpty = m_menusToDeepCache.isEmpty();
-        if (m_isCachingEverything) {
-            // The deep caching phase has begun. Add the children of the newly-loaded
-            // submenu to the processing queue.
-            const auto actions = menu->actions();
-             for (QAction *a : actions) {
-                 if (auto subMenu = a->menu()) {
-                     if (m_seenMenus.contains(subMenu)) {
-                         continue;
-                     }
-                     m_seenMenus.insert(subMenu);
-                     m_menusToDeepCache.append(QPointer(subMenu));
-                 }
-             }
+        if (m_deepCacheRequested) {
+            resumeDeepCacheIfIdle(menu);
         }
 
-        // If the processing chain was idle and we've just added new items,
-        // we need to kick-start it again.
-        if (wasQueueEmpty && !m_menusToDeepCache.isEmpty()) {
-            processNext();
-        }
-
-        // Track the number of pending submenu updates. When it reaches zero,
-        // the entire menu tree has been fetched and is ready for searching.
-        if (m_pendingMenuUpdates > 0) {
-            m_pendingMenuUpdates--;
-            if (m_pendingMenuUpdates == 0) {
-                Q_EMIT menuReadyForSearch();
+        // Track the specific submenus being deep cached. When all pending
+        // updates are finished, the entire menu tree has been fetched.
+        if (m_pendingDeepCacheUpdates.remove(menu)) {
+            if (m_pendingDeepCacheUpdates.isEmpty() && m_nextMenuToProcess >= m_menusToDeepCache.size()) {
+                processNext();
             }
         }
     }
@@ -240,20 +216,17 @@ void AppMenuModel::loadSubMenu(QMenu *menu)
 
 void AppMenuModel::stopCaching()
 {
-    if (!m_isCachingEverything) {
-        m_pendingMenuUpdates = 0; // Ensure consistency
-        m_nextMenuToProcess = 0;
-        m_seenMenus.clear();
-        return;
+    for (QMenu *subMenu : std::as_const(m_seenMenus)) {
+        disconnect(subMenu, nullptr, this, nullptr);
     }
+    m_seenMenus.clear();
 
     m_menusToDeepCache.clear();
     m_nextMenuToProcess = 0;
-    m_seenMenus.clear();
     m_staggerTimer->stop();
-    m_isCachingEverything = false;
+    m_deepCacheRequested = false;
     m_deepCacheStarted = false;
-    m_pendingMenuUpdates = 0;
+    m_pendingDeepCacheUpdates.clear();
 }
 
 void AppMenuModel::startDeepCaching()
@@ -261,48 +234,88 @@ void AppMenuModel::startDeepCaching()
     if (m_deepCacheStarted) {
         return;
     }
-    m_deepCacheStarted = true;
 
-    m_isCachingEverything = true;
-    m_menusToDeepCache.clear();
-    m_nextMenuToProcess = 0;
-    m_seenMenus.clear();
+    m_deepCacheRequested = true;
 
     if (!m_menu) {
         return;
     }
 
+    m_deepCacheStarted = true;
+    m_menusToDeepCache.clear();
+    m_nextMenuToProcess = 0;
+    m_seenMenus.clear();
+
     // Populate the queue with the first level of submenus.
     // The recursive loading will happen as each menu is processed.
-    const auto actions = m_menu->actions();
-    for (QAction *a : actions) {
-        if (auto subMenu = a->menu()) {
-             if (m_seenMenus.contains(subMenu)) {
-                 continue;
-             }
-            m_seenMenus.insert(subMenu);
-            m_menusToDeepCache.append(QPointer(subMenu));
-        }
-    }
+    registerSubMenus(m_menu.data());
 
     // Start processing the queue.
     processNext();
 }
 
+void AppMenuModel::registerSubMenus(QMenu *menu)
+{
+    if (!menu) {
+        return;
+    }
+    const auto actions = menu->actions();
+    for (QAction *a : actions) {
+        if (auto subMenu = a->menu()) {
+            if (!m_seenMenus.contains(subMenu)) {
+                m_seenMenus.insert(subMenu);
+                connect(subMenu, &QObject::destroyed, this, [this, subMenu]() {
+                    m_seenMenus.remove(subMenu);
+                    if (m_pendingDeepCacheUpdates.remove(subMenu)) {
+                        if (m_pendingDeepCacheUpdates.isEmpty() && m_nextMenuToProcess >= m_menusToDeepCache.size()) {
+                            QMetaObject::invokeMethod(this, &AppMenuModel::processNext, Qt::QueuedConnection);
+                        }
+                    }
+                });
+                m_menusToDeepCache.append(QPointer(subMenu));
+            }
+        }
+    }
+}
+
+void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
+{
+    if (!menu || !m_deepCacheRequested) {
+        return;
+    }
+
+    const bool wasQueueFinished = (m_nextMenuToProcess >= m_menusToDeepCache.size());
+
+    registerSubMenus(menu);
+
+    if (wasQueueFinished) {
+        m_deepCacheStarted = true;
+        processNext();
+    }
+}
+
 void AppMenuModel::processNext()
 {
+    if (!m_deepCacheRequested) {
+        return;
+    }
+    
     QDeadlineTimer deadline(std::chrono::milliseconds(8));
 
     while (!m_menusToDeepCache.isEmpty()) {
         if (m_nextMenuToProcess >= m_menusToDeepCache.size()) {
+            if (!m_pendingDeepCacheUpdates.isEmpty()) {
+                return; // Wait for pending updates to finish and potentially add more items
+            }
+            for (QMenu *subMenu : std::as_const(m_seenMenus)) {
+                disconnect(subMenu, nullptr, this, nullptr);
+            }
             m_menusToDeepCache.clear();
             m_nextMenuToProcess = 0;
-            m_isCachingEverything = false;
+            m_deepCacheRequested = false;
             m_deepCacheStarted = false;
             m_seenMenus.clear();
-            if (m_pendingMenuUpdates == 0) {
-                Q_EMIT menuReadyForSearch();
-            }
+            Q_EMIT menuReadyForSearch();
             return;
         }
 
@@ -311,15 +324,7 @@ void AppMenuModel::processNext()
 
         if (menuToProcess) {
             if (!menuToProcess->actions().isEmpty()) {
-                const auto actions = menuToProcess->actions();
-                for (QAction *a : actions) {
-                    if (auto subMenu = a->menu()) {
-                        if (!m_seenMenus.contains(subMenu)) {
-                            m_seenMenus.insert(subMenu);
-                            m_menusToDeepCache.append(QPointer(subMenu));
-                        }
-                    }
-                }
+                registerSubMenus(menuToProcess);
                 if (deadline.hasExpired()) {
                     m_staggerTimer->start();
                     return;
@@ -327,7 +332,7 @@ void AppMenuModel::processNext()
                 continue; // Process next item immediately
             }
             
-            m_pendingMenuUpdates++;
+            m_pendingDeepCacheUpdates.insert(menuToProcess);
             if (m_importer) {
                 m_importer->updateMenu(menuToProcess);
             }
@@ -336,11 +341,14 @@ void AppMenuModel::processNext()
         }
     }
 
-    m_isCachingEverything = false;
+    m_deepCacheRequested = false;
     m_deepCacheStarted = false;
     m_nextMenuToProcess = 0;
+    for (QMenu *subMenu : std::as_const(m_seenMenus)) {
+        disconnect(subMenu, nullptr, this, nullptr);
+    }
     m_seenMenus.clear();
-    if (m_pendingMenuUpdates == 0) {
+    if (m_pendingDeepCacheUpdates.isEmpty()) {
         Q_EMIT menuReadyForSearch();
     }
 }

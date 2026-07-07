@@ -1,4 +1,4 @@
-name: archlinux-smoke
+name: archlinux-x11-smoke
 
 on:
   pull_request:
