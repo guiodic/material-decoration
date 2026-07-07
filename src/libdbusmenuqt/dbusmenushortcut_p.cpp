@@ -21,16 +21,16 @@ struct Row {
     const char *one;
 };
 
-static constexpr Row table[] = {{"Meta", "Super"},
-                                {"Ctrl", "Control"},
-                                // Special cases for compatibility with libdbusmenu-glib which uses
-                                // "plus" for "+" and "minus" for "-".
-                                // cf https://bugs.launchpad.net/libdbusmenu-qt/+bug/712565
-                                {"+", "plus"},
-                                {"-", "minus"},
-                                {nullptr, nullptr}};
+static const Row table[] = {{"Meta", "Super"},
+                            {"Ctrl", "Control"},
+                            // Special cases for compatibility with libdbusmenu-glib which uses
+                            // "plus" for "+" and "minus" for "-".
+                            // cf https://bugs.launchpad.net/libdbusmenu-qt/+bug/712565
+                            {"+", "plus"},
+                            {"-", "minus"},
+                            {nullptr, nullptr}};
 
-static constexpr QLatin1StringView translate(QStringView token, int srcCol, int dstCol)
+static inline QLatin1StringView translate(QStringView token, int srcCol, int dstCol)
 {
     for (const Row *ptr = table; ptr->zero != nullptr; ++ptr) {
         const char *from = (srcCol == QT_COLUMN ? ptr->zero : ptr->one);
