@@ -11,6 +11,7 @@
 
 // STL
 #include <algorithm>
+#include <iterator>
 
 QString swapMnemonicChar(const QString &in, char src, char dst)
 {
