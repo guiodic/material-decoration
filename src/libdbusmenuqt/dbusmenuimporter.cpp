@@ -452,7 +452,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     }
 
     // 2. Remove actions no longer present
-    for (QAction *action : std::as_const(actions)) {
+    for (QAction *action : actions) {
         const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
         if (!newIds.contains(id)) {
             if (menu) {
