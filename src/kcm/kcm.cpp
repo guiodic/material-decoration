@@ -21,9 +21,9 @@ K_PLUGIN_CLASS_WITH_JSON(MaterialDecorationKCM, "materialdecoration_kcm.json")
 
 MaterialDecorationKCM::MaterialDecorationKCM(QObject *parent, const KPluginMetaData &data)
     : KCModule(qobject_cast<QWidget*>(parent), data)
-    , m_ui(std::make_unique<Ui::Config>())
-    , m_settings(std::make_unique<Material::InternalSettings>())
 {
+    m_settings = new Material::InternalSettings();
+    m_ui = new Ui::Config();
     m_ui->setupUi(widget());
 
     // Populate combo boxes
@@ -53,7 +53,11 @@ MaterialDecorationKCM::MaterialDecorationKCM(QObject *parent, const KPluginMetaD
     setupConnections();
 }
 
-MaterialDecorationKCM::~MaterialDecorationKCM() = default;
+MaterialDecorationKCM::~MaterialDecorationKCM()
+{
+    delete m_settings;
+    delete m_ui;
+}
 
 void MaterialDecorationKCM::setupConnections()
 {
@@ -77,9 +81,9 @@ void MaterialDecorationKCM::setupConnections()
         }
     });
     connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
-    connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, m_ui->kcfg_ShowDisabledActions, &QWidget::setEnabled);
-    connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, m_ui->kcfg_SearchIgnoreTopLevel, &QWidget::setEnabled);
-    connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, m_ui->kcfg_SearchIgnoreSubMenus, &QWidget::setEnabled);
+    connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, m_ui->kcfg_ShowDisabledActions, &QCheckBox::setEnabled);
+    connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, m_ui->kcfg_SearchIgnoreTopLevel, &QCheckBox::setEnabled);
+    connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, m_ui->kcfg_SearchIgnoreSubMenus, &QCheckBox::setEnabled);
 
     connect(m_ui->kcfg_SearchIgnoreSubMenus, &QCheckBox::toggled, this, [this](bool checked) {
         if (checked) {
@@ -114,13 +118,13 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_AnimationsDuration, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_BottomCorners, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_HideCaptionWhenLimitedSpace, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
-    connect(m_ui->kcfg_HideCaptionWhenLimitedSpace, &QCheckBox::toggled, m_ui->kcfg_MinWidthForCaption, &QWidget::setEnabled);
-    connect(m_ui->kcfg_HideCaptionWhenLimitedSpace, &QCheckBox::toggled, m_ui->label_minWidthForCaption, &QWidget::setEnabled);
+    connect(m_ui->kcfg_HideCaptionWhenLimitedSpace, &QCheckBox::toggled, m_ui->kcfg_MinWidthForCaption, &QSpinBox::setEnabled);
+    connect(m_ui->kcfg_HideCaptionWhenLimitedSpace, &QCheckBox::toggled, m_ui->label_minWidthForCaption, &QLabel::setEnabled);
     connect(m_ui->kcfg_MinWidthForCaption, qOverload<int>(&QSpinBox::valueChanged), this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_ShowCaptionOnHover, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
 
     connect(m_ui->kcfg_LongPressEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
-    connect(m_ui->kcfg_LongPressEnabled, &QCheckBox::toggled, m_ui->kcfg_LongPressDuration, &QWidget::setEnabled);
+    connect(m_ui->kcfg_LongPressEnabled, &QCheckBox::toggled, m_ui->kcfg_LongPressDuration, &QSpinBox::setEnabled);
     connect(m_ui->kcfg_LongPressDuration, qOverload<int>(&QSpinBox::valueChanged), this, &MaterialDecorationKCM::updateChanged);
 
     connect(m_ui->kcfg_DragFromButtonsEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);

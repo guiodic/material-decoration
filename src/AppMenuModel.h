@@ -51,7 +51,7 @@ public:
 
     QMenu *menu() const;
 
-private:
+private Q_SLOTS:
     void update();
 
 signals:
@@ -61,12 +61,14 @@ signals:
     void menuReadyForSearch();
     void subMenuReady(QMenu *menu);
 
-public:
+public Q_SLOTS:
     void loadSubMenu(QMenu *menu);
     void stopCaching();
+
+public Q_SLOTS:
     void startDeepCaching();
 
-private:
+private Q_SLOTS:
     void onMenuUpdated(QMenu *menu);
     void onActionChanged();
     void processNext();

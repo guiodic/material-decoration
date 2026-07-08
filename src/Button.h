@@ -81,7 +81,7 @@ public:
     void setIsLeftmost(bool isLeftmost);
     void setIsRightmost(bool isRightmost);
 
-private:
+private Q_SLOTS:
     void updateAnimationState(bool hovered);
     void handleHoldTimeout();
 

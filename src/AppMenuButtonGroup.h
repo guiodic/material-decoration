@@ -83,16 +83,18 @@ public:
 
     void handleHoverMove(const QPointF &pos);
 
-public:
+public slots:
     void setHamburgerMenu(bool value);
     void updateAppMenuModel();
     void updateOverflow(QRectF availableRect);
     void updateShowing();
 
-private:
+private slots:
     void onMenuReadyForSearch();
     void triggerOverflow();
     void onMenuAboutToHide();
+
+private slots:
     void onHitLeft();
     void onHitRight();
     void onHasApplicationMenuChanged(bool hasMenu);

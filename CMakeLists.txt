@@ -4,7 +4,7 @@ project (material-decoration)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_definitions (-Wall -Werror -DQT_USE_QSTRINGBUILDER)
+add_definitions (-Wall -Werror)
 
 option(FORCE_X11 "Force compilation for X11 only" OFF)
 

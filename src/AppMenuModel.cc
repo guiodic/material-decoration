@@ -73,7 +73,7 @@ AppMenuModel::AppMenuModel(QObject *parent)
     m_serviceWatcher->setConnection(QDBusConnection::sessionBus());
     // If our current DBus connection gets lost, close the menu
     // we'll select the new menu when the focus changes
-    connect(m_serviceWatcher, &QDBusServiceWatcher::serviceUnregistered, this, [this](const QString &serviceName) {
+    connect(m_serviceWatcher, &QDBusServiceWatcher::serviceUnregistered, this, [this](const QString & serviceName) {
         if (serviceName == m_serviceName) {
             setMenuAvailable(false);
             stopCaching();
@@ -90,13 +90,13 @@ AppMenuModel::AppMenuModel(QObject *parent)
     connect(this, &AppMenuModel::modelNeedsUpdate, this, [this] {
         if (!m_updatePending) {
             m_updatePending = true;
-            QMetaObject::invokeMethod(this, &AppMenuModel::update, Qt::QueuedConnection);
+            QMetaObject::invokeMethod(this, "update", Qt::QueuedConnection);
         }
     });
 
     m_staggerTimer = new QTimer(this);
     m_staggerTimer->setSingleShot(true);
-    m_staggerTimer->setInterval(8);
+    m_staggerTimer->setInterval(8); 
     connect(m_staggerTimer, &QTimer::timeout, this, &AppMenuModel::processNext);
 }
 
@@ -136,13 +136,13 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     
     if (m_serviceName == serviceName && m_menuObjectPath == menuObjectPath) {
         if (m_importer) {
-            QMetaObject::invokeMethod(m_importer.data(), qOverload<>(&DBusMenuImporter::updateMenu), Qt::QueuedConnection);
+            QMetaObject::invokeMethod(m_importer, "updateMenu", Qt::QueuedConnection);
             return;
         }
     }
 
     m_serviceName = serviceName;
-    m_serviceWatcher->setWatchedServices({m_serviceName});
+    m_serviceWatcher->setWatchedServices(QStringList({m_serviceName}));
 
     m_menuObjectPath = menuObjectPath;
     m_menu = nullptr;
@@ -153,7 +153,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     }
 
     m_importer = new KDBusMenuImporter(serviceName, menuObjectPath, this);
-    QMetaObject::invokeMethod(m_importer.data(), qOverload<>(&DBusMenuImporter::updateMenu), Qt::QueuedConnection);
+    QMetaObject::invokeMethod(m_importer, "updateMenu", Qt::QueuedConnection);
 
     connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, &AppMenuModel::onMenuUpdated);
 
@@ -178,7 +178,8 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         }
 
         // Connect signals for top-level actions to update the model when they change.
-        for (QAction *a : m_menu->actions()) {
+        const auto actions = m_menu->actions();
+        for (QAction *a : actions) {
             connect(a, &QAction::destroyed, this, &AppMenuModel::modelNeedsUpdate, Qt::UniqueConnection);
             connect(a, &QAction::changed, this, &AppMenuModel::onActionChanged, Qt::UniqueConnection);
         }
@@ -258,7 +259,8 @@ void AppMenuModel::registerSubMenus(QMenu *menu)
     if (!menu) {
         return;
     }
-    for (QAction *a : menu->actions()) {
+    const auto actions = menu->actions();
+    for (QAction *a : actions) {
         if (auto subMenu = a->menu()) {
             if (!m_seenMenus.contains(subMenu)) {
                 m_seenMenus.insert(subMenu);
