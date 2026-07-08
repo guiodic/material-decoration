@@ -1,6 +1,7 @@
 #pragma once
 
 #include <KCModule>
+#include <memory>
 
 class KConfig;
 class QWidget;
@@ -28,12 +29,12 @@ public:
     void save() override;
     void defaults() override;
 
-private Q_SLOTS:
+private:
     void updateChanged();
 
 private:
-    Ui::Config *m_ui = nullptr;
-    Material::InternalSettings *m_settings = nullptr;
+    std::unique_ptr<Ui::Config> m_ui;
+    std::unique_ptr<Material::InternalSettings> m_settings;
 
     void setupConnections();
     bool isChanged() const;

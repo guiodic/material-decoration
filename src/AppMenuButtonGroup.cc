@@ -54,6 +54,8 @@
 
 #include <utility>
 
+using namespace Qt::StringLiterals;
+
 static constexpr int MAX_SEARCH_RESULTS = 100;
 
 namespace Material
@@ -170,12 +172,12 @@ AppMenuButtonGroup::~AppMenuButtonGroup()
     if (m_searchMenu) {
         m_searchMenu->deleteLater();
     }
-    
-    // explicit destruction even 
+
+    // explicit destruction even
     // if it already is Qt::WA_DeleteOnClose,
-    // deal whit the corner-case in which the window 
+    // deal whit the corner-case in which the window
     // is closed while the m_overflowMenu is open
-    if (m_overflowMenu) { 
+    if (m_overflowMenu) {
         m_overflowMenu->deleteLater();
     }
 }
@@ -197,7 +199,7 @@ void AppMenuButtonGroup::setupSearchMenu()
 
     m_searchLineEdit->installEventFilter(this);
     m_searchLineEdit->setFocusPolicy(Qt::StrongFocus);
-    m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu","Search")+QStringLiteral("…"));
+    m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu","Search")+u"…"_s);
     m_searchLineEdit->setClearButtonEnabled(false);
 }
 
@@ -518,7 +520,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
                 }
                 QAction *itemAction = actions.at(actionIdx++);
                 textButton->setAction(itemAction);
-                textButton->setText(itemAction->text().trimmed());
+                textButton->setText(QStringView(itemAction->text()).trimmed().toString());
                 // Skip items with empty labels (The first item in a Gtk app)
                 if (itemAction->text().isEmpty()) {
                     textButton->setEnabled(false);
@@ -538,7 +540,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
             // Populate
             for (int i = 0; i < menuActionCount; ++i) {
                 QAction *itemAction = actions.at(i);
-                const QString itemLabel = itemAction->text().trimmed();
+                const QString itemLabel = QStringView(itemAction->text()).trimmed().toString();
 
                 TextButton *b = new TextButton(deco, i, this);
                 b->setText(itemLabel);
@@ -1002,7 +1004,7 @@ void AppMenuButtonGroup::onHitRight()
 void AppMenuButtonGroup::onShowingChanged(bool showing)
 {
     if (m_animationEnabled) {
-        QAbstractAnimation::Direction dir = showing ? QAbstractAnimation::Forward : QAbstractAnimation::Backward;
+        const QAbstractAnimation::Direction dir = showing ? QAbstractAnimation::Forward : QAbstractAnimation::Backward;
         if (m_animation->state() == QAbstractAnimation::Running && m_animation->direction() != dir) {
             m_animation->stop();
         }
@@ -1034,7 +1036,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
         if (text.isEmpty()) {
             m_searchLineEdit->setClearButtonEnabled(false);
-            m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu", "Search") + QStringLiteral("…"));
+            m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu", "Search") + u"…"_s);
             return;
         }
         m_searchLineEdit->setClearButtonEnabled(true);
@@ -1086,7 +1088,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     }
 
     int resultCount = 0;
-    for (const SearchResult &result : results) {
+    for (const SearchResult &result : std::as_const(results)) {
         if (resultCount >= MAX_SEARCH_RESULTS) { // stop after 100 results
             break;
         }
@@ -1177,14 +1179,14 @@ QString AppMenuButtonGroup::getActionText(QAction *action) const
     if (it != m_actionTextCache.end()) {
         return it.value();
     }
-    const QString cleanedText = KLocalizedString::removeAcceleratorMarker(rawText.trimmed());
+    const QString cleanedText = KLocalizedString::removeAcceleratorMarker(QStringView(rawText).trimmed().toString());
     m_actionTextCache.insert(rawText, cleanedText);
     return cleanedText;
 }
 
 void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &searchText, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled, bool parentMatched)
 {
-    if (!menu || visited.contains(menu)) {
+    if (results.size() >= MAX_SEARCH_RESULTS || !menu || visited.contains(menu)) {
         return;
     }
     visited.insert(menu);
@@ -1237,8 +1239,8 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &searchText, QLis
                 info.isEffectivelyEnabled = isCurrentEnabled && action->isEnabled();
 
                 currentPath.append(itemText);
-                info.path = currentPath.join(QStringLiteral(" » "));
-                info.searchablePath = (currentPath.size() > 1) ? currentPath.mid(1).join(QStringLiteral(" » ")) : itemText;
+                info.path = currentPath.join(u" » "_s);
+                info.searchablePath = (currentPath.size() > 1) ? currentPath.mid(1).join(u" » "_s) : itemText;
                 currentPath.removeLast();
 
                 results.append({action, info});
