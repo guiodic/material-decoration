@@ -9,10 +9,13 @@
 // Qt
 #include <QString>
 
-QString swapMnemonicChar(const QString &in, const char src, const char dst)
+// STL
+#include <algorithm>
+#include <iterator>
+
+QString swapMnemonicChar(const QString &in, char src, char dst)
 {
-    const int len = in.length();
-    if (len == 0) {
+    if (in.isEmpty()) {
         return in;
     }
 
@@ -20,38 +23,38 @@ QString swapMnemonicChar(const QString &in, const char src, const char dst)
     const QChar qdst = QLatin1Char(dst);
 
     // Optimization: find first character that needs processing
-    int first = 0;
-    const QChar *const data = in.constData();
-    while (first < len && data[first] != qsrc && data[first] != qdst) {
-        ++first;
-    }
+    const QChar *data = in.constData();
+    const QChar *const end = data + in.length();
+    const QChar *ptr = std::find_if(data, end, [qsrc, qdst](QChar c) {
+        return c == qsrc || c == qdst;
+    });
 
-    if (first == len) {
+    if (ptr == end) {
         return in;
     }
 
     QString out;
-    out.reserve(len + 4);
-    out.append(in.constData(), first);
+    out.reserve(in.length() + 4);
+    out.append(data, std::distance(data, ptr));
 
     bool mnemonicFound = false;
 
-    for (int pos = first; pos < len; ++pos) {
-        const QChar ch = data[pos];
+    for (; ptr < end; ++ptr) {
+        const QChar ch = *ptr;
         if (ch == qsrc) {
-            if (pos == len - 1) {
+            if (ptr + 1 == end) {
                 // 'src' at the end of string, keep it
                 out.append(qsrc);
-            } else if (data[pos + 1] == qsrc) {
+            } else if (*(ptr + 1) == qsrc) {
                 // A real 'src'
                 out.append(qsrc);
-                ++pos;
+                ++ptr;
             } else {
                 bool isMnemonic = !mnemonicFound;
 
                 // Heuristic: if followed by a digit and preceded by an alphanumeric char,
                 // it's probably part of an identifier (like video_1) rather than a mnemonic.
-                if (isMnemonic && data[pos + 1].isDigit() && pos > 0 && data[pos - 1].isLetterOrNumber()) {
+                if (isMnemonic && (ptr + 1)->isDigit() && ptr > data && (ptr - 1)->isLetterOrNumber()) {
                     isMnemonic = false;
                 }
 

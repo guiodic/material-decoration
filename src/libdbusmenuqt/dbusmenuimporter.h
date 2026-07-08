@@ -9,6 +9,9 @@
 // Qt
 #include <QObject>
 
+// STL
+#include <memory>
+
 class QAction;
 class QDBusPendingCallWatcher;
 class QIcon;
@@ -87,9 +90,6 @@ private Q_SLOTS:
 
 private:
     Q_DISABLE_COPY(DBusMenuImporter)
-    DBusMenuImporterPrivate *const d;
+    std::unique_ptr<DBusMenuImporterPrivate> const d;
     friend class DBusMenuImporterPrivate;
-
-    // Use Q_PRIVATE_SLOT to avoid exposing DBusMenuItemList
-    Q_PRIVATE_SLOT(d, void slotItemsPropertiesUpdated(const DBusMenuItemList &updatedList, const DBusMenuItemKeysList &removedList))
 };
