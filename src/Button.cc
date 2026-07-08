@@ -122,11 +122,7 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     });
     
    
-    connect(this, &Button::hoveredChanged, this,
-        [this](bool hovered) {
-            updateAnimationState(hovered);
-            UPDATE_GEOM();
-        });
+    connect(this, &Button::hoveredChanged, this, &Button::updateAnimationState);
 
     
     connect(this, &Button::transitionValueChanged, this, [this]() {
@@ -727,7 +723,7 @@ void Button::setVertPadding(int value)
 void Button::updateAnimationState(bool hovered)
 {
     if (m_animationEnabled) {
-        QAbstractAnimation::Direction dir = hovered ? QAbstractAnimation::Forward : QAbstractAnimation::Backward;
+        const QAbstractAnimation::Direction dir = hovered ? QAbstractAnimation::Forward : QAbstractAnimation::Backward;
         if (m_animation->state() == QAbstractAnimation::Running && m_animation->direction() != dir) {
             m_animation->stop();
         }
@@ -738,6 +734,7 @@ void Button::updateAnimationState(bool hovered)
     } else {
         setTransitionValue(1);
     }
+    UPDATE_GEOM();
 }
 
 void Button::forceUnpress()

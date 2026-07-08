@@ -45,6 +45,7 @@
 // Qt
 #include <QApplication>
 #include <QDebug>
+#include <QtMath>
 #include <QHoverEvent>
 #include <QMouseEvent>
 #include <QPainter>
@@ -308,7 +309,7 @@ bool Decoration::init()
     connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
         this, &Decoration::updateCornerRadiusAndOutline);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
-        this, static_cast<void (Decoration::*)()>(&Decoration::update));
+        this, qOverload<>(&Decoration::update));
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
@@ -972,10 +973,11 @@ QFont Decoration::menuFont() const
 qreal Decoration::getMenuTextWidth(const QString &text, bool showMnemonic) const
 {
     const QFontMetricsF fontMetrics(menuFont());
-    int flags = showMnemonic ? Qt::TextShowMnemonic : Qt::TextHideMnemonic;
+    const int flags = showMnemonic ? Qt::TextShowMnemonic : Qt::TextHideMnemonic;
     // Use an unconstrained bounding rect to get the ideal width.
     const QRectF boundingRect = fontMetrics.boundingRect(QRectF(), flags, text);
-    return boundingRect.width();
+    const qreal scale = window()->nextScale();
+    return qCeil(boundingRect.width() * scale) / scale;
 }
 
 bool Decoration::isMenuOnRight() const
