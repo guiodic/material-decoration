@@ -170,12 +170,12 @@ AppMenuButtonGroup::~AppMenuButtonGroup()
     if (m_searchMenu) {
         m_searchMenu->deleteLater();
     }
-    
-    // explicit destruction even 
+
+    // explicit destruction even
     // if it already is Qt::WA_DeleteOnClose,
-    // deal whit the corner-case in which the window 
+    // deal whit the corner-case in which the window
     // is closed while the m_overflowMenu is open
-    if (m_overflowMenu) { 
+    if (m_overflowMenu) {
         m_overflowMenu->deleteLater();
     }
 }
@@ -1002,7 +1002,7 @@ void AppMenuButtonGroup::onHitRight()
 void AppMenuButtonGroup::onShowingChanged(bool showing)
 {
     if (m_animationEnabled) {
-        QAbstractAnimation::Direction dir = showing ? QAbstractAnimation::Forward : QAbstractAnimation::Backward;
+        const QAbstractAnimation::Direction dir = showing ? QAbstractAnimation::Forward : QAbstractAnimation::Backward;
         if (m_animation->state() == QAbstractAnimation::Running && m_animation->direction() != dir) {
             m_animation->stop();
         }
@@ -1086,7 +1086,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     }
 
     int resultCount = 0;
-    for (const SearchResult &result : results) {
+    for (const SearchResult &result : std::as_const(results)) {
         if (resultCount >= MAX_SEARCH_RESULTS) { // stop after 100 results
             break;
         }
@@ -1184,7 +1184,7 @@ QString AppMenuButtonGroup::getActionText(QAction *action) const
 
 void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &searchText, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled, bool parentMatched)
 {
-    if (!menu || visited.contains(menu)) {
+    if (results.size() >= MAX_SEARCH_RESULTS || !menu || visited.contains(menu)) {
         return;
     }
     visited.insert(menu);
@@ -1212,6 +1212,9 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &searchText, QLis
     }
 
     for (QAction *action : menu->actions()) {
+        if (results.size() >= MAX_SEARCH_RESULTS) {
+            break;
+        }
         if (action->isSeparator()) {
             continue;
         }
