@@ -1212,6 +1212,9 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &searchText, QLis
     }
 
     for (QAction *action : menu->actions()) {
+        if (results.size() >= MAX_SEARCH_RESULTS) {
+            break;
+        }
         if (action->isSeparator()) {
             continue;
         }
