@@ -62,6 +62,11 @@ public slots:
     bool init() override;
     void reconfigure();
 
+private slots:
+#if HAVE_WAYLAND
+    void onTabletModeChanged(bool mode);
+#endif
+
 protected:
     void hoverEnterEvent(QHoverEvent *event) override;
     void hoverMoveEvent(QHoverEvent *event) override;
@@ -74,9 +79,6 @@ private:
     void onSectionUnderMouseChanged(const Qt::WindowFrameSection value);
     void onSizeChanged();
     void onNextScaleChanged();
-#if HAVE_WAYLAND
-    void onTabletModeChanged(bool mode);
-#endif
 
 private:
     QRectF titleBarRect() const;
