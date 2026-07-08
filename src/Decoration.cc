@@ -354,7 +354,7 @@ bool Decoration::init()
                  QStringLiteral("tabletModeChanged"),
                  QStringLiteral("b"),
                  this,
-                 SLOT(onTabletModeChanged(bool)));
+                 SLOT(onTabletModeChanged_slot(bool)));
 
     auto message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.KWin"),
                                                   QStringLiteral("/org/kde/KWin"),

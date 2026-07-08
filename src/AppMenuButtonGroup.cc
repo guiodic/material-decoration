@@ -54,8 +54,6 @@
 
 #include <utility>
 
-using namespace Qt::StringLiterals;
-
 static constexpr int MAX_SEARCH_RESULTS = 100;
 
 namespace Material
@@ -199,7 +197,7 @@ void AppMenuButtonGroup::setupSearchMenu()
 
     m_searchLineEdit->installEventFilter(this);
     m_searchLineEdit->setFocusPolicy(Qt::StrongFocus);
-    m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu","Search")+u"…"_s);
+    m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu","Search")+QStringLiteral("…"));
     m_searchLineEdit->setClearButtonEnabled(false);
 }
 
@@ -520,7 +518,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
                 }
                 QAction *itemAction = actions.at(actionIdx++);
                 textButton->setAction(itemAction);
-                textButton->setText(QStringView(itemAction->text()).trimmed().toString());
+                textButton->setText(itemAction->text().trimmed());
                 // Skip items with empty labels (The first item in a Gtk app)
                 if (itemAction->text().isEmpty()) {
                     textButton->setEnabled(false);
@@ -540,7 +538,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
             // Populate
             for (int i = 0; i < menuActionCount; ++i) {
                 QAction *itemAction = actions.at(i);
-                const QString itemLabel = QStringView(itemAction->text()).trimmed().toString();
+                const QString itemLabel = itemAction->text().trimmed();
 
                 TextButton *b = new TextButton(deco, i, this);
                 b->setText(itemLabel);
@@ -1036,7 +1034,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
         if (text.isEmpty()) {
             m_searchLineEdit->setClearButtonEnabled(false);
-            m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu", "Search") + u"…"_s);
+            m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu", "Search") + QStringLiteral("…"));
             return;
         }
         m_searchLineEdit->setClearButtonEnabled(true);
@@ -1179,7 +1177,7 @@ QString AppMenuButtonGroup::getActionText(QAction *action) const
     if (it != m_actionTextCache.end()) {
         return it.value();
     }
-    const QString cleanedText = KLocalizedString::removeAcceleratorMarker(QStringView(rawText).trimmed().toString());
+    const QString cleanedText = KLocalizedString::removeAcceleratorMarker(rawText.trimmed());
     m_actionTextCache.insert(rawText, cleanedText);
     return cleanedText;
 }
@@ -1239,8 +1237,8 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &searchText, QLis
                 info.isEffectivelyEnabled = isCurrentEnabled && action->isEnabled();
 
                 currentPath.append(itemText);
-                info.path = currentPath.join(u" » "_s);
-                info.searchablePath = (currentPath.size() > 1) ? currentPath.mid(1).join(u" » "_s) : itemText;
+                info.path = currentPath.join(QStringLiteral(" » "));
+                info.searchablePath = (currentPath.size() > 1) ? currentPath.mid(1).join(QStringLiteral(" » ")) : itemText;
                 currentPath.removeLast();
 
                 results.append({action, info});
