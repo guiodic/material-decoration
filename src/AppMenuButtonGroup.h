@@ -31,9 +31,9 @@
 #include <QLineEdit>
 #include <QPointer>
 #include <QHash>
-#include <QStringMatcher>
 
 class QTimer;
+class QStringMatcher;
 class QVariantAnimation;
 
 namespace Material

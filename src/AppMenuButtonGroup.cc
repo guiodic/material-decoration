@@ -49,6 +49,7 @@
 #include <QScreen>
 #include <QSet>
 #include <QTimer>
+#include <QStringMatcher>
 #include <QVariantAnimation>
 #include <QWidgetAction>
 
