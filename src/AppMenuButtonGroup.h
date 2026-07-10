@@ -33,6 +33,7 @@
 #include <QHash>
 
 class QTimer;
+class QStringMatcher;
 class QVariantAnimation;
 
 namespace Material
@@ -163,7 +164,7 @@ private:
     QString getActionText(QAction *action) const;
     void setupSearchMenu();
     void repositionSearchMenu();
-    void searchMenu(QMenu *menu, const QString &searchText, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled = true, bool parentMatched = false);
+    void searchMenu(QMenu *menu, const QStringMatcher &matcher, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled = true, bool parentMatched = false);
     AppMenuButton *getAppMenuButton(int index) const;
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
 
