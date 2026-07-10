@@ -45,7 +45,7 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
 {
     const QString string = sequence.toString();
     DBusMenuShortcut shortcut;
-    for (auto token : QStringTokenizer{string, QLatin1StringView(", "), Qt::SkipEmptyParts}) {
+    for (const QStringView token : QStringTokenizer{string, QLatin1StringView(", "), Qt::SkipEmptyParts}) {
         if (token == QLatin1StringView("+")) {
             shortcut.append({QLatin1String("plus")});
             continue;
@@ -60,7 +60,7 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
 
         QStringList keyTokens;
         keyTokens.reserve(4);
-        for (auto kt : QStringTokenizer{subToken, QLatin1Char('+'), Qt::SkipEmptyParts}) {
+        for (const QStringView kt : QStringTokenizer{subToken, QLatin1Char('+'), Qt::SkipEmptyParts}) {
             if (const auto t = translate(kt, QT_COLUMN, DM_COLUMN); !t.isEmpty()) {
                 keyTokens.append(t);
             } else {
