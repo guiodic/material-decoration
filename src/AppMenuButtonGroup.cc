@@ -1057,7 +1057,8 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
             const bool ignoreTopLevel = deco && deco->searchIgnoreTopLevel();
             const bool ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
             QStringList currentPath;
-            searchMenu(rootMenu, text, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath);
+            QStringMatcher matcher(text, Qt::CaseInsensitive);
+            searchMenu(rootMenu, matcher, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath);
         }
     }
 
@@ -1182,7 +1183,7 @@ QString AppMenuButtonGroup::getActionText(QAction *action) const
     return cleanedText;
 }
 
-void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &searchText, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled, bool parentMatched)
+void AppMenuButtonGroup::searchMenu(QMenu *menu, const QStringMatcher &matcher, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled, bool parentMatched)
 {
     if (results.size() >= MAX_SEARCH_RESULTS || !menu || visited.contains(menu)) {
         return;
@@ -1204,7 +1205,7 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &searchText, QLis
             addedToPath = true;
 
             if (!currentMatched && (!ignoreTopLevel || currentPath.size() > 1)) {
-                if (menuText.contains(searchText, Qt::CaseInsensitive)) {
+                if (matcher.indexIn(menuText) != -1) {
                     currentMatched = true;
                 }
             }
@@ -1219,16 +1220,16 @@ void AppMenuButtonGroup::searchMenu(QMenu *menu, const QString &searchText, QLis
             continue;
         }
         if (action->menu()) {
-            searchMenu(action->menu(), searchText, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath, isCurrentEnabled, currentMatched);
+            searchMenu(action->menu(), matcher, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath, isCurrentEnabled, currentMatched);
         } else {
             const QString itemText = getActionText(action);
             bool match = currentMatched;
             if (ignoreSubMenus) {
-                match = itemText.contains(searchText, Qt::CaseInsensitive);
+                match = matcher.indexIn(itemText) != -1;
             } else {
                 // Check the text of the action
                 if (!match && (!ignoreTopLevel || !currentPath.isEmpty())) {
-                    if (itemText.contains(searchText, Qt::CaseInsensitive)) {
+                    if (matcher.indexIn(itemText) != -1) {
                         match = true;
                     }
                 }
