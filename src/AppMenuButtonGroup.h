@@ -217,6 +217,7 @@ private:
 
     friend class AppMenuButton;
     friend class SearchButton;
+    friend class Button;
     friend class Decoration;
 };
 

@@ -39,6 +39,9 @@
 #endif
 
 #include "TextButton.h"
+#include "SearchButton.h"
+#include "AppMenuButtonGroup.h"
+#include "AppMenuModel.h"
 
 // KDecoration
 #include <KDecoration3/DecoratedWindow>
@@ -143,7 +146,8 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
         if (deco && deco->m_internalSettings->longPressEnabled() &&
             (this->type() == KDecoration3::DecorationButtonType::Close ||
             this->type() == KDecoration3::DecorationButtonType::Maximize ||
-            this->type() == KDecoration3::DecorationButtonType::Minimize)) {
+            this->type() == KDecoration3::DecorationButtonType::Minimize ||
+            qobject_cast<SearchButton *>(this))) {
             if (isPressed()) {
                 m_longPressTriggered = false;
                 m_holdTimer->start(deco->m_internalSettings->longPressDuration());
@@ -751,6 +755,13 @@ void Button::forceUnpress()
 void Button::handleHoldTimeout()
 {
     m_longPressTriggered = true;
+    if (auto *searchButton = qobject_cast<SearchButton *>(this)) {
+        auto *buttonGroup = qobject_cast<AppMenuButtonGroup *>(searchButton->parent());
+        if (buttonGroup && buttonGroup->m_appMenuModel) {
+            buttonGroup->m_appMenuModel->triggerKCommandBar();
+        }
+        return;
+    }
     switch (type()) {
     case KDecoration3::DecorationButtonType::Close:
         onCloseHold();
