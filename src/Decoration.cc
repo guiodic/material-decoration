@@ -361,13 +361,16 @@ bool Decoration::init()
                                                   QStringLiteral("org.freedesktop.DBus.Properties"),
                                                   QStringLiteral("Get"));
     message.setArguments({QStringLiteral("org.kde.KWin.TabletModeManager"), QStringLiteral("tabletMode")});
-    auto call = new QDBusPendingCallWatcher(dbus.asyncCall(message), this);
-    connect(call, &QDBusPendingCallWatcher::finished, this, [this, call]() {
-        QDBusPendingReply<QDBusVariant> reply = *call;
+    auto *call = new QDBusPendingCallWatcher(dbus.asyncCall(message), this);
+    QPointer<QDBusPendingCallWatcher> watcher(call);
+    connect(call, &QDBusPendingCallWatcher::finished, this, [this, watcher]() {
+        if (!watcher) // watcher was deleted -> bail out
+            return;
+        QDBusPendingReply<QDBusVariant> reply = *watcher;
         if (!reply.isError()) {
             onTabletModeChanged(reply.value().variant().toBool());
         }
-        call->deleteLater();
+        watcher->deleteLater(); // optional if watcher already has a parent
     });
 #endif
 
