@@ -1114,7 +1114,9 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
             if (safeAction) {
                 safeAction->trigger();
             }
-            m_searchMenu->hide();
+            if (m_searchMenu) {
+                m_searchMenu->hide();
+            }
         });
         m_searchMenu->addAction(newAction);
         resultCount++;
