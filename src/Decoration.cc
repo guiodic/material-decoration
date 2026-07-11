@@ -181,8 +181,9 @@ Decoration::Decoration(QObject *parent, const QVariantList &args)
 
 Decoration::~Decoration()
 {
-    if (--s_decoCount <= 0) {
-        Q_ASSERT_X(s_decoCount >= 0, "Decoration::~Decoration()", "s_decoCount became negative, indicating a logic error!");
+    int count = --s_decoCount;
+    if (count <= 0) {
+        Q_ASSERT_X(count >= 0, "Decoration::~Destruction()", "s_decoCount became negative!");
         s_decoCount.store(0); // defensive reset
         s_cachedShadow.reset();
         s_shadowSizePreset = -1;
