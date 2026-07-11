@@ -4,20 +4,18 @@ on:
   issue_comment:
     types: [created]
 
-permissions:
-  contents: read
-  pull-requests: write
+permissions: write-all
 
 jobs:
   gemini-code-review:
     runs-on: ubuntu-latest
-    if: contains(github.event.comment.body, '/gemini-review')
+    if: |
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '/gemini-review')
     steps:
       - name: PR Info
-        env:
-          COMMENT_BODY: ${{ github.event.comment.body }}
         run: |
-          echo "Comment: $COMMENT_BODY"
+          echo "Comment: ${{ github.event.comment.body }}"
           echo "Issue Number: ${{ github.event.issue.number }}"
           echo "Repository: ${{ github.repository }}"
 
@@ -29,77 +27,15 @@ jobs:
       - name: Get PR Details
         id: pr
         run: |
-          PR_NUMBER=${{ github.event.issue.number }}
-          PR_JSON=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER)
+          PR_JSON=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.issue.number }})
           echo "head_sha=$(echo $PR_JSON | jq -r .head.sha)" >> $GITHUB_OUTPUT
-          echo "title<<EOF" >> $GITHUB_OUTPUT
-          echo "$(echo $PR_JSON | jq -r .title)" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "body<<EOF" >> $GITHUB_OUTPUT
-          echo "$(echo $PR_JSON | jq -r .body)" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "base_sha=$(echo $PR_JSON | jq -r .base.sha)" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate Context for Gemini
-        id: context
-        run: |
-          # Project context
-          cat > /tmp/context.txt << 'EOF'
-          PROJECT: Material-ish window decoration theme for KWin
-          LANGUAGE: C++20, CMake
-          API: Qt6, KDecoration3 (Plasma 6) and other Plasma6/KF6 APIs
-          FOCUS AREAS:
-          - KWin window decoration implementation
-          - Menu integration (Locally Integrated Menu)
-          - Menu search functionality
-          - Performance and stability
-          
-          CODE REVIEW PRIORITIES:
-          1. KWin and KDecoration3 API compliance and best practices
-          2. C++ memory management and safety (RAII patterns)
-          3. Performance considerations for window decoration
-          4. CMake build configuration
-          5. Code clarity and maintainability
-          EOF
-          echo "context=$(cat /tmp/context.txt | base64 -w0)" >> $GITHUB_OUTPUT
-
-      - name: Run Gemini Code Review
-        id: review
-        continue-on-error: true
-        uses: truongnh1992/gemini-ai-code-reviewer@main
+      - uses: truongnh1992/gemini-ai-code-reviewer@main
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: gemini-3.1-flash-lite
+          GEMINI_MODEL: gemini-2.5-pro # Optional, default is `gemini-2.5-flash`
           EXCLUDE: "*.md,*.txt,package-lock.json,*.yml,*.yaml"
-          PROMPT_CONTEXT: |
-            You are reviewing code for: ${{ steps.context.outputs.context }}
-            
-            PR Title: ${{ steps.pr.outputs.title }}
-            PR Description: ${{ steps.pr.outputs.body }}
-            
-            Focus on KWin-specific concerns, C++ best practices, and performance implications.
-
-      - name: Post Review Status Comment
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const reviewStatus = '${{ steps.review.outcome }}';
-            let commentBody = '';
-            
-            if (reviewStatus === 'success') {
-              commentBody = '✅ **Gemini Code Review completed successfully**\n\nCheck the review comments above.';
-            } else if (reviewStatus === 'failure') {
-              commentBody = '⚠️ **Gemini Code Review encountered an error**\n\nPossible causes:\n- API rate limit exceeded\n- Configuration issues\n- Network problems\n\nPlease check the [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.';
-            } else {
-              commentBody = '❓ **Gemini Code Review status: ' + reviewStatus + '**\n\nCheck the [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.';
-            }
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: commentBody
-            });
