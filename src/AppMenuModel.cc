@@ -34,12 +34,18 @@
 #include <QAction>
 #include <QMenu>
 #include <QDeadlineTimer>
+#include <QSet>
 
 #include <QDBusConnection>
 #include <QDBusServiceWatcher>
 
 // libdbusmenuqt
 #include <dbusmenuimporter.h>
+
+// KF6
+#include <KLocalizedString>
+#include <KStandardAction>
+
 
 //std
 #include <utility>
@@ -351,5 +357,68 @@ void AppMenuModel::processNext()
     }
 }
 
+void AppMenuModel::triggerKCommandBar()
+{
+    if (!m_menu) {
+        return;
+    }
+
+    QAction *cmdBarAction = findKCommandBarAction(m_menu.data());
+    if (cmdBarAction) {
+        cmdBarAction->trigger();
+    } else {
+        qCWarning(category) << "KCommandBar action not found in application DBusMenu.";
+    }
+}
+
+static QAction *findKCommandBarActionRecursive(QMenu *menu, QSet<QMenu *> &visited)
+{
+    using namespace Qt::StringLiterals;
+
+    if (!menu || visited.contains(menu)) {
+        return nullptr;
+    }
+    visited.insert(menu);
+
+    const QKeySequence defaultShortcut(Qt::CTRL | Qt::ALT | Qt::Key_I);
+    const QString rawTranslated = i18nd("kxmlgui", "Find Action…");
+    const QString targetLabel = KLocalizedString::removeAcceleratorMarker(rawTranslated.trimmed());
+    const QString fallbackLabel1 = u"Find Action…"_s;
+    const QString fallbackLabel2 = u"Find Action"_s;
+
+    // 1. Breadth-first: check all actions in the current menu level first
+    for (QAction *action : menu->actions()) {
+        if (action->shortcut() == defaultShortcut || action->shortcuts().contains(defaultShortcut)) {
+            return action;
+        }
+        const QString currentLabel = KLocalizedString::removeAcceleratorMarker(action->text().trimmed());
+        if (!targetLabel.isEmpty() && currentLabel.compare(targetLabel, Qt::CaseInsensitive) == 0) {
+            return action;
+        }
+        if (currentLabel.compare(fallbackLabel1, Qt::CaseInsensitive) == 0) {
+            return action;
+        }
+        if (currentLabel.compare(fallbackLabel2, Qt::CaseInsensitive) == 0) {
+            return action;
+        }
+    }
+
+    // 2. Depth-first: recurse into submenus
+    for (QAction *action : menu->actions()) {
+        if (action->menu()) {
+            if (QAction *found = findKCommandBarActionRecursive(action->menu(), visited)) {
+                return found;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+QAction* AppMenuModel::findKCommandBarAction(QMenu *menu) const
+{
+    QSet<QMenu *> visited;
+    return findKCommandBarActionRecursive(menu, visited);
+}
 
 } // namespace Material

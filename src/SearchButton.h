@@ -19,6 +19,8 @@
 
 #include "AppMenuButton.h"
 
+class QMouseEvent;
+
 namespace Material
 {
 
@@ -33,6 +35,8 @@ public:
 
 protected:
     void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
 };
 
 } // namespace Material

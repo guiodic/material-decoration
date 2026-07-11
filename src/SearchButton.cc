@@ -17,10 +17,13 @@
 
 // own
 #include "SearchButton.h"
+#include "AppMenuButtonGroup.h"
+#include "AppMenuModel.h"
 
 // Qt
 #include <QPainter>
 #include <QtMath>
+#include <QMouseEvent>
 
 namespace Material
 {
@@ -31,6 +34,28 @@ SearchButton::SearchButton(Decoration *decoration, const int buttonIndex, QObjec
 }
 
 SearchButton::~SearchButton() = default;
+
+void SearchButton::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::RightButton) {
+        event->accept();
+        auto *buttonGroup = qobject_cast<AppMenuButtonGroup *>(parent());
+        if (buttonGroup && buttonGroup->m_appMenuModel) {
+            buttonGroup->m_appMenuModel->triggerKCommandBar();
+        }
+        return;
+    }
+    AppMenuButton::mousePressEvent(event);
+}
+
+void SearchButton::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::RightButton) {
+        event->accept();
+        return;
+    }
+    AppMenuButton::mouseReleaseEvent(event);
+}
 
 void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal)
 {
