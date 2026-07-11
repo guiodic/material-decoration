@@ -48,14 +48,16 @@ static constexpr auto DBUSMENU_PROPERTY_ID = "_dbusmenu_id";
 static constexpr auto DBUSMENU_PROPERTY_ICON_NAME = "_dbusmenu_icon_name";
 static constexpr auto DBUSMENU_PROPERTY_ICON_DATA_HASH = "_dbusmenu_icon_data_hash";
 
-static QAction *createKdeTitle(QAction *action, QWidget *parent)
+// Create a KDE-style title action directly from text and icon. This avoids
+// allocating a temporary QAction when x-kde-title is present in the item map.
+static QWidgetAction *createKdeTitle(const QString &text, const QIcon &icon, QWidget *parent)
 {
     QToolButton *titleWidget = new QToolButton(nullptr);
     QFont font = titleWidget->font();
     font.setBold(true);
     titleWidget->setFont(font);
-    titleWidget->setIcon(action->icon());
-    titleWidget->setText(action->text());
+    titleWidget->setIcon(icon);
+    titleWidget->setText(text);
     titleWidget->setDown(true);
     titleWidget->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
@@ -63,6 +65,8 @@ static QAction *createKdeTitle(QAction *action, QWidget *parent)
     titleAction->setDefaultWidget(titleWidget);
     return titleAction;
 }
+
+static QAction *createKdeTitle(QAction *action, QWidget *parent) = delete; // Prevent accidental use of the old overload
 
 class DBusMenuImporterPrivate
 {
@@ -106,35 +110,91 @@ public:
     QAction *createAction(int id, const QVariantMap &_map, QWidget *parent)
     {
         QVariantMap map = _map;
-        QAction *action = new QAction(parent);
-        action->setProperty(DBUSMENU_PROPERTY_ID, id);
 
+        // Extract immutable flags first so we can avoid allocating a throwaway
+        // QAction when x-kde-title is present.
         const QString type = map.take(QStringLiteral("type")).toString();
-        if (type == QLatin1StringView("separator")) {
-            action->setSeparator(true);
-        }
+        const bool isSeparator = (type == QLatin1StringView("separator"));
 
-        if (map.take(QStringLiteral("children-display")).toString() == QLatin1StringView("submenu")) {
-            QMenu *menu = createMenu(parent);
-            action->setMenu(menu);
-        }
+        const bool isSubmenu = (map.take(QStringLiteral("children-display")).toString() == QLatin1StringView("submenu"));
 
         const QString toggleType = map.take(QStringLiteral("toggle-type")).toString();
-        if (!toggleType.isEmpty()) {
-            action->setCheckable(true);
-            if (toggleType == QLatin1StringView("radio")) {
-                QActionGroup *group = new QActionGroup(action);
-                group->addAction(action);
-            }
-        }
 
         const bool isKdeTitle = map.take(QStringLiteral("x-kde-title")).toBool();
-        updateAction(action, map);
 
+        // If this item is a KDE title, construct a QWidgetAction directly from
+        // the label/icon data to avoid creating and throwing away a plain QAction.
+        QAction *action = nullptr;
         if (isKdeTitle) {
-            QAction *oldAction = action;
-            action = createKdeTitle(oldAction, parent);
-            oldAction->deleteLater();
+            // Determine initial label (apply mnemonic swapping like updateActionLabel)
+            QString text = swapMnemonicChar(map.value(QStringLiteral("label")).toString(), '_', '&');
+            if (isSubmenu) {
+                text += QLatin1StringView("  ");
+            }
+
+            // Determine initial icon (prefer raw icon-data over icon-name)
+            QIcon icon;
+            const QVariant iconDataVar = map.value(QStringLiteral("icon-data"));
+            if (iconDataVar.isValid()) {
+                QByteArray data = iconDataVar.toByteArray();
+                QPixmap pix;
+                if (pix.loadFromData(data)) {
+                    icon = QIcon(pix);
+                }
+            }
+            if (icon.isNull()) {
+                const QString iconName = map.value(QStringLiteral("icon-name")).toString();
+                if (!iconName.isEmpty()) {
+                    icon = q->iconForName(iconName);
+                }
+            }
+
+            QWidgetAction *titleAction = createKdeTitle(text, icon, parent);
+            action = titleAction;
+            action->setProperty(DBUSMENU_PROPERTY_ID, id);
+
+            if (isSeparator) {
+                action->setSeparator(true);
+            }
+
+            if (isSubmenu) {
+                QMenu *menu = createMenu(parent);
+                action->setMenu(menu);
+            }
+
+            if (!toggleType.isEmpty()) {
+                action->setCheckable(true);
+                if (toggleType == QLatin1StringView("radio")) {
+                    QActionGroup *group = new QActionGroup(action);
+                    group->addAction(action);
+                }
+            }
+
+            // Now apply remaining mutable properties (label, enabled, icon-data, ...)
+            updateAction(action, map);
+        } else {
+            // Fallback: create a regular QAction and initialize as before.
+            action = new QAction(parent);
+            action->setProperty(DBUSMENU_PROPERTY_ID, id);
+
+            if (isSeparator) {
+                action->setSeparator(true);
+            }
+
+            if (isSubmenu) {
+                QMenu *menu = createMenu(parent);
+                action->setMenu(menu);
+            }
+
+            if (!toggleType.isEmpty()) {
+                action->setCheckable(true);
+                if (toggleType == QLatin1StringView("radio")) {
+                    QActionGroup *group = new QActionGroup(action);
+                    group->addAction(action);
+                }
+            }
+
+            updateAction(action, map);
         }
 
         return action;
