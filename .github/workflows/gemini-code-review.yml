@@ -33,19 +33,14 @@ jobs:
       - name: Get PR Details
         id: pr
         run: |
-          # Get PR number - from pull_request event or issue_comment event
-          PR_NUMBER=${{ github.event.pull_request.number || github.event.issue.number }}
-          
-          if [ -z "$PR_NUMBER" ]; then
-            echo "Error: Could not determine PR number"
-            exit 1
-          fi
-          
-          PR_JSON=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER)
+          PR_JSON=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.issue.number }})
           echo "head_sha=$(echo $PR_JSON | jq -r .head.sha)" >> $GITHUB_OUTPUT
-          echo "base_sha=$(echo $PR_JSON | jq -r .base.sha)" >> $GITHUB_OUTPUT
-          echo "title=$(echo $PR_JSON | jq -r .title)" >> $GITHUB_OUTPUT
-          echo "body=$(echo $PR_JSON | jq -r .body)" >> $GITHUB_OUTPUT
+          echo "title<<EOF" >> $GITHUB_OUTPUT
+          echo "$(echo $PR_JSON | jq -r .title)" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$(echo $PR_JSON | jq -r .body)" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
