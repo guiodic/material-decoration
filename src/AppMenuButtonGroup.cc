@@ -1018,6 +1018,9 @@ void AppMenuButtonGroup::onShowingChanged(bool showing)
 
 void AppMenuButtonGroup::filterMenu(const QString &text)
 {
+    if (!m_searchMenu) {
+            return;
+    }
     m_lastSearchQuery = text;
 
     // Clear results if search text is too short
@@ -1108,13 +1111,15 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
             group->setExclusive(true);
             group->addAction(newAction);
         }
-
+      
         QPointer<QAction> safeAction = action;
-        connect(newAction, &QAction::triggered, this, [safeAction, this]() {
+        connect(newAction, &QAction::triggered, this, [safeAction, searchMenu = m_searchMenu]() {
             if (safeAction) {
                 safeAction->trigger();
             }
-            m_searchMenu->hide();
+            if (searchMenu) {
+                searchMenu->hide();
+            }
         });
         m_searchMenu->addAction(newAction);
         resultCount++;
