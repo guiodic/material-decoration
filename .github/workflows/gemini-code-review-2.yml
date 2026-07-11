@@ -1,5 +1,5 @@
 # .github/workflows/review.yml
-name: AI Code Review
+name: Pilot Code Review
 on:
   pull_request:
     types: [opened, synchronize]
@@ -19,4 +19,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           apiKey: ${{ secrets.GEMINI_API_KEY }}
           level: 'HIGH'
-          customInstructionUri: 'https://raw.githubusercontent.com/guiodic/material-decoration/main/review-guide.txt'
+          customInstructionUri: 'https://raw.githubusercontent.com/guiodic/material-decoration/master/.github/workflows/review-guide.txt'
