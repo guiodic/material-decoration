@@ -33,7 +33,7 @@ jobs:
       - name: Get PR Details
         id: pr
         run: |
-          PR_JSON=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.issue.number }})
+          PR_JSON=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number || github.event.issue.number }})
           echo "head_sha=$(echo $PR_JSON | jq -r .head.sha)" >> $GITHUB_OUTPUT
           echo "title<<EOF" >> $GITHUB_OUTPUT
           echo "$(echo $PR_JSON | jq -r .title)" >> $GITHUB_OUTPUT
