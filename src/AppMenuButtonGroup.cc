@@ -1109,9 +1109,12 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
             group->addAction(newAction);
         }
 
+        if (!m_searchMenu) {
+            return;
+        }
+        
         QPointer<QAction> safeAction = action;
-        QPointer<QMenu> searchMenu = m_searchMenu;
-        connect(newAction, &QAction::triggered, this, [safeAction, searchMenu]() {
+        connect(newAction, &QAction::triggered, this, [safeAction, searchMenu = m_searchMenu]() {
             if (safeAction) {
                 safeAction->trigger();
             }
