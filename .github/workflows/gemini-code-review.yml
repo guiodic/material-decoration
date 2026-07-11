@@ -35,9 +35,12 @@ jobs:
         run: |
           PR_JSON=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.issue.number }})
           echo "head_sha=$(echo $PR_JSON | jq -r .head.sha)" >> $GITHUB_OUTPUT
-          echo "base_sha=$(echo $PR_JSON | jq -r .base.sha)" >> $GITHUB_OUTPUT
-          echo "title=$(echo $PR_JSON | jq -r .title)" >> $GITHUB_OUTPUT
-          echo "body=$(echo $PR_JSON | jq -r .body)" >> $GITHUB_OUTPUT
+          echo "title<<EOF" >> $GITHUB_OUTPUT
+          echo "$(echo $PR_JSON | jq -r .title)" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$(echo $PR_JSON | jq -r .body)" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
