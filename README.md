@@ -48,7 +48,7 @@ directory `/usr/share/kwin-wayland/scripts/minimizeall` to `
 git clone https://github.com/guiodic/material-decoration.git
 cd material-decoration
 mkdir build
-cmake -B build . -DQT_MAJOR_VERSION=6 -DQT_VERSION_MAJOR=6 # add this for SonicDE: -DFORCE_X11=ON
+cmake -B build . # add this for SonicDE: -DFORCE_X11=ON
 cmake --build build -j$(nproc)
 sudo cmake --install build
 ```

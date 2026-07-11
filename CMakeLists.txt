@@ -16,8 +16,8 @@ set (CMAKE_MODULE_PATH
     ${ECM_MODULE_PATH}
 )
 
-set(DKDE_INSTALL_USE_QT_SYS_PATHS=ON)
-set(DQT_VERSION_MAJOR=6)
+set(KDE_INSTALL_USE_QT_SYS_PATHS ON CACHE BOOL "Install to Qt system paths")
+set(QT_MAJOR_VERSION 6)
 
 include (ECMInstallIcons)
 include (KDEInstallDirs)

@@ -58,7 +58,6 @@ jobs:
       - name: Configure with FORCE_X11=ON
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
-            -DQT_MAJOR_VERSION=6 -DQT_VERSION_MAJOR=6 \
             -DFORCE_X11=ON
 
       - name: Build smoke targets
