@@ -63,6 +63,16 @@ static QWidgetAction *createKdeTitle(const QString &text, const QIcon &icon, QWi
 
     QWidgetAction *titleAction = new QWidgetAction(parent);
     titleAction->setDefaultWidget(titleWidget);
+
+    // Keep the widget in sync with QAction changes (icon/text updates).
+    // updateAction() will call setText()/setIcon() on the QAction, which
+    // emits QAction::changed(); use that to refresh the QToolButton so the
+    // visible title updates at runtime.
+    QObject::connect(titleAction, &QAction::changed, titleAction, [titleAction, titleWidget]() {
+        titleWidget->setIcon(titleAction->icon());
+        titleWidget->setText(titleAction->text());
+    });
+
     return titleAction;
 }
 
