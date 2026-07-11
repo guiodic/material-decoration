@@ -11,8 +11,8 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - name: Review Pull Request
-        uses: Programmer-RD-AI/review-pilot@v1
+      - name: ReviewPilot Action
+        uses: prdai/review-pilot@v2.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           apiKey: ${{ secrets.GEMINI_API_KEY }}
