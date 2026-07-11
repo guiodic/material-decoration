@@ -79,6 +79,12 @@ private:
     void onSectionUnderMouseChanged(const Qt::WindowFrameSection value);
     void onSizeChanged();
     void onNextScaleChanged();
+    void onWidthChanged();
+    void onMaximizedChanged();
+    void onShadedChanged();
+    void onActiveChanged();
+    void onAdjacentScreenEdgesChanged();
+    void onSpacingChanged();
 
 private:
     QRectF titleBarRect() const;

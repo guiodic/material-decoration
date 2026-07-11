@@ -181,9 +181,12 @@ Decoration::Decoration(QObject *parent, const QVariantList &args)
 
 Decoration::~Decoration()
 {
-    if (--s_decoCount <= 0) {
-        Q_ASSERT_X(s_decoCount >= 0, "Decoration::~Decoration()", "s_decoCount became negative, indicating a logic error!");
-        s_decoCount.store(0); // defensive reset
+    int count = --s_decoCount;
+    if (count <= 0) {
+        Q_ASSERT_X(count >= 0, "Decoration::~Decoration()", "s_decoCount became negative, indicating a logic error!");
+        if (count < 0) {
+            s_decoCount.store(0); // defensive reset
+        }
         s_cachedShadow.reset();
         s_shadowSizePreset = -1;
         s_shadowStrength = -1;
@@ -279,16 +282,10 @@ bool Decoration::init()
             this, &Decoration::onNextScaleChanged);
     
     connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged,
-        this, &Decoration::updateTitleBar);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::widthChanged,
-        this, &Decoration::updateButtonsGeometry);
+        this, &Decoration::onWidthChanged);
     
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged, 
-        this, &Decoration::updateBordersCornersBlurShadow);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged, 
-        this, &Decoration::updateButtonsGeometry);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged, 
-        this, &Decoration::updateTitleBar);
+        this, &Decoration::onMaximizedChanged);
     //connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged, 
     //    this, &Decoration::setOpaque);
     
@@ -297,26 +294,16 @@ bool Decoration::init()
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedVerticallyChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::shadedChanged,
-            this, &Decoration::updateBordersCornersBlurShadow);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::shadedChanged,
-            this, &Decoration::updateButtonsGeometry);
+            this, &Decoration::onShadedChanged);
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::captionChanged,
             this, repaintTitleBar);
     
     connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
-        this, &Decoration::updateColors);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
-        this, &Decoration::updateCornerRadiusAndOutline);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
-        this, qOverload<>(&Decoration::update));
+        this, &Decoration::onActiveChanged);
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
-            this, &Decoration::updateBordersCornersBlurShadow);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
-            this, &Decoration::updateTitleBar);
-    connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
-            this, &Decoration::updateButtonsGeometry);
+            this, &Decoration::onAdjacentScreenEdgesChanged);
     
     connect(this, &KDecoration3::Decoration::bordersChanged, 
             this, &Decoration::updateTitleBar);
@@ -361,7 +348,7 @@ bool Decoration::init()
                                                   QStringLiteral("org.freedesktop.DBus.Properties"),
                                                   QStringLiteral("Get"));
     message.setArguments({QStringLiteral("org.kde.KWin.TabletModeManager"), QStringLiteral("tabletMode")});
-    auto call = new QDBusPendingCallWatcher(dbus.asyncCall(message), this);
+    auto *call = new QDBusPendingCallWatcher(dbus.asyncCall(message), this);
     connect(call, &QDBusPendingCallWatcher::finished, this, [this, call]() {
         QDBusPendingReply<QDBusVariant> reply = *call;
         if (!reply.isError()) {
@@ -385,9 +372,7 @@ bool Decoration::init()
     connect(settings().get(), &KDecoration3::DecorationSettings::fontChanged,
         this, &Decoration::updateBordersCornersBlurShadow);
     connect(settings().get(), &KDecoration3::DecorationSettings::spacingChanged,
-        this, &Decoration::updateBordersCornersBlurShadow);
-    connect(settings().get(), &KDecoration3::DecorationSettings::spacingChanged,
-        this, &Decoration::updateButtonsGeometryDelayed);
+        this, &Decoration::onSpacingChanged);
     connect(settings().get(), &KDecoration3::DecorationSettings::decorationButtonsLeftChanged,
         this, &Decoration::updateButtonsGeometryDelayed);
     connect(settings().get(), &KDecoration3::DecorationSettings::decorationButtonsRightChanged,
@@ -1391,6 +1376,45 @@ void Decoration::onNextScaleChanged()
     updateResizeBorders();
     updateTitleBar();
     updateButtonsGeometry();
+}
+
+void Decoration::onWidthChanged()
+{
+    updateTitleBar();
+    updateButtonsGeometry();
+}
+
+void Decoration::onMaximizedChanged()
+{
+    updateBordersCornersBlurShadow();
+    updateButtonsGeometry();
+    updateTitleBar();
+}
+
+void Decoration::onShadedChanged()
+{
+    updateBordersCornersBlurShadow();
+    updateButtonsGeometry();
+}
+
+void Decoration::onActiveChanged()
+{
+    updateColors();
+    updateCornerRadiusAndOutline();
+    update();
+}
+
+void Decoration::onAdjacentScreenEdgesChanged()
+{
+    updateBordersCornersBlurShadow();
+    updateTitleBar();
+    updateButtonsGeometry();
+}
+
+void Decoration::onSpacingChanged()
+{
+    updateBordersCornersBlurShadow();
+    updateButtonsGeometryDelayed();
 }
 
 #if HAVE_WAYLAND
