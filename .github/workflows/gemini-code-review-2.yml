@@ -3,10 +3,12 @@ name: AI Code Review
 on:
   pull_request:
     types: [opened, synchronize]
-
+  issue_comment:
+    types: [created]
 jobs:
   review:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '@pilot-review'))
     permissions:
       contents: read
       pull-requests: write
