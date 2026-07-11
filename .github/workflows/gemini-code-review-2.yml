@@ -17,4 +17,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           apiKey: ${{ secrets.GEMINI_API_KEY }}
           level: 'HIGH'
-          customInstructionUri: './review-guide.txt' 
+          customInstructionUri: 'https://raw.githubusercontent.com/guiodic/material-decoration/main/review-guide.txt'
