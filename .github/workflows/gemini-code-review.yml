@@ -36,8 +36,33 @@ jobs:
           PR_JSON=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.issue.number }})
           echo "head_sha=$(echo $PR_JSON | jq -r .head.sha)" >> $GITHUB_OUTPUT
           echo "base_sha=$(echo $PR_JSON | jq -r .base.sha)" >> $GITHUB_OUTPUT
+          echo "title=$(echo $PR_JSON | jq -r .title)" >> $GITHUB_OUTPUT
+          echo "body=$(echo $PR_JSON | jq -r .body)" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate Context for Gemini
+        id: context
+        run: |
+          # Project context
+          cat > /tmp/context.txt << 'EOF'
+          PROJECT: Material-ish window decoration theme for KWin
+          LANGUAGE: C++20, CMake
+          API: Qt6, KDecoration3 (Plasma 6) and other Plasma6/KF6 APIs
+          FOCUS AREAS:
+          - KWin window decoration implementation
+          - Menu integration (Locally Integrated Menu)
+          - Menu search functionality
+          - Performance and stability
+          
+          CODE REVIEW PRIORITIES:
+          1. KWin and KDecoration3 API compliance and best practices
+          2. C++ memory management and safety (RAII patterns)
+          3. Performance considerations for window decoration
+          4. CMake build configuration
+          5. Code clarity and maintainability
+          EOF
+          echo "context=$(cat /tmp/context.txt | base64 -w0)" >> $GITHUB_OUTPUT
 
       - name: Run Gemini Code Review
         id: review
@@ -46,8 +71,15 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: gemini-3.1-flash-lite # Optional, default is `gemini-2.5-flash`
+          GEMINI_MODEL: gemini-3.1-flash-lite
           EXCLUDE: "*.md,*.txt,package-lock.json,*.yml,*.yaml"
+          PROMPT_CONTEXT: |
+            You are reviewing code for: ${{ steps.context.outputs.context }}
+            
+            PR Title: ${{ steps.pr.outputs.title }}
+            PR Description: ${{ steps.pr.outputs.body }}
+            
+            Focus on KWin-specific concerns, C++ best practices, and performance implications.
 
       - name: Post Review Status Comment
         if: always()
