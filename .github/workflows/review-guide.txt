@@ -1,0 +1,100 @@
+Project: material-decoration
+Repo: guiodic/material-decoration
+Description: Material-ish window decoration theme for KWin, with Locally Integrated Menu and Menu Search
+
+Purpose of this guide
+- Provide ReviewPilot (or similar AI review action) focused, project-specific instructions so reviews are relevant, actionable, and low-noise.
+- Tell the reviewer what matters most in this repository, what to ignore, and how to surface issues (severity/labels/phrasing).
+
+Quick summary of what this project is
+- A KWin6 window decoration theme written primarily in C++ with CMake build files.
+- Contains UI/UX code, and integration points with Qt6, KDE6, KWin6, KDecoration3 (from Plasma 6) APIs.
+- Implemets a Locally Integrated Menu via DBusmenu.
+
+High-level review priorities (in order)
+1. Correctness & stability: crashes, incorrect window behavior, regressions with KWin APIs.
+2. Memory safety & lifetime: leaks, dangling pointers, incorrect ownership of QObject-derived objects and Qt signals/slots.
+3. Integration & API usage: correct use of Qt/KDE/KWin APIs and event loop assumptions.
+4. Performance: expensive paint operations, unnecessary allocations in hot code paths (frame/compositing hooks).
+5. Build & packaging: correct CMake usage, install rules, desktop/metadata files.
+6. Readability & maintainability: clear intent, small functions, explicit ownership, appropriate comments.
+7. Style & conventions: C++/Qt idioms, project-specific patterns.
+
+Files & directories to focus on
+- src/ : primary target.
+- CMakeLists.txt: ensure build correctness and install targets.
+
+Files/areas to ignore or treat low-priority
+- Vendor/third-party libraries and generated files.
+- Large binary resources (icons, images) unless PR modifies them noticeably.
+- Localization files unless PR touches i18n code.
+
+Code-style and conventions to enforce
+- C++: prefer modern idiomatic usage (C++20).
+- Use RAII and smart pointers (std::unique_ptr/std::shared_ptr) over naked new/delete.
+- For QObject-derived lifetime management, prefer parent ownership where appropriate; flag suspicious manual deletes.
+- Prefer const correctness, noexcept where meaningful.
+- For Qt signal/slot code: prefer new connection syntax where possible; ensure connections are disconnected only when needed.
+- Avoid blocking calls on the GUI thread; flag long synchronous IO/processing in UI threads.
+- Keep UI painting code efficient: minimize allocations and heavy computations per frame.
+
+Memory / lifetime rules
+- Flag raw pointers used as owning references.
+- Look for potential double-deletes, missing parent assignments for QObject children, and missing parent on heap-allocated widgets/objects.
+- Highlight suspicious use of static globals that hold QObject pointers.
+- Suggest move semantics for heavy objects passed by value.
+
+Threading & concurrency
+- Verify thread affinity for QObjects (must live in the thread that created them unless moved).
+- Flag cross-thread signal/slot usage that assumes direct invocation.
+- For any worker threads: ensure proper synchronization and safe teardown.
+
+Performance guidance
+- Point out obvious O(n^2) algorithms or repeated work inside paint/compositing loops.
+- Identify expensive allocations in frequently-called code paths; recommend caching or reusing objects.
+- For heavy UI manipulations, suggest using GPU-accelerated paths.
+
+Security & privacy notes
+- This repo is a UI/theme plugin—no sensitive data expected. Flag any network uploads, telemetry, or inadvertent file writes in unexpected locations.
+
+What a good review comment should include
+- Short summary of the problem (one-line).
+- Severity (BLOCKER/MAJOR/MINOR/SUGGESTION).
+- Repro steps or reasoning (if behavioral).
+- File(s) and approximate lines (if available).
+- Concrete fix recommendation and an example code snippet when possible.
+- If uncertain, ask the author for clarification rather than assuming intent.
+
+Severity definitions
+- BLOCKER: Crash, data loss, severe regression preventing normal use.
+- MAJOR: Incorrect behavior, memory leak, security issue, wrong API usage.
+- MINOR: Performance, maintainability, missing tests, style violations.
+- SUGGESTION: Cosmetic, small refactors, wording, comments.
+
+Examples of checks to run or call out explicitly
+- Is CMakeLists installing the decoration metadata correctly? Are install targets correct?
+- Does the decoration respect compositing and not perform blocking painting on the UI thread?
+- Are QObjects created without parents in places where parent ownership is expected?
+- Any uses of new/delete that could be replaced with smart pointers?
+- Any uses of reinterpret_cast, manual memory management, or C APIs that bypass Qt safety?
+- Proper use of macros and preprocessor in cross-platform code paths.
+
+Preferred tone for comments
+- Constructive and specific. Offer exact code suggestions rather than vague criticism.
+- When flagging style preferences, reference an authoritative rule (e.g., C++ Core Guidelines, Qt docs).
+- For ambiguous issues, ask pointed questions to the PR author.
+
+Action/label suggestions for maintainers
+- label: ai-review:needs-attention for BLOCKER/MAJOR findings.
+- label: ai-review:suggestions for MINOR/SUGGESTION items.
+- If review finds large scope PR (>> 500 changed lines), recommend splitting or increasing maxChanges threshold.
+
+Integration snippet recommendation (GitHub Action)
+- customInstructionUri: './review-guide.txt' (this file)
+- model: default or 'gemini-2.5-flash-lite' (or the action's recommended model)
+- level: HIGH for stricter reviews of critical PRs
+- maxChanges: 1000 (lower for small repos; raise if needed)
+
+If anything is unclear or outside the repository (e.g., preferred C++ standard), ask maintainers.
+
+End of guide.
