@@ -1,8 +1,6 @@
 name: Gemini AI Code Reviewer
 
 on:
-  pull_request:
-    types: [opened, synchronize]
   issue_comment:
     types: [created]
 
@@ -13,9 +11,7 @@ permissions:
 jobs:
   gemini-code-review:
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'pull_request' ||
-      contains(github.event.comment.body, '/gemini-review')
+    if: contains(github.event.comment.body, '/gemini-review')
     steps:
       - name: PR Info
         env:
