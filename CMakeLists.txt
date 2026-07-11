@@ -16,7 +16,6 @@ set (CMAKE_MODULE_PATH
     ${ECM_MODULE_PATH}
 )
 
-option(KDE_INSTALL_USE_QT_SYS_PATHS "Install to Qt system paths" ON)
 set(QT_MAJOR_VERSION 6)
 
 include (ECMInstallIcons)
