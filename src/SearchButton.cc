@@ -22,6 +22,7 @@
 
 // Qt
 #include <QPainter>
+#include <QMouseEvent>
 #include <QtMath>
 
 namespace Material
@@ -51,6 +52,16 @@ void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qr
     const qreal handleEndOffset = (circleRadius + handleLength) / sqrt2;
     const QPointF handleEnd = circleCenter + QPointF(handleEndOffset, handleEndOffset);
     painter->drawLine(handleStart, handleEnd);
+}
+
+void SearchButton::mousePressEvent(QMouseEvent *event)
+{
+    AppMenuButton::mousePressEvent(event);
+}
+
+void SearchButton::mouseReleaseEvent(QMouseEvent *event)
+{
+    AppMenuButton::mouseReleaseEvent(event);
 }
 
 } // namespace Material
