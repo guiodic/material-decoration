@@ -183,7 +183,7 @@ Decoration::~Decoration()
 {
     int count = --s_decoCount;
     if (count <= 0) {
-        Q_ASSERT_X(count >= 0, "Decoration::~Destruction()", "s_decoCount became negative!");
+        Q_ASSERT_X(s_decoCount >= 0, "Decoration::~Decoration()", "s_decoCount became negative, indicating a logic error!");
         s_decoCount.store(0); // defensive reset
         s_cachedShadow.reset();
         s_shadowSizePreset = -1;
@@ -347,15 +347,12 @@ bool Decoration::init()
                                                   QStringLiteral("Get"));
     message.setArguments({QStringLiteral("org.kde.KWin.TabletModeManager"), QStringLiteral("tabletMode")});
     auto *call = new QDBusPendingCallWatcher(dbus.asyncCall(message), this);
-    QPointer<QDBusPendingCallWatcher> watcher(call);
-    connect(call, &QDBusPendingCallWatcher::finished, this, [this, watcher]() {
-        if (!watcher) // watcher was deleted -> bail out
-            return;
-        QDBusPendingReply<QDBusVariant> reply = *watcher;
+    connect(call, &QDBusPendingCallWatcher::finished, this, [this, call]() {
+        QDBusPendingReply<QDBusVariant> reply = *call;
         if (!reply.isError()) {
             onTabletModeChanged(reply.value().variant().toBool());
         }
-        watcher->deleteLater(); // optional if watcher already has a parent
+        call->deleteLater();
     });
 #endif
 
