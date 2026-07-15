@@ -880,7 +880,7 @@ void AppMenuButtonGroup::triggerOverflow()
 bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
 {
     // Event handling for the search bar's QLineEdit
-     if (watched == m_searchLineEdit) {
+    if (watched == m_searchLineEdit) {
         if (event->type() == QEvent::KeyPress) {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
 
@@ -906,6 +906,15 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
 
     if (!menu) {
         return KDecoration3::DecorationButtonGroup::eventFilter(watched, event);
+    }
+
+    // Right-click on search menu to trigger KCommandBar
+    if (menu == m_searchMenu && event->type() == QEvent::MouseButtonPress) {
+        auto *mouseEvent = static_cast<QMouseEvent *>(event);
+        if (mouseEvent->button() == Qt::RightButton && m_appMenuModel) {
+            m_appMenuModel->triggerKCommandBar();
+            return true;  // Consume the event
+        }
     }
 
     if (event->type() == QEvent::MouseMove) {
