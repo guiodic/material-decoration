@@ -31,6 +31,8 @@ public:
     explicit SearchButton(Decoration *decoration, const int buttonIndex, QObject *parent = nullptr);
     ~SearchButton() override;
 
+    void mouseReleaseEvent(QMouseEvent *event) override;
+
 protected:
     void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal) override;
 };

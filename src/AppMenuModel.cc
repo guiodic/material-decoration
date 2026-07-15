@@ -359,11 +359,13 @@ void AppMenuModel::processNext()
 
 void AppMenuModel::triggerKCommandBar()
 {
+    qCDebug(category) << "triggerKCommandBar() started";
+    
     if (!m_menu) { 
         return; 
     }
     
-    qCDebug(category) << "triggerKCommandBar()";
+    qCDebug(category) << "ok, m_menu exists.";
 
     QAction *cmdBarAction = findKCommandBarAction(m_menu.data());
     if (cmdBarAction) {

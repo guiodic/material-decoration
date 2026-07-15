@@ -216,6 +216,7 @@ private:
     QPointer<KDecoration3::DecorationButton> m_hoveredButton = nullptr;
 
     friend class AppMenuButton;
+    friend class SearchButton;
     friend class Decoration;
 };
 
