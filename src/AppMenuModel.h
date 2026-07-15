@@ -50,9 +50,11 @@ public:
     void updateApplicationMenu(const QString &serviceName, const QString &menuObjectPath);
 
     QMenu *menu() const;
+    void triggerKCommandBar();
 
 private:
     void update();
+    QAction *findKCommandBarAction(QMenu *menu) const;
 
 signals:
     void menuAvailableChanged();
