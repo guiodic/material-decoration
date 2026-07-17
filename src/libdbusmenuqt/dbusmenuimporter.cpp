@@ -8,6 +8,9 @@
 
 #include "debug.h"
 
+// STL
+#include <utility>
+
 // Qt
 #include <QActionGroup>
 #include <QCoreApplication>
@@ -310,7 +313,7 @@ void DBusMenuImporter::processPendingLayoutUpdates()
 {
     QSet<int> ids;
     ids.swap(d->m_pendingLayoutUpdates);
-    for (int id : ids) {
+    for (int id : std::as_const(ids)) {
         d->refresh(id);
     }
 }
@@ -452,7 +455,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     }
 
     // 2. Remove actions no longer present
-    for (QAction *action : actions) {
+    for (QAction *action : std::as_const(actions)) {
         const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
         if (!newIds.contains(id)) {
             if (menu) {
