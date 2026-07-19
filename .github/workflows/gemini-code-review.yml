@@ -44,7 +44,7 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: gemini-3.5-flash # Optional, default is `gemini-2.5-flash`
+          GEMINI_MODEL: gemini-3.1-flash-lite # Optional, default is `gemini-2.5-flash`
           EXCLUDE: "*.md,*.txt,package-lock.json,*.yml,*.yaml"
 
       - name: Post Review Status Comment
