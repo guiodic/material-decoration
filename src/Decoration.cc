@@ -1416,9 +1416,7 @@ void Decoration::onSpacingChanged()
 
 void Decoration::onTabletModeChanged(bool mode)
 {
-    if (KWindowSystem::isPlatformX11()) {
-        return;
-    }
+    if (KWindowSystem::isPlatformWayland()) {
 #if HAVE_WAYLAND
     if (m_tabletMode == mode) {
         return;
@@ -1430,6 +1428,10 @@ void Decoration::onTabletModeChanged(bool mode)
     updateButtonsGeometryDelayed();
     update();
 #endif
+    } else {
+        Q_UNUSED(mode);
+        return;
+    }    
 }
 
 
