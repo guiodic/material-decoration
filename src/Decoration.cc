@@ -307,13 +307,7 @@ bool Decoration::init()
     
     connect(this, &KDecoration3::Decoration::bordersChanged, 
             this, &Decoration::updateTitleBar);
-    
-    
-
-    
-    
-    
-    
+     
     updateColors();
     updateBordersCornersBlurShadow();
     updateResizeBorders();
@@ -335,27 +329,29 @@ bool Decoration::init()
                  SLOT(reconfigure()));
 
 #if HAVE_WAYLAND
-    dbus.connect(QStringLiteral("org.kde.KWin"),
-                 QStringLiteral("/org/kde/KWin"),
-                 QStringLiteral("org.kde.KWin.TabletModeManager"),
-                 QStringLiteral("tabletModeChanged"),
-                 QStringLiteral("b"),
-                 this,
-                 SLOT(onTabletModeChanged(bool)));
-
-    auto message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.KWin"),
-                                                  QStringLiteral("/org/kde/KWin"),
-                                                  QStringLiteral("org.freedesktop.DBus.Properties"),
-                                                  QStringLiteral("Get"));
-    message.setArguments({QStringLiteral("org.kde.KWin.TabletModeManager"), QStringLiteral("tabletMode")});
-    auto *call = new QDBusPendingCallWatcher(dbus.asyncCall(message), this);
-    connect(call, &QDBusPendingCallWatcher::finished, this, [this, call]() {
-        QDBusPendingReply<QDBusVariant> reply = *call;
-        if (!reply.isError()) {
-            onTabletModeChanged(reply.value().variant().toBool());
-        }
-        call->deleteLater();
-    });
+    if (KWindowSystem::isPlatformX11()) {
+        dbus.connect(QStringLiteral("org.kde.KWin"),
+                     QStringLiteral("/org/kde/KWin"),
+                     QStringLiteral("org.kde.KWin.TabletModeManager"),
+                     QStringLiteral("tabletModeChanged"),
+                     QStringLiteral("b"),
+                     this,
+                     SLOT(onTabletModeChanged(bool)));
+        
+        auto message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.KWin"),
+                                                      QStringLiteral("/org/kde/KWin"),
+                                                      QStringLiteral("org.freedesktop.DBus.Properties"),
+                                                      QStringLiteral("Get"));
+        message.setArguments({QStringLiteral("org.kde.KWin.TabletModeManager"), QStringLiteral("tabletMode")});
+        auto *call = new QDBusPendingCallWatcher(dbus.asyncCall(message), this);
+        connect(call, &QDBusPendingCallWatcher::finished, this, [this, call]() {
+            QDBusPendingReply<QDBusVariant> reply = *call;
+            if (!reply.isError()) {
+                onTabletModeChanged(reply.value().variant().toBool());
+            }
+            call->deleteLater();
+        });
+    }
 #endif
 
     // Window Decoration KCM
@@ -1420,6 +1416,10 @@ void Decoration::onSpacingChanged()
 #if HAVE_WAYLAND
 void Decoration::onTabletModeChanged(bool mode)
 {
+    if (KWindowSystem::isPlatformX11()) {
+        return;
+    }
+    
     if (m_tabletMode == mode) {
         return;
     }
