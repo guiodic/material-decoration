@@ -973,12 +973,12 @@ bool Decoration::isMenuOnRight() const
 
 QPoint Decoration::windowPos() const
 {
-#if HAVE_X11
-    if (const auto *p = parent()) {
-        return p->property("clientGeometry").toRect().topLeft();
-    }
-#endif
-
+    if (KWindowSystem::isPlatformX11()) {
+        if (const auto *p = parent()) {
+            return p->property("clientGeometry").toRect().topLeft();
+        }
+    }    
+    
     return QPoint(0, 0);
 }
 
