@@ -1416,22 +1416,21 @@ void Decoration::onSpacingChanged()
 
 void Decoration::onTabletModeChanged(bool mode)
 {
-    if (KWindowSystem::isPlatformWayland()) {
 #if HAVE_WAYLAND
-    if (m_tabletMode == mode) {
+    if (KWindowSystem::isPlatformWayland()) {
+        if (m_tabletMode == mode) {
+            return;
+        }
+        m_tabletMode = mode;
+        updateBordersCornersBlurShadow();
+        updateResizeBorders();
+        updateTitleBar();
+        updateButtonsGeometryDelayed();
+        update();
         return;
     }
-    m_tabletMode = mode;
-    updateBordersCornersBlurShadow();
-    updateResizeBorders();
-    updateTitleBar();
-    updateButtonsGeometryDelayed();
-    update();
 #endif
-    } else {
-        Q_UNUSED(mode);
-        return;
-    }    
+    Q_UNUSED(mode);
 }
 
 
