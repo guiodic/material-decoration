@@ -63,9 +63,7 @@ public slots:
     void reconfigure();
 
 private slots:
-#if HAVE_WAYLAND
     void onTabletModeChanged(bool mode);
-#endif
 
 protected:
     void hoverEnterEvent(QHoverEvent *event) override;

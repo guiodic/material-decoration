@@ -1413,13 +1413,13 @@ void Decoration::onSpacingChanged()
     updateButtonsGeometryDelayed();
 }
 
-#if HAVE_WAYLAND
+
 void Decoration::onTabletModeChanged(bool mode)
 {
     if (KWindowSystem::isPlatformX11()) {
         return;
     }
-    
+#if HAVE_WAYLAND
     if (m_tabletMode == mode) {
         return;
     }
@@ -1429,7 +1429,8 @@ void Decoration::onTabletModeChanged(bool mode)
     updateTitleBar();
     updateButtonsGeometryDelayed();
     update();
-}
 #endif
+}
+
 
 } // namespace Material
