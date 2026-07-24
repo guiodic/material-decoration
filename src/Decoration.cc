@@ -329,7 +329,7 @@ bool Decoration::init()
                  SLOT(reconfigure()));
 
 #if HAVE_WAYLAND
-    if (KWindowSystem::isPlatformX11()) {
+    if (KWindowSystem::isPlatformWayland()) {
         dbus.connect(QStringLiteral("org.kde.KWin"),
                      QStringLiteral("/org/kde/KWin"),
                      QStringLiteral("org.kde.KWin.TabletModeManager"),
