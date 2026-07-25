@@ -1073,7 +1073,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
     m_searchMenu->setUpdatesEnabled(false);
 
-    m_lastResults = results;
+    m_lastResults = std::move(results);
 
     // Clear previous results
     const auto actions = m_searchMenu->actions();
@@ -1091,7 +1091,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     }
 
     int resultCount = 0;
-    for (const SearchResult &result : std::as_const(results)) {
+    for (const SearchResult &result : std::as_const(m_lastResults)) {
         if (resultCount >= MAX_SEARCH_RESULTS) { // stop after 100 results
             break;
         }
