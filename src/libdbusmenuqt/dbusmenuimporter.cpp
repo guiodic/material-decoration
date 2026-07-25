@@ -412,26 +412,8 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         newIds.insert(child.id);
     }
 
-    // 1. Remove actions no longer present
-    QList<QAction *> currentActions;
-    currentActions.reserve(actions.size());
-    for (QAction *action : std::as_const(actions)) {
-        const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
-        if (!newIds.contains(id)) {
-            if (menu) {
-                menu->removeAction(action);
-            }
-            if (QMenu *subMenu = action->menu()) {
-                subMenu->deleteLater();
-            }
-            action->deleteLater();
-            d->m_actionForId.remove(id);
-        } else {
-            currentActions.append(action);
-        }
-    }
-
-    // 2. Synchronize existing actions and add new ones
+    // 1. Synchronize existing actions and add new ones
+    auto currentActions = actions;
     const int childCount = rootItem.children.count();
     for (int i = 0; i < childCount; ++i) {
         const DBusMenuLayoutItem &dbusMenuItem = rootItem.children.at(i);
@@ -474,6 +456,21 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
                 currentActions.removeAt(index);
             }
             currentActions.insert(i, action);
+        }
+    }
+
+    // 2. Remove actions no longer present
+    for (QAction *action : std::as_const(actions)) {
+        const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
+        if (!newIds.contains(id)) {
+            if (menu) {
+                menu->removeAction(action);
+            }
+            if (QMenu *subMenu = action->menu()) {
+                subMenu->deleteLater();
+            }
+            action->deleteLater();
+            d->m_actionForId.remove(id);
         }
     }
 
