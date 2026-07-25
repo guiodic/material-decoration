@@ -412,8 +412,26 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         newIds.insert(child.id);
     }
 
-    // 1. Synchronize existing actions and add new ones
-    auto currentActions = menu->actions();
+    // 1. Remove actions no longer present
+    QList<QAction *> currentActions;
+    currentActions.reserve(actions.size());
+    for (QAction *action : std::as_const(actions)) {
+        const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
+        if (!newIds.contains(id)) {
+            if (menu) {
+                menu->removeAction(action);
+            }
+            if (QMenu *subMenu = action->menu()) {
+                subMenu->deleteLater();
+            }
+            action->deleteLater();
+            d->m_actionForId.remove(id);
+        } else {
+            currentActions.append(action);
+        }
+    }
+
+    // 2. Synchronize existing actions and add new ones
     const int childCount = rootItem.children.count();
     for (int i = 0; i < childCount; ++i) {
         const DBusMenuLayoutItem &dbusMenuItem = rootItem.children.at(i);
@@ -449,23 +467,13 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         if (before != action) {
             // If action was already in menu, insertAction will move it.
             menu->insertAction(before, action);
-            // Refresh the cached actions list after a move or insert
-            currentActions = menu->actions();
-        }
-    }
-
-    // 2. Remove actions no longer present
-    for (QAction *action : std::as_const(actions)) {
-        const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
-        if (!newIds.contains(id)) {
-            if (menu) {
-                menu->removeAction(action);
+            
+            // Update local currentActions instead of calling menu->actions() again!
+            const int index = (i + 1 < currentActions.count()) ? currentActions.indexOf(action, i + 1) : -1;
+            if (index != -1) {
+                currentActions.removeAt(index);
             }
-            if (QMenu *subMenu = action->menu()) {
-                subMenu->deleteLater();
-            }
-            action->deleteLater();
-            d->m_actionForId.remove(id);
+            currentActions.insert(i, action);
         }
     }
 
