@@ -461,6 +461,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
             }
         }
     }
+    Q_ASSERT(menu->actions() == currentActions);
 
     // 2. Remove actions no longer present
     for (QAction *action : std::as_const(actions)) {
