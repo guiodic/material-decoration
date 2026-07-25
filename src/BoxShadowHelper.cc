@@ -258,14 +258,11 @@ static inline void mirrorTopLeftQuadrant(QImage &image)
     const int stride = image.depth() >> 3;
 
     if (stride == 4) {
+        const int halfWidth = width / 2;
+        const int destOffset = width - halfWidth;
         for (int y = 0; y < centerY; ++y) {
             uint32_t *row = reinterpret_cast<uint32_t *>(image.scanLine(y));
-            uint32_t *in = row;
-            uint32_t *out = row + width - 1;
-
-            for (int x = 0; x < width / 2; ++x, ++in, --out) {
-                *out = *in;
-            }
+            std::reverse_copy(row, row + halfWidth, row + destOffset);
         }
     } else {
         for (int y = 0; y < centerY; ++y) {
