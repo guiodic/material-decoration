@@ -260,6 +260,14 @@ static inline void mirrorTopLeftQuadrant(QImage &image)
     if (stride == 4) {
         const int halfWidth = width / 2;
         const int destOffset = width - halfWidth;
+        // Proof of non-overlapping ranges for std::reverse_copy:
+        // - Source range is [row, row + halfWidth).
+        // - Destination range is [row + destOffset, row + destOffset + halfWidth).
+        // Since halfWidth = width / 2 and destOffset = width - halfWidth, we have:
+        //   destOffset >= halfWidth for all integers width >= 0.
+        // Therefore, the destination range starts exactly where the source range ends (if even)
+        // or strictly after it (if odd), ensuring they never overlap.
+        Q_ASSERT(destOffset >= halfWidth);
         for (int y = 0; y < centerY; ++y) {
             uint32_t *row = reinterpret_cast<uint32_t *>(image.scanLine(y));
             std::reverse_copy(row, row + halfWidth, row + destOffset);
