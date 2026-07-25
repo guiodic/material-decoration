@@ -1051,29 +1051,31 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         return;
     }
 
-    // Find results
-    QList<SearchResult> results;
-    if (m_appMenuModel) {
-        QMenu *rootMenu = m_appMenuModel->menu();
-        if (rootMenu) {
-            QSet<QMenu *> visited;
-            const auto *deco = qobject_cast<const Decoration *>(decoration());
-            const bool ignoreTopLevel = deco && deco->searchIgnoreTopLevel();
-            const bool ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
-            QStringList currentPath;
-            QStringMatcher matcher(text, Qt::CaseInsensitive);
-            searchMenu(rootMenu, matcher, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath);
+    {
+        // Find results
+        QList<SearchResult> results;
+        if (m_appMenuModel) {
+            QMenu *rootMenu = m_appMenuModel->menu();
+            if (rootMenu) {
+                QSet<QMenu *> visited;
+                const auto *deco = qobject_cast<const Decoration *>(decoration());
+                const bool ignoreTopLevel = deco && deco->searchIgnoreTopLevel();
+                const bool ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
+                QStringList currentPath;
+                QStringMatcher matcher(text, Qt::CaseInsensitive);
+                searchMenu(rootMenu, matcher, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath);
+            }
         }
-    }
 
-    // If results are the same as last time, do nothing to prevent the freeze.
-    if (m_lastResults == results) {
-        return;
-    }
+        // If results are the same as last time, do nothing to prevent the freeze.
+        if (m_lastResults == results) {
+            return;
+        }
+
+        m_lastResults = std::move(results);
+    } // 'results' goes out of scope here to prevent accidental use-after-move
 
     m_searchMenu->setUpdatesEnabled(false);
-
-    m_lastResults = std::move(results);
 
     // Clear previous results
     const auto actions = m_searchMenu->actions();
