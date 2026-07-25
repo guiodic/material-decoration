@@ -451,11 +451,14 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
             menu->insertAction(before, action);
             
             // Update local currentActions instead of calling menu->actions() again!
-            const int index = (i + 1 < currentActions.count()) ? currentActions.indexOf(action, i + 1) : -1;
+            const int index = currentActions.indexOf(action);
             if (index != -1) {
-                currentActions.removeAt(index);
+                if (index != i) {
+                    currentActions.move(index, i);
+                }
+            } else {
+                currentActions.insert(i, action);
             }
-            currentActions.insert(i, action);
         }
     }
 
