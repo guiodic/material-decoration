@@ -413,7 +413,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     }
 
     // 1. Synchronize existing actions and add new ones
-    auto currentActions = menu->actions();
+    auto currentActions = actions;
     const int childCount = rootItem.children.count();
     for (int i = 0; i < childCount; ++i) {
         const DBusMenuLayoutItem &dbusMenuItem = rootItem.children.at(i);
@@ -449,10 +449,19 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         if (before != action) {
             // If action was already in menu, insertAction will move it.
             menu->insertAction(before, action);
-            // Refresh the cached actions list after a move or insert
-            currentActions = menu->actions();
+            
+            // Update local currentActions instead of calling menu->actions() again!
+            const int index = currentActions.indexOf(action, i);
+            if (index != -1) {
+                if (index != i) {
+                    currentActions.move(index, i);
+                }
+            } else {
+                currentActions.insert(i, action);
+            }
         }
     }
+    Q_ASSERT(menu->actions() == currentActions);
 
     // 2. Remove actions no longer present
     for (QAction *action : std::as_const(actions)) {
