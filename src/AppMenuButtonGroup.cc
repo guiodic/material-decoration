@@ -56,6 +56,11 @@
 #include <utility>
 
 static constexpr int MAX_SEARCH_RESULTS = 100;
+// Safety cap on the flattened candidate cache (distinct from MAX_SEARCH_RESULTS,
+// which caps *matches shown*): protects against pathologically huge app menus
+// while still comfortably covering any realistic menu (the previous per-keystroke
+// walk had no equivalent cap on nodes visited before hitting MAX_SEARCH_RESULTS).
+static constexpr int MAX_SEARCH_CANDIDATES = 5000;
 
 namespace Material
 {
@@ -472,6 +477,8 @@ void AppMenuButtonGroup::performDebouncedMenuUpdate()
 
 void AppMenuButtonGroup::updateAppMenuModel()
 {
+    m_searchCandidatesDirty = true;
+
     auto *deco = qobject_cast<Decoration *>(decoration());
     if (!deco) {
         return;
@@ -1074,19 +1081,12 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
     {
         // Find results
-        QList<SearchResult> results;
-        if (m_appMenuModel) {
-            QMenu *rootMenu = m_appMenuModel->menu();
-            if (rootMenu) {
-                QSet<QMenu *> visited;
-                const auto *deco = qobject_cast<const Decoration *>(decoration());
-                const bool ignoreTopLevel = deco && deco->searchIgnoreTopLevel();
-                const bool ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
-                QStringList currentPath;
-                QStringMatcher matcher(text, Qt::CaseInsensitive);
-                searchMenu(rootMenu, matcher, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath);
-            }
-        }
+        rebuildSearchCandidatesIfNeeded();
+        const auto *deco = qobject_cast<const Decoration *>(decoration());
+        const bool ignoreTopLevel = deco && deco->searchIgnoreTopLevel();
+        const bool ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
+        QStringMatcher matcher(text, Qt::CaseInsensitive);
+        QList<SearchResult> results = matchSearchCandidates(matcher, ignoreTopLevel, ignoreSubMenus);
 
         // If results are the same as last time, do nothing to prevent the freeze.
         if (m_lastResults == results) {
@@ -1161,6 +1161,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
 {
     m_actionTextCache.clear();
+    m_searchCandidatesDirty = true;
 
     if (m_searchUiVisible && !m_lastSearchQuery.isEmpty()) {
         if (!m_searchDebounceTimer->isActive()) {
@@ -1217,76 +1218,126 @@ QString AppMenuButtonGroup::getActionText(QAction *action) const
     return cleanedText;
 }
 
-void AppMenuButtonGroup::searchMenu(QMenu *menu, const QStringMatcher &matcher, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled, bool parentMatched)
+void AppMenuButtonGroup::rebuildSearchCandidatesIfNeeded()
 {
-    if (results.size() >= MAX_SEARCH_RESULTS || !menu || visited.contains(menu)) {
+    if (!m_searchCandidatesDirty) {
+        return;
+    }
+    m_searchCandidatesDirty = false;
+    m_searchCandidates.clear();
+
+    if (!m_appMenuModel) {
+        return;
+    }
+    QMenu *rootMenu = m_appMenuModel->menu();
+    if (!rootMenu) {
+        return;
+    }
+
+    QSet<QMenu *> visited;
+    QList<QPointer<QAction>> namedAncestors;
+    collectSearchCandidates(rootMenu, visited, namedAncestors);
+}
+
+void AppMenuButtonGroup::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &namedAncestors)
+{
+    if (!menu || visited.contains(menu) || m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES) {
         return;
     }
     visited.insert(menu);
 
     QAction *menuAction = menu->menuAction();
-    bool isCurrentEnabled = isParentEnabled;
-    bool addedToPath = false;
-    bool currentMatched = parentMatched;
-
-    if (menuAction) {
-        if (!menuAction->isEnabled()) {
-            isCurrentEnabled = false;
-        }
-        const QString menuText = getActionText(menuAction);
-        if (!menuText.isEmpty()) {
-            currentPath.append(menuText);
-            addedToPath = true;
-
-            if (!currentMatched && (!ignoreTopLevel || currentPath.size() > 1)) {
-                if (matcher.indexIn(menuText) != -1) {
-                    currentMatched = true;
-                }
-            }
-        }
+    bool addedAncestor = false;
+    if (menuAction && !getActionText(menuAction).isEmpty()) {
+        namedAncestors.append(menuAction);
+        addedAncestor = true;
     }
 
     for (QAction *action : menu->actions()) {
-        if (results.size() >= MAX_SEARCH_RESULTS) {
+        if (m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES) {
             break;
         }
         if (action->isSeparator()) {
             continue;
         }
         if (action->menu()) {
-            searchMenu(action->menu(), matcher, results, visited, ignoreTopLevel, ignoreSubMenus, currentPath, isCurrentEnabled, currentMatched);
+            collectSearchCandidates(action->menu(), visited, namedAncestors);
         } else {
-            const QString itemText = getActionText(action);
-            bool match = currentMatched;
-            if (ignoreSubMenus) {
-                match = matcher.indexIn(itemText) != -1;
-            } else {
-                // Check the text of the action
-                if (!match && (!ignoreTopLevel || !currentPath.isEmpty())) {
-                    if (matcher.indexIn(itemText) != -1) {
-                        match = true;
-                    }
-                }
-            }
-
-            if (match) {
-                ActionInfo info;
-                info.label = itemText;
-                info.isEffectivelyEnabled = isCurrentEnabled && action->isEnabled();
-
-                currentPath.append(itemText);
-                info.path = currentPath.join(QStringLiteral(" » "));
-                info.searchablePath = (currentPath.size() > 1) ? currentPath.mid(1).join(QStringLiteral(" » ")) : itemText;
-                currentPath.removeLast();
-
-                results.append({action, info});
-            }
+            m_searchCandidates.append({action, namedAncestors});
         }
     }
 
-    if (addedToPath) {
-        currentPath.removeLast();
+    if (addedAncestor) {
+        namedAncestors.removeLast();
     }
+}
+
+QList<AppMenuButtonGroup::SearchResult> AppMenuButtonGroup::matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus) const
+{
+    QList<SearchResult> results;
+
+    for (const SearchCandidate &candidate : std::as_const(m_searchCandidates)) {
+        if (results.size() >= MAX_SEARCH_RESULTS) {
+            break;
+        }
+        QAction *action = candidate.action;
+        if (!action) {
+            continue; // Action was destroyed since the cache was built.
+        }
+
+        // Re-derive the still-live ancestor titles/enabled-state fresh on
+        // every call: only the *shape* of the tree is cached, not the
+        // (mutable) text or enabled flags of the actions in it.
+        QStringList currentPath;
+        bool isCurrentEnabled = true;
+        bool currentMatched = false;
+        bool ancestorsStillValid = true;
+        for (int i = 0; i < candidate.namedAncestors.size(); ++i) {
+            QAction *ancestor = candidate.namedAncestors.at(i);
+            if (!ancestor) {
+                ancestorsStillValid = false;
+                break;
+            }
+            if (!ancestor->isEnabled()) {
+                isCurrentEnabled = false;
+            }
+            currentPath.append(getActionText(ancestor));
+            if (!currentMatched && (!ignoreTopLevel || currentPath.size() > 1)) {
+                if (matcher.indexIn(currentPath.last()) != -1) {
+                    currentMatched = true;
+                }
+            }
+        }
+        if (!ancestorsStillValid) {
+            continue; // A submenu in the path was rebuilt/destroyed; skip until next full rebuild.
+        }
+
+        const QString itemText = getActionText(action);
+        bool match = currentMatched;
+        if (ignoreSubMenus) {
+            match = matcher.indexIn(itemText) != -1;
+        } else if (!match && (!ignoreTopLevel || !currentPath.isEmpty())) {
+            if (matcher.indexIn(itemText) != -1) {
+                match = true;
+            }
+        }
+
+        if (!match) {
+            continue;
+        }
+
+        ActionInfo info;
+        info.label = itemText;
+        info.isEffectivelyEnabled = isCurrentEnabled && action->isEnabled();
+
+        currentPath.append(itemText);
+        info.path = currentPath.join(QStringLiteral(" » "));
+        info.searchablePath = (currentPath.size() > 1) ? currentPath.mid(1).join(QStringLiteral(" » ")) : itemText;
+
+        results.append({action, info});
+    }
+
+    return results;
 }
 
 AppMenuButton *AppMenuButtonGroup::getAppMenuButton(int index) const

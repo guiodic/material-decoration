@@ -149,6 +149,19 @@ private:
         bool isEffectivelyEnabled;
     };
 
+    // A leaf action reachable from the app menu root, plus the chain of
+    // named ancestor submenu-actions leading to it. Built once per menu
+    // structure (see rebuildSearchCandidatesIfNeeded()) instead of being
+    // re-derived by walking the whole QMenu tree on every keystroke.
+    // Text and enabled-state are deliberately NOT cached here, since those
+    // can change at runtime (e.g. "Undo X" toggling label/enabled) without
+    // the structure itself changing; they are re-read fresh from the still-
+    // live QAction pointers each time matchSearchCandidates() runs.
+    struct SearchCandidate {
+        QPointer<QAction> action;
+        QList<QPointer<QAction>> namedAncestors;
+    };
+
     struct SearchResult {
         QPointer<QAction> action;
         ActionInfo info;
@@ -166,7 +179,9 @@ private:
     QString getActionText(QAction *action) const;
     void setupSearchMenu();
     void repositionSearchMenu();
-    void searchMenu(QMenu *menu, const QStringMatcher &matcher, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled = true, bool parentMatched = false);
+    void rebuildSearchCandidatesIfNeeded();
+    void collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &namedAncestors);
+    QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus) const;
     AppMenuButton *getAppMenuButton(int index) const;
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
 
@@ -208,6 +223,11 @@ private:
     bool m_menuLoadedOnce = false;
     QString m_lastSearchQuery;
     QList<SearchResult> m_lastResults;
+    // Flat, pre-walked list of searchable leaf actions. Rebuilt only when
+    // the app menu structure actually changes (see rebuildSearchCandidatesIfNeeded()),
+    // not on every keystroke.
+    QList<SearchCandidate> m_searchCandidates;
+    bool m_searchCandidatesDirty = true;
     // QActionGroups created in filterMenu() to preserve mutual exclusivity
     // between search-result proxies; owned here (parented to m_searchMenu)
     // since they aren't owned by any single proxy action anymore and must
