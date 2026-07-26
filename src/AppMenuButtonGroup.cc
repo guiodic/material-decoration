@@ -1026,6 +1026,10 @@ void AppMenuButtonGroup::clearSearchResultActions()
     for (int i = actions.count() - 1; i >= 2; --i) {
         QAction *action = actions.at(i);
         m_searchMenu->removeAction(action);
+        // Detach action from its group before scheduling deletion
+        if (QActionGroup *group = action->actionGroup()) {
+            group->removeAction(action);
+        }
         action->deleteLater();
     }
 
@@ -1130,7 +1134,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
             QActionGroup *&proxyGroup = groupMap[originalGroup];
             if (!proxyGroup) {
                 proxyGroup = new QActionGroup(m_searchMenu);
-                proxyGroup->setExclusive(true);
+                proxyGroup->setExclusionPolicy(originalGroup->exclusionPolicy());
                 m_searchResultGroups.append(proxyGroup);
             }
             proxyGroup->addAction(newAction);
