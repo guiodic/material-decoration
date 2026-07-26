@@ -70,7 +70,7 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, bool ignoreTo
         // Find results
         rebuildSearchCandidatesIfNeeded();
         QStringMatcher matcher(text, Qt::CaseInsensitive);
-        QList<SearchResult> results = matchSearchCandidates(matcher, ignoreTopLevel, ignoreSubMenus);
+        QList<SearchResult> results = matchSearchCandidates(matcher, ignoreTopLevel, ignoreSubMenus, showDisabledActions);
 
         // If results and options are the same as last time, do nothing to prevent the freeze.
         if (m_lastResults == results && m_lastShowDisabledActions == showDisabledActions && m_lastIgnoreTopLevel == ignoreTopLevel && m_lastIgnoreSubMenus == ignoreSubMenus) {
@@ -99,7 +99,10 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, bool ignoreTo
         }
 
         const ActionInfo &info = result.info;
-        QAction *action = result.action;
+        QAction *action = result.action.data();
+        if (!action) {
+            continue;
+        }
         if (!info.isEffectivelyEnabled && !showDisabledActions) {
             continue;
         }
@@ -169,6 +172,7 @@ void AppMenuSearch::invalidateCandidates()
 {
     m_searchCandidatesDirty = true;
     m_searchCandidates.clear();
+    m_actionTextCache.clear();
 }
 
 void AppMenuSearch::clearLastResults()
@@ -251,7 +255,7 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
     }
 }
 
-QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus) const
+QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions) const
 {
     QList<SearchResult> results;
 
@@ -361,6 +365,11 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
             continue; // Skip building path entirely for non-matching entries!
         }
 
+        const bool isEffectivelyEnabled = isCurrentEnabled && action->isEnabled();
+        if (!isEffectivelyEnabled && !showDisabledActions) {
+            continue;
+        }
+
         // 2. Only perform path allocation and joins for matching results
         QStringList currentPath;
         currentPath.reserve(candidate.namedAncestors.size() + 1);
@@ -371,11 +380,10 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
 
         ActionInfo info;
         info.label = itemText;
-        info.isEffectivelyEnabled = isCurrentEnabled && action->isEnabled();
+        info.isEffectivelyEnabled = isEffectivelyEnabled;
 
         currentPath.append(itemText);
         info.path = currentPath.join(QStringLiteral(" » "));
-        info.searchablePath = (currentPath.size() > 1) ? currentPath.mid(1).join(QStringLiteral(" » ")) : itemText;
 
         results.append({action, info});
     }

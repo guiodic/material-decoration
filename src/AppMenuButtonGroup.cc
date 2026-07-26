@@ -208,7 +208,7 @@ void AppMenuButtonGroup::setupSearchMenu()
     m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu","Search")+QStringLiteral("…"));
     m_searchLineEdit->setClearButtonEnabled(false);
 
-    connect(m_search, &AppMenuSearch::repositionRequested, this, &AppMenuButtonGroup::repositionSearchMenu);
+    connect(m_search, &AppMenuSearch::repositionRequested, this, &AppMenuButtonGroup::repositionSearchMenu, Qt::UniqueConnection);
 }
 
 void AppMenuButtonGroup::repositionSearchMenu()

@@ -46,7 +46,6 @@ public:
 
     struct ActionInfo {
         QString path;
-        QString searchablePath;
         QString label;
         bool isEffectivelyEnabled = false;
     };
@@ -84,7 +83,7 @@ signals:
 private:
     void rebuildSearchCandidatesIfNeeded();
     void collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &namedAncestors, QList<QPointer<QAction>> &enablementAncestors);
-    QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus) const;
+    QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions) const;
     QString getActionText(QAction *action) const;
 
     QPointer<AppMenuModel> m_appMenuModel;
