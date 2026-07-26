@@ -48,7 +48,7 @@ public:
         QString path;
         QString searchablePath;
         QString label;
-        bool isEffectivelyEnabled;
+        bool isEffectivelyEnabled = false;
     };
 
     struct SearchCandidate {
@@ -89,6 +89,7 @@ private:
 
     QPointer<AppMenuModel> m_appMenuModel;
     QString m_lastSearchQuery;
+    bool m_lastShowDisabledActions = false;
     QList<SearchResult> m_lastResults;
     QList<SearchCandidate> m_searchCandidates;
     bool m_searchCandidatesDirty = true;

@@ -69,11 +69,12 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, bool ignoreTo
         QStringMatcher matcher(text, Qt::CaseInsensitive);
         QList<SearchResult> results = matchSearchCandidates(matcher, ignoreTopLevel, ignoreSubMenus);
 
-        // If results are the same as last time, do nothing to prevent the freeze.
-        if (m_lastResults == results) {
+        // If results and options are the same as last time, do nothing to prevent the freeze.
+        if (m_lastResults == results && m_lastShowDisabledActions == showDisabledActions) {
             return;
         }
 
+        m_lastShowDisabledActions = showDisabledActions;
         m_lastResults = std::move(results);
     } // 'results' goes out of scope here to prevent accidental use-after-move
 
@@ -101,6 +102,7 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, bool ignoreTo
         newAction->setEnabled(info.isEffectivelyEnabled);
         newAction->setCheckable(action->isCheckable());
         newAction->setChecked(action->isChecked());
+        newAction->setData(true); // Mark as a proxy result action
 
         if (QActionGroup *originalGroup = action->actionGroup(); originalGroup && originalGroup->isExclusive()) {
             QActionGroup *&proxyGroup = groupMap[originalGroup];
@@ -125,8 +127,8 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, bool ignoreTo
         resultCount++;
     }
 
-    Q_EMIT repositionRequested();
     searchMenu->setUpdatesEnabled(true);
+    Q_EMIT repositionRequested();
 }
 
 void AppMenuSearch::clear(QMenu *searchMenu)
@@ -136,14 +138,15 @@ void AppMenuSearch::clear(QMenu *searchMenu)
     }
 
     const auto actions = searchMenu->actions();
-    for (int i = actions.count() - 1; i >= 2; --i) {
-        QAction *action = actions.at(i);
-        searchMenu->removeAction(action);
-        // Detach action from its group before scheduling deletion
-        if (QActionGroup *group = action->actionGroup()) {
-            group->removeAction(action);
+    for (QAction *action : actions) {
+        if (action && action->data().toBool() == true) {
+            searchMenu->removeAction(action);
+            // Detach action from its group before scheduling deletion
+            if (QActionGroup *group = action->actionGroup()) {
+                group->removeAction(action);
+            }
+            action->deleteLater();
         }
-        action->deleteLater();
     }
 
     // The old proxy actions no longer reference these groups (deleteLater()
@@ -161,13 +164,13 @@ void AppMenuSearch::invalidateCandidates()
 {
     m_searchCandidatesDirty = true;
     m_searchCandidates.clear();
-    m_actionTextCache.clear();
 }
 
 void AppMenuSearch::clearLastResults()
 {
     m_lastResults.clear();
     m_lastSearchQuery.clear();
+    m_lastShowDisabledActions = false;
 }
 
 QString AppMenuSearch::lastSearchQuery() const
