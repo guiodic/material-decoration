@@ -31,9 +31,10 @@
 #include <QLineEdit>
 #include <QPointer>
 #include <QHash>
+#include <QSet>
+#include <QStringMatcher>
 
 class QTimer;
-class QStringMatcher;
 class QVariantAnimation;
 class QActionGroup;
 
