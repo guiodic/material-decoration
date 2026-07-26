@@ -150,7 +150,7 @@ private:
     };
 
     struct SearchResult {
-        QAction *action;
+        QPointer<QAction> action;
         ActionInfo info;
 
         bool operator==(const SearchResult &other) const {
