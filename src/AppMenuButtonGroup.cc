@@ -1276,6 +1276,13 @@ QList<AppMenuButtonGroup::SearchResult> AppMenuButtonGroup::matchSearchCandidate
 {
     QList<SearchResult> results;
 
+    struct AncestorState {
+        bool isEffectivelyEnabled;
+        bool currentMatched;
+        QString text;
+    };
+    QHash<QAction *, AncestorState> localAncestorCache;
+
     for (const SearchCandidate &candidate : std::as_const(m_searchCandidates)) {
         if (results.size() >= MAX_SEARCH_RESULTS) {
             break;
@@ -1285,29 +1292,51 @@ QList<AppMenuButtonGroup::SearchResult> AppMenuButtonGroup::matchSearchCandidate
             continue; // Action was destroyed since the cache was built.
         }
 
-        // Re-derive the still-live ancestor titles/enabled-state fresh on
-        // every call: only the *shape* of the tree is cached, not the
-        // (mutable) text or enabled flags of the actions in it.
-        QStringList currentPath;
+        // 1. Determine match and enabled states using cached ancestor info with zero string path allocations.
+        // We optimize by checking the last parent directly from the cache to avoid looping on candidate prefix sharing.
         bool isCurrentEnabled = true;
         bool currentMatched = false;
         bool ancestorsStillValid = true;
-        for (int i = 0; i < candidate.namedAncestors.size(); ++i) {
-            QAction *ancestor = candidate.namedAncestors.at(i);
-            if (!ancestor) {
+
+        if (!candidate.namedAncestors.isEmpty()) {
+            QAction *parent = candidate.namedAncestors.last();
+            if (!parent) {
                 ancestorsStillValid = false;
-                break;
-            }
-            if (!ancestor->isEnabled()) {
-                isCurrentEnabled = false;
-            }
-            currentPath.append(getActionText(ancestor));
-            if (!currentMatched && (!ignoreTopLevel || currentPath.size() > 1)) {
-                if (matcher.indexIn(currentPath.last()) != -1) {
-                    currentMatched = true;
+            } else {
+                auto it = localAncestorCache.find(parent);
+                if (it != localAncestorCache.end()) {
+                    isCurrentEnabled = it.value().isEffectivelyEnabled;
+                    currentMatched = it.value().currentMatched;
+                } else {
+                    // Populate cache for the entire chain of candidate.namedAncestors
+                    for (int i = 0; i < candidate.namedAncestors.size(); ++i) {
+                        QAction *ancestor = candidate.namedAncestors.at(i);
+                        if (!ancestor) {
+                            ancestorsStillValid = false;
+                            break;
+                        }
+                        
+                        auto it2 = localAncestorCache.find(ancestor);
+                        if (it2 != localAncestorCache.end()) {
+                            isCurrentEnabled = it2.value().isEffectivelyEnabled;
+                            currentMatched = it2.value().currentMatched;
+                        } else {
+                            if (!ancestor->isEnabled()) {
+                                isCurrentEnabled = false;
+                            }
+                            QString ancestorText = getActionText(ancestor);
+                            if (!currentMatched && (!ignoreTopLevel || i > 0)) {
+                                if (matcher.indexIn(ancestorText) != -1) {
+                                    currentMatched = true;
+                                }
+                            }
+                            localAncestorCache.insert(ancestor, {isCurrentEnabled, currentMatched, ancestorText});
+                        }
+                    }
                 }
             }
         }
+
         if (!ancestorsStillValid) {
             continue; // A submenu in the path was rebuilt/destroyed; skip until next full rebuild.
         }
@@ -1316,14 +1345,22 @@ QList<AppMenuButtonGroup::SearchResult> AppMenuButtonGroup::matchSearchCandidate
         bool match = currentMatched;
         if (ignoreSubMenus) {
             match = matcher.indexIn(itemText) != -1;
-        } else if (!match && (!ignoreTopLevel || !currentPath.isEmpty())) {
+        } else if (!match && (!ignoreTopLevel || !candidate.namedAncestors.isEmpty())) {
             if (matcher.indexIn(itemText) != -1) {
                 match = true;
             }
         }
 
         if (!match) {
-            continue;
+            continue; // Skip building path entirely for non-matching entries!
+        }
+
+        // 2. Only perform path allocation and joins for matching results
+        QStringList currentPath;
+        currentPath.reserve(candidate.namedAncestors.size() + 1);
+        for (int i = 0; i < candidate.namedAncestors.size(); ++i) {
+            QAction *ancestor = candidate.namedAncestors.at(i);
+            currentPath.append(localAncestorCache.value(ancestor).text);
         }
 
         ActionInfo info;
