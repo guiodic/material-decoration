@@ -90,6 +90,8 @@ private:
     QPointer<AppMenuModel> m_appMenuModel;
     QString m_lastSearchQuery;
     bool m_lastShowDisabledActions = false;
+    bool m_lastIgnoreTopLevel = false;
+    bool m_lastIgnoreSubMenus = false;
     QList<SearchResult> m_lastResults;
     QList<SearchCandidate> m_searchCandidates;
     bool m_searchCandidatesDirty = true;

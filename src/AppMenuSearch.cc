@@ -73,11 +73,13 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, bool ignoreTo
         QList<SearchResult> results = matchSearchCandidates(matcher, ignoreTopLevel, ignoreSubMenus);
 
         // If results and options are the same as last time, do nothing to prevent the freeze.
-        if (m_lastResults == results && m_lastShowDisabledActions == showDisabledActions) {
+        if (m_lastResults == results && m_lastShowDisabledActions == showDisabledActions && m_lastIgnoreTopLevel == ignoreTopLevel && m_lastIgnoreSubMenus == ignoreSubMenus) {
             return;
         }
 
         m_lastShowDisabledActions = showDisabledActions;
+        m_lastIgnoreTopLevel = ignoreTopLevel;
+        m_lastIgnoreSubMenus = ignoreSubMenus;
         m_lastResults = std::move(results);
     } // 'results' goes out of scope here to prevent accidental use-after-move
 
@@ -105,7 +107,7 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, bool ignoreTo
         newAction->setEnabled(info.isEffectivelyEnabled);
         newAction->setCheckable(action->isCheckable());
         newAction->setChecked(action->isChecked());
-        newAction->setData(true); // Mark as a proxy result action
+        newAction->setData(QStringLiteral("AppMenuSearchProxy")); // Uniquely mark as a proxy result action
 
         if (QActionGroup *originalGroup = action->actionGroup(); originalGroup && originalGroup->isExclusive()) {
             QActionGroup *&proxyGroup = groupMap[originalGroup];
@@ -142,7 +144,7 @@ void AppMenuSearch::clear(QMenu *searchMenu)
 
     const auto actions = searchMenu->actions();
     for (QAction *action : actions) {
-        if (action && action->data().toBool() == true) {
+        if (action && action->data().toString() == QStringLiteral("AppMenuSearchProxy")) {
             searchMenu->removeAction(action);
             // Detach action from its group before scheduling deletion
             if (QActionGroup *group = action->actionGroup()) {
@@ -174,6 +176,8 @@ void AppMenuSearch::clearLastResults()
     m_lastResults.clear();
     m_lastSearchQuery.clear();
     m_lastShowDisabledActions = false;
+    m_lastIgnoreTopLevel = false;
+    m_lastIgnoreSubMenus = false;
 }
 
 QString AppMenuSearch::lastSearchQuery() const
