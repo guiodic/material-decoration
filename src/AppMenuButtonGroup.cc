@@ -1016,6 +1016,30 @@ void AppMenuButtonGroup::onShowingChanged(bool showing)
     }
 }
 
+void AppMenuButtonGroup::clearSearchResultActions()
+{
+    if (!m_searchMenu) {
+        return;
+    }
+
+    const auto actions = m_searchMenu->actions();
+    for (int i = actions.count() - 1; i >= 2; --i) {
+        QAction *action = actions.at(i);
+        m_searchMenu->removeAction(action);
+        action->deleteLater();
+    }
+
+    // The old proxy actions no longer reference these groups (deleteLater()
+    // above), so nothing else owns them: delete explicitly to avoid leaking
+    // one QActionGroup per exclusive result set on every keystroke.
+    for (const QPointer<QActionGroup> &oldGroup : std::as_const(m_searchResultGroups)) {
+        if (oldGroup) {
+            oldGroup->deleteLater();
+        }
+    }
+    m_searchResultGroups.clear();
+}
+
 void AppMenuButtonGroup::filterMenu(const QString &text)
 {
     if (!m_searchMenu) {
@@ -1025,14 +1049,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
     // Clear results if search text is too short
     if (text.length() < 3) {
-        const auto actions = m_searchMenu->actions();
-        if (actions.count() > 2) {
-            for (int i = actions.count() - 1; i >= 2; --i) {
-                QAction *action = actions.at(i);
-                m_searchMenu->removeAction(action);
-                action->deleteLater();
-            }
-        }
+        clearSearchResultActions();
         m_lastResults.clear();
         repositionSearchMenu();
 
@@ -1078,12 +1095,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     m_searchMenu->setUpdatesEnabled(false);
 
     // Clear previous results
-    const auto actions = m_searchMenu->actions();
-    for (int i = actions.count() - 1; i >= 2; --i) {
-        QAction *action = actions.at(i);
-        m_searchMenu->removeAction(action);
-        action->deleteLater();
-    }
+    clearSearchResultActions();
 
     // Add new results
     const auto *deco = qobject_cast<const Decoration *>(decoration());
@@ -1093,6 +1105,12 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     }
 
     int resultCount = 0;
+    // Map each *original* action group to the QActionGroup we create for its
+    // search-result proxies, so results that were mutually exclusive in the
+    // real menu (e.g. radio-button items) stay mutually exclusive here too.
+    // Without this, each proxy action got its own isolated single-member
+    // group and could show several "checked" radio results at once.
+    QHash<QActionGroup *, QActionGroup *> groupMap;
     for (const SearchResult &result : std::as_const(m_lastResults)) {
         if (resultCount >= MAX_SEARCH_RESULTS) { // stop after 100 results
             break;
@@ -1108,10 +1126,14 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
         newAction->setCheckable(action->isCheckable());
         newAction->setChecked(action->isChecked());
 
-        if (action->actionGroup() && action->actionGroup()->isExclusive()) {
-            auto *group = new QActionGroup(newAction);
-            group->setExclusive(true);
-            group->addAction(newAction);
+        if (QActionGroup *originalGroup = action->actionGroup(); originalGroup && originalGroup->isExclusive()) {
+            QActionGroup *&proxyGroup = groupMap[originalGroup];
+            if (!proxyGroup) {
+                proxyGroup = new QActionGroup(m_searchMenu);
+                proxyGroup->setExclusive(true);
+                m_searchResultGroups.append(proxyGroup);
+            }
+            proxyGroup->addAction(newAction);
         }
       
         QPointer<QAction> safeAction = action;

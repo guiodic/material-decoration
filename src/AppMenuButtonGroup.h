@@ -35,6 +35,7 @@
 class QTimer;
 class QStringMatcher;
 class QVariantAnimation;
+class QActionGroup;
 
 namespace Material
 {
@@ -103,6 +104,7 @@ private:
     void onDelayedCacheTimerTimeout();
     void onShowingChanged(bool hovered);
     void filterMenu(const QString &text);
+    void clearSearchResultActions();
     void onSearchTimerTimeout();
     void onSubMenuReady(QMenu *menu);
 
@@ -206,6 +208,11 @@ private:
     bool m_menuLoadedOnce = false;
     QString m_lastSearchQuery;
     QList<SearchResult> m_lastResults;
+    // QActionGroups created in filterMenu() to preserve mutual exclusivity
+    // between search-result proxies; owned here (parented to m_searchMenu)
+    // since they aren't owned by any single proxy action anymore and must
+    // be deleted explicitly when the previous results are cleared.
+    QList<QPointer<QActionGroup>> m_searchResultGroups;
 
     QList<QPointer<TextButton>> m_textButtons;
     QPointer<MenuOverflowButton> m_overflowButton;
