@@ -59,6 +59,7 @@ NOTE: the master branch is aligned with the latest Plasma version. For earlier
 ones, see the other branches.
 
 ![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/guiodic/material-decoration?utm_source=oss&utm_medium=github&utm_campaign=guiodic%2Fmaterial-decoration&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
+
 ....
 
 TODO/Bugs ([Issue #1](https://github.com/Zren/material-decoration/issues/1)):
