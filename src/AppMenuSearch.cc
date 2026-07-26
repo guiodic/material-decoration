@@ -39,6 +39,11 @@ AppMenuSearch::AppMenuSearch(AppMenuModel *model, QObject *parent)
 
 AppMenuSearch::~AppMenuSearch() = default;
 
+bool AppMenuSearch::isQueryTooShort(const QString &text)
+{
+    return text.length() < MINIMUM_SEARCH_LENGTH;
+}
+
 void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions)
 {
     if (!searchMenu) {
@@ -47,7 +52,7 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, bool ignoreTo
     m_lastSearchQuery = text;
 
     // Clear results if search text is too short
-    if (text.length() < 3) {
+    if (isQueryTooShort(text)) {
         clear(searchMenu);
         m_lastResults.clear();
         Q_EMIT repositionRequested();

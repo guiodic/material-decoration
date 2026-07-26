@@ -1035,7 +1035,7 @@ void AppMenuButtonGroup::onShowingChanged(bool showing)
 
 void AppMenuButtonGroup::filterMenu(const QString &text)
 {
-    if (!m_searchMenu) {
+    if (!m_searchMenu || !m_searchLineEdit) {
         return;
     }
 

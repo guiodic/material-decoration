@@ -41,6 +41,9 @@ public:
     explicit AppMenuSearch(AppMenuModel *model, QObject *parent = nullptr);
     ~AppMenuSearch() override;
 
+    static constexpr int MINIMUM_SEARCH_LENGTH = 3;
+    static bool isQueryTooShort(const QString &text);
+
     struct ActionInfo {
         QString path;
         QString searchablePath;
@@ -84,7 +87,7 @@ private:
     QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus) const;
     QString getActionText(QAction *action) const;
 
-    AppMenuModel *m_appMenuModel;
+    QPointer<AppMenuModel> m_appMenuModel;
     QString m_lastSearchQuery;
     QList<SearchResult> m_lastResults;
     QList<SearchCandidate> m_searchCandidates;
