@@ -60,6 +60,9 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, bool ignoreTo
     }
 
     if (!m_appMenuModel) {
+        clear(searchMenu);
+        m_lastResults.clear();
+        Q_EMIT repositionRequested();
         return;
     }
 
