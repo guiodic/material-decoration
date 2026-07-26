@@ -45,6 +45,7 @@ class Decoration;
 class TextButton;
 class MenuOverflowButton;
 class SearchButton;
+class AppMenuSearch;
 
 class AppMenuButtonGroup : public KDecoration3::DecorationButtonGroup
 {
@@ -105,7 +106,6 @@ private:
     void onDelayedCacheTimerTimeout();
     void onShowingChanged(bool hovered);
     void filterMenu(const QString &text);
-    void clearSearchResultActions();
     void onSearchTimerTimeout();
     void onSubMenuReady(QMenu *menu);
 
@@ -143,56 +143,9 @@ private:
 
     void trigger(int index);
 
-    struct ActionInfo {
-        QString path;
-        QString searchablePath;
-        QString label;
-        bool isEffectivelyEnabled;
-    };
-
-    // A leaf action reachable from the app menu root, plus the chain of
-    // named ancestor submenu-actions leading to it. Built once per menu
-    // structure (see rebuildSearchCandidatesIfNeeded()) instead of being
-    // re-derived by walking the whole QMenu tree on every keystroke.
-    // Text and enabled-state are deliberately NOT cached here, since those
-    // can change at runtime (e.g. "Undo X" toggling label/enabled) without
-    // the structure itself changing; they are re-read fresh from the still-
-    // live QAction pointers each time matchSearchCandidates() runs.
-    struct SearchCandidate {
-        QPointer<QAction> action;
-        // Ancestors WITH display text: used for the visible path and for
-        // text matching. A submenu with empty text contributes nothing here.
-        QList<QPointer<QAction>> namedAncestors;
-        // Every ancestor menu-action, named or not: used purely to
-        // propagate the enabled/disabled chain. A submenu can be disabled
-        // while having no title of its own (e.g. a bare grouping menu), and
-        // the original recursive algorithm still honoured that: it checked
-        // menuAction->isEnabled() unconditionally, independent of whether
-        // the menu had a non-empty title. Folding this into namedAncestors
-        // would silently drop that disabled state for untitled submenus.
-        QList<QPointer<QAction>> enablementAncestors;
-    };
-
-    struct SearchResult {
-        QPointer<QAction> action;
-        ActionInfo info;
-
-        bool operator==(const SearchResult &other) const {
-            return action == other.action
-            && info.isEffectivelyEnabled == other.info.isEffectivelyEnabled
-            && info.path == other.info.path
-            && (!action || (action->isChecked() == other.action->isChecked()
-            && action->isCheckable() == other.action->isCheckable()));
-        }
-    };
-
     void resetButtons();
-    QString getActionText(QAction *action) const;
     void setupSearchMenu();
     void repositionSearchMenu();
-    void rebuildSearchCandidatesIfNeeded();
-    void collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &namedAncestors, QList<QPointer<QAction>> &enablementAncestors);
-    QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus) const;
     AppMenuButton *getAppMenuButton(int index) const;
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
 
@@ -232,24 +185,12 @@ private:
     bool m_isMenuUpdateThrottled = false;
     bool m_pendingMenuUpdate = false;
     bool m_menuLoadedOnce = false;
-    QString m_lastSearchQuery;
-    QList<SearchResult> m_lastResults;
-    // Flat, pre-walked list of searchable leaf actions. Rebuilt only when
-    // the app menu structure actually changes (see rebuildSearchCandidatesIfNeeded()),
-    // not on every keystroke.
-    QList<SearchCandidate> m_searchCandidates;
-    bool m_searchCandidatesDirty = true;
-    // QActionGroups created in filterMenu() to preserve mutual exclusivity
-    // between search-result proxies; owned here (parented to m_searchMenu)
-    // since they aren't owned by any single proxy action anymore and must
-    // be deleted explicitly when the previous results are cleared.
-    QList<QPointer<QActionGroup>> m_searchResultGroups;
+
+    AppMenuSearch *m_search;
 
     QList<QPointer<TextButton>> m_textButtons;
     QPointer<MenuOverflowButton> m_overflowButton;
     QPointer<SearchButton> m_searchButton;
-
-    mutable QHash<QString, QString> m_actionTextCache;
 
     QPointer<KDecoration3::DecorationButton> m_hoveredButton = nullptr;
 
