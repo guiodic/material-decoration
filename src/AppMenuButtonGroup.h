@@ -160,10 +160,25 @@ private:
     // live QAction pointers each time matchSearchCandidates() runs.
     struct SearchCandidate {
         QPointer<QAction> action;
+        // Ancestors WITH display text: used for the visible path and for
+        // text matching. A submenu with empty text contributes nothing here.
         QList<QPointer<QAction>> namedAncestors;
+        // Every ancestor menu-action, named or not: used purely to
+        // propagate the enabled/disabled chain. A submenu can be disabled
+        // while having no title of its own (e.g. a bare grouping menu), and
+        // the original recursive algorithm still honoured that: it checked
+        // menuAction->isEnabled() unconditionally, independent of whether
+        // the menu had a non-empty title. Folding this into namedAncestors
+        // would silently drop that disabled state for untitled submenus.
+        QList<QPointer<QAction>> enablementAncestors;
     };
 
     struct SearchResult {
+        // QPointer, not a raw QAction*: this struct can sit in m_lastResults
+        // across an arbitrary amount of real time (until the next keystroke),
+        // during which a live DBus menu update can destroy the underlying
+        // QAction. A raw pointer would then dangle and operator== below
+        // would dereference freed memory the next time results are compared.
         QPointer<QAction> action;
         ActionInfo info;
 
@@ -181,7 +196,7 @@ private:
     void setupSearchMenu();
     void repositionSearchMenu();
     void rebuildSearchCandidatesIfNeeded();
-    void collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &namedAncestors);
+    void collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &namedAncestors, QList<QPointer<QAction>> &enablementAncestors);
     QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus) const;
     AppMenuButton *getAppMenuButton(int index) const;
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
