@@ -53,6 +53,8 @@ endif()
 
 configure_file(BuildConfig.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/BuildConfig.h)
 
+set(CMAKE_AUTOMOC ON)
+
 set (decoration_SRCS
     AppMenuModel.cc
     AppMenuSearch.cc

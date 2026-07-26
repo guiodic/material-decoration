@@ -69,7 +69,13 @@ public:
         }
     };
 
-    void filter(QMenu *searchMenu, const QString &text, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions);
+    struct FilterOptions {
+        bool ignoreTopLevel = false;
+        bool ignoreSubMenus = false;
+        bool showDisabledActions = false;
+    };
+
+    void filter(QMenu *searchMenu, const QString &text, const FilterOptions &options);
     void clear(QMenu *searchMenu);
     
     void invalidateCandidates();
