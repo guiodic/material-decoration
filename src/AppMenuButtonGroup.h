@@ -31,9 +31,10 @@
 #include <QLineEdit>
 #include <QPointer>
 #include <QHash>
+#include <QSet>
+#include <QStringMatcher>
 
 class QTimer;
-class QStringMatcher;
 class QVariantAnimation;
 class QActionGroup;
 
@@ -149,6 +150,29 @@ private:
         bool isEffectivelyEnabled;
     };
 
+    // A leaf action reachable from the app menu root, plus the chain of
+    // named ancestor submenu-actions leading to it. Built once per menu
+    // structure (see rebuildSearchCandidatesIfNeeded()) instead of being
+    // re-derived by walking the whole QMenu tree on every keystroke.
+    // Text and enabled-state are deliberately NOT cached here, since those
+    // can change at runtime (e.g. "Undo X" toggling label/enabled) without
+    // the structure itself changing; they are re-read fresh from the still-
+    // live QAction pointers each time matchSearchCandidates() runs.
+    struct SearchCandidate {
+        QPointer<QAction> action;
+        // Ancestors WITH display text: used for the visible path and for
+        // text matching. A submenu with empty text contributes nothing here.
+        QList<QPointer<QAction>> namedAncestors;
+        // Every ancestor menu-action, named or not: used purely to
+        // propagate the enabled/disabled chain. A submenu can be disabled
+        // while having no title of its own (e.g. a bare grouping menu), and
+        // the original recursive algorithm still honoured that: it checked
+        // menuAction->isEnabled() unconditionally, independent of whether
+        // the menu had a non-empty title. Folding this into namedAncestors
+        // would silently drop that disabled state for untitled submenus.
+        QList<QPointer<QAction>> enablementAncestors;
+    };
+
     struct SearchResult {
         QPointer<QAction> action;
         ActionInfo info;
@@ -166,7 +190,9 @@ private:
     QString getActionText(QAction *action) const;
     void setupSearchMenu();
     void repositionSearchMenu();
-    void searchMenu(QMenu *menu, const QStringMatcher &matcher, QList<SearchResult> &results, QSet<QMenu *> &visited, bool ignoreTopLevel, bool ignoreSubMenus, QStringList &currentPath, bool isParentEnabled = true, bool parentMatched = false);
+    void rebuildSearchCandidatesIfNeeded();
+    void collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &namedAncestors, QList<QPointer<QAction>> &enablementAncestors);
+    QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus) const;
     AppMenuButton *getAppMenuButton(int index) const;
     int findNextVisibleButtonIndex(int currentIndex, bool forward) const;
 
@@ -208,6 +234,11 @@ private:
     bool m_menuLoadedOnce = false;
     QString m_lastSearchQuery;
     QList<SearchResult> m_lastResults;
+    // Flat, pre-walked list of searchable leaf actions. Rebuilt only when
+    // the app menu structure actually changes (see rebuildSearchCandidatesIfNeeded()),
+    // not on every keystroke.
+    QList<SearchCandidate> m_searchCandidates;
+    bool m_searchCandidatesDirty = true;
     // QActionGroups created in filterMenu() to preserve mutual exclusivity
     // between search-result proxies; owned here (parented to m_searchMenu)
     // since they aren't owned by any single proxy action anymore and must
