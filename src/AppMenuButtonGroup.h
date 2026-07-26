@@ -174,11 +174,6 @@ private:
     };
 
     struct SearchResult {
-        // QPointer, not a raw QAction*: this struct can sit in m_lastResults
-        // across an arbitrary amount of real time (until the next keystroke),
-        // during which a live DBus menu update can destroy the underlying
-        // QAction. A raw pointer would then dangle and operator== below
-        // would dereference freed memory the next time results are compared.
         QPointer<QAction> action;
         ActionInfo info;
 

@@ -1122,9 +1122,6 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
         const ActionInfo &info = result.info;
         QAction *action = result.action;
-        if (!action) {
-            continue; // Destroyed by a live menu update since this result was built.
-        }
         if (!info.isEffectivelyEnabled && !deco->showDisabledActions()) {
             continue;
         }
