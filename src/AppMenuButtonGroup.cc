@@ -1049,7 +1049,7 @@ void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
 {
     m_search->invalidateCandidates();
 
-    if (m_search && m_searchUiVisible && m_search->hasValidQuery()) {
+    if (m_searchUiVisible && m_search->hasValidQuery()) {
         if (!m_searchDebounceTimer->isActive()) {
             m_searchDebounceTimer->start();
         }

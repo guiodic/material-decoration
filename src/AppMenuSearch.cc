@@ -174,7 +174,11 @@ void AppMenuSearch::invalidateCandidates()
 {
     m_searchCandidatesDirty = true;
     m_searchCandidates.clear();
-    resetSearchState();
+    m_lastResults.clear();
+    m_lastProcessedMenu = nullptr;
+    m_lastShowDisabledActions = false;
+    m_lastIgnoreTopLevel = false;
+    m_lastIgnoreSubMenus = false;
 }
 
 void AppMenuSearch::clearLastResults()
