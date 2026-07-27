@@ -1040,12 +1040,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
     m_search->filter(m_searchMenu, text, options);
 
-    if (text.isEmpty()) {
-        m_searchLineEdit->setClearButtonEnabled(false);
-        m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu", "Search") + QStringLiteral("…"));
-    } else {
-        m_searchLineEdit->setClearButtonEnabled(true);
-    }
+    m_searchLineEdit->setClearButtonEnabled(!text.isEmpty());
 }
 
 void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)

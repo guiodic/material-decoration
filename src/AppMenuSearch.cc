@@ -52,7 +52,6 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterO
     if (!m_searchMenu) {
         return;
     }
-    m_lastSearchQuery = text;
 
     // Clear results if search text is too short
     if (isQueryTooShort(text)) {
@@ -173,7 +172,6 @@ void AppMenuSearch::invalidateCandidates()
 void AppMenuSearch::clearLastResults()
 {
     resetSearchState();
-    m_lastSearchQuery.clear();
     m_actionTextCache.clear();
 }
 
@@ -186,17 +184,11 @@ void AppMenuSearch::resetSearchState()
     m_lastIgnoreSubMenus = false;
 }
 
-QString AppMenuSearch::lastSearchQuery() const
-{
-    return m_lastSearchQuery;
-}
-
 void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
 {
     if (!m_searchCandidatesDirty) {
         return;
     }
-    m_searchCandidatesDirty = false;
     m_searchCandidates.clear();
 
     if (!m_appMenuModel) {
@@ -207,6 +199,7 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
         return;
     }
 
+    m_searchCandidatesDirty = false;
     QSet<QMenu *> visited;
     QList<QPointer<QAction>> namedAncestors;
     QList<QPointer<QAction>> enablementAncestors;

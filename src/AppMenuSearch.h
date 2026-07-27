@@ -83,8 +83,6 @@ public:
     
     void invalidateCandidates();
     void clearLastResults();
-    
-    QString lastSearchQuery() const;
 
 signals:
     void repositionRequested();
@@ -98,7 +96,6 @@ private:
 
     QPointer<AppMenuModel> m_appMenuModel;
     QPointer<QMenu> m_searchMenu;
-    QString m_lastSearchQuery;
     bool m_lastShowDisabledActions = false;
     bool m_lastIgnoreTopLevel = false;
     bool m_lastIgnoreSubMenus = false;
