@@ -44,19 +44,27 @@ bool AppMenuSearch::isQueryTooShort(const QString &text)
     return text.length() < MINIMUM_SEARCH_LENGTH;
 }
 
-void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterOptions &options)
+void AppMenuSearch::setSearchMenu(QMenu *searchMenu)
 {
-    if (searchMenu) {
-        m_searchMenu = searchMenu;
-    }
+    m_searchMenu = searchMenu;
+}
+
+void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
+{
     if (!m_searchMenu) {
         return;
     }
 
+    m_lastSearchQuery = text;
+
     // Clear results if search text is too short
     if (isQueryTooShort(text)) {
         clear();
-        resetSearchState();
+        m_lastResults.clear();
+        m_lastProcessedMenu = nullptr;
+        m_lastShowDisabledActions = false;
+        m_lastIgnoreTopLevel = false;
+        m_lastIgnoreSubMenus = false;
         Q_EMIT repositionRequested();
         return;
     }
@@ -175,8 +183,19 @@ void AppMenuSearch::clearLastResults()
     m_actionTextCache.clear();
 }
 
+QString AppMenuSearch::lastSearchQuery() const
+{
+    return m_lastSearchQuery;
+}
+
+bool AppMenuSearch::hasValidQuery() const
+{
+    return !m_lastSearchQuery.isEmpty() && !isQueryTooShort(m_lastSearchQuery);
+}
+
 void AppMenuSearch::resetSearchState()
 {
+    m_lastSearchQuery.clear();
     m_lastResults.clear();
     m_lastProcessedMenu = nullptr;
     m_lastShowDisabledActions = false;

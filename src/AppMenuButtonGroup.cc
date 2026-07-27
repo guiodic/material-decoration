@@ -208,6 +208,8 @@ void AppMenuButtonGroup::setupSearchMenu()
     m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu","Search")+QStringLiteral("…"));
     m_searchLineEdit->setClearButtonEnabled(false);
 
+    m_search->setSearchMenu(m_searchMenu);
+
     connect(m_search, &AppMenuSearch::repositionRequested, this, &AppMenuButtonGroup::repositionSearchMenu, Qt::UniqueConnection);
 }
 
@@ -396,8 +398,8 @@ void AppMenuButtonGroup::resetButtons()
 
 void AppMenuButtonGroup::onMenuReadyForSearch()
 {
-    if (m_searchLineEdit && !m_searchLineEdit->text().isEmpty() && m_searchUiVisible) {
-        filterMenu(m_searchLineEdit->text());
+    if (m_search && m_searchUiVisible && m_search->hasValidQuery()) {
+        filterMenu(m_search->lastSearchQuery());
     }
 }
 
@@ -1038,7 +1040,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     options.ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
     options.showDisabledActions = deco && deco->showDisabledActions();
 
-    m_search->filter(m_searchMenu, text, options);
+    m_search->filter(text, options);
 
     m_searchLineEdit->setClearButtonEnabled(!text.isEmpty());
 }
@@ -1047,7 +1049,7 @@ void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
 {
     m_search->invalidateCandidates();
 
-    if (m_searchUiVisible && m_searchLineEdit && !m_searchLineEdit->text().isEmpty()) {
+    if (m_search && m_searchUiVisible && m_search->hasValidQuery()) {
         if (!m_searchDebounceTimer->isActive()) {
             m_searchDebounceTimer->start();
         }

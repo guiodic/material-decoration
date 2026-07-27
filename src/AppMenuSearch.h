@@ -78,11 +78,14 @@ public:
         bool showDisabledActions = false;
     };
 
-    void filter(QMenu *searchMenu, const QString &text, const FilterOptions &options);
+    void setSearchMenu(QMenu *searchMenu);
+    void filter(const QString &text, const FilterOptions &options);
     void clear();
     
     void invalidateCandidates();
     void clearLastResults();
+    QString lastSearchQuery() const;
+    bool hasValidQuery() const;
 
 signals:
     void repositionRequested();
@@ -96,6 +99,7 @@ private:
 
     QPointer<AppMenuModel> m_appMenuModel;
     QPointer<QMenu> m_searchMenu;
+    QString m_lastSearchQuery;
     bool m_lastShowDisabledActions = false;
     bool m_lastIgnoreTopLevel = false;
     bool m_lastIgnoreSubMenus = false;
