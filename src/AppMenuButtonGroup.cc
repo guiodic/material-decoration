@@ -84,7 +84,7 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     , m_searchLineEdit(nullptr)
     , m_searchDebounceTimer(nullptr)
     , m_searchUiVisible(false)
-    , m_search(new Material::AppMenuSearch(m_appMenuModel, this))
+    , m_search(new AppMenuSearch(m_appMenuModel, this))
 {
     m_searchDebounceTimer = new QTimer(this);
     m_searchDebounceTimer->setInterval(150);
@@ -1036,7 +1036,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     }
 
     const auto *deco = qobject_cast<const Decoration *>(decoration());
-    Material::AppMenuSearch::FilterOptions options;
+    AppMenuSearch::FilterOptions options;
     options.ignoreTopLevel = deco && deco->searchIgnoreTopLevel();
     options.ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
     options.showDisabledActions = deco && deco->showDisabledActions();

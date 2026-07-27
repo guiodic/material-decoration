@@ -27,7 +27,6 @@
 
 static constexpr int MAX_SEARCH_RESULTS = 100;
 static constexpr int MAX_SEARCH_CANDIDATES = 5000;
-static const QString SEARCH_PROXY_MARKER = QStringLiteral("AppMenuSearchProxy");
 
 namespace Material
 {
@@ -106,7 +105,7 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterO
         newAction->setEnabled(info.isEffectivelyEnabled);
         newAction->setCheckable(action->isCheckable());
         newAction->setChecked(action->isChecked());
-        newAction->setData(SEARCH_PROXY_MARKER); // Uniquely mark as a proxy result action
+        newAction->setProperty("isAppMenuSearchProxy", true); // Uniquely mark as a proxy result action
 
         if (QActionGroup *originalGroup = action->actionGroup(); originalGroup && originalGroup->isExclusive()) {
             QActionGroup *&proxyGroup = groupMap[originalGroup];
@@ -142,7 +141,7 @@ void AppMenuSearch::clear()
 
     const auto actions = m_searchMenu->actions();
     for (QAction *action : actions) {
-        if (action && action->data().toString() == SEARCH_PROXY_MARKER) {
+        if (action && action->property("isAppMenuSearchProxy").toBool() == true) {
             m_searchMenu->removeAction(action);
             // Detach action from its group before scheduling deletion
             if (QActionGroup *group = action->actionGroup()) {
