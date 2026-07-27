@@ -42,6 +42,7 @@ public:
     ~AppMenuSearch() override;
 
     static constexpr int MINIMUM_SEARCH_LENGTH = 3;
+    static constexpr const char PROPERTY_SEARCH_PROXY[] = "isAppMenuSearchProxy";
     static bool isQueryTooShort(const QString &text);
 
     struct ActionInfo {
@@ -93,6 +94,7 @@ private:
     void collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &namedAncestors, QList<QPointer<QAction>> &enablementAncestors);
     QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions) const;
     QString getActionText(QAction *action) const;
+    void resetSearchState();
 
     QPointer<AppMenuModel> m_appMenuModel;
     QPointer<QMenu> m_searchMenu;

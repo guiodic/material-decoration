@@ -106,7 +106,7 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterO
         newAction->setEnabled(info.isEffectivelyEnabled);
         newAction->setCheckable(info.isCheckable);
         newAction->setChecked(info.isChecked);
-        newAction->setProperty("isAppMenuSearchProxy", true); // Uniquely mark as a proxy result action
+        newAction->setProperty(PROPERTY_SEARCH_PROXY, true); // Uniquely mark as a proxy result action
 
         if (QActionGroup *originalGroup = action->actionGroup(); originalGroup && originalGroup->isExclusive()) {
             QActionGroup *&proxyGroup = groupMap[originalGroup];
@@ -142,7 +142,7 @@ void AppMenuSearch::clear()
 
     const auto actions = m_searchMenu->actions();
     for (QAction *action : actions) {
-        if (action && action->property("isAppMenuSearchProxy").toBool() == true) {
+        if (action && action->property(PROPERTY_SEARCH_PROXY).toBool() == true) {
             m_searchMenu->removeAction(action);
             // Detach action from its group before scheduling deletion
             if (QActionGroup *group = action->actionGroup()) {
@@ -168,18 +168,19 @@ void AppMenuSearch::invalidateCandidates()
     m_searchCandidatesDirty = true;
     m_searchCandidates.clear();
     m_actionTextCache.clear();
-    m_lastResults.clear();
-    m_lastProcessedMenu = nullptr;
-    m_lastShowDisabledActions = false;
-    m_lastIgnoreTopLevel = false;
-    m_lastIgnoreSubMenus = false;
+    resetSearchState();
 }
 
 void AppMenuSearch::clearLastResults()
 {
+    resetSearchState();
+    m_lastSearchQuery.clear();
+}
+
+void AppMenuSearch::resetSearchState()
+{
     m_lastResults.clear();
     m_lastProcessedMenu = nullptr;
-    m_lastSearchQuery.clear();
     m_lastShowDisabledActions = false;
     m_lastIgnoreTopLevel = false;
     m_lastIgnoreSubMenus = false;
