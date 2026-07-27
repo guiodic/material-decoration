@@ -53,8 +53,6 @@ endif()
 
 configure_file(BuildConfig.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/BuildConfig.h)
 
-set(CMAKE_AUTOMOC ON)
-
 set (decoration_SRCS
     AppMenuModel.cc
     AppMenuSearch.cc
@@ -77,6 +75,8 @@ kconfig_add_kcfg_files(decoration_SRCS
 add_library (materialdecoration MODULE
     ${decoration_SRCS}
 )
+
+set_target_properties(materialdecoration PROPERTIES AUTOMOC ON)
 
 target_include_directories(materialdecoration PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 

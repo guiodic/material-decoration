@@ -165,6 +165,7 @@ void AppMenuSearch::invalidateCandidates()
     m_searchCandidatesDirty = true;
     m_searchCandidates.clear();
     m_actionTextCache.clear();
+    clearLastResults();
 }
 
 void AppMenuSearch::clearLastResults()
