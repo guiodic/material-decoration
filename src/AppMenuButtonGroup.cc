@@ -515,6 +515,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
         const bool wasSearchOpen = (m_currentIndex == m_searchIndex && m_searchIndex != -1);
         const bool wasOverflowOpen = (m_currentIndex == m_overflowIndex && m_overflowIndex != -1);
         QPointer<QMenu> previousMenu = m_currentMenu;
+        const QString savedQuery = m_searchLineEdit ? m_searchLineEdit->text() : QString();
 
         // Try in-place update if possible to reduce flicker and object churn
         const bool searchStateMatches = (m_searchButton.isNull() == !deco->searchEnabled());
@@ -594,6 +595,10 @@ void AppMenuButtonGroup::updateAppMenuModel()
             
             if (AppMenuButton *b = getAppMenuButton(m_currentIndex)) {
                 b->setChecked(true);
+            }
+
+            if (wasSearchOpen && !savedQuery.isEmpty()) {
+                filterMenu(savedQuery);
             }
         }
 
