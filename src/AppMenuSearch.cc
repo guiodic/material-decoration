@@ -104,8 +104,8 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterO
         }
         QAction *newAction = new QAction(action->icon(), info.path, m_searchMenu);
         newAction->setEnabled(info.isEffectivelyEnabled);
-        newAction->setCheckable(action->isCheckable());
-        newAction->setChecked(action->isChecked());
+        newAction->setCheckable(info.isCheckable);
+        newAction->setChecked(info.isChecked);
         newAction->setProperty("isAppMenuSearchProxy", true); // Uniquely mark as a proxy result action
 
         if (QActionGroup *originalGroup = action->actionGroup(); originalGroup && originalGroup->isExclusive()) {
@@ -169,6 +169,7 @@ void AppMenuSearch::invalidateCandidates()
     m_searchCandidates.clear();
     m_actionTextCache.clear();
     m_lastResults.clear();
+    m_lastProcessedMenu = nullptr;
     m_lastShowDisabledActions = false;
     m_lastIgnoreTopLevel = false;
     m_lastIgnoreSubMenus = false;
@@ -177,6 +178,7 @@ void AppMenuSearch::invalidateCandidates()
 void AppMenuSearch::clearLastResults()
 {
     m_lastResults.clear();
+    m_lastProcessedMenu = nullptr;
     m_lastSearchQuery.clear();
     m_lastShowDisabledActions = false;
     m_lastIgnoreTopLevel = false;
@@ -380,6 +382,8 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         ActionInfo info;
         info.label = itemText;
         info.isEffectivelyEnabled = isEffectivelyEnabled;
+        info.isChecked = action->isChecked();
+        info.isCheckable = action->isCheckable();
 
         currentPath.append(itemText);
         info.path = currentPath.join(QStringLiteral(" » "));
