@@ -57,14 +57,14 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterO
     // Clear results if search text is too short
     if (isQueryTooShort(text)) {
         clear();
-        m_lastResults.clear();
+        resetSearchState();
         Q_EMIT repositionRequested();
         return;
     }
 
     if (!m_appMenuModel) {
         clear();
-        m_lastResults.clear();
+        resetSearchState();
         Q_EMIT repositionRequested();
         return;
     }
@@ -167,7 +167,6 @@ void AppMenuSearch::invalidateCandidates()
 {
     m_searchCandidatesDirty = true;
     m_searchCandidates.clear();
-    m_actionTextCache.clear();
     resetSearchState();
 }
 
@@ -175,6 +174,7 @@ void AppMenuSearch::clearLastResults()
 {
     resetSearchState();
     m_lastSearchQuery.clear();
+    m_actionTextCache.clear();
 }
 
 void AppMenuSearch::resetSearchState()

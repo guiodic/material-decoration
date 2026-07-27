@@ -396,8 +396,8 @@ void AppMenuButtonGroup::resetButtons()
 
 void AppMenuButtonGroup::onMenuReadyForSearch()
 {
-    if (!m_search->lastSearchQuery().isEmpty() && m_searchUiVisible) {
-        filterMenu(m_search->lastSearchQuery());
+    if (m_searchLineEdit && !m_searchLineEdit->text().isEmpty() && m_searchUiVisible) {
+        filterMenu(m_searchLineEdit->text());
     }
 }
 
@@ -588,12 +588,13 @@ void AppMenuButtonGroup::updateAppMenuModel()
         if (indexToRestore != -1) {
             setCurrentIndex(indexToRestore);
             m_currentMenu = previousMenu;
-            
+
             if (AppMenuButton *b = getAppMenuButton(m_currentIndex)) {
                 b->setChecked(true);
             }
 
-            if (wasSearchOpen && !savedQuery.isEmpty()) {
+            if (wasSearchOpen && !savedQuery.isEmpty() && m_searchLineEdit) {
+                m_searchLineEdit->setText(savedQuery);
                 m_searchDebounceTimer->start();
             }
         }
