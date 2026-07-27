@@ -136,16 +136,6 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterO
 
 void AppMenuSearch::clear()
 {
-    // The old proxy actions no longer reference these groups (deleteLater()
-    // above), so nothing else owns them: delete explicitly to avoid leaking
-    // one QActionGroup per exclusive result set on every keystroke.
-    for (const QPointer<QActionGroup> &oldGroup : std::as_const(m_searchResultGroups)) {
-        if (oldGroup) {
-            oldGroup->deleteLater();
-        }
-    }
-    m_searchResultGroups.clear();
-
     if (!m_searchMenu) {
         return;
     }
@@ -161,6 +151,16 @@ void AppMenuSearch::clear()
             action->deleteLater();
         }
     }
+
+    // The old proxy actions no longer reference these groups (deleteLater()
+    // above), so nothing else owns them: delete explicitly to avoid leaking
+    // one QActionGroup per exclusive result set on every keystroke.
+    for (const QPointer<QActionGroup> &oldGroup : std::as_const(m_searchResultGroups)) {
+        if (oldGroup) {
+            oldGroup->deleteLater();
+        }
+    }
+    m_searchResultGroups.clear();
 }
 
 void AppMenuSearch::invalidateCandidates()

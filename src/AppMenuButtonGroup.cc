@@ -594,7 +594,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
             }
 
             if (wasSearchOpen && !savedQuery.isEmpty()) {
-                filterMenu(savedQuery);
+                m_searchDebounceTimer->start();
             }
         }
 
