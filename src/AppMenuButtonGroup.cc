@@ -20,6 +20,7 @@
 
 // own
 #include "AppMenuButtonGroup.h"
+#include "AppMenuSearch.h"
 #include "Material.h"
 #include "BuildConfig.h"
 #include "AppMenuModel.h"
@@ -83,6 +84,7 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     , m_searchLineEdit(nullptr)
     , m_searchDebounceTimer(nullptr)
     , m_searchUiVisible(false)
+    , m_search(new AppMenuSearch(m_appMenuModel, this))
 {
     m_searchDebounceTimer = new QTimer(this);
     m_searchDebounceTimer->setInterval(150);
@@ -205,6 +207,8 @@ void AppMenuButtonGroup::setupSearchMenu()
     m_searchLineEdit->setFocusPolicy(Qt::StrongFocus);
     m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu","Search")+QStringLiteral("…"));
     m_searchLineEdit->setClearButtonEnabled(false);
+
+    connect(m_search, &AppMenuSearch::repositionRequested, this, &AppMenuButtonGroup::repositionSearchMenu, Qt::UniqueConnection);
 }
 
 void AppMenuButtonGroup::repositionSearchMenu()
@@ -363,9 +367,8 @@ void AppMenuButtonGroup::resetButtons()
     }
     setCurrentIndex(-1);
     m_currentMenu = nullptr;
-    m_lastResults.clear();
-    m_lastSearchQuery.clear();
-    m_actionTextCache.clear();
+    m_search->clearLastResults();
+    m_search->clear();
     m_textButtons.clear();
     m_overflowButton = nullptr;
     m_searchButton = nullptr;
@@ -393,8 +396,8 @@ void AppMenuButtonGroup::resetButtons()
 
 void AppMenuButtonGroup::onMenuReadyForSearch()
 {
-    if (!m_lastSearchQuery.isEmpty() && m_searchUiVisible) {
-        filterMenu(m_lastSearchQuery);
+    if (m_searchLineEdit && !m_searchLineEdit->text().isEmpty() && m_searchUiVisible) {
+        filterMenu(m_searchLineEdit->text());
     }
 }
 
@@ -477,7 +480,7 @@ void AppMenuButtonGroup::performDebouncedMenuUpdate()
 
 void AppMenuButtonGroup::updateAppMenuModel()
 {
-    m_searchCandidatesDirty = true;
+    m_search->invalidateCandidates();
 
     auto *deco = qobject_cast<Decoration *>(decoration());
     if (!deco) {
@@ -512,12 +515,12 @@ void AppMenuButtonGroup::updateAppMenuModel()
         const bool wasSearchOpen = (m_currentIndex == m_searchIndex && m_searchIndex != -1);
         const bool wasOverflowOpen = (m_currentIndex == m_overflowIndex && m_overflowIndex != -1);
         QPointer<QMenu> previousMenu = m_currentMenu;
+        const QString savedQuery = m_searchLineEdit ? m_searchLineEdit->text() : QString();
 
         // Try in-place update if possible to reduce flicker and object churn
         const bool searchStateMatches = (m_searchButton.isNull() == !deco->searchEnabled());
 
         if (m_textButtons.count() == menuActionCount && !m_textButtons.isEmpty() && searchStateMatches) {
-            m_actionTextCache.clear();
             int actionIdx = 0;
             for (auto &textButton : std::as_const(m_textButtons)) {
                 if (!textButton) {
@@ -535,10 +538,6 @@ void AppMenuButtonGroup::updateAppMenuModel()
                     textButton->setEnabled(itemAction->isEnabled());
                     textButton->setVisible(true);
                 }
-            }
-
-            if (wasSearchOpen && !m_lastSearchQuery.isEmpty()) {
-                filterMenu(m_lastSearchQuery);
             }
         } else {
             resetButtons(); // Immediate reset is intended here for structural changes
@@ -589,9 +588,14 @@ void AppMenuButtonGroup::updateAppMenuModel()
         if (indexToRestore != -1) {
             setCurrentIndex(indexToRestore);
             m_currentMenu = previousMenu;
-            
+
             if (AppMenuButton *b = getAppMenuButton(m_currentIndex)) {
                 b->setChecked(true);
+            }
+
+            if (wasSearchOpen && !savedQuery.isEmpty() && m_searchLineEdit) {
+                m_searchLineEdit->setText(savedQuery);
+                m_searchDebounceTimer->start();
             }
         }
 
@@ -983,8 +987,7 @@ void AppMenuButtonGroup::onMenuAboutToHide()
     if (menu == m_searchMenu && m_searchLineEdit) {
         m_searchLineEdit->clear();
         m_searchUiVisible = false;
-        m_lastResults.clear();
-        m_lastSearchQuery.clear();
+        m_search->clearLastResults();
     }
 
     if (AppMenuButton *currentButton = getAppMenuButton(m_currentIndex)) {
@@ -1023,147 +1026,33 @@ void AppMenuButtonGroup::onShowingChanged(bool showing)
     }
 }
 
-void AppMenuButtonGroup::clearSearchResultActions()
-{
-    if (!m_searchMenu) {
-        return;
-    }
-
-    const auto actions = m_searchMenu->actions();
-    for (int i = actions.count() - 1; i >= 2; --i) {
-        QAction *action = actions.at(i);
-        m_searchMenu->removeAction(action);
-        // Detach action from its group before scheduling deletion
-        if (QActionGroup *group = action->actionGroup()) {
-            group->removeAction(action);
-        }
-        action->deleteLater();
-    }
-
-    // The old proxy actions no longer reference these groups (deleteLater()
-    // above), so nothing else owns them: delete explicitly to avoid leaking
-    // one QActionGroup per exclusive result set on every keystroke.
-    for (const QPointer<QActionGroup> &oldGroup : std::as_const(m_searchResultGroups)) {
-        if (oldGroup) {
-            oldGroup->deleteLater();
-        }
-    }
-    m_searchResultGroups.clear();
-}
-
 void AppMenuButtonGroup::filterMenu(const QString &text)
 {
-    if (!m_searchMenu) {
-            return;
-    }
-    m_lastSearchQuery = text;
-
-    // Clear results if search text is too short
-    if (text.length() < 3) {
-        clearSearchResultActions();
-        m_lastResults.clear();
-        repositionSearchMenu();
-
-        if (text.isEmpty()) {
-            m_searchLineEdit->setClearButtonEnabled(false);
-            m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu", "Search") + QStringLiteral("…"));
-            return;
-        }
-        m_searchLineEdit->setClearButtonEnabled(true);
+    if (!m_searchMenu || !m_searchLineEdit) {
         return;
+    }
+
+    const auto *deco = qobject_cast<const Decoration *>(decoration());
+    AppMenuSearch::FilterOptions options;
+    options.ignoreTopLevel = deco && deco->searchIgnoreTopLevel();
+    options.ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
+    options.showDisabledActions = deco && deco->showDisabledActions();
+
+    m_search->filter(m_searchMenu, text, options);
+
+    if (text.isEmpty()) {
+        m_searchLineEdit->setClearButtonEnabled(false);
+        m_searchLineEdit->setPlaceholderText(i18nd("plasma_applet_org.kde.plasma.appmenu", "Search") + QStringLiteral("…"));
     } else {
         m_searchLineEdit->setClearButtonEnabled(true);
     }
-
-    if (!m_appMenuModel) {
-        return;
-    }
-
-    {
-        // Find results
-        rebuildSearchCandidatesIfNeeded();
-        const auto *deco = qobject_cast<const Decoration *>(decoration());
-        const bool ignoreTopLevel = deco && deco->searchIgnoreTopLevel();
-        const bool ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
-        QStringMatcher matcher(text, Qt::CaseInsensitive);
-        QList<SearchResult> results = matchSearchCandidates(matcher, ignoreTopLevel, ignoreSubMenus);
-
-        // If results are the same as last time, do nothing to prevent the freeze.
-        if (m_lastResults == results) {
-            return;
-        }
-
-        m_lastResults = std::move(results);
-    } // 'results' goes out of scope here to prevent accidental use-after-move
-
-    m_searchMenu->setUpdatesEnabled(false);
-
-    // Clear previous results
-    clearSearchResultActions();
-
-    // Add new results
-    const auto *deco = qobject_cast<const Decoration *>(decoration());
-    if (!deco) {
-        m_searchMenu->setUpdatesEnabled(true);
-        return;
-    }
-
-    int resultCount = 0;
-    // Map each *original* action group to the QActionGroup we create for its
-    // search-result proxies, so results that were mutually exclusive in the
-    // real menu (e.g. radio-button items) stay mutually exclusive here too.
-    // Without this, each proxy action got its own isolated single-member
-    // group and could show several "checked" radio results at once.
-    QHash<QActionGroup *, QActionGroup *> groupMap;
-    for (const SearchResult &result : std::as_const(m_lastResults)) {
-        if (resultCount >= MAX_SEARCH_RESULTS) { // stop after 100 results
-            break;
-        }
-
-        const ActionInfo &info = result.info;
-        QAction *action = result.action;
-        if (!info.isEffectivelyEnabled && !deco->showDisabledActions()) {
-            continue;
-        }
-        QAction *newAction = new QAction(action->icon(), info.path, m_searchMenu);
-        newAction->setEnabled(info.isEffectivelyEnabled);
-        newAction->setCheckable(action->isCheckable());
-        newAction->setChecked(action->isChecked());
-
-        if (QActionGroup *originalGroup = action->actionGroup(); originalGroup && originalGroup->isExclusive()) {
-            QActionGroup *&proxyGroup = groupMap[originalGroup];
-            if (!proxyGroup) {
-                proxyGroup = new QActionGroup(m_searchMenu);
-                proxyGroup->setExclusionPolicy(originalGroup->exclusionPolicy());
-                m_searchResultGroups.append(proxyGroup);
-            }
-            proxyGroup->addAction(newAction);
-        }
-      
-        QPointer<QAction> safeAction = action;
-        connect(newAction, &QAction::triggered, this, [safeAction, searchMenu = m_searchMenu]() {
-            if (safeAction) {
-                safeAction->trigger();
-            }
-            if (searchMenu) {
-                searchMenu->hide();
-            }
-        });
-        m_searchMenu->addAction(newAction);
-        resultCount++;
-    }
-
-    repositionSearchMenu();
-    m_searchMenu->setUpdatesEnabled(true);
-    // qCDebug(category) << "[AppMenuButtonGroup] filterMenu(" << text << ") ended";
 }
 
 void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
 {
-    m_actionTextCache.clear();
-    m_searchCandidatesDirty = true;
+    m_search->invalidateCandidates();
 
-    if (m_searchUiVisible && !m_lastSearchQuery.isEmpty()) {
+    if (m_searchUiVisible && m_searchLineEdit && !m_searchLineEdit->text().isEmpty()) {
         if (!m_searchDebounceTimer->isActive()) {
             m_searchDebounceTimer->start();
         }
@@ -1201,219 +1090,6 @@ void AppMenuButtonGroup::onSearchTimerTimeout()
     if (m_searchLineEdit) {
         filterMenu(m_searchLineEdit->text());
     }
-}
-
-QString AppMenuButtonGroup::getActionText(QAction *action) const
-{
-    if (!action) {
-        return QString();
-    }
-    const QString rawText = action->text();
-    auto it = m_actionTextCache.find(rawText);
-    if (it != m_actionTextCache.end()) {
-        return it.value();
-    }
-    const QString cleanedText = KLocalizedString::removeAcceleratorMarker(rawText.trimmed());
-    m_actionTextCache.insert(rawText, cleanedText);
-    return cleanedText;
-}
-
-void AppMenuButtonGroup::rebuildSearchCandidatesIfNeeded()
-{
-    if (!m_searchCandidatesDirty) {
-        return;
-    }
-    m_searchCandidatesDirty = false;
-    m_searchCandidates.clear();
-
-    if (!m_appMenuModel) {
-        return;
-    }
-    QMenu *rootMenu = m_appMenuModel->menu();
-    if (!rootMenu) {
-        return;
-    }
-
-    QSet<QMenu *> visited;
-    QList<QPointer<QAction>> namedAncestors;
-    QList<QPointer<QAction>> enablementAncestors;
-    collectSearchCandidates(rootMenu, visited, namedAncestors, enablementAncestors);
-}
-
-void AppMenuButtonGroup::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &namedAncestors, QList<QPointer<QAction>> &enablementAncestors)
-{
-    if (!menu || visited.contains(menu) || m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES) {
-        return;
-    }
-    visited.insert(menu);
-
-    QAction *menuAction = menu->menuAction();
-    bool addedNamed = false;
-    bool addedEnablement = false;
-    if (menuAction) {
-        // Unconditional: even an untitled submenu still gates whether its
-        // children are reachable/enabled, so its own enabled state must
-        // propagate down regardless of whether it has display text.
-        enablementAncestors.append(menuAction);
-        addedEnablement = true;
-        if (!getActionText(menuAction).isEmpty()) {
-            namedAncestors.append(menuAction);
-            addedNamed = true;
-        }
-    }
-
-    for (QAction *action : menu->actions()) {
-        if (m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES) {
-            break;
-        }
-        if (action->isSeparator()) {
-            continue;
-        }
-        if (action->menu()) {
-            collectSearchCandidates(action->menu(), visited, namedAncestors, enablementAncestors);
-        } else {
-            m_searchCandidates.append({action, namedAncestors, enablementAncestors});
-        }
-    }
-
-    if (addedNamed) {
-        namedAncestors.removeLast();
-    }
-    if (addedEnablement) {
-        enablementAncestors.removeLast();
-    }
-}
-
-QList<AppMenuButtonGroup::SearchResult> AppMenuButtonGroup::matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus) const
-{
-    QList<SearchResult> results;
-
-    // Two independent memoized chains, mirroring how the original recursive
-    // algorithm kept these concerns separate: a submenu's *enabled* state
-    // always propagates to its children, even if the submenu has no title
-    // of its own; its *title* only contributes to the visible path/matching
-    // when non-empty. Folding both into a single "named ancestors" chain
-    // would silently drop the disabled state of untitled submenus.
-    QHash<QAction *, bool> enabledCache; // cumulative isEnabled up to and including this ancestor
-    struct MatchState {
-        bool currentMatched;
-        QString text;
-    };
-    QHash<QAction *, MatchState> matchCache; // cumulative match state + this ancestor's text
-
-    for (const SearchCandidate &candidate : std::as_const(m_searchCandidates)) {
-        if (results.size() >= MAX_SEARCH_RESULTS) {
-            break;
-        }
-        QAction *action = candidate.action;
-        if (!action) {
-            continue; // Action was destroyed since the cache was built.
-        }
-
-        bool ancestorsStillValid = true;
-
-        // --- Enabled chain (every ancestor, named or not) ---
-        bool isCurrentEnabled = true;
-        if (!candidate.enablementAncestors.isEmpty()) {
-            QAction *deepest = candidate.enablementAncestors.last();
-            if (!deepest) {
-                ancestorsStillValid = false;
-            } else {
-                auto it = enabledCache.find(deepest);
-                if (it != enabledCache.end()) {
-                    isCurrentEnabled = it.value();
-                } else {
-                    for (QAction *ancestor : std::as_const(candidate.enablementAncestors)) {
-                        if (!ancestor) {
-                            ancestorsStillValid = false;
-                            break;
-                        }
-                        auto it2 = enabledCache.find(ancestor);
-                        if (it2 != enabledCache.end()) {
-                            isCurrentEnabled = it2.value();
-                        } else {
-                            if (!ancestor->isEnabled()) {
-                                isCurrentEnabled = false;
-                            }
-                            enabledCache.insert(ancestor, isCurrentEnabled);
-                        }
-                    }
-                }
-            }
-        }
-
-        // --- Match/text chain (only ancestors with a non-empty title) ---
-        bool currentMatched = false;
-        if (ancestorsStillValid && !candidate.namedAncestors.isEmpty()) {
-            QAction *parent = candidate.namedAncestors.last();
-            if (!parent) {
-                ancestorsStillValid = false;
-            } else {
-                auto it = matchCache.find(parent);
-                if (it != matchCache.end()) {
-                    currentMatched = it.value().currentMatched;
-                } else {
-                    for (int i = 0; i < candidate.namedAncestors.size(); ++i) {
-                        QAction *ancestor = candidate.namedAncestors.at(i);
-                        if (!ancestor) {
-                            ancestorsStillValid = false;
-                            break;
-                        }
-                        auto it2 = matchCache.find(ancestor);
-                        if (it2 != matchCache.end()) {
-                            currentMatched = it2.value().currentMatched;
-                        } else {
-                            QString ancestorText = getActionText(ancestor);
-                            if (!currentMatched && (!ignoreTopLevel || i > 0)) {
-                                if (matcher.indexIn(ancestorText) != -1) {
-                                    currentMatched = true;
-                                }
-                            }
-                            matchCache.insert(ancestor, {currentMatched, ancestorText});
-                        }
-                    }
-                }
-            }
-        }
-
-        if (!ancestorsStillValid) {
-            continue; // A submenu in the path was rebuilt/destroyed; skip until next full rebuild.
-        }
-
-        const QString itemText = getActionText(action);
-        bool match = currentMatched;
-        if (ignoreSubMenus) {
-            match = matcher.indexIn(itemText) != -1;
-        } else if (!match && (!ignoreTopLevel || !candidate.namedAncestors.isEmpty())) {
-            if (matcher.indexIn(itemText) != -1) {
-                match = true;
-            }
-        }
-
-        if (!match) {
-            continue; // Skip building path entirely for non-matching entries!
-        }
-
-        // 2. Only perform path allocation and joins for matching results
-        QStringList currentPath;
-        currentPath.reserve(candidate.namedAncestors.size() + 1);
-        for (int i = 0; i < candidate.namedAncestors.size(); ++i) {
-            QAction *ancestor = candidate.namedAncestors.at(i);
-            currentPath.append(matchCache.value(ancestor).text);
-        }
-
-        ActionInfo info;
-        info.label = itemText;
-        info.isEffectivelyEnabled = isCurrentEnabled && action->isEnabled();
-
-        currentPath.append(itemText);
-        info.path = currentPath.join(QStringLiteral(" » "));
-        info.searchablePath = (currentPath.size() > 1) ? currentPath.mid(1).join(QStringLiteral(" » ")) : itemText;
-
-        results.append({action, info});
-    }
-
-    return results;
 }
 
 AppMenuButton *AppMenuButtonGroup::getAppMenuButton(int index) const
