@@ -524,9 +524,6 @@ void AppMenuButtonGroup::updateAppMenuModel()
         const bool searchStateMatches = (m_searchButton.isNull() == !deco->searchEnabled());
 
         if (m_textButtons.count() == menuActionCount && !m_textButtons.isEmpty() && searchStateMatches) {
-            if (m_search) {
-                m_search->invalidateCandidates();
-            }
             int actionIdx = 0;
             for (auto &textButton : std::as_const(m_textButtons)) {
                 if (!textButton) {
@@ -1040,12 +1037,13 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     }
 
     const auto *deco = qobject_cast<const Decoration *>(decoration());
-    const bool ignoreTopLevel = deco && deco->searchIgnoreTopLevel();
-    const bool ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
-    const bool showDisabledActions = deco && deco->showDisabledActions();
+    AppMenuSearch::FilterOptions options;
+    options.ignoreTopLevel = deco && deco->searchIgnoreTopLevel();
+    options.ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
+    options.showDisabledActions = deco && deco->showDisabledActions();
 
     if (m_search) {
-        m_search->filter(m_searchMenu, text, ignoreTopLevel, ignoreSubMenus, showDisabledActions);
+        m_search->filter(m_searchMenu, text, options);
     }
 
     if (text.isEmpty()) {

@@ -27,6 +27,7 @@
 
 static constexpr int MAX_SEARCH_RESULTS = 100;
 static constexpr int MAX_SEARCH_CANDIDATES = 5000;
+static const QString SEARCH_PROXY_MARKER = QStringLiteral("AppMenuSearchProxy");
 
 namespace Material
 {
@@ -44,7 +45,7 @@ bool AppMenuSearch::isQueryTooShort(const QString &text)
     return text.length() < MINIMUM_SEARCH_LENGTH;
 }
 
-void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions)
+void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterOptions &options)
 {
     if (!searchMenu) {
         return;
@@ -70,16 +71,16 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, bool ignoreTo
         // Find results
         rebuildSearchCandidatesIfNeeded();
         QStringMatcher matcher(text, Qt::CaseInsensitive);
-        QList<SearchResult> results = matchSearchCandidates(matcher, ignoreTopLevel, ignoreSubMenus, showDisabledActions);
+        QList<SearchResult> results = matchSearchCandidates(matcher, options.ignoreTopLevel, options.ignoreSubMenus, options.showDisabledActions);
 
         // If results and options are the same as last time, do nothing to prevent the freeze.
-        if (m_lastResults == results && m_lastShowDisabledActions == showDisabledActions && m_lastIgnoreTopLevel == ignoreTopLevel && m_lastIgnoreSubMenus == ignoreSubMenus) {
+        if (m_lastResults == results && m_lastShowDisabledActions == options.showDisabledActions && m_lastIgnoreTopLevel == options.ignoreTopLevel && m_lastIgnoreSubMenus == options.ignoreSubMenus) {
             return;
         }
 
-        m_lastShowDisabledActions = showDisabledActions;
-        m_lastIgnoreTopLevel = ignoreTopLevel;
-        m_lastIgnoreSubMenus = ignoreSubMenus;
+        m_lastShowDisabledActions = options.showDisabledActions;
+        m_lastIgnoreTopLevel = options.ignoreTopLevel;
+        m_lastIgnoreSubMenus = options.ignoreSubMenus;
         m_lastResults = std::move(results);
     } // 'results' goes out of scope here to prevent accidental use-after-move
 
@@ -88,29 +89,21 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, bool ignoreTo
     // Clear previous results
     clear(searchMenu);
 
-    int resultCount = 0;
     // Map each *original* action group to the QActionGroup we create for its
     // search-result proxies, so results that were mutually exclusive in the
     // real menu (e.g. radio-button items) stay mutually exclusive here too.
     QHash<QActionGroup *, QActionGroup *> groupMap;
     for (const SearchResult &result : std::as_const(m_lastResults)) {
-        if (resultCount >= MAX_SEARCH_RESULTS) { // stop after 100 results
-            break;
-        }
-
         const ActionInfo &info = result.info;
         QAction *action = result.action.data();
         if (!action) {
-            continue;
-        }
-        if (!info.isEffectivelyEnabled && !showDisabledActions) {
             continue;
         }
         QAction *newAction = new QAction(action->icon(), info.path, searchMenu);
         newAction->setEnabled(info.isEffectivelyEnabled);
         newAction->setCheckable(action->isCheckable());
         newAction->setChecked(action->isChecked());
-        newAction->setData(QStringLiteral("AppMenuSearchProxy")); // Uniquely mark as a proxy result action
+        newAction->setData(SEARCH_PROXY_MARKER); // Uniquely mark as a proxy result action
 
         if (QActionGroup *originalGroup = action->actionGroup(); originalGroup && originalGroup->isExclusive()) {
             QActionGroup *&proxyGroup = groupMap[originalGroup];
@@ -132,7 +125,6 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, bool ignoreTo
             }
         });
         searchMenu->addAction(newAction);
-        resultCount++;
     }
 
     searchMenu->setUpdatesEnabled(true);
@@ -147,7 +139,7 @@ void AppMenuSearch::clear(QMenu *searchMenu)
 
     const auto actions = searchMenu->actions();
     for (QAction *action : actions) {
-        if (action && action->data().toString() == QStringLiteral("AppMenuSearchProxy")) {
+        if (action && action->data().toString() == SEARCH_PROXY_MARKER) {
             searchMenu->removeAction(action);
             // Detach action from its group before scheduling deletion
             if (QActionGroup *group = action->actionGroup()) {
@@ -267,8 +259,8 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
     // would silently drop the disabled state of untitled submenus.
     QHash<QAction *, bool> enabledCache; // cumulative isEnabled up to and including this ancestor
     struct MatchState {
-        bool currentMatched;
-        QString text;
+        bool currentMatched = false;
+        QString text = QString();
     };
     QHash<QAction *, MatchState> matchCache; // cumulative match state + this ancestor's text
 
