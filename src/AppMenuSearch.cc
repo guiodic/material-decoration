@@ -27,6 +27,7 @@
 
 static constexpr int MAX_SEARCH_RESULTS = 100;
 static constexpr int MAX_SEARCH_CANDIDATES = 5000;
+static constexpr int MAX_MENU_DEPTH = 20;
 
 namespace Material
 {
@@ -225,7 +226,7 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
 
 void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &namedAncestors, QList<QPointer<QAction>> &enablementAncestors)
 {
-    if (!menu || visited.contains(menu) || m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES) {
+    if (!menu || visited.contains(menu) || m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES || enablementAncestors.size() >= MAX_MENU_DEPTH) {
         return;
     }
     visited.insert(menu);

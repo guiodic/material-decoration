@@ -401,7 +401,7 @@ void AppMenuButtonGroup::onMenuReadyForSearch()
     if (m_search && m_searchUiVisible && m_searchLineEdit) {
         const QString currentText = m_searchLineEdit->text();
         if (!AppMenuSearch::isQueryTooShort(currentText)) {
-            filterMenu(currentText);
+            m_searchDebounceTimer->start();
         }
     }
 }
