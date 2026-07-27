@@ -48,6 +48,8 @@ public:
         QString path;
         QString label;
         bool isEffectivelyEnabled = false;
+        bool isChecked = false;
+        bool isCheckable = false;
     };
 
     struct SearchCandidate {
@@ -64,8 +66,8 @@ public:
             return action == other.action
             && info.isEffectivelyEnabled == other.info.isEffectivelyEnabled
             && info.path == other.info.path
-            && (!action || (action->isChecked() == other.action->isChecked()
-            && action->isCheckable() == other.action->isCheckable()));
+            && info.isChecked == other.info.isChecked
+            && info.isCheckable == other.info.isCheckable;
         }
     };
 
