@@ -104,8 +104,8 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterO
         }
         QAction *newAction = new QAction(action->icon(), info.path, m_searchMenu);
         newAction->setEnabled(info.isEffectivelyEnabled);
-        newAction->setCheckable(action->isCheckable());
-        newAction->setChecked(action->isChecked());
+        newAction->setCheckable(info.isCheckable);
+        newAction->setChecked(info.isChecked);
         newAction->setProperty("isAppMenuSearchProxy", true); // Uniquely mark as a proxy result action
 
         if (QActionGroup *originalGroup = action->actionGroup(); originalGroup && originalGroup->isExclusive()) {
