@@ -539,10 +539,6 @@ void AppMenuButtonGroup::updateAppMenuModel()
                     textButton->setVisible(true);
                 }
             }
-
-            if (wasSearchOpen && !m_search->lastSearchQuery().isEmpty()) {
-                filterMenu(m_search->lastSearchQuery());
-            }
         } else {
             resetButtons(); // Immediate reset is intended here for structural changes
 

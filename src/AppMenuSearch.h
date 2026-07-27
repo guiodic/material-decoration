@@ -99,6 +99,7 @@ private:
     bool m_lastIgnoreTopLevel = false;
     bool m_lastIgnoreSubMenus = false;
     QList<SearchResult> m_lastResults;
+    QPointer<QMenu> m_lastProcessedMenu;
     QList<SearchCandidate> m_searchCandidates;
     bool m_searchCandidatesDirty = true;
     QList<QPointer<QActionGroup>> m_searchResultGroups;

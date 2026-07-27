@@ -76,7 +76,7 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterO
         QList<SearchResult> results = matchSearchCandidates(matcher, options.ignoreTopLevel, options.ignoreSubMenus, options.showDisabledActions);
 
         // If results and options are the same as last time, do nothing to prevent the freeze.
-        if (m_lastResults == results && m_lastShowDisabledActions == options.showDisabledActions && m_lastIgnoreTopLevel == options.ignoreTopLevel && m_lastIgnoreSubMenus == options.ignoreSubMenus) {
+        if (m_lastProcessedMenu == m_searchMenu && m_lastResults == results && m_lastShowDisabledActions == options.showDisabledActions && m_lastIgnoreTopLevel == options.ignoreTopLevel && m_lastIgnoreSubMenus == options.ignoreSubMenus) {
             return;
         }
 
@@ -84,6 +84,7 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterO
         m_lastIgnoreTopLevel = options.ignoreTopLevel;
         m_lastIgnoreSubMenus = options.ignoreSubMenus;
         m_lastResults = std::move(results);
+        m_lastProcessedMenu = m_searchMenu;
     } // 'results' goes out of scope here to prevent accidental use-after-move
 
     m_searchMenu->setUpdatesEnabled(false);
@@ -135,6 +136,16 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterO
 
 void AppMenuSearch::clear()
 {
+    // The old proxy actions no longer reference these groups (deleteLater()
+    // above), so nothing else owns them: delete explicitly to avoid leaking
+    // one QActionGroup per exclusive result set on every keystroke.
+    for (const QPointer<QActionGroup> &oldGroup : std::as_const(m_searchResultGroups)) {
+        if (oldGroup) {
+            oldGroup->deleteLater();
+        }
+    }
+    m_searchResultGroups.clear();
+
     if (!m_searchMenu) {
         return;
     }
@@ -150,16 +161,6 @@ void AppMenuSearch::clear()
             action->deleteLater();
         }
     }
-
-    // The old proxy actions no longer reference these groups (deleteLater()
-    // above), so nothing else owns them: delete explicitly to avoid leaking
-    // one QActionGroup per exclusive result set on every keystroke.
-    for (const QPointer<QActionGroup> &oldGroup : std::as_const(m_searchResultGroups)) {
-        if (oldGroup) {
-            oldGroup->deleteLater();
-        }
-    }
-    m_searchResultGroups.clear();
 }
 
 void AppMenuSearch::invalidateCandidates()
