@@ -186,7 +186,7 @@ private:
     bool m_pendingMenuUpdate = false;
     bool m_menuLoadedOnce = false;
 
-    AppMenuSearch *m_search;
+    Material::AppMenuSearch *m_search;
 
     QList<QPointer<TextButton>> m_textButtons;
     QPointer<MenuOverflowButton> m_overflowButton;

@@ -76,7 +76,7 @@ public:
     };
 
     void filter(QMenu *searchMenu, const QString &text, const FilterOptions &options);
-    void clear(QMenu *searchMenu);
+    void clear();
     
     void invalidateCandidates();
     void clearLastResults();
@@ -93,6 +93,7 @@ private:
     QString getActionText(QAction *action) const;
 
     QPointer<AppMenuModel> m_appMenuModel;
+    QPointer<QMenu> m_searchMenu;
     QString m_lastSearchQuery;
     bool m_lastShowDisabledActions = false;
     bool m_lastIgnoreTopLevel = false;

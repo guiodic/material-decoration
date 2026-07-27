@@ -84,7 +84,7 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     , m_searchLineEdit(nullptr)
     , m_searchDebounceTimer(nullptr)
     , m_searchUiVisible(false)
-    , m_search(new AppMenuSearch(m_appMenuModel, this))
+    , m_search(new Material::AppMenuSearch(m_appMenuModel, this))
 {
     m_searchDebounceTimer = new QTimer(this);
     m_searchDebounceTimer->setInterval(150);
@@ -367,10 +367,8 @@ void AppMenuButtonGroup::resetButtons()
     }
     setCurrentIndex(-1);
     m_currentMenu = nullptr;
-    if (m_search) {
-        m_search->clearLastResults();
-        m_search->clear(m_searchMenu);
-    }
+    m_search->clearLastResults();
+    m_search->clear();
     m_textButtons.clear();
     m_overflowButton = nullptr;
     m_searchButton = nullptr;
@@ -398,7 +396,7 @@ void AppMenuButtonGroup::resetButtons()
 
 void AppMenuButtonGroup::onMenuReadyForSearch()
 {
-    if (m_search && !m_search->lastSearchQuery().isEmpty() && m_searchUiVisible) {
+    if (!m_search->lastSearchQuery().isEmpty() && m_searchUiVisible) {
         filterMenu(m_search->lastSearchQuery());
     }
 }
@@ -482,9 +480,7 @@ void AppMenuButtonGroup::performDebouncedMenuUpdate()
 
 void AppMenuButtonGroup::updateAppMenuModel()
 {
-    if (m_search) {
-        m_search->invalidateCandidates();
-    }
+    m_search->invalidateCandidates();
 
     auto *deco = qobject_cast<Decoration *>(decoration());
     if (!deco) {
@@ -543,7 +539,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
                 }
             }
 
-            if (wasSearchOpen && m_search && !m_search->lastSearchQuery().isEmpty()) {
+            if (wasSearchOpen && !m_search->lastSearchQuery().isEmpty()) {
                 filterMenu(m_search->lastSearchQuery());
             }
         } else {
@@ -989,9 +985,7 @@ void AppMenuButtonGroup::onMenuAboutToHide()
     if (menu == m_searchMenu && m_searchLineEdit) {
         m_searchLineEdit->clear();
         m_searchUiVisible = false;
-        if (m_search) {
-            m_search->clearLastResults();
-        }
+        m_search->clearLastResults();
     }
 
     if (AppMenuButton *currentButton = getAppMenuButton(m_currentIndex)) {
@@ -1037,14 +1031,12 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     }
 
     const auto *deco = qobject_cast<const Decoration *>(decoration());
-    AppMenuSearch::FilterOptions options;
+    Material::AppMenuSearch::FilterOptions options;
     options.ignoreTopLevel = deco && deco->searchIgnoreTopLevel();
     options.ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
     options.showDisabledActions = deco && deco->showDisabledActions();
 
-    if (m_search) {
-        m_search->filter(m_searchMenu, text, options);
-    }
+    m_search->filter(m_searchMenu, text, options);
 
     if (text.isEmpty()) {
         m_searchLineEdit->setClearButtonEnabled(false);
@@ -1056,11 +1048,9 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
 void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
 {
-    if (m_search) {
-        m_search->invalidateCandidates();
-    }
+    m_search->invalidateCandidates();
 
-    if (m_searchUiVisible && m_search && !m_search->lastSearchQuery().isEmpty()) {
+    if (m_searchUiVisible && m_searchLineEdit && !m_searchLineEdit->text().isEmpty()) {
         if (!m_searchDebounceTimer->isActive()) {
             m_searchDebounceTimer->start();
         }

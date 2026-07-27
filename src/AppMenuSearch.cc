@@ -47,21 +47,24 @@ bool AppMenuSearch::isQueryTooShort(const QString &text)
 
 void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterOptions &options)
 {
-    if (!searchMenu) {
+    if (searchMenu) {
+        m_searchMenu = searchMenu;
+    }
+    if (!m_searchMenu) {
         return;
     }
     m_lastSearchQuery = text;
 
     // Clear results if search text is too short
     if (isQueryTooShort(text)) {
-        clear(searchMenu);
+        clear();
         m_lastResults.clear();
         Q_EMIT repositionRequested();
         return;
     }
 
     if (!m_appMenuModel) {
-        clear(searchMenu);
+        clear();
         m_lastResults.clear();
         Q_EMIT repositionRequested();
         return;
@@ -84,10 +87,10 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterO
         m_lastResults = std::move(results);
     } // 'results' goes out of scope here to prevent accidental use-after-move
 
-    searchMenu->setUpdatesEnabled(false);
+    m_searchMenu->setUpdatesEnabled(false);
 
     // Clear previous results
-    clear(searchMenu);
+    clear();
 
     // Map each *original* action group to the QActionGroup we create for its
     // search-result proxies, so results that were mutually exclusive in the
@@ -99,7 +102,7 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterO
         if (!action) {
             continue;
         }
-        QAction *newAction = new QAction(action->icon(), info.path, searchMenu);
+        QAction *newAction = new QAction(action->icon(), info.path, m_searchMenu);
         newAction->setEnabled(info.isEffectivelyEnabled);
         newAction->setCheckable(action->isCheckable());
         newAction->setChecked(action->isChecked());
@@ -108,7 +111,7 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterO
         if (QActionGroup *originalGroup = action->actionGroup(); originalGroup && originalGroup->isExclusive()) {
             QActionGroup *&proxyGroup = groupMap[originalGroup];
             if (!proxyGroup) {
-                proxyGroup = new QActionGroup(searchMenu);
+                proxyGroup = new QActionGroup(m_searchMenu);
                 proxyGroup->setExclusionPolicy(originalGroup->exclusionPolicy());
                 m_searchResultGroups.append(proxyGroup);
             }
@@ -116,7 +119,7 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterO
         }
       
         QPointer<QAction> safeAction = action;
-        connect(newAction, &QAction::triggered, this, [safeAction, searchMenu]() {
+        connect(newAction, &QAction::triggered, this, [safeAction, searchMenu = m_searchMenu]() {
             if (safeAction) {
                 safeAction->trigger();
             }
@@ -124,23 +127,23 @@ void AppMenuSearch::filter(QMenu *searchMenu, const QString &text, const FilterO
                 searchMenu->hide();
             }
         });
-        searchMenu->addAction(newAction);
+        m_searchMenu->addAction(newAction);
     }
 
-    searchMenu->setUpdatesEnabled(true);
+    m_searchMenu->setUpdatesEnabled(true);
     Q_EMIT repositionRequested();
 }
 
-void AppMenuSearch::clear(QMenu *searchMenu)
+void AppMenuSearch::clear()
 {
-    if (!searchMenu) {
+    if (!m_searchMenu) {
         return;
     }
 
-    const auto actions = searchMenu->actions();
+    const auto actions = m_searchMenu->actions();
     for (QAction *action : actions) {
         if (action && action->data().toString() == SEARCH_PROXY_MARKER) {
-            searchMenu->removeAction(action);
+            m_searchMenu->removeAction(action);
             // Detach action from its group before scheduling deletion
             if (QActionGroup *group = action->actionGroup()) {
                 group->removeAction(action);
@@ -165,7 +168,10 @@ void AppMenuSearch::invalidateCandidates()
     m_searchCandidatesDirty = true;
     m_searchCandidates.clear();
     m_actionTextCache.clear();
-    clearLastResults();
+    m_lastResults.clear();
+    m_lastShowDisabledActions = false;
+    m_lastIgnoreTopLevel = false;
+    m_lastIgnoreSubMenus = false;
 }
 
 void AppMenuSearch::clearLastResults()
