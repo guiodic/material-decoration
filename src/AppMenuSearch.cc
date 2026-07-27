@@ -57,15 +57,8 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
 
     m_lastSearchQuery = text;
 
-    // Clear results if search text is too short
-    if (isQueryTooShort(text)) {
-        clear();
-        resetSearchState();
-        Q_EMIT repositionRequested();
-        return;
-    }
-
-    if (!m_appMenuModel) {
+    // Clear results if search text is too short or model is unavailable
+    if (isQueryTooShort(text) || !m_appMenuModel) {
         clear();
         resetSearchState();
         Q_EMIT repositionRequested();

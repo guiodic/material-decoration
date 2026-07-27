@@ -398,8 +398,11 @@ void AppMenuButtonGroup::resetButtons()
 
 void AppMenuButtonGroup::onMenuReadyForSearch()
 {
-    if (m_search && m_searchUiVisible && m_search->hasValidQuery()) {
-        filterMenu(m_search->lastSearchQuery());
+    if (m_search && m_searchUiVisible && m_searchLineEdit) {
+        const QString currentText = m_searchLineEdit->text();
+        if (!AppMenuSearch::isQueryTooShort(currentText)) {
+            filterMenu(currentText);
+        }
     }
 }
 
