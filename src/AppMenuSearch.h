@@ -107,6 +107,8 @@ private:
     QPointer<QMenu> m_lastProcessedMenu;
     QList<SearchCandidate> m_searchCandidates;
     bool m_searchCandidatesDirty = true;
+    bool m_menuIsRendered = false;
+    bool m_candidateTruncationLogged = false;
     QList<QPointer<QActionGroup>> m_searchResultGroups;
     mutable QHash<QString, QString> m_actionTextCache;
 };

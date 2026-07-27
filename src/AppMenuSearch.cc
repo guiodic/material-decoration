@@ -60,11 +60,7 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
     // Clear results if search text is too short
     if (isQueryTooShort(text)) {
         clear();
-        m_lastResults.clear();
-        m_lastProcessedMenu = nullptr;
-        m_lastShowDisabledActions = false;
-        m_lastIgnoreTopLevel = false;
-        m_lastIgnoreSubMenus = false;
+        resetSearchState();
         Q_EMIT repositionRequested();
         return;
     }
@@ -83,7 +79,7 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
         QList<SearchResult> results = matchSearchCandidates(matcher, options.ignoreTopLevel, options.ignoreSubMenus, options.showDisabledActions);
 
         // If results and options are the same as last time, do nothing to prevent the freeze.
-        if (m_lastProcessedMenu == m_searchMenu && m_lastResults == results && m_lastShowDisabledActions == options.showDisabledActions && m_lastIgnoreTopLevel == options.ignoreTopLevel && m_lastIgnoreSubMenus == options.ignoreSubMenus) {
+        if (m_menuIsRendered && m_lastProcessedMenu == m_searchMenu && m_lastResults == results && m_lastShowDisabledActions == options.showDisabledActions && m_lastIgnoreTopLevel == options.ignoreTopLevel && m_lastIgnoreSubMenus == options.ignoreSubMenus) {
             return;
         }
 
@@ -137,6 +133,7 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
         m_searchMenu->addAction(newAction);
     }
 
+    m_menuIsRendered = true;
     m_searchMenu->setUpdatesEnabled(true);
     Q_EMIT repositionRequested();
 }
@@ -146,6 +143,8 @@ void AppMenuSearch::clear()
     if (!m_searchMenu) {
         return;
     }
+
+    m_menuIsRendered = false;
 
     const auto actions = m_searchMenu->actions();
     for (QAction *action : actions) {
@@ -173,6 +172,7 @@ void AppMenuSearch::clear()
 void AppMenuSearch::invalidateCandidates()
 {
     m_searchCandidatesDirty = true;
+    m_candidateTruncationLogged = false;
     m_searchCandidates.clear();
     m_lastResults.clear();
     m_lastProcessedMenu = nullptr;
@@ -213,6 +213,7 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
         return;
     }
     m_searchCandidates.clear();
+    m_candidateTruncationLogged = false;
 
     if (!m_appMenuModel) {
         return;
@@ -253,6 +254,10 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
 
     for (QAction *action : menu->actions()) {
         if (m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES) {
+            if (!m_candidateTruncationLogged) {
+                qWarning() << "AppMenuSearch: Maximum search candidates limit reached (" << MAX_SEARCH_CANDIDATES << "), remaining candidates will be discarded";
+                m_candidateTruncationLogged = true;
+            }
             break;
         }
         if (action->isSeparator()) {
