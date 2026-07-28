@@ -42,7 +42,7 @@ AppMenuSearch::~AppMenuSearch() = default;
 
 bool AppMenuSearch::isQueryTooShort(const QString &text)
 {
-    return text.length() < MINIMUM_SEARCH_LENGTH;
+    return text.simplified().length() < MINIMUM_SEARCH_LENGTH;
 }
 
 void AppMenuSearch::setSearchMenu(QMenu *searchMenu)
@@ -63,13 +63,15 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
         Q_EMIT repositionRequested();
         return;
     }
+    
+    const QString simplifiedText = text.simplified();
 
-    m_lastSearchQuery = text;
+    m_lastSearchQuery = simplifiedText;
 
     {
         // Find results
         rebuildSearchCandidatesIfNeeded();
-        QStringMatcher matcher(text, Qt::CaseInsensitive);
+        QStringMatcher matcher(simplifiedText, Qt::CaseInsensitive);
         QList<SearchResult> results = matchSearchCandidates(matcher, options.ignoreTopLevel, options.ignoreSubMenus, options.showDisabledActions);
 
         // If results and options are the same as last time, do nothing to prevent the freeze.
