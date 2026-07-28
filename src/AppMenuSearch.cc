@@ -243,6 +243,9 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
     }
 
     for (QAction *action : menu->actions()) {
+        if (!action || !action->isVisible()) {
+            continue;
+        }
         if (m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES) {
             if (!m_candidateTruncationLogged) {
                 qWarning() << "AppMenuSearch: Maximum search candidates limit reached (" << MAX_SEARCH_CANDIDATES << "), remaining candidates will be discarded";
@@ -400,7 +403,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         currentPath.append(itemText);
         info.path = currentPath.join(QStringLiteral(" » "));
 
-        results.append({action, info});
+        results.append({action, info, action ? action->icon().cacheKey() : 0});
     }
 
     return results;

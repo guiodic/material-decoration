@@ -62,9 +62,11 @@ public:
     struct SearchResult {
         QPointer<QAction> action;
         ActionInfo info;
+        qint64 iconCacheKey = 0;
 
         bool operator==(const SearchResult &other) const {
             return action == other.action
+            && iconCacheKey == other.iconCacheKey
             && info.isEffectivelyEnabled == other.info.isEffectivelyEnabled
             && info.path == other.info.path
             && info.isChecked == other.info.isChecked
