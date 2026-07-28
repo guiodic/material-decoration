@@ -168,6 +168,7 @@ void AppMenuSearch::invalidateCandidates()
     m_searchCandidatesDirty = true;
     m_candidateTruncationLogged = false;
     m_searchCandidates.clear();
+    m_actionTextCache.clear();
     // Note: m_lastSearchQuery is intentionally preserved here so that
     // hasValidQuery() still reports the in-progress query (e.g. while a
     // submenu is loading), letting the debounce timer re-run the search.
