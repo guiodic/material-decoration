@@ -89,7 +89,6 @@ public:
     void reset();
     
     void invalidateCandidates();
-    void clearLastResults();
     bool hasValidQuery() const;
 
 signals:

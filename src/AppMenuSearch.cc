@@ -56,17 +56,15 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
         return;
     }
 
-    m_lastSearchQuery = text;
-
     // Clear results if search text is too short or model is unavailable
     if (isQueryTooShort(text) || !m_appMenuModel) {
         clear();
-        m_lastResults.clear();
-        m_lastProcessedMenu = nullptr;
-        m_lastOptions = FilterOptions();
+        resetSearchState();
         Q_EMIT repositionRequested();
         return;
     }
+
+    m_lastSearchQuery = text;
 
     {
         // Find results
@@ -176,12 +174,6 @@ void AppMenuSearch::invalidateCandidates()
     m_lastOptions = FilterOptions();
 }
 
-void AppMenuSearch::clearLastResults()
-{
-    resetSearchState();
-    m_actionTextCache.clear();
-}
-
 bool AppMenuSearch::hasValidQuery() const
 {
     return !m_lastSearchQuery.isEmpty() && !isQueryTooShort(m_lastSearchQuery);
@@ -190,7 +182,8 @@ bool AppMenuSearch::hasValidQuery() const
 void AppMenuSearch::reset()
 {
     clear();
-    clearLastResults();
+    resetSearchState();
+    m_actionTextCache.clear();
 }
 
 void AppMenuSearch::resetSearchState()
