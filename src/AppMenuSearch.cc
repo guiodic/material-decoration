@@ -161,12 +161,6 @@ void AppMenuSearch::clear()
     m_searchResultGroups.clear();
 }
 
-void AppMenuSearch::reset()
-{
-    clear();
-    clearLastResults();
-}
-
 void AppMenuSearch::invalidateCandidates()
 {
     m_searchCandidatesDirty = true;
@@ -180,15 +174,16 @@ void AppMenuSearch::invalidateCandidates()
     m_lastOptions = FilterOptions();
 }
 
-void AppMenuSearch::clearLastResults()
-{
-    resetSearchState();
-    m_actionTextCache.clear();
-}
-
 bool AppMenuSearch::hasValidQuery() const
 {
     return !m_lastSearchQuery.isEmpty() && !isQueryTooShort(m_lastSearchQuery);
+}
+
+void AppMenuSearch::reset()
+{
+    clear();
+    resetSearchState();
+    m_actionTextCache.clear();
 }
 
 void AppMenuSearch::resetSearchState()
