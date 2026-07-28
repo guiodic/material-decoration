@@ -991,9 +991,11 @@ void AppMenuButtonGroup::onMenuAboutToHide()
     }
 
     if (menu == m_searchMenu && m_searchLineEdit) {
+        m_searchDebounceTimer->stop();
         m_searchLineEdit->clear();
         m_searchUiVisible = false;
         m_search->clearLastResults();
+        m_search->clear();
     }
 
     if (AppMenuButton *currentButton = getAppMenuButton(m_currentIndex)) {
