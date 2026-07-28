@@ -371,6 +371,7 @@ void AppMenuButtonGroup::resetButtons()
     m_currentMenu = nullptr;
     m_search->clearLastResults();
     m_search->clear();
+    m_search->invalidateCandidates();
     m_textButtons.clear();
     m_overflowButton = nullptr;
     m_searchButton = nullptr;
