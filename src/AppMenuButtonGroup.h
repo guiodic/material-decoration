@@ -30,13 +30,9 @@
 #include <QMenu>
 #include <QLineEdit>
 #include <QPointer>
-#include <QHash>
-#include <QSet>
-#include <QStringMatcher>
 
 class QTimer;
 class QVariantAnimation;
-class QActionGroup;
 
 namespace Material
 {
