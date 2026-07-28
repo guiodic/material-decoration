@@ -87,7 +87,7 @@ public:
     // Clears both the rendered result actions and the cached search state
     // (query, results, options). Used whenever the search UI is dismissed.
     void reset();
-
+    
     void invalidateCandidates();
     void clearLastResults();
     bool hasValidQuery() const;
