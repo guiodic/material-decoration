@@ -992,7 +992,9 @@ void AppMenuButtonGroup::onMenuAboutToHide()
 
     if (menu == m_searchMenu && m_searchLineEdit) {
         m_searchDebounceTimer->stop();
+        m_searchLineEdit->blockSignals(true);
         m_searchLineEdit->clear();
+        m_searchLineEdit->blockSignals(false);
         m_searchUiVisible = false;
         m_search->clearLastResults();
         m_search->clear();
