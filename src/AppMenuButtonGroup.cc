@@ -39,7 +39,6 @@
 
 // Qt
 #include <QAction>
-#include <QActionGroup>
 #include <QApplication>
 #include <QDebug>
 #include <QEvent>
@@ -48,20 +47,11 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QScreen>
-#include <QSet>
 #include <QTimer>
-#include <QStringMatcher>
 #include <QVariantAnimation>
 #include <QWidgetAction>
 
 #include <utility>
-
-static constexpr int MAX_SEARCH_RESULTS = 100;
-// Safety cap on the flattened candidate cache (distinct from MAX_SEARCH_RESULTS,
-// which caps *matches shown*): protects against pathologically huge app menus
-// while still comfortably covering any realistic menu (the previous per-keystroke
-// walk had no equivalent cap on nodes visited before hitting MAX_SEARCH_RESULTS).
-static constexpr int MAX_SEARCH_CANDIDATES = 5000;
 
 namespace Material
 {
@@ -369,8 +359,7 @@ void AppMenuButtonGroup::resetButtons()
     }
     setCurrentIndex(-1);
     m_currentMenu = nullptr;
-    m_search->clearLastResults();
-    m_search->clear();
+    m_search->reset();
     m_search->invalidateCandidates();
     m_textButtons.clear();
     m_overflowButton = nullptr;
@@ -996,8 +985,7 @@ void AppMenuButtonGroup::onMenuAboutToHide()
         m_searchLineEdit->clear();
         m_searchLineEdit->blockSignals(false);
         m_searchUiVisible = false;
-        m_search->clearLastResults();
-        m_search->clear();
+        m_search->reset();
     }
 
     if (AppMenuButton *currentButton = getAppMenuButton(m_currentIndex)) {

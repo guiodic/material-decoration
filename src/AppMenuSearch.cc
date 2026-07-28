@@ -56,8 +56,6 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
         return;
     }
 
-    m_lastSearchQuery = text;
-
     // Clear results if search text is too short or model is unavailable
     if (isQueryTooShort(text) || !m_appMenuModel) {
         clear();
@@ -66,6 +64,8 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
         return;
     }
 
+    m_lastSearchQuery = text;
+
     {
         // Find results
         rebuildSearchCandidatesIfNeeded();
@@ -73,13 +73,11 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
         QList<SearchResult> results = matchSearchCandidates(matcher, options.ignoreTopLevel, options.ignoreSubMenus, options.showDisabledActions);
 
         // If results and options are the same as last time, do nothing to prevent the freeze.
-        if (m_menuIsRendered && m_lastProcessedMenu == m_searchMenu && m_lastResults == results && m_lastShowDisabledActions == options.showDisabledActions && m_lastIgnoreTopLevel == options.ignoreTopLevel && m_lastIgnoreSubMenus == options.ignoreSubMenus) {
+        if (m_menuIsRendered && m_lastProcessedMenu == m_searchMenu && m_lastResults == results && m_lastOptions == options) {
             return;
         }
 
-        m_lastShowDisabledActions = options.showDisabledActions;
-        m_lastIgnoreTopLevel = options.ignoreTopLevel;
-        m_lastIgnoreSubMenus = options.ignoreSubMenus;
+        m_lastOptions = options;
         m_lastResults = std::move(results);
         m_lastProcessedMenu = m_searchMenu;
     } // 'results' goes out of scope here to prevent accidental use-after-move
@@ -163,27 +161,29 @@ void AppMenuSearch::clear()
     m_searchResultGroups.clear();
 }
 
+void AppMenuSearch::reset()
+{
+    clear();
+    clearLastResults();
+}
+
 void AppMenuSearch::invalidateCandidates()
 {
     m_searchCandidatesDirty = true;
     m_candidateTruncationLogged = false;
     m_searchCandidates.clear();
+    // Note: m_lastSearchQuery is intentionally preserved here so that
+    // hasValidQuery() still reports the in-progress query (e.g. while a
+    // submenu is loading), letting the debounce timer re-run the search.
     m_lastResults.clear();
     m_lastProcessedMenu = nullptr;
-    m_lastShowDisabledActions = false;
-    m_lastIgnoreTopLevel = false;
-    m_lastIgnoreSubMenus = false;
+    m_lastOptions = FilterOptions();
 }
 
 void AppMenuSearch::clearLastResults()
 {
     resetSearchState();
     m_actionTextCache.clear();
-}
-
-QString AppMenuSearch::lastSearchQuery() const
-{
-    return m_lastSearchQuery;
 }
 
 bool AppMenuSearch::hasValidQuery() const
@@ -196,9 +196,7 @@ void AppMenuSearch::resetSearchState()
     m_lastSearchQuery.clear();
     m_lastResults.clear();
     m_lastProcessedMenu = nullptr;
-    m_lastShowDisabledActions = false;
-    m_lastIgnoreTopLevel = false;
-    m_lastIgnoreSubMenus = false;
+    m_lastOptions = FilterOptions();
 }
 
 void AppMenuSearch::rebuildSearchCandidatesIfNeeded()

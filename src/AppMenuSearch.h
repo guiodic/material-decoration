@@ -76,15 +76,20 @@ public:
         bool ignoreTopLevel = false;
         bool ignoreSubMenus = false;
         bool showDisabledActions = false;
+
+        bool operator==(const FilterOptions &other) const = default;
     };
 
     void setSearchMenu(QMenu *searchMenu);
     void filter(const QString &text, const FilterOptions &options);
     void clear();
-    
+
+    // Clears both the rendered result actions and the cached search state
+    // (query, results, options). Used whenever the search UI is dismissed.
+    void reset();
+
     void invalidateCandidates();
     void clearLastResults();
-    QString lastSearchQuery() const;
     bool hasValidQuery() const;
 
 signals:
@@ -100,9 +105,7 @@ private:
     QPointer<AppMenuModel> m_appMenuModel;
     QPointer<QMenu> m_searchMenu;
     QString m_lastSearchQuery;
-    bool m_lastShowDisabledActions = false;
-    bool m_lastIgnoreTopLevel = false;
-    bool m_lastIgnoreSubMenus = false;
+    FilterOptions m_lastOptions;
     QList<SearchResult> m_lastResults;
     QPointer<QMenu> m_lastProcessedMenu;
     QList<SearchCandidate> m_searchCandidates;
