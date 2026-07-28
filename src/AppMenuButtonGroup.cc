@@ -47,6 +47,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QScreen>
+#include <QString>
 #include <QTimer>
 #include <QVariantAnimation>
 #include <QWidgetAction>
@@ -1036,7 +1037,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     options.ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
     options.showDisabledActions = deco && deco->showDisabledActions();
 
-    m_search->filter(text, options);
+    m_search->filter(text.simplified(), options); // search for simplified string (without initia/end spaces, double spaces, etc).
 
     m_searchLineEdit->setClearButtonEnabled(!text.isEmpty());
 }
