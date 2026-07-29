@@ -101,6 +101,13 @@ signals:
 private:
     void rebuildSearchCandidatesIfNeeded();
     void collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &ancestors);
+    
+    struct MatchState {
+        QString text;
+        bool matched = false;
+    };
+    bool matchesAncestorsOrText(const SearchCandidate &candidate, const QStringMatcher &matcher, bool ignoreTopLevel, QHash<QAction *, MatchState> &matchCache) const;
+    
     QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions) const;
     QString getActionText(QAction *action) const;
     void resetSearchState();

@@ -259,13 +259,55 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
     }
 }
 
+bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, const QStringMatcher &matcher, bool ignoreTopLevel, QHash<QAction *, MatchState> &matchCache) const
+{
+    const QString itemText = getActionText(candidate.action);
+    bool isTopLevel = true;
+    bool hasNamedAncestors = false;
+    for (QAction *ancestor : candidate.ancestors) {
+        if (!ancestor) {
+            continue;
+        }
+
+        auto it = matchCache.find(ancestor);
+        QString ancestorText;
+        bool matched = false;
+        if (it != matchCache.end()) {
+            ancestorText = it.value().text;
+            matched = it.value().matched;
+        } else {
+            ancestorText = getActionText(ancestor);
+            matched = (matcher.indexIn(ancestorText) != -1);
+            matchCache.insert(ancestor, {ancestorText, matched});
+        }
+
+        if (ancestorText.isEmpty()) {
+            continue;
+        }
+        hasNamedAncestors = true;
+        if (ignoreTopLevel && isTopLevel) {
+            isTopLevel = false;
+            continue;
+        }
+        isTopLevel = false;
+
+        if (matched) {
+            return true;
+        }
+    }
+
+    if (!ignoreTopLevel || hasNamedAncestors) {
+        if (matcher.indexIn(itemText) != -1) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions) const
 {
     QList<SearchResult> results;
-    struct MatchState {
-        QString text;
-        bool matched = false;
-    };
     QHash<QAction *, MatchState> matchCache;
 
     for (const SearchCandidate &candidate : std::as_const(m_searchCandidates)) {
@@ -303,46 +345,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         if (ignoreSubMenus) {
             match = (matcher.indexIn(itemText) != -1);
         } else {
-            bool isTopLevel = true;
-            bool hasNamedAncestors = false;
-            for (QAction *ancestor : candidate.ancestors) {
-                if (!ancestor) {
-                    continue;
-                }
-
-                auto it = matchCache.find(ancestor);
-                QString ancestorText;
-                bool matched = false;
-                if (it != matchCache.end()) {
-                    ancestorText = it.value().text;
-                    matched = it.value().matched;
-                } else {
-                    ancestorText = getActionText(ancestor);
-                    matched = (matcher.indexIn(ancestorText) != -1);
-                    matchCache.insert(ancestor, {ancestorText, matched});
-                }
-
-                if (ancestorText.isEmpty()) {
-                    continue;
-                }
-                hasNamedAncestors = true;
-                if (ignoreTopLevel && isTopLevel) {
-                    isTopLevel = false;
-                    continue;
-                }
-                isTopLevel = false;
-
-                if (matched) {
-                    match = true;
-                    break;
-                }
-            }
-
-            if (!match && (!ignoreTopLevel || hasNamedAncestors)) {
-                if (matcher.indexIn(itemText) != -1) {
-                    match = true;
-                }
-            }
+            match = matchesAncestorsOrText(candidate, matcher, ignoreTopLevel, matchCache);
         }
 
         if (!match) {
