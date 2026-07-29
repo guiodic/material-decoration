@@ -55,8 +55,7 @@ public:
 
     struct SearchCandidate {
         QPointer<QAction> action;
-        QList<QPointer<QAction>> namedAncestors;
-        QList<QPointer<QAction>> enablementAncestors;
+        QList<QPointer<QAction>> ancestors;
     };
 
     struct SearchResult {
@@ -98,7 +97,7 @@ signals:
 
 private:
     void rebuildSearchCandidatesIfNeeded();
-    void collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &namedAncestors, QList<QPointer<QAction>> &enablementAncestors);
+    void collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &ancestors);
     QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions) const;
     QString getActionText(QAction *action) const;
     void resetSearchState();
