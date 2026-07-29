@@ -59,7 +59,7 @@ public:
         // This is a strict invariant: even an untitled submenu gates whether its children
         // are reachable, so its enabled state must propagate down to all descendants.
         QList<QPointer<QAction>> ancestors;
-        bool isTopLevel = false;
+        bool hasNoNamedAncestor = false;
     };
 
     struct SearchResult {
@@ -101,7 +101,7 @@ signals:
 
 private:
     void rebuildSearchCandidatesIfNeeded();
-    void collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &ancestors);
+    void collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &ancestors, bool hasNamedAncestor = false);
     
     struct MatchState {
         QString text;

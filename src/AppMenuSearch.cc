@@ -219,20 +219,22 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
     collectSearchCandidates(rootMenu, visited, ancestors);
 }
 
-void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &ancestors)
+void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &ancestors, bool hasNamedAncestor)
 {
     if (!menu || visited.contains(menu) || m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES || ancestors.size() >= MAX_MENU_DEPTH) {
         return;
     }
     visited.insert(menu);
 
-    bool isMenuRoot = m_appMenuModel && (menu == m_appMenuModel->menu());
-
     QAction *menuAction = menu->menuAction();
     bool addedAncestor = false;
+    bool childHasNamedAncestor = hasNamedAncestor;
     if (menuAction) {
         ancestors.append(menuAction);
         addedAncestor = true;
+        if (!getActionText(menuAction).isEmpty()) {
+            childHasNamedAncestor = true;
+        }
     }
 
     for (QAction *action : menu->actions()) {
@@ -250,9 +252,9 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
             continue;
         }
         if (action->menu()) {
-            collectSearchCandidates(action->menu(), visited, ancestors);
+            collectSearchCandidates(action->menu(), visited, ancestors, childHasNamedAncestor);
         } else {
-            m_searchCandidates.append({action, ancestors, isMenuRoot});
+            m_searchCandidates.append({action, ancestors, !childHasNamedAncestor});
         }
     }
 
@@ -295,7 +297,7 @@ bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, con
         }
     }
 
-    if (!ignoreTopLevel || !candidate.isTopLevel) {
+    if (!ignoreTopLevel || !candidate.hasNoNamedAncestor) {
         if (matcher.indexIn(itemText) != -1) {
             return true;
         }
@@ -342,7 +344,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         bool match = false;
 
         if (ignoreSubMenus) {
-            if (ignoreTopLevel && candidate.isTopLevel) {
+            if (ignoreTopLevel && candidate.hasNoNamedAncestor) {
                 match = false;
             } else {
                 match = (matcher.indexIn(itemText) != -1);
