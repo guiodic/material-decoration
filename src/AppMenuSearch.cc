@@ -359,6 +359,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
                     text = it.value().text;
                 } else {
                     text = getActionText(ancestor);
+                    matchCache.insert(ancestor, {text, false});
                 }
                 if (!text.isEmpty()) {
                     currentPath.append(text);
