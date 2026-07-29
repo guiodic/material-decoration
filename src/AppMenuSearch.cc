@@ -226,6 +226,8 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
     }
     visited.insert(menu);
 
+    bool isMenuRoot = m_appMenuModel && (menu == m_appMenuModel->menu());
+
     QAction *menuAction = menu->menuAction();
     bool addedAncestor = false;
     if (menuAction) {
@@ -250,7 +252,7 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         if (action->menu()) {
             collectSearchCandidates(action->menu(), visited, ancestors);
         } else {
-            m_searchCandidates.append({action, ancestors});
+            m_searchCandidates.append({action, ancestors, isMenuRoot});
         }
     }
 
@@ -259,11 +261,9 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
     }
 }
 
-bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, const QStringMatcher &matcher, bool ignoreTopLevel, QHash<QAction *, MatchState> &matchCache) const
+bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, QHash<QAction *, MatchState> &matchCache) const
 {
-    const QString itemText = getActionText(candidate.action);
-    bool isTopLevel = true;
-    bool hasNamedAncestors = false;
+    bool isTopLevelAncestor = true;
     for (QAction *ancestor : candidate.ancestors) {
         if (!ancestor) {
             continue;
@@ -284,19 +284,18 @@ bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, con
         if (ancestorText.isEmpty()) {
             continue;
         }
-        hasNamedAncestors = true;
-        if (ignoreTopLevel && isTopLevel) {
-            isTopLevel = false;
+        if (ignoreTopLevel && isTopLevelAncestor) {
+            isTopLevelAncestor = false;
             continue;
         }
-        isTopLevel = false;
+        isTopLevelAncestor = false;
 
         if (matched) {
             return true;
         }
     }
 
-    if (!ignoreTopLevel || hasNamedAncestors) {
+    if (!ignoreTopLevel || !candidate.isTopLevel) {
         if (matcher.indexIn(itemText) != -1) {
             return true;
         }
@@ -343,20 +342,13 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         bool match = false;
 
         if (ignoreSubMenus) {
-            bool hasNamedAncestors = false;
-            for (QAction *ancestor : candidate.ancestors) {
-                if (ancestor && !getActionText(ancestor).isEmpty()) {
-                    hasNamedAncestors = true;
-                    break;
-                }
-            }
-            if (ignoreTopLevel && !hasNamedAncestors) {
+            if (ignoreTopLevel && candidate.isTopLevel) {
                 match = false;
             } else {
                 match = (matcher.indexIn(itemText) != -1);
             }
         } else {
-            match = matchesAncestorsOrText(candidate, matcher, ignoreTopLevel, matchCache);
+            match = matchesAncestorsOrText(candidate, itemText, matcher, ignoreTopLevel, matchCache);
         }
 
         if (!match) {
