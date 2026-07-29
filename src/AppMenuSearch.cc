@@ -254,7 +254,7 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         if (action->menu()) {
             collectSearchCandidates(action->menu(), visited, ancestors, childHasNamedAncestor);
         } else {
-            m_searchCandidates.append({action, ancestors, !childHasNamedAncestor});
+            m_searchCandidates.append({action, ancestors, childHasNamedAncestor});
         }
     }
 
@@ -297,7 +297,7 @@ bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, con
         }
     }
 
-    if (!ignoreTopLevel || !candidate.hasNoNamedAncestor) {
+    if (!ignoreTopLevel || candidate.hasNamedAncestor) {
         if (matcher.indexIn(itemText) != -1) {
             return true;
         }
@@ -344,7 +344,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         bool match = false;
 
         if (ignoreSubMenus) {
-            if (ignoreTopLevel && candidate.hasNoNamedAncestor) {
+            if (ignoreTopLevel && !candidate.hasNamedAncestor) {
                 match = false;
             } else {
                 match = (matcher.indexIn(itemText) != -1);

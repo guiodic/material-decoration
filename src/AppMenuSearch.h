@@ -59,7 +59,9 @@ public:
         // This is a strict invariant: even an untitled submenu gates whether its children
         // are reachable, so its enabled state must propagate down to all descendants.
         QList<QPointer<QAction>> ancestors;
-        bool hasNoNamedAncestor = false;
+        // True if at least one ancestor in the whole parent chain (not just the immediate parent)
+        // has a non-empty title/label. Used to correctly identify top-level leaf actions.
+        bool hasNamedAncestor = false;
     };
 
     struct SearchResult {
