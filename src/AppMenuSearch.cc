@@ -272,15 +272,24 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
             continue; // Action was destroyed since the cache was built.
         }
 
+        // Single pass over the ancestor chain: validate it, compute the
+        // effective enabled state, and collect the (non-empty) ancestor
+        // titles used both for top-level matching and for the result path.
         bool isEffectivelyEnabled = action->isEnabled();
         bool ancestorsStillValid = true;
-        for (const auto &ancestor : candidate.ancestors) {
+        QStringList ancestorTexts;
+        ancestorTexts.reserve(candidate.ancestors.size());
+        for (QAction *ancestor : candidate.ancestors) {
             if (!ancestor) {
                 ancestorsStillValid = false;
                 break;
             }
             if (!ancestor->isEnabled()) {
                 isEffectivelyEnabled = false;
+            }
+            const QString ancestorText = getActionText(ancestor);
+            if (!ancestorText.isEmpty()) {
+                ancestorTexts.append(ancestorText);
             }
         }
 
@@ -297,28 +306,13 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
 
         if (ignoreSubMenus) {
             match = (matcher.indexIn(itemText) != -1);
+        } else if (matcher.indexIn(itemText) != -1) {
+            match = true;
         } else {
-            if (matcher.indexIn(itemText) != -1) {
-                match = true;
-            } else {
-                bool isTopLevel = true;
-                for (QAction *ancestor : candidate.ancestors) {
-                    if (!ancestor) {
-                        continue;
-                    }
-                    QString ancestorText = getActionText(ancestor);
-                    if (ancestorText.isEmpty()) {
-                        continue;
-                    }
-                    if (ignoreTopLevel && isTopLevel) {
-                        isTopLevel = false;
-                        continue;
-                    }
-                    isTopLevel = false;
-                    if (matcher.indexIn(ancestorText) != -1) {
-                        match = true;
-                        break;
-                    }
+            for (int i = ignoreTopLevel ? 1 : 0; i < ancestorTexts.size(); ++i) {
+                if (matcher.indexIn(ancestorTexts.at(i)) != -1) {
+                    match = true;
+                    break;
                 }
             }
         }
@@ -327,16 +321,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
             continue;
         }
 
-        QStringList currentPath;
-        currentPath.reserve(candidate.ancestors.size() + 1);
-        for (QAction *ancestor : candidate.ancestors) {
-            if (ancestor) {
-                QString text = getActionText(ancestor);
-                if (!text.isEmpty()) {
-                    currentPath.append(text);
-                }
-            }
-        }
+        QStringList currentPath = ancestorTexts;
 
         ActionInfo info;
         info.label = itemText;
