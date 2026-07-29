@@ -262,6 +262,7 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
 QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions) const
 {
     QList<SearchResult> results;
+    QHash<QAction *, bool> matchCache;
 
     for (const SearchCandidate &candidate : std::as_const(m_searchCandidates)) {
         if (results.size() >= MAX_SEARCH_RESULTS) {
@@ -315,7 +316,17 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
                         continue;
                     }
                     isTopLevel = false;
-                    if (matcher.indexIn(ancestorText) != -1) {
+
+                    auto it = matchCache.find(ancestor);
+                    bool matched = false;
+                    if (it != matchCache.end()) {
+                        matched = it.value();
+                    } else {
+                        matched = (matcher.indexIn(ancestorText) != -1);
+                        matchCache.insert(ancestor, matched);
+                    }
+
+                    if (matched) {
                         match = true;
                         break;
                     }
