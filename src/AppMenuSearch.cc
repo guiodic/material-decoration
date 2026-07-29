@@ -262,7 +262,11 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
 QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions) const
 {
     QList<SearchResult> results;
-    QHash<QAction *, bool> matchCache;
+    struct MatchState {
+        QString text;
+        bool matched = false;
+    };
+    QHash<QAction *, MatchState> matchCache;
 
     for (const SearchCandidate &candidate : std::as_const(m_searchCandidates)) {
         if (results.size() >= MAX_SEARCH_RESULTS) {
@@ -305,7 +309,19 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
                 if (!ancestor) {
                     continue;
                 }
-                QString ancestorText = getActionText(ancestor);
+
+                auto it = matchCache.find(ancestor);
+                QString ancestorText;
+                bool matched = false;
+                if (it != matchCache.end()) {
+                    ancestorText = it.value().text;
+                    matched = it.value().matched;
+                } else {
+                    ancestorText = getActionText(ancestor);
+                    matched = (matcher.indexIn(ancestorText) != -1);
+                    matchCache.insert(ancestor, {ancestorText, matched});
+                }
+
                 if (ancestorText.isEmpty()) {
                     continue;
                 }
@@ -315,15 +331,6 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
                     continue;
                 }
                 isTopLevel = false;
-
-                auto it = matchCache.find(ancestor);
-                bool matched = false;
-                if (it != matchCache.end()) {
-                    matched = it.value();
-                } else {
-                    matched = (matcher.indexIn(ancestorText) != -1);
-                    matchCache.insert(ancestor, matched);
-                }
 
                 if (matched) {
                     match = true;
@@ -346,7 +353,13 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         currentPath.reserve(candidate.ancestors.size() + 1);
         for (QAction *ancestor : candidate.ancestors) {
             if (ancestor) {
-                QString text = getActionText(ancestor);
+                QString text;
+                auto it = matchCache.find(ancestor);
+                if (it != matchCache.end()) {
+                    text = it.value().text;
+                } else {
+                    text = getActionText(ancestor);
+                }
                 if (!text.isEmpty()) {
                     currentPath.append(text);
                 }
