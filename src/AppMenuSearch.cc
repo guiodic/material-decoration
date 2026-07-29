@@ -343,7 +343,18 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         bool match = false;
 
         if (ignoreSubMenus) {
-            match = (matcher.indexIn(itemText) != -1);
+            bool hasNamedAncestors = false;
+            for (QAction *ancestor : candidate.ancestors) {
+                if (ancestor && !getActionText(ancestor).isEmpty()) {
+                    hasNamedAncestors = true;
+                    break;
+                }
+            }
+            if (ignoreTopLevel && !hasNamedAncestors) {
+                match = false;
+            } else {
+                match = (matcher.indexIn(itemText) != -1);
+            }
         } else {
             match = matchesAncestorsOrText(candidate, matcher, ignoreTopLevel, matchCache);
         }
