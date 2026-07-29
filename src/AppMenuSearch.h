@@ -55,6 +55,9 @@ public:
 
     struct SearchCandidate {
         QPointer<QAction> action;
+        // Contains all parent menu actions, including those without a title/label.
+        // This is a strict invariant: even an untitled submenu gates whether its children
+        // are reachable, so its enabled state must propagate down to all descendants.
         QList<QPointer<QAction>> ancestors;
     };
 

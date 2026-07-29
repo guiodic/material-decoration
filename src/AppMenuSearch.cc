@@ -299,37 +299,41 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         if (ignoreSubMenus) {
             match = (matcher.indexIn(itemText) != -1);
         } else {
-            if (matcher.indexIn(itemText) != -1) {
-                match = true;
-            } else {
-                bool isTopLevel = true;
-                for (QAction *ancestor : candidate.ancestors) {
-                    if (!ancestor) {
-                        continue;
-                    }
-                    QString ancestorText = getActionText(ancestor);
-                    if (ancestorText.isEmpty()) {
-                        continue;
-                    }
-                    if (ignoreTopLevel && isTopLevel) {
-                        isTopLevel = false;
-                        continue;
-                    }
+            bool isTopLevel = true;
+            bool hasNamedAncestors = false;
+            for (QAction *ancestor : candidate.ancestors) {
+                if (!ancestor) {
+                    continue;
+                }
+                QString ancestorText = getActionText(ancestor);
+                if (ancestorText.isEmpty()) {
+                    continue;
+                }
+                hasNamedAncestors = true;
+                if (ignoreTopLevel && isTopLevel) {
                     isTopLevel = false;
+                    continue;
+                }
+                isTopLevel = false;
 
-                    auto it = matchCache.find(ancestor);
-                    bool matched = false;
-                    if (it != matchCache.end()) {
-                        matched = it.value();
-                    } else {
-                        matched = (matcher.indexIn(ancestorText) != -1);
-                        matchCache.insert(ancestor, matched);
-                    }
+                auto it = matchCache.find(ancestor);
+                bool matched = false;
+                if (it != matchCache.end()) {
+                    matched = it.value();
+                } else {
+                    matched = (matcher.indexIn(ancestorText) != -1);
+                    matchCache.insert(ancestor, matched);
+                }
 
-                    if (matched) {
-                        match = true;
-                        break;
-                    }
+                if (matched) {
+                    match = true;
+                    break;
+                }
+            }
+
+            if (!match && (!ignoreTopLevel || hasNamedAncestors)) {
+                if (matcher.indexIn(itemText) != -1) {
+                    match = true;
                 }
             }
         }
