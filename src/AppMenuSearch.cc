@@ -215,30 +215,25 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
 
     m_searchCandidatesDirty = false;
     QSet<QMenu *> visited;
-    QList<QPointer<QAction>> namedAncestors;
-    QList<QPointer<QAction>> enablementAncestors;
-    collectSearchCandidates(rootMenu, visited, namedAncestors, enablementAncestors);
+    QList<QPointer<QAction>> ancestors;
+    collectSearchCandidates(rootMenu, visited, ancestors);
 }
 
-void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &namedAncestors, QList<QPointer<QAction>> &enablementAncestors)
+void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &ancestors, bool hasNamedAncestor)
 {
-    if (!menu || visited.contains(menu) || m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES || enablementAncestors.size() >= MAX_MENU_DEPTH) {
+    if (!menu || visited.contains(menu) || m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES || ancestors.size() >= MAX_MENU_DEPTH) {
         return;
     }
     visited.insert(menu);
 
     QAction *menuAction = menu->menuAction();
-    bool addedNamed = false;
-    bool addedEnablement = false;
+    bool addedAncestor = false;
+    bool childHasNamedAncestor = hasNamedAncestor;
     if (menuAction) {
-        // Unconditional: even an untitled submenu still gates whether its
-        // children are reachable/enabled, so its own enabled state must
-        // propagate down regardless of whether it has display text.
-        enablementAncestors.append(menuAction);
-        addedEnablement = true;
+        ancestors.append(menuAction);
+        addedAncestor = true;
         if (!getActionText(menuAction).isEmpty()) {
-            namedAncestors.append(menuAction);
-            addedNamed = true;
+            childHasNamedAncestor = true;
         }
     }
 
@@ -257,36 +252,64 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
             continue;
         }
         if (action->menu()) {
-            collectSearchCandidates(action->menu(), visited, namedAncestors, enablementAncestors);
+            collectSearchCandidates(action->menu(), visited, ancestors, childHasNamedAncestor);
         } else {
-            m_searchCandidates.append({action, namedAncestors, enablementAncestors});
+            m_searchCandidates.append({action, ancestors, childHasNamedAncestor});
         }
     }
 
-    if (addedNamed) {
-        namedAncestors.removeLast();
+    if (addedAncestor) {
+        ancestors.removeLast();
     }
-    if (addedEnablement) {
-        enablementAncestors.removeLast();
+}
+
+bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, QHash<QAction *, MatchState> &matchCache) const
+{
+    bool isTopLevelAncestor = true;
+    for (QAction *ancestor : candidate.ancestors) {
+        if (!ancestor) {
+            continue;
+        }
+
+        auto it = matchCache.find(ancestor);
+        QString ancestorText;
+        bool matched = false;
+        if (it != matchCache.end()) {
+            ancestorText = it.value().text;
+            matched = it.value().matched;
+        } else {
+            ancestorText = getActionText(ancestor);
+            matched = (matcher.indexIn(ancestorText) != -1);
+            matchCache.insert(ancestor, {ancestorText, matched});
+        }
+
+        if (ancestorText.isEmpty()) {
+            continue;
+        }
+        if (ignoreTopLevel && isTopLevelAncestor) {
+            isTopLevelAncestor = false;
+            continue;
+        }
+        isTopLevelAncestor = false;
+
+        if (matched) {
+            return true;
+        }
     }
+
+    if (!ignoreTopLevel || candidate.hasNamedAncestor) {
+        if (matcher.indexIn(itemText) != -1) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions) const
 {
     QList<SearchResult> results;
-
-    // Two independent memoized chains, mirroring how the original recursive
-    // algorithm kept these concerns separate: a submenu's *enabled* state
-    // always propagates to its children, even if the submenu has no title
-    // of its own; its *title* only contributes to the visible path/matching
-    // when non-empty. Folding both into a single "named ancestors" chain
-    // would silently drop the disabled state of untitled submenus.
-    QHash<QAction *, bool> enabledCache; // cumulative isEnabled up to and including this ancestor
-    struct MatchState {
-        bool currentMatched = false;
-        QString text = QString();
-    };
-    QHash<QAction *, MatchState> matchCache; // cumulative match state + this ancestor's text
+    QHash<QAction *, MatchState> matchCache;
 
     for (const SearchCandidate &candidate : std::as_const(m_searchCandidates)) {
         if (results.size() >= MAX_SEARCH_RESULTS) {
@@ -297,69 +320,15 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
             continue; // Action was destroyed since the cache was built.
         }
 
+        bool isEffectivelyEnabled = action->isEnabled();
         bool ancestorsStillValid = true;
-
-        // --- Enabled chain (every ancestor, named or not) ---
-        bool isCurrentEnabled = true;
-        if (!candidate.enablementAncestors.isEmpty()) {
-            QAction *deepest = candidate.enablementAncestors.last();
-            if (!deepest) {
+        for (const auto &ancestor : candidate.ancestors) {
+            if (!ancestor) {
                 ancestorsStillValid = false;
-            } else {
-                auto it = enabledCache.find(deepest);
-                if (it != enabledCache.end()) {
-                    isCurrentEnabled = it.value();
-                } else {
-                    for (QAction *ancestor : std::as_const(candidate.enablementAncestors)) {
-                        if (!ancestor) {
-                            ancestorsStillValid = false;
-                            break;
-                        }
-                        auto it2 = enabledCache.find(ancestor);
-                        if (it2 != enabledCache.end()) {
-                            isCurrentEnabled = it2.value();
-                        } else {
-                            if (!ancestor->isEnabled()) {
-                                isCurrentEnabled = false;
-                            }
-                            enabledCache.insert(ancestor, isCurrentEnabled);
-                        }
-                    }
-                }
+                break;
             }
-        }
-
-        // --- Match/text chain (only ancestors with a non-empty title) ---
-        bool currentMatched = false;
-        if (ancestorsStillValid && !candidate.namedAncestors.isEmpty()) {
-            QAction *parent = candidate.namedAncestors.last();
-            if (!parent) {
-                ancestorsStillValid = false;
-            } else {
-                auto it = matchCache.find(parent);
-                if (it != matchCache.end()) {
-                    currentMatched = it.value().currentMatched;
-                } else {
-                    for (int i = 0; i < candidate.namedAncestors.size(); ++i) {
-                        QAction *ancestor = candidate.namedAncestors.at(i);
-                        if (!ancestor) {
-                            ancestorsStillValid = false;
-                            break;
-                        }
-                        auto it2 = matchCache.find(ancestor);
-                        if (it2 != matchCache.end()) {
-                            currentMatched = it2.value().currentMatched;
-                        } else {
-                            QString ancestorText = getActionText(ancestor);
-                            if (!currentMatched && (!ignoreTopLevel || i > 0)) {
-                                if (matcher.indexIn(ancestorText) != -1) {
-                                    currentMatched = true;
-                                }
-                            }
-                            matchCache.insert(ancestor, {currentMatched, ancestorText});
-                        }
-                    }
-                }
+            if (!ancestor->isEnabled()) {
+                isEffectivelyEnabled = false;
             }
         }
 
@@ -367,31 +336,43 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
             continue; // A submenu in the path was rebuilt/destroyed; skip until next full rebuild.
         }
 
-        const QString itemText = getActionText(action);
-        bool match = currentMatched;
-        if (ignoreSubMenus) {
-            match = matcher.indexIn(itemText) != -1;
-        } else if (!match && (!ignoreTopLevel || !candidate.namedAncestors.isEmpty())) {
-            if (matcher.indexIn(itemText) != -1) {
-                match = true;
-            }
-        }
-
-        if (!match) {
-            continue; // Skip building path entirely for non-matching entries!
-        }
-
-        const bool isEffectivelyEnabled = isCurrentEnabled && action->isEnabled();
         if (!isEffectivelyEnabled && !showDisabledActions) {
             continue;
         }
 
-        // 2. Only perform path allocation and joins for matching results
+        const QString itemText = getActionText(action);
+        bool match = false;
+
+        if (ignoreSubMenus) {
+            if (ignoreTopLevel && !candidate.hasNamedAncestor) {
+                match = false;
+            } else {
+                match = (matcher.indexIn(itemText) != -1);
+            }
+        } else {
+            match = matchesAncestorsOrText(candidate, itemText, matcher, ignoreTopLevel, matchCache);
+        }
+
+        if (!match) {
+            continue;
+        }
+
         QStringList currentPath;
-        currentPath.reserve(candidate.namedAncestors.size() + 1);
-        for (int i = 0; i < candidate.namedAncestors.size(); ++i) {
-            QAction *ancestor = candidate.namedAncestors.at(i);
-            currentPath.append(matchCache.value(ancestor).text);
+        currentPath.reserve(candidate.ancestors.size() + 1);
+        for (QAction *ancestor : candidate.ancestors) {
+            if (ancestor) {
+                QString text;
+                auto it = matchCache.find(ancestor);
+                if (it != matchCache.end()) {
+                    text = it.value().text;
+                } else {
+                    text = getActionText(ancestor);
+                    matchCache.insert(ancestor, {text, matcher.indexIn(text) != -1});
+                }
+                if (!text.isEmpty()) {
+                    currentPath.append(text);
+                }
+            }
         }
 
         ActionInfo info;
@@ -403,7 +384,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         currentPath.append(itemText);
         info.path = currentPath.join(QStringLiteral(" » "));
 
-        results.append({action, info, action ? action->icon().cacheKey() : 0});
+        results.append({action, info, action->icon().cacheKey()});
     }
 
     return results;

@@ -55,8 +55,13 @@ public:
 
     struct SearchCandidate {
         QPointer<QAction> action;
-        QList<QPointer<QAction>> namedAncestors;
-        QList<QPointer<QAction>> enablementAncestors;
+        // Contains all parent menu actions, including those without a title/label.
+        // This is a strict invariant: even an untitled submenu gates whether its children
+        // are reachable, so its enabled state must propagate down to all descendants.
+        QList<QPointer<QAction>> ancestors;
+        // True if at least one ancestor in the whole parent chain (not just the immediate parent)
+        // has a non-empty title/label. Used to correctly identify top-level leaf actions.
+        bool hasNamedAncestor = false;
     };
 
     struct SearchResult {
@@ -98,7 +103,14 @@ signals:
 
 private:
     void rebuildSearchCandidatesIfNeeded();
-    void collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &namedAncestors, QList<QPointer<QAction>> &enablementAncestors);
+    void collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &ancestors, bool hasNamedAncestor = false);
+    
+    struct MatchState {
+        QString text;
+        bool matched = false;
+    };
+    bool matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, QHash<QAction *, MatchState> &matchCache) const;
+    
     QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions) const;
     QString getActionText(QAction *action) const;
     void resetSearchState();
