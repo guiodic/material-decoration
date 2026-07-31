@@ -412,8 +412,36 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         newIds.insert(child.id);
     }
 
-    // 1. Synchronize existing actions and add new ones
-    auto currentActions = actions;
+    // 1. Remove actions no longer present
+    for (QAction *action : std::as_const(actions)) {
+        const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
+        if (!newIds.contains(id)) {
+            menu->removeAction(action);
+            if (QMenu *subMenu = action->menu()) {
+                subMenu->deleteLater();
+            }
+            action->deleteLater();
+            d->m_actionForId.remove(id);
+        }
+    }
+
+    // Filter currentActions to keep only those that are not obsolete
+    QList<QAction *> currentActions;
+    currentActions.reserve(actions.count());
+    for (QAction *action : std::as_const(actions)) {
+        const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
+        if (newIds.contains(id)) {
+            currentActions.append(action);
+        }
+    }
+
+    // 2. Synchronize existing actions and add new ones
+    QList<QAction *> finalActions;
+    finalActions.reserve(rootItem.children.count());
+    QSet<QAction *> usedActions;
+    usedActions.reserve(currentActions.count());
+
+    int nextUnusedIndex = 0;
     const int childCount = rootItem.children.count();
     for (int i = 0; i < childCount; ++i) {
         const DBusMenuLayoutItem &dbusMenuItem = rootItem.children.at(i);
@@ -422,7 +450,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         if (action) {
             // Update properties
             d->updateAction(action, dbusMenuItem.properties);
-            if (menu && action->parent() != menu) {
+            if (action->parent() != menu) {
                 action->setParent(menu);
             }
         } else {
@@ -444,39 +472,20 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
             }
         }
 
-        // Ensure correct position.
-        QAction *before = (i < currentActions.count()) ? currentActions.at(i) : nullptr;
-        if (before != action) {
-            // If action was already in menu, insertAction will move it.
-            menu->insertAction(before, action);
-            
-            // Update local currentActions instead of calling menu->actions() again!
-            const int index = currentActions.indexOf(action, i);
-            if (index != -1) {
-                if (index != i) {
-                    currentActions.move(index, i);
-                }
-            } else {
-                currentActions.insert(i, action);
-            }
+        // Find the first unused action in currentActions to be the "before" action.
+        while (nextUnusedIndex < currentActions.count() && usedActions.contains(currentActions.at(nextUnusedIndex))) {
+            nextUnusedIndex++;
         }
-    }
-    Q_ASSERT(menu->actions() == currentActions);
+        QAction *before = (nextUnusedIndex < currentActions.count()) ? currentActions.at(nextUnusedIndex) : nullptr;
 
-    // 2. Remove actions no longer present
-    for (QAction *action : std::as_const(actions)) {
-        const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
-        if (!newIds.contains(id)) {
-            if (menu) {
-                menu->removeAction(action);
-            }
-            if (QMenu *subMenu = action->menu()) {
-                subMenu->deleteLater();
-            }
-            action->deleteLater();
-            d->m_actionForId.remove(id);
+        if (before != action) {
+            menu->insertAction(before, action);
         }
+
+        finalActions.append(action);
+        usedActions.insert(action);
     }
+    Q_ASSERT(menu->actions() == finalActions);
 
     connect(menu, &QMenu::aboutToHide, this, &DBusMenuImporter::slotMenuAboutToHide, Qt::UniqueConnection);
     menu->setUpdatesEnabled(true);
