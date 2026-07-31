@@ -82,25 +82,25 @@ QKeySequence DBusMenuShortcut::toKeySequence() const
     QString res;
     // Heuristic: estimate size to minimize reallocations.
     // Each shortcut part is at least a few chars, plus separators.
-    res.reserve(size() * 16);
+    res.reserve(size() * 24);
 
     for (const QStringList &keyTokens : std::as_const(*this)) {
         if (keyTokens.isEmpty()) {
             continue;
         }
         if (!res.isEmpty()) {
-            res += QLatin1StringView(", ");
+            res.append(QLatin1StringView(", "));
         }
         bool first = true;
         for (const QString &token : keyTokens) {
             if (!first) {
-                res += QLatin1Char('+');
+                res.append(QLatin1Char('+'));
             }
             first = false;
             if (const auto t = translate(token, DM_COLUMN, QT_COLUMN); !t.isEmpty()) {
-                res += t;
+                res.append(t);
             } else {
-                res += token;
+                res.append(token);
             }
         }
     }
