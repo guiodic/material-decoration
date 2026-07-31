@@ -263,15 +263,15 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
     }
 }
 
-bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, QHash<QAction *, MatchState> &matchCache, QHash<QAction *, bool> &pathMatchCache) const
+bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, MatchContext &context) const
 {
     // 1. O(1) Fast-Path: check if the direct parent menu's path evaluation is already cached.
     // Safe within this search pass: collectSearchCandidates() visits every QMenu
     // at most once, so each submenu action has a unique root-to-parent path.
     QAction *lastAncestor = candidate.ancestors.isEmpty() ? nullptr : candidate.ancestors.last();
     if (lastAncestor) {
-        auto it = pathMatchCache.find(lastAncestor);
-        if (it != pathMatchCache.end()) {
+        auto it = context.pathMatchCache.find(lastAncestor);
+        if (it != context.pathMatchCache.end()) {
             if (it.value()) {
                 return true;
             }
@@ -293,23 +293,26 @@ bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, con
             continue;
         }
 
-        auto it = matchCache.find(ancestor);
+        auto it = context.matchCache.find(ancestor);
         QString ancestorText;
         bool matched = false;
 
-        if (it != matchCache.end()) {
+        if (it != context.matchCache.end()) {
             ancestorText = it.value().text;
             matched = it.value().matched;
         } else {
             ancestorText = getActionText(ancestor);
             matched = (matcher.indexIn(ancestorText) != -1);
-            matchCache.insert(ancestor, {ancestorText, matched});
+            context.matchCache.insert(ancestor, {ancestorText, matched});
         }
 
         if (ancestorText.isEmpty()) {
             continue;
         }
 
+        // If ignoreTopLevel is true, the first non-empty ancestor is skipped from evaluation.
+        // This ensures anyAncestorMatched remains false for the top-level menu match,
+        // correctly preventing children of the top-level menu from matching solely due to their parent.
         if (ignoreTopLevel && isTopLevelAncestor) {
             isTopLevelAncestor = false;
             continue;
@@ -324,8 +327,8 @@ bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, con
 
     // Cache the cumulative root-to-parent match result for this submenu action.
     if (lastAncestor) {
-        Q_ASSERT(!pathMatchCache.contains(lastAncestor));
-        pathMatchCache.insert(lastAncestor, anyAncestorMatched);
+        Q_ASSERT(!context.pathMatchCache.contains(lastAncestor));
+        context.pathMatchCache.insert(lastAncestor, anyAncestorMatched);
     }
 
     if (anyAncestorMatched) {
@@ -346,6 +349,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
     QList<SearchResult> results;
     QHash<QAction *, MatchState> matchCache;
     QHash<QAction *, bool> pathMatchCache;
+    MatchContext context{matchCache, pathMatchCache};
 
     for (const SearchCandidate &candidate : std::as_const(m_searchCandidates)) {
         if (results.size() >= MAX_SEARCH_RESULTS) {
@@ -386,7 +390,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
                 match = (matcher.indexIn(itemText) != -1);
             }
         } else {
-            match = matchesAncestorsOrText(candidate, itemText, matcher, ignoreTopLevel, matchCache, pathMatchCache);
+            match = matchesAncestorsOrText(candidate, itemText, matcher, ignoreTopLevel, context);
         }
 
         if (!match) {
