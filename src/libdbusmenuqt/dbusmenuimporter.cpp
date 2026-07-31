@@ -451,6 +451,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     usedActions.reserve(currentActions.count());
 
     int nextUnusedIndex = 0;
+    int ignoredCount = 0;
     for (int i = 0; i < childCount; ++i) {
         const DBusMenuLayoutItem &dbusMenuItem = rootItem.children.at(i);
         QAction *action = d->m_actionForId.value(dbusMenuItem.id);
@@ -464,7 +465,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         } else {
             // Create
             if (d->m_actionForId.count() >= MAX_TOTAL_ACTIONS) {
-                qCWarning(DBUSMENUQT) << "Maximum total actions limit reached (" << MAX_TOTAL_ACTIONS << "). Ignoring new action creation.";
+                ignoredCount++;
                 continue;
             }
             const int id = dbusMenuItem.id;
@@ -498,6 +499,10 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         usedActions.insert(action);
     }
     Q_ASSERT(menu->actions() == finalActions);
+
+    if (ignoredCount > 0) {
+        qCWarning(DBUSMENUQT) << "Maximum total actions limit reached (" << MAX_TOTAL_ACTIONS << ")." << ignoredCount << "new actions were ignored.";
+    }
 
     connect(menu, &QMenu::aboutToHide, this, &DBusMenuImporter::slotMenuAboutToHide, Qt::UniqueConnection);
     menu->setUpdatesEnabled(true);
