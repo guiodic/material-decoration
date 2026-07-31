@@ -51,6 +51,9 @@ static constexpr auto DBUSMENU_PROPERTY_ID = "_dbusmenu_id";
 static constexpr auto DBUSMENU_PROPERTY_ICON_NAME = "_dbusmenu_icon_name";
 static constexpr auto DBUSMENU_PROPERTY_ICON_DATA_HASH = "_dbusmenu_icon_data_hash";
 
+static constexpr int MAX_ACTIONS_PER_MENU = 1000;
+static constexpr int MAX_TOTAL_ACTIONS = 5000;
+
 static QAction *createKdeTitle(QAction *action, QWidget *parent)
 {
     QToolButton *titleWidget = new QToolButton(nullptr);
@@ -405,11 +408,17 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
 
     menu->setUpdatesEnabled(false);
 
+    int childCount = rootItem.children.count();
+    if (childCount > MAX_ACTIONS_PER_MENU) {
+        qCWarning(DBUSMENUQT) << "Menu children count" << childCount << "exceeds limit" << MAX_ACTIONS_PER_MENU << ". Truncating.";
+        childCount = MAX_ACTIONS_PER_MENU;
+    }
+
     const auto actions = menu->actions();
     QSet<int> newIds;
-    newIds.reserve(rootItem.children.count());
-    for (const auto &child : std::as_const(rootItem.children)) {
-        newIds.insert(child.id);
+    newIds.reserve(childCount);
+    for (int i = 0; i < childCount; ++i) {
+        newIds.insert(rootItem.children.at(i).id);
     }
 
     // 1. Remove actions no longer present
@@ -437,12 +446,12 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
 
     // 2. Synchronize existing actions and add new ones
     QList<QAction *> finalActions;
-    finalActions.reserve(rootItem.children.count());
+    finalActions.reserve(childCount);
     QSet<QAction *> usedActions;
     usedActions.reserve(currentActions.count());
 
     int nextUnusedIndex = 0;
-    const int childCount = rootItem.children.count();
+    int ignoredCount = 0;
     for (int i = 0; i < childCount; ++i) {
         const DBusMenuLayoutItem &dbusMenuItem = rootItem.children.at(i);
         QAction *action = d->m_actionForId.value(dbusMenuItem.id);
@@ -455,6 +464,10 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
             }
         } else {
             // Create
+            if (d->m_actionForId.count() >= MAX_TOTAL_ACTIONS) {
+                ignoredCount++;
+                continue;
+            }
             const int id = dbusMenuItem.id;
             action = d->createAction(id, dbusMenuItem.properties, menu);
             d->m_actionForId.insert(id, action);
@@ -486,6 +499,10 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         usedActions.insert(action);
     }
     Q_ASSERT(menu->actions() == finalActions);
+
+    if (ignoredCount > 0) {
+        qCWarning(DBUSMENUQT) << "Maximum total actions limit reached (" << MAX_TOTAL_ACTIONS << ")." << ignoredCount << "new actions were ignored.";
+    }
 
     connect(menu, &QMenu::aboutToHide, this, &DBusMenuImporter::slotMenuAboutToHide, Qt::UniqueConnection);
     menu->setUpdatesEnabled(true);
