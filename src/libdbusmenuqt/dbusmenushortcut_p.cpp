@@ -8,6 +8,7 @@
 
 // Qt
 #include <QKeySequence>
+#include <QStringBuilder>
 #include <QStringTokenizer>
 
 // STL
@@ -82,7 +83,7 @@ QKeySequence DBusMenuShortcut::toKeySequence() const
     QString res;
     // Heuristic: estimate size to minimize reallocations.
     // Each shortcut part is at least a few chars, plus separators.
-    res.reserve(size() * 16);
+    res.reserve(size() * 24);
 
     for (const QStringList &keyTokens : std::as_const(*this)) {
         if (keyTokens.isEmpty()) {
@@ -93,14 +94,23 @@ QKeySequence DBusMenuShortcut::toKeySequence() const
         }
         bool first = true;
         for (const QString &token : keyTokens) {
+            auto withToken = [&](auto &&callback) {
+                if (const auto t = translate(token, DM_COLUMN, QT_COLUMN); !t.isEmpty()) {
+                    callback(t);
+                } else {
+                    callback(token);
+                }
+            };
+
             if (!first) {
-                res += QLatin1Char('+');
-            }
-            first = false;
-            if (const auto t = translate(token, DM_COLUMN, QT_COLUMN); !t.isEmpty()) {
-                res += t;
+                withToken([&](const auto &str) {
+                    res += QLatin1Char('+') % str;
+                });
             } else {
-                res += token;
+                first = false;
+                withToken([&](const auto &str) {
+                    res += str;
+                });
             }
         }
     }
