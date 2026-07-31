@@ -263,30 +263,30 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
     }
 }
 
-bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, QHash<QAction *, MatchState> &matchCache) const
+bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, QHash<QAction *, MatchState> &matchCache, QHash<QAction *, bool> &pathMatchCache) const
 {
-    // 1. O(1) Fast-Path: check if the last ancestor is already cached and valid
-    if (!candidate.ancestors.isEmpty()) {
-        QAction *lastAncestor = candidate.ancestors.last();
-        if (lastAncestor) {
-            auto it = matchCache.find(lastAncestor);
-            if (it != matchCache.end() && it.value().pathMatchedValid) {
-                if (it.value().pathMatched) {
+    // 1. O(1) Fast-Path: check if the direct parent menu's path evaluation is already cached.
+    // Safe because each submenu action occurs in one unique root-to-leaf path (since Qt's QObject/QMenu
+    // hierarchy forms a strict, tree-structured parent-child relationship with unique parentage).
+    QAction *lastAncestor = candidate.ancestors.isEmpty() ? nullptr : candidate.ancestors.last();
+    if (lastAncestor) {
+        auto it = pathMatchCache.find(lastAncestor);
+        if (it != pathMatchCache.end()) {
+            if (it.value()) {
+                return true;
+            }
+            if (!ignoreTopLevel || candidate.hasNamedAncestor) {
+                if (matcher.indexIn(itemText) != -1) {
                     return true;
                 }
-                if (!ignoreTopLevel || candidate.hasNamedAncestor) {
-                    if (matcher.indexIn(itemText) != -1) {
-                        return true;
-                    }
-                }
-                return false;
             }
+            return false;
         }
     }
 
-    // 2. Slow path/Fallback path: Evaluate sequentially and cache
+    // 2. Fallback path: Evaluate sequentially and cache individual elements
     bool isTopLevelAncestor = true;
-    bool runningPathMatched = false;
+    bool anyAncestorMatched = false;
 
     for (QAction *ancestor : candidate.ancestors) {
         if (!ancestor) {
@@ -296,47 +296,40 @@ bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, con
         auto it = matchCache.find(ancestor);
         QString ancestorText;
         bool matched = false;
-        bool pathMatched = false;
 
         if (it != matchCache.end()) {
             ancestorText = it.value().text;
             matched = it.value().matched;
-            if (it.value().pathMatchedValid) {
-                pathMatched = it.value().pathMatched;
-            } else {
-                if (ignoreTopLevel && isTopLevelAncestor) {
-                    pathMatched = false;
-                } else {
-                    pathMatched = runningPathMatched || matched;
-                }
-                matchCache.insert(ancestor, {ancestorText, matched, pathMatched, true});
-            }
         } else {
             ancestorText = getActionText(ancestor);
-            if (!ancestorText.isEmpty()) {
-                matched = (matcher.indexIn(ancestorText) != -1);
-                if (ignoreTopLevel && isTopLevelAncestor) {
-                    pathMatched = false;
-                } else {
-                    pathMatched = runningPathMatched || matched;
-                }
-                matchCache.insert(ancestor, {ancestorText, matched, pathMatched, true});
-            } else {
-                pathMatched = runningPathMatched;
-                matchCache.insert(ancestor, {ancestorText, false, pathMatched, true});
-            }
+            matched = (matcher.indexIn(ancestorText) != -1);
+            matchCache.insert(ancestor, {ancestorText, matched});
         }
 
         if (ancestorText.isEmpty()) {
             continue;
         }
 
-        isTopLevelAncestor = false;
-        runningPathMatched = pathMatched;
-
-        if (runningPathMatched) {
-            return true;
+        if (ignoreTopLevel && isTopLevelAncestor) {
+            isTopLevelAncestor = false;
+            continue;
         }
+        isTopLevelAncestor = false;
+
+        if (matched) {
+            anyAncestorMatched = true;
+            break; // Stop evaluating further ancestors since we found a match
+        }
+    }
+
+    // Cache the cumulative root-to-leaf path match result for this parent
+    if (lastAncestor) {
+        Q_ASSERT(!pathMatchCache.contains(lastAncestor));
+        pathMatchCache.insert(lastAncestor, anyAncestorMatched);
+    }
+
+    if (anyAncestorMatched) {
+        return true;
     }
 
     if (!ignoreTopLevel || candidate.hasNamedAncestor) {
@@ -352,6 +345,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
 {
     QList<SearchResult> results;
     QHash<QAction *, MatchState> matchCache;
+    QHash<QAction *, bool> pathMatchCache;
 
     for (const SearchCandidate &candidate : std::as_const(m_searchCandidates)) {
         if (results.size() >= MAX_SEARCH_RESULTS) {
@@ -392,7 +386,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
                 match = (matcher.indexIn(itemText) != -1);
             }
         } else {
-            match = matchesAncestorsOrText(candidate, itemText, matcher, ignoreTopLevel, matchCache);
+            match = matchesAncestorsOrText(candidate, itemText, matcher, ignoreTopLevel, matchCache, pathMatchCache);
         }
 
         if (!match) {
@@ -409,7 +403,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
                     text = it.value().text;
                 } else {
                     text = getActionText(ancestor);
-                    matchCache.insert(ancestor, {text, matcher.indexIn(text) != -1, false, false});
+                    matchCache.insert(ancestor, {text, matcher.indexIn(text) != -1});
                 }
                 if (!text.isEmpty()) {
                     currentPath.append(text);

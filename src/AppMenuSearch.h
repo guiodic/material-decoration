@@ -108,10 +108,8 @@ private:
     struct MatchState {
         QString text;
         bool matched = false;
-        bool pathMatched = false;
-        bool pathMatchedValid = false;
     };
-    bool matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, QHash<QAction *, MatchState> &matchCache) const;
+    bool matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, QHash<QAction *, MatchState> &matchCache, QHash<QAction *, bool> &pathMatchCache) const;
     
     QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions) const;
     QString getActionText(QAction *action) const;
