@@ -416,9 +416,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     for (QAction *action : std::as_const(actions)) {
         const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
         if (!newIds.contains(id)) {
-            if (menu) {
-                menu->removeAction(action);
-            }
+            menu->removeAction(action);
             if (QMenu *subMenu = action->menu()) {
                 subMenu->deleteLater();
             }
@@ -430,7 +428,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     // Filter currentActions to keep only those that are not obsolete
     QList<QAction *> currentActions;
     currentActions.reserve(actions.count());
-    for (QAction *action : actions) {
+    for (QAction *action : std::as_const(actions)) {
         const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
         if (newIds.contains(id)) {
             currentActions.append(action);
@@ -452,7 +450,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         if (action) {
             // Update properties
             d->updateAction(action, dbusMenuItem.properties);
-            if (menu && action->parent() != menu) {
+            if (action->parent() != menu) {
                 action->setParent(menu);
             }
         } else {
@@ -481,15 +479,13 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         QAction *before = (nextUnusedIndex < currentActions.count()) ? currentActions.at(nextUnusedIndex) : nullptr;
 
         if (before != action) {
-            if (menu) {
-                menu->insertAction(before, action);
-            }
+            menu->insertAction(before, action);
         }
 
         finalActions.append(action);
         usedActions.insert(action);
     }
-    Q_ASSERT(!menu || menu->actions() == finalActions);
+    Q_ASSERT(menu->actions() == finalActions);
 
     connect(menu, &QMenu::aboutToHide, this, &DBusMenuImporter::slotMenuAboutToHide, Qt::UniqueConnection);
     menu->setUpdatesEnabled(true);
