@@ -109,7 +109,13 @@ private:
         QString text;
         bool matched = false;
     };
-    bool matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, QHash<QAction *, MatchState> &matchCache) const;
+
+    struct MatchContext {
+        QHash<QAction *, MatchState> &matchCache;
+        QHash<QAction *, bool> &pathMatchCache;
+    };
+
+    bool matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, MatchContext &context) const;
     
     QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions) const;
     QString getActionText(QAction *action) const;
