@@ -266,8 +266,8 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
 bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, QHash<QAction *, MatchState> &matchCache, QHash<QAction *, bool> &pathMatchCache) const
 {
     // 1. O(1) Fast-Path: check if the direct parent menu's path evaluation is already cached.
-    // Safe because each submenu action occurs in one unique root-to-leaf path (since Qt's QObject/QMenu
-    // hierarchy forms a strict, tree-structured parent-child relationship with unique parentage).
+    // Safe within this search pass: collectSearchCandidates() visits every QMenu
+    // at most once, so each submenu action has a unique root-to-parent path.
     QAction *lastAncestor = candidate.ancestors.isEmpty() ? nullptr : candidate.ancestors.last();
     if (lastAncestor) {
         auto it = pathMatchCache.find(lastAncestor);
@@ -322,7 +322,7 @@ bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, con
         }
     }
 
-    // Cache the cumulative root-to-leaf path match result for this parent
+    // Cache the cumulative root-to-parent match result for this submenu action.
     if (lastAncestor) {
         Q_ASSERT(!pathMatchCache.contains(lastAncestor));
         pathMatchCache.insert(lastAncestor, anyAncestorMatched);
