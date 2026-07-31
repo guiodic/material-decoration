@@ -23,12 +23,12 @@
 // Qt
 #include <QPainter>
 #include <QtMath>
-#include <QScopedArrayPointer>
 
 // std
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <memory>
 #include <new>
 #include <utility>
 
@@ -219,12 +219,12 @@ static inline void boxBlurAlpha(QImage &image, int radius, const QRect &rect = {
         return;
     }
 
-    QScopedArrayPointer<uint8_t> buf(new (std::nothrow) uint8_t[totalSize]);
+    std::unique_ptr<uint8_t[]> buf(new (std::nothrow) uint8_t[totalSize]);
     if (!buf) {
         return;
     }
 
-    uint8_t *buf1 = buf.data();
+    uint8_t *buf1 = buf.get();
     uint8_t *buf2 = buf1 + bufferStride;
 
     // Blur the image in horizontal direction.
