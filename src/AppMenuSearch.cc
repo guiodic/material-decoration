@@ -265,7 +265,29 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
 
 bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, QHash<QAction *, MatchState> &matchCache) const
 {
+    // 1. O(1) Fast-Path: check if the last ancestor is already cached and valid
+    if (!candidate.ancestors.isEmpty()) {
+        QAction *lastAncestor = candidate.ancestors.last();
+        if (lastAncestor) {
+            auto it = matchCache.find(lastAncestor);
+            if (it != matchCache.end() && it.value().pathMatchedValid) {
+                if (it.value().pathMatched) {
+                    return true;
+                }
+                if (!ignoreTopLevel || candidate.hasNamedAncestor) {
+                    if (matcher.indexIn(itemText) != -1) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+    }
+
+    // 2. Slow path/Fallback path: Evaluate sequentially and cache
     bool isTopLevelAncestor = true;
+    bool runningPathMatched = false;
+
     for (QAction *ancestor : candidate.ancestors) {
         if (!ancestor) {
             continue;
@@ -274,25 +296,45 @@ bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, con
         auto it = matchCache.find(ancestor);
         QString ancestorText;
         bool matched = false;
+        bool pathMatched = false;
+
         if (it != matchCache.end()) {
             ancestorText = it.value().text;
             matched = it.value().matched;
+            if (it.value().pathMatchedValid) {
+                pathMatched = it.value().pathMatched;
+            } else {
+                if (ignoreTopLevel && isTopLevelAncestor) {
+                    pathMatched = false;
+                } else {
+                    pathMatched = runningPathMatched || matched;
+                }
+                matchCache.insert(ancestor, {ancestorText, matched, pathMatched, true});
+            }
         } else {
             ancestorText = getActionText(ancestor);
-            matched = (matcher.indexIn(ancestorText) != -1);
-            matchCache.insert(ancestor, {ancestorText, matched});
+            if (!ancestorText.isEmpty()) {
+                matched = (matcher.indexIn(ancestorText) != -1);
+                if (ignoreTopLevel && isTopLevelAncestor) {
+                    pathMatched = false;
+                } else {
+                    pathMatched = runningPathMatched || matched;
+                }
+                matchCache.insert(ancestor, {ancestorText, matched, pathMatched, true});
+            } else {
+                pathMatched = runningPathMatched;
+                matchCache.insert(ancestor, {ancestorText, false, pathMatched, true});
+            }
         }
 
         if (ancestorText.isEmpty()) {
             continue;
         }
-        if (ignoreTopLevel && isTopLevelAncestor) {
-            isTopLevelAncestor = false;
-            continue;
-        }
-        isTopLevelAncestor = false;
 
-        if (matched) {
+        isTopLevelAncestor = false;
+        runningPathMatched = pathMatched;
+
+        if (runningPathMatched) {
             return true;
         }
     }
@@ -367,7 +409,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
                     text = it.value().text;
                 } else {
                     text = getActionText(ancestor);
-                    matchCache.insert(ancestor, {text, matcher.indexIn(text) != -1});
+                    matchCache.insert(ancestor, {text, matcher.indexIn(text) != -1, false, false});
                 }
                 if (!text.isEmpty()) {
                     currentPath.append(text);
