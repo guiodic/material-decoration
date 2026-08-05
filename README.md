@@ -55,8 +55,12 @@ sudo cmake --install build
 for Arch and derivatives, please install the AUR package 
 [material-kwin-decoration-git](https://aur.archlinux.org/packages/material-kwin-decoration-git)
 
-NOTE: the master branch is aligned with the latest Plasma version. For earlier
+NOTE 1: the master branch is aligned with the latest Plasma version. For earlier
 ones, see the other branches.
+
+NOTE 2: After 5 August 2026 the Decoration Id changed, please select again Material in Systemsettings, if needed.
+
+
 
 
 ....

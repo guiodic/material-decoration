@@ -1,8 +1,8 @@
 {
     "KPlugin": {
         "Description": "Window decoration",
-        "EnabledByDefault": false,
-        "Id": "com.github.zren.material",
+        "EnabledByDefault": true,
+        "Id": "com.github.guiodic.material",
         "Name": "Material",
         "ServiceTypes": [
             "org.kde.kdecoration3"
