@@ -1,5 +1,8 @@
 name: archlinux-x11-smoke
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     paths:
