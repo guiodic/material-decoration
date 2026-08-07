@@ -47,7 +47,8 @@ public:
         );
     }
     
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal dpr) {
+        Q_UNUSED(dpr)
         //const QRectF contentRect = button->contentArea();
         const QSizeF appIconSize(
             iconRect.width() * 0.7,

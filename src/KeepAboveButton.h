@@ -39,11 +39,10 @@ public:
 
         button->setVisible(true);
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal dpr) {
         Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.25);
 
-        const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
         const qreal scaleX = qAbs(painter->transform().m11());
         const qreal localToPhysical = scaleX * dpr;
 
@@ -59,15 +58,15 @@ public:
 
         const QPointF offset(-5.0, -5.0);
         painter->drawPolyline(  QVector<QPointF> {
-            snapPoint(QPointF( 0.5, 4.75 ) + offset),
-            snapPoint(QPointF( 5.0, 0.25 ) + offset),
-            snapPoint(QPointF( 9.5, 4.75 ) + offset)
+            snapPoint(QPointF( 0.0, 5.0 ) + offset),
+            snapPoint(QPointF( 5.0, 0.0 ) + offset),
+            snapPoint(QPointF( 10.0, 5.0 ) + offset)
         });
 
         painter->drawPolyline(  QVector<QPointF> {
-            snapPoint(QPointF( 0.5, 9.75 ) + offset),
-            snapPoint(QPointF( 5.0, 5.25 ) + offset),
-            snapPoint(QPointF( 9.5, 9.75 ) + offset)
+            snapPoint(QPointF( 0.0, 10.0 ) + offset),
+            snapPoint(QPointF( 5.0, 5.0 ) + offset),
+            snapPoint(QPointF( 10.0, 10.0 ) + offset)
         });
     }
 };

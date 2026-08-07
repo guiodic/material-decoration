@@ -39,12 +39,11 @@ public:
 
         button->setVisible(decoratedClient->isMinimizeable());
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal dpr) {
         Q_UNUSED(iconRect)
         
         button->setPenWidth(painter, 1.75);
 
-        const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
         const qreal scaleX = qAbs(painter->transform().m11());
         const qreal localToPhysical = scaleX * dpr;
 

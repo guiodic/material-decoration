@@ -93,7 +93,7 @@ signals:
     void paddingChanged();
 
 protected:
-    virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal);
+    virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal dpr);
     virtual void updateSize(qreal contentWidth, qreal contentHeight);
     virtual void setHeight(qreal buttonHeight);
 

@@ -40,9 +40,8 @@ public:
 
         button->setVisible(decoratedClient->isShadeable());
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal dpr) {
         Q_UNUSED(iconRect)
-        const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
         const qreal scaleX = qAbs(painter->transform().m11());
         const qreal localToPhysical = scaleX * dpr;
 
@@ -66,9 +65,9 @@ public:
             );
             button->setPenWidth(painter, 1.25);
             painter->drawPolyline(  QVector<QPointF> {
-                snapPoint(QPointF( 0.5, 5.25 ) + offset),
-                snapPoint(QPointF( 5.0, 9.75 ) + offset),
-                snapPoint(QPointF( 9.5, 5.25 ) + offset)
+                snapPoint(QPointF( 0.0, 5.0 ) + offset),
+                snapPoint(QPointF( 5.0, 10.0 ) + offset),
+                snapPoint(QPointF( 10.0, 5.0 ) + offset)
             });
         } else {
             button->setPenWidth(painter, 1.25);
@@ -78,9 +77,9 @@ public:
             );
             button->setPenWidth(painter, 1.25);
             painter->drawPolyline( QVector<QPointF> {
-                snapPoint(QPointF( 0.5, 9.75 ) + offset),
-                snapPoint(QPointF( 5.0, 5.25 ) + offset),
-                snapPoint(QPointF( 9.5, 5.25 ) + offset)
+                snapPoint(QPointF( 0.0, 10.0 ) + offset),
+                snapPoint(QPointF( 5.0, 5.0 ) + offset),
+                snapPoint(QPointF( 10.0, 10.0 ) + offset)
             });
         }
     }

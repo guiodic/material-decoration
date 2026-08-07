@@ -47,7 +47,7 @@ public:
     }
     
     //--- copied from Breeze for now. Copyright goes to KDE Developers
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal dpr) {
         Q_UNUSED(iconRect)
         const auto *deco = qobject_cast<Decoration *>(button->decoration());
         if (!deco) {
@@ -55,7 +55,6 @@ public:
         }
         button->setPenWidth(painter, 1.25 * KDecoration3::pixelSize(deco->window()->scale()));
 
-        const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
         const qreal scaleX = qAbs(painter->transform().m11());
         const qreal localToPhysical = scaleX * dpr;
 

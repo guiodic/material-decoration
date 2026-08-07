@@ -320,13 +320,15 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->setRenderHint(QPainter::Antialiasing, true);
     painter->setBrush(Qt::NoBrush);
 
+    const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
+
     const QRectF contentRect = contentArea();
 
     // TextButton and AppIconButton are special, so we don't scale the painter
     if (auto textButton = qobject_cast<TextButton*>(this)) {
-        textButton->paintIcon(painter, contentRect, 0);
+        textButton->paintIcon(painter, contentRect, dpr);
     } else if (type() == KDecoration3::DecorationButtonType::Menu) {
-        AppIconButton::paintIcon(this, painter, contentRect, 0);
+        AppIconButton::paintIcon(this, painter, contentRect, dpr);
     } else {
         // All further rendering is performed inside a 18x18 square
         const qreal width = contentRect.width();
@@ -349,8 +351,6 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
             size = qMin(width, height) * 0.6; // 60% of the Kwin Deco
         }
 
-        const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
-
         // For a sharper image, we use physical-pixel-aligned positioning and scaling
         const qreal physicalIconSize = qRound(size * dpr);
         const qreal iconLogicalSize = physicalIconSize / dpr;
@@ -371,47 +371,47 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         switch (type()) {
         // NOTE: Menu and ApplicationMenu are handled above
         case KDecoration3::DecorationButtonType::OnAllDesktops:
-            OnAllDesktopsButton::paintIcon(this, painter, iconRect, 0);
+            OnAllDesktopsButton::paintIcon(this, painter, iconRect, dpr);
             break;
 
         case KDecoration3::DecorationButtonType::ContextHelp:
-            ContextHelpButton::paintIcon(this, painter, iconRect, 0);
+            ContextHelpButton::paintIcon(this, painter, iconRect, dpr);
             break;
 
         case KDecoration3::DecorationButtonType::Shade:
-            ShadeButton::paintIcon(this, painter, iconRect, 0);
+            ShadeButton::paintIcon(this, painter, iconRect, dpr);
             break;
 
         case KDecoration3::DecorationButtonType::KeepAbove:
-            KeepAboveButton::paintIcon(this, painter, iconRect, 0);
+            KeepAboveButton::paintIcon(this, painter, iconRect, dpr);
             break;
 
         case KDecoration3::DecorationButtonType::KeepBelow:
-            KeepBelowButton::paintIcon(this, painter, iconRect, 0);
+            KeepBelowButton::paintIcon(this, painter, iconRect, dpr);
             break;
 
         case KDecoration3::DecorationButtonType::Close:
-            CloseButton::paintIcon(this, painter, iconRect, 0);
+            CloseButton::paintIcon(this, painter, iconRect, dpr);
             break;
 
         case KDecoration3::DecorationButtonType::Maximize:
-            MaximizeButton::paintIcon(this, painter, iconRect, 0);
+            MaximizeButton::paintIcon(this, painter, iconRect, dpr);
             break;
 
         case KDecoration3::DecorationButtonType::Minimize:
-            MinimizeButton::paintIcon(this, painter, iconRect, 0);
+            MinimizeButton::paintIcon(this, painter, iconRect, dpr);
             break;
         case KDecoration3::DecorationButtonType::Spacer:  
             break;            
 
 #if HAVE_EXCLUDE_FROM_CAPTURE
         case KDecoration3::DecorationButtonType::ExcludeFromCapture:
-            ExcludeFromCaptureButton::paintIcon(this, painter, iconRect, 0);
+            ExcludeFromCaptureButton::paintIcon(this, painter, iconRect, dpr);
             break;
 #endif
 
         default:
-            paintIcon(painter, iconRect, 0);
+            paintIcon(painter, iconRect, dpr);
             break;
         }
     }
@@ -419,10 +419,11 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->restore();
 }
 
-void Button::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal)
+void Button::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal dpr)
 {
     Q_UNUSED(painter)
     Q_UNUSED(iconRect)
+    Q_UNUSED(dpr)
 }
 
 void Button::updateSize(qreal contentWidth, qreal contentHeight)
