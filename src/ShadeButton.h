@@ -42,8 +42,9 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal dpr) {
         Q_UNUSED(iconRect)
-        auto snapPoint = [button, painter, dpr](const QPointF &p) -> QPointF {
-            return button->snapPoint(painter, p, dpr);
+        PixelSnapper snapper(painter, dpr);
+        auto snapPoint = [&snapper](const QPointF &p) -> QPointF {
+            return snapper.snap(p);
         };
 
         const QPointF offset(-5.0, -5.0);

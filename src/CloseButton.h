@@ -42,11 +42,10 @@ public:
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal dpr) {
         Q_UNUSED(iconRect)
 
-        //painter->setRenderHints(QPainter::Antialiasing, true);
-
         button->setPenWidth(painter, 1.5);
 
-        const qreal s = button->snapValue(painter, 5.0, dpr);
+        PixelSnapper snapper(painter, dpr);
+        const qreal s = snapper.snap(5.0);
 
         painter->drawLine(QPointF(-s, -s), QPointF(s, s));
         painter->drawLine(QPointF(s, -s), QPointF(-s, s));

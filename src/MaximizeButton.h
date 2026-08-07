@@ -43,10 +43,11 @@ public:
         Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.5);
 
-        const qreal x = button->snapValue(painter, -5.0, dpr);
-        const qreal y = button->snapValue(painter, -5.0, dpr);
-        const qreal w = button->snapValue(painter, 10.0, dpr);
-        const qreal h = button->snapValue(painter, 10.0, dpr);
+        PixelSnapper snapper(painter, dpr);
+        const qreal x = snapper.snap(-5.0);
+        const qreal y = snapper.snap(-5.0);
+        const qreal w = snapper.snap(10.0);
+        const qreal h = snapper.snap(10.0);
         const QRectF innerRect(x, y, w, h);
 
         if (button->isChecked()) {

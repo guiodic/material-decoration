@@ -38,11 +38,12 @@ void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qr
     //painter->setRenderHint(QPainter::Antialiasing, true);
     setPenWidth(painter, 1.25);
 
-    auto snapPoint = [this, painter, dpr](const QPointF &p) -> QPointF {
-        return this->snapPoint(painter, p, dpr);
+    PixelSnapper snapper(painter, dpr);
+    auto snapPoint = [&snapper](const QPointF &p) -> QPointF {
+        return snapper.snap(p);
     };
 
-    const qreal circleRadius = snapValue(painter, 4.0, dpr);
+    const qreal circleRadius = snapper.snap(4.0);
     const QPointF circleCenter = snapPoint(QPointF(-2.0, -2.0));
     painter->drawEllipse(circleCenter, circleRadius, circleRadius);
 

@@ -41,11 +41,12 @@ public:
         Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.5);
         
+        PixelSnapper snapper(painter, dpr);
         const qreal spacing = painter->pen().widthF() * 2.5;
         for (int i = -1; i <= 1; ++i) {
             const qreal y = i * spacing;
-            const QPointF left = button->snapPoint(painter, QPointF { -5.5, y }, dpr);
-            const QPointF right = button->snapPoint(painter, QPointF { 5.5, y }, dpr);
+            const QPointF left = snapper.snap(QPointF { -5.5, y });
+            const QPointF right = snapper.snap(QPointF { 5.5, y });
 
             painter->drawLine(left, right);
         }

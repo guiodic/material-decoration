@@ -41,10 +41,10 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal dpr) {
         Q_UNUSED(iconRect)
-        //painter->setRenderHints(QPainter::Antialiasing, true);
         button->setPenWidth(painter, 1.25);
 
-        const qreal radius = button->snapValue(painter, 6.0, dpr);
+        PixelSnapper snapper(painter, dpr);
+        const qreal radius = snapper.snap(6.0);
 
         painter->drawPolygon( QVector<QPointF> {
             QPointF(-radius, 0),

@@ -27,13 +27,30 @@
 #include <QMouseEvent>
 #include <QRectF>
 #include <QVariantAnimation>
+#include <QTransform>
 
 class QTimer;
+class QPainter;
 
 namespace Material
 {
 
 class Decoration;
+
+class PixelSnapper
+{
+public:
+    PixelSnapper(QPainter *painter, const qreal dpr);
+
+    QPointF snap(const QPointF &p) const;
+    qreal snap(const qreal v) const;
+
+private:
+    QTransform m_trans;
+    QTransform m_inv;
+    qreal m_dpr;
+    bool m_invertible;
+};
 
 class Button : public KDecoration3::DecorationButton
 {

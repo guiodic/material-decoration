@@ -49,14 +49,9 @@ void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qrea
     painter->setPen(foregroundColor());
     painter->setRenderHint(QPainter::TextAntialiasing);
 
-    QRectF snappedRect = iconRect;
-    if (dpr > 0.0) {
-        snappedRect.setLeft(qRound(iconRect.left() * dpr) / dpr);
-        snappedRect.setTop(qRound(iconRect.top() * dpr) / dpr);
-        snappedRect.setRight(qRound(iconRect.right() * dpr) / dpr);
-        snappedRect.setBottom(qRound(iconRect.bottom() * dpr) / dpr);
-    }
-    //const qreal pixelShift = (dpr > 0.0) ? (1.0 / dpr) : 1.0;
+    PixelSnapper snapper(painter, dpr);
+    const QPointF snappedTopLeft = snapper.snap(iconRect.topLeft());
+    const QRectF snappedRect(snappedTopLeft, iconRect.size());
 
     // TODO: Use Qt::TextShowMnemonic when Alt is pressed
     const bool isAltPressed = false;

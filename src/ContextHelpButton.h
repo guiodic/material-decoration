@@ -48,17 +48,16 @@ public:
         Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.25);
 
-        //painter->setRenderHints(QPainter::Antialiasing, true);
-
-        auto snapPoint = [button, painter, dpr](const QPointF &p) -> QPointF {
-            return button->snapPoint(painter, p, dpr);
+        PixelSnapper snapper(painter, dpr);
+        auto snapPoint = [&snapper](const QPointF &p) -> QPointF {
+            return snapper.snap(p);
         };
 
         const QPointF offset(-5.5, -5.5);
 
         const QPointF p1 = snapPoint(QPointF( 1.5, 0.5 ) + offset);
-        const qreal topCurveW = button->snapValue(painter, 8.0, dpr);
-        const qreal topCurveH = button->snapValue(painter, 6.0, dpr);
+        const qreal topCurveW = snapper.snap(8.0);
+        const qreal topCurveH = snapper.snap(6.0);
         const QRectF topCurveRect(p1, QSizeF(topCurveW, topCurveH));
 
         QPainterPath path;
@@ -77,8 +76,8 @@ public:
 
         // Dot
         const QPointF dotPos = snapPoint(QPointF( 5.0, 10.0 ) + offset);
-        const qreal dotW = button->snapValue(painter, 0.5, dpr);
-        const qreal dotH = button->snapValue(painter, 0.5, dpr);
+        const qreal dotW = snapper.snap(0.5);
+        const qreal dotH = snapper.snap(0.5);
         painter->drawRect(QRectF(dotPos, QSizeF(dotW, dotH)));
     }
 };
