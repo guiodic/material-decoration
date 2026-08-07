@@ -46,6 +46,7 @@ public:
     qreal snap(const qreal v) const;
     qreal snapX(const qreal v) const;
     qreal snapY(const qreal v) const;
+    qreal localToPhysicalScale() const;
 
 private:
     QTransform m_trans;

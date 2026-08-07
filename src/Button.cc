@@ -353,14 +353,14 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         }
 
         // For a sharper image, we use physical-pixel-aligned positioning and scaling
-        const QTransform transform = painter->transform();
-        const qreal localToPhysicalScale = std::hypot(transform.m11(), transform.m12()) * dpr;
+        PixelSnapper snapper(painter, dpr);
+        const qreal localToPhysicalScale = snapper.localToPhysicalScale();
         const qreal physicalIconSize = (localToPhysicalScale > 0.0) ? qRound(size * localToPhysicalScale) : qRound(size * dpr);
         const qreal iconLogicalSize = (localToPhysicalScale > 0.0) ? (physicalIconSize / localToPhysicalScale) : (physicalIconSize / dpr);
 
         // Translate to a center aligned with physical pixel grid
         const QPointF center = contentRect.center();
-        const QPointF centerSnapped = snapPoint(painter, center, dpr);
+        const QPointF centerSnapped = snapper.snap(center);
         painter->translate(centerSnapped);
 
         // Scale by physical-aligned factor
@@ -451,8 +451,8 @@ void Button::setPenWidth(QPainter *painter, const qreal scale)
     pen.setJoinStyle(Qt::MiterJoin);
 
     const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
-    const QTransform transform = painter->transform();
-    const qreal localToPhysicalScale = std::hypot(transform.m11(), transform.m12()) * dpr;
+    PixelSnapper snapper(painter, dpr);
+    const qreal localToPhysicalScale = snapper.localToPhysicalScale();
 
     if (localToPhysicalScale > 0.0) {
         const qreal nominalPhysicalWidth = PenWidth::Symbol * scale * localToPhysicalScale;
@@ -504,6 +504,11 @@ qreal PixelSnapper::snapY(const qreal v) const
 qreal PixelSnapper::snap(const qreal v) const
 {
     return snapX(v);
+}
+
+qreal PixelSnapper::localToPhysicalScale() const
+{
+    return std::hypot(m_trans.m11(), m_trans.m12()) * m_dpr;
 }
 
 QPointF Button::snapPoint(QPainter *painter, const QPointF &p, const qreal dpr) const
