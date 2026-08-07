@@ -358,9 +358,8 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 
         // Translate to a center aligned with physical pixel grid
         const QPointF center = contentRect.center();
-        const qreal centerX = qRound(center.x() * dpr) / dpr;
-        const qreal centerY = qRound(center.y() * dpr) / dpr;
-        painter->translate(centerX, centerY);
+        const QPointF centerSnapped = snapPoint(painter, center, dpr);
+        painter->translate(centerSnapped);
 
         // Scale by physical-aligned factor
         painter->scale(iconLogicalSize / 18.0, iconLogicalSize / 18.0);
@@ -451,8 +450,7 @@ void Button::setPenWidth(QPainter *painter, const qreal scale)
 
     const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
     const QTransform transform = painter->transform();
-    const qreal scaleX = qAbs(transform.m11());
-    const qreal localToPhysicalScale = scaleX * dpr;
+    const qreal localToPhysicalScale = std::hypot(transform.m11(), transform.m12()) * dpr;
 
     if (localToPhysicalScale > 0.0) {
         const qreal nominalPhysicalWidth = PenWidth::Symbol * scale * localToPhysicalScale;
