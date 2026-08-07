@@ -59,6 +59,7 @@
 #include <QTimer>
 #include <QDBusConnection>
 #include <QDBusMessage>
+#include <cmath>
 
 #define UPDATE_GEOM() update(geometry().adjusted(-1, -1, 1, 1))
 
@@ -466,25 +467,27 @@ void Button::setPenWidth(QPainter *painter, const qreal scale)
 
 QPointF Button::snapPoint(QPainter *painter, const QPointF &p, const qreal dpr) const
 {
-    const qreal scaleX = qAbs(painter->transform().m11());
-    const qreal localToPhysical = scaleX * dpr;
-    if (localToPhysical > 0.0) {
-        return QPointF(
-            qRound(p.x() * localToPhysical) / localToPhysical,
-            qRound(p.y() * localToPhysical) / localToPhysical
-        );
+    if (dpr > 0.0) {
+        const QTransform trans = painter->transform();
+        bool invertible = false;
+        const QTransform inv = trans.inverted(&invertible);
+        if (invertible) {
+            const QPointF devInd = trans.map(p);
+            const QPointF phys(devInd.x() * dpr, devInd.y() * dpr);
+            const QPointF physSnapped(qRound(phys.x()), qRound(phys.y()));
+            const QPointF devIndSnapped(physSnapped.x() / dpr, physSnapped.y() / dpr);
+            return inv.map(devIndSnapped);
+        }
     }
     return p;
 }
 
 qreal Button::snapValue(QPainter *painter, const qreal v, const qreal dpr) const
 {
-    const qreal scaleX = qAbs(painter->transform().m11());
-    const qreal localToPhysical = scaleX * dpr;
-    if (localToPhysical > 0.0) {
-        return qRound(v * localToPhysical) / localToPhysical;
-    }
-    return v;
+    const QPointF p0 = snapPoint(painter, QPointF(0.0, 0.0), dpr);
+    const QPointF pV = snapPoint(painter, QPointF(v, 0.0), dpr);
+    const qreal len = std::hypot(pV.x() - p0.x(), pV.y() - p0.y());
+    return (v < 0.0) ? -len : len;
 }
 
 QColor Button::backgroundColor() const
