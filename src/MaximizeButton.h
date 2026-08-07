@@ -50,7 +50,7 @@ public:
         const QRectF innerRect(x, y, w, h);
 
         if (button->isChecked()) {
-            const qreal offset = button->snapValue(painter, 2.0, dpr);
+            const qreal offset = painter->pen().widthF() * 1.5;
             // Outline of first square, "on top", aligned bottom left.
             painter->drawPolygon(QVector<QPointF> {
                 innerRect.bottomLeft(),
