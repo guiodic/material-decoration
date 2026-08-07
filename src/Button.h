@@ -32,28 +32,12 @@
 class QTimer;
 class QPainter;
 
+#include "PixelSnapper.h"
+
 namespace Material
 {
 
 class Decoration;
-
-class PixelSnapper
-{
-public:
-    PixelSnapper(QPainter *painter, const qreal dpr);
-
-    QPointF snap(const QPointF &p) const;
-    qreal snap(const qreal v) const;
-    qreal snapX(const qreal v) const;
-    qreal snapY(const qreal v) const;
-    qreal localToPhysicalScale() const;
-
-private:
-    QTransform m_trans;
-    QTransform m_inv;
-    qreal m_dpr;
-    bool m_invertible;
-};
 
 class Button : public KDecoration3::DecorationButton
 {

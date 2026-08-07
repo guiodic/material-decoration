@@ -49,33 +49,30 @@ public:
         button->setPenWidth(painter, 1.25);
 
         PixelSnapper snapper(painter, dpr);
-        auto snapPoint = [&snapper](const QPointF &p) -> QPointF {
-            return snapper.snap(p);
-        };
 
         const QPointF offset(-5.5, -5.5);
 
-        const QPointF p1 = snapPoint(QPointF( 1.5, 0.5 ) + offset);
+        const QPointF p1 = snapper.snap(QPointF( 1.5, 0.5 ) + offset);
         const qreal topCurveW = snapper.snapX(8.0);
         const qreal topCurveH = snapper.snapY(6.0);
         const QRectF topCurveRect(p1, QSizeF(topCurveW, topCurveH));
 
         QPainterPath path;
-        path.moveTo(snapPoint(topCurveRect.center() - QPointF(topCurveRect.width() / 2.0, 0.0)));
+        path.moveTo(snapper.snap(topCurveRect.center() - QPointF(topCurveRect.width() / 2.0, 0.0)));
         path.arcTo(
             topCurveRect,
             180,
             -180
         );
         path.cubicTo(
-            snapPoint(QPointF( 7.8125, 5.9375 ) + offset),
-            snapPoint(QPointF( 5.625, 4.6875 ) + offset),
-            snapPoint(QPointF( 5.0, 8.0 ) + offset)
+            snapper.snap(QPointF( 7.8125, 5.9375 ) + offset),
+            snapper.snap(QPointF( 5.625, 4.6875 ) + offset),
+            snapper.snap(QPointF( 5.0, 8.0 ) + offset)
         );
         painter->drawPath(path);
 
         // Dot
-        const QPointF dotPos = snapPoint(QPointF( 5.0, 10.0 ) + offset);
+        const QPointF dotPos = snapper.snap(QPointF( 5.0, 10.0 ) + offset);
         const qreal dotW = snapper.snapX(0.5);
         const qreal dotH = snapper.snapY(0.5);
         painter->drawRect(QRectF(dotPos, QSizeF(dotW, dotH)));

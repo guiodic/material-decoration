@@ -56,34 +56,31 @@ public:
         button->setPenWidth(painter, 1.25 * KDecoration3::pixelSize(deco->window()->scale()));
 
         PixelSnapper snapper(painter, dpr);
-        auto snapPoint = [&snapper](const QPointF &p) -> QPointF {
-            return snapper.snap(p);
-        };
 
         // A spy hat (like view-private.svg icon)
         // Hat crown with dip/crease at top (filled)
         const QVector<QPointF> crownPoints {
-            snapPoint(QPointF(-4.1, -2.5)),
-            snapPoint(QPointF(-3.2, -6.1)),
-            snapPoint(QPointF(0, -5)),
-            snapPoint(QPointF(3.2, -6.1)),
-            snapPoint(QPointF(4.1, -2.5))
+            snapper.snap(QPointF(-4.1, -2.5)),
+            snapper.snap(QPointF(-3.2, -6.1)),
+            snapper.snap(QPointF(0, -5)),
+            snapper.snap(QPointF(3.2, -6.1)),
+            snapper.snap(QPointF(4.1, -2.5))
         };
         painter->setBrush(painter->pen().color());
         painter->drawPolygon(crownPoints);
         painter->setBrush(Qt::NoBrush);
 
         // Hat brim
-        painter->drawLine(snapPoint(QPointF(-6.2, -0.5)), snapPoint(QPointF(6.2, -0.5)));
+        painter->drawLine(snapper.snap(QPointF(-6.2, -0.5)), snapper.snap(QPointF(6.2, -0.5)));
 
         // Glasses' lenses
         const qreal rx = snapper.snapX(2.3);
         const qreal ry = snapper.snapY(2.3);
-        painter->drawEllipse(snapPoint(QPointF(-4.0, 3.8)), rx, ry);
-        painter->drawEllipse(snapPoint(QPointF(4.0, 3.8)), rx, ry);
+        painter->drawEllipse(snapper.snap(QPointF(-4.0, 3.8)), rx, ry);
+        painter->drawEllipse(snapper.snap(QPointF(4.0, 3.8)), rx, ry);
 
         // Bridge between lenses
-        painter->drawLine(snapPoint(QPointF(-1.5, 3.8)), snapPoint(QPointF(1.5, 3.8)));
+        painter->drawLine(snapper.snap(QPointF(-1.5, 3.8)), snapper.snap(QPointF(1.5, 3.8)));
     }
 };
 #endif

@@ -44,21 +44,18 @@ public:
         button->setPenWidth(painter, 1.25);
 
         PixelSnapper snapper(painter, dpr);
-        auto snapPoint = [&snapper](const QPointF &p) -> QPointF {
-            return snapper.snap(p);
-        };
 
         const QPointF offset(-5.0, -5.0);
         painter->drawPolyline(  QVector<QPointF> {
-            snapPoint(QPointF( 0.0, 5.0 ) + offset),
-            snapPoint(QPointF( 5.0, 0.0 ) + offset),
-            snapPoint(QPointF( 10.0, 5.0 ) + offset)
+            snapper.snap(QPointF( 0.0, 5.0 ) + offset),
+            snapper.snap(QPointF( 5.0, 0.0 ) + offset),
+            snapper.snap(QPointF( 10.0, 5.0 ) + offset)
         });
 
         painter->drawPolyline(  QVector<QPointF> {
-            snapPoint(QPointF( 0.0, 10.0 ) + offset),
-            snapPoint(QPointF( 5.0, 5.0 ) + offset),
-            snapPoint(QPointF( 10.0, 10.0 ) + offset)
+            snapper.snap(QPointF( 0.0, 10.0 ) + offset),
+            snapper.snap(QPointF( 5.0, 5.0 ) + offset),
+            snapper.snap(QPointF( 10.0, 10.0 ) + offset)
         });
     }
 };

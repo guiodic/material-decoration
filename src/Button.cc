@@ -465,52 +465,6 @@ void Button::setPenWidth(QPainter *painter, const qreal scale)
     painter->setPen(pen);
 }
 
-PixelSnapper::PixelSnapper(QPainter *painter, const qreal dpr)
-    : m_trans(painter->transform())
-    , m_dpr(dpr)
-    , m_invertible(false)
-{
-    m_inv = m_trans.inverted(&m_invertible);
-}
-
-QPointF PixelSnapper::snap(const QPointF &p) const
-{
-    if (m_dpr > 0.0 && m_invertible) {
-        const QPointF devInd = m_trans.map(p);
-        const QPointF phys(devInd.x() * m_dpr, devInd.y() * m_dpr);
-        const QPointF physSnapped(qRound(phys.x()), qRound(phys.y()));
-        const QPointF devIndSnapped(physSnapped.x() / m_dpr, physSnapped.y() / m_dpr);
-        return m_inv.map(devIndSnapped);
-    }
-    return p;
-}
-
-qreal PixelSnapper::snapX(const qreal v) const
-{
-    const QPointF p0 = snap(QPointF(0.0, 0.0));
-    const QPointF pV = snap(QPointF(v, 0.0));
-    const qreal len = std::hypot(pV.x() - p0.x(), pV.y() - p0.y());
-    return (v < 0.0) ? -len : len;
-}
-
-qreal PixelSnapper::snapY(const qreal v) const
-{
-    const QPointF p0 = snap(QPointF(0.0, 0.0));
-    const QPointF pV = snap(QPointF(0.0, v));
-    const qreal len = std::hypot(pV.x() - p0.x(), pV.y() - p0.y());
-    return (v < 0.0) ? -len : len;
-}
-
-qreal PixelSnapper::snap(const qreal v) const
-{
-    return snapX(v);
-}
-
-qreal PixelSnapper::localToPhysicalScale() const
-{
-    return std::hypot(m_trans.m11(), m_trans.m12()) * m_dpr;
-}
-
 QPointF Button::snapPoint(QPainter *painter, const QPointF &p, const qreal dpr) const
 {
     PixelSnapper snapper(painter, dpr);
