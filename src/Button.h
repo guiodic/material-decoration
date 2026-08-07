@@ -44,6 +44,8 @@ public:
 
     QPointF snap(const QPointF &p) const;
     qreal snap(const qreal v) const;
+    qreal snapX(const qreal v) const;
+    qreal snapY(const qreal v) const;
 
 private:
     QTransform m_trans;

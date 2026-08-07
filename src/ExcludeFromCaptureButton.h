@@ -77,8 +77,8 @@ public:
         painter->drawLine(snapPoint(QPointF(-6.2, -0.5)), snapPoint(QPointF(6.2, -0.5)));
 
         // Glasses' lenses
-        const qreal rx = snapper.snap(2.3);
-        const qreal ry = snapper.snap(2.3);
+        const qreal rx = snapper.snapX(2.3);
+        const qreal ry = snapper.snapY(2.3);
         painter->drawEllipse(snapPoint(QPointF(-4.0, 3.8)), rx, ry);
         painter->drawEllipse(snapPoint(QPointF(4.0, 3.8)), rx, ry);
 

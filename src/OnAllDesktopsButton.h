@@ -44,7 +44,7 @@ public:
         button->setPenWidth(painter, 1.25);
 
         PixelSnapper snapper(painter, dpr);
-        const qreal radius = snapper.snap(6.0);
+        const qreal radius = snapper.snapX(6.0);
 
         painter->drawPolygon( QVector<QPointF> {
             QPointF(-radius, 0),

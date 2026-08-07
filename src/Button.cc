@@ -353,8 +353,10 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         }
 
         // For a sharper image, we use physical-pixel-aligned positioning and scaling
-        const qreal physicalIconSize = qRound(size * dpr);
-        const qreal iconLogicalSize = physicalIconSize / dpr;
+        const QTransform transform = painter->transform();
+        const qreal localToPhysicalScale = std::hypot(transform.m11(), transform.m12()) * dpr;
+        const qreal physicalIconSize = (localToPhysicalScale > 0.0) ? qRound(size * localToPhysicalScale) : qRound(size * dpr);
+        const qreal iconLogicalSize = (localToPhysicalScale > 0.0) ? (physicalIconSize / localToPhysicalScale) : (physicalIconSize / dpr);
 
         // Translate to a center aligned with physical pixel grid
         const QPointF center = contentRect.center();
@@ -483,12 +485,25 @@ QPointF PixelSnapper::snap(const QPointF &p) const
     return p;
 }
 
-qreal PixelSnapper::snap(const qreal v) const
+qreal PixelSnapper::snapX(const qreal v) const
 {
     const QPointF p0 = snap(QPointF(0.0, 0.0));
     const QPointF pV = snap(QPointF(v, 0.0));
     const qreal len = std::hypot(pV.x() - p0.x(), pV.y() - p0.y());
     return (v < 0.0) ? -len : len;
+}
+
+qreal PixelSnapper::snapY(const qreal v) const
+{
+    const QPointF p0 = snap(QPointF(0.0, 0.0));
+    const QPointF pV = snap(QPointF(0.0, v));
+    const qreal len = std::hypot(pV.x() - p0.x(), pV.y() - p0.y());
+    return (v < 0.0) ? -len : len;
+}
+
+qreal PixelSnapper::snap(const qreal v) const
+{
+    return snapX(v);
 }
 
 QPointF Button::snapPoint(QPainter *painter, const QPointF &p, const qreal dpr) const
@@ -500,7 +515,7 @@ QPointF Button::snapPoint(QPainter *painter, const QPointF &p, const qreal dpr) 
 qreal Button::snapValue(QPainter *painter, const qreal v, const qreal dpr) const
 {
     PixelSnapper snapper(painter, dpr);
-    return snapper.snap(v);
+    return snapper.snapX(v);
 }
 
 QColor Button::backgroundColor() const

@@ -45,7 +45,7 @@ public:
         button->setPenWidth(painter, 1.75);
 
         PixelSnapper snapper(painter, dpr);
-        const qreal s = snapper.snap(5.0);
+        const qreal s = snapper.snapX(5.0);
 
         painter->drawLine(QPointF(-s, 0), QPointF(s, 0));
     }

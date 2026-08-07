@@ -44,10 +44,10 @@ public:
         button->setPenWidth(painter, 1.5);
 
         PixelSnapper snapper(painter, dpr);
-        const qreal x = snapper.snap(-5.0);
-        const qreal y = snapper.snap(-5.0);
-        const qreal w = snapper.snap(10.0);
-        const qreal h = snapper.snap(10.0);
+        const qreal x = snapper.snapX(-5.0);
+        const qreal y = snapper.snapY(-5.0);
+        const qreal w = snapper.snapX(10.0);
+        const qreal h = snapper.snapY(10.0);
         const QRectF innerRect(x, y, w, h);
 
         if (button->isChecked()) {

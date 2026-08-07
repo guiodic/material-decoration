@@ -43,7 +43,7 @@ void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qr
         return snapper.snap(p);
     };
 
-    const qreal circleRadius = snapper.snap(4.0);
+    const qreal circleRadius = snapper.snapX(4.0);
     const QPointF circleCenter = snapPoint(QPointF(-2.0, -2.0));
     painter->drawEllipse(circleCenter, circleRadius, circleRadius);
 

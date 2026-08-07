@@ -56,8 +56,8 @@ public:
         const QPointF offset(-5.5, -5.5);
 
         const QPointF p1 = snapPoint(QPointF( 1.5, 0.5 ) + offset);
-        const qreal topCurveW = snapper.snap(8.0);
-        const qreal topCurveH = snapper.snap(6.0);
+        const qreal topCurveW = snapper.snapX(8.0);
+        const qreal topCurveH = snapper.snapY(6.0);
         const QRectF topCurveRect(p1, QSizeF(topCurveW, topCurveH));
 
         QPainterPath path;
@@ -76,8 +76,8 @@ public:
 
         // Dot
         const QPointF dotPos = snapPoint(QPointF( 5.0, 10.0 ) + offset);
-        const qreal dotW = snapper.snap(0.5);
-        const qreal dotH = snapper.snap(0.5);
+        const qreal dotW = snapper.snapX(0.5);
+        const qreal dotH = snapper.snapY(0.5);
         painter->drawRect(QRectF(dotPos, QSizeF(dotW, dotH)));
     }
 };
