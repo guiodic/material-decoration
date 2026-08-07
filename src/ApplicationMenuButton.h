@@ -40,14 +40,12 @@ public:
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal dpr) {
         Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.5);
-
-        const qreal spacing = 4.0;
+        
+        const qreal spacing = painter->pen().widthF() * 2.5;
         for (int i = -1; i <= 1; ++i) {
-            const qreal y = button->snapValue(painter, i * spacing, dpr);
-            const qreal xLeft = button->snapValue(painter, -5.5, dpr);
-            const qreal xRight = button->snapValue(painter, 5.5, dpr);
-            const QPointF left { xLeft, y };
-            const QPointF right { xRight, y };
+            const qreal y = i * spacing;
+            const QPointF left = button->snapPoint(painter, QPointF { -5.5, y }, dpr);
+            const QPointF right = button->snapPoint(painter, QPointF { 5.5, y }, dpr);
 
             painter->drawLine(left, right);
         }
