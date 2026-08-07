@@ -44,13 +44,7 @@ public:
         
         button->setPenWidth(painter, 1.75);
 
-        const qreal scaleX = qAbs(painter->transform().m11());
-        const qreal localToPhysical = scaleX * dpr;
-
-        qreal s = 5.0;
-        if (localToPhysical > 0.0) {
-            s = qRound(s * localToPhysical) / localToPhysical;
-        }
+        const qreal s = button->snapValue(painter, 5.0, dpr);
 
         painter->drawLine(QPointF(-s, 0), QPointF(s, 0));
     }

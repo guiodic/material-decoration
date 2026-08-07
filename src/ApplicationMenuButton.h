@@ -41,19 +41,11 @@ public:
         Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.5);
 
-        const qreal scaleX = qAbs(painter->transform().m11());
-        const qreal localToPhysical = scaleX * dpr;
-
         const qreal spacing = 4.0;
         for (int i = -1; i <= 1; ++i) {
-            qreal y = i * spacing;
-            qreal xLeft = -5.5;
-            qreal xRight = 5.5;
-            if (localToPhysical > 0.0) {
-                y = qRound(y * localToPhysical) / localToPhysical;
-                xLeft = qRound(xLeft * localToPhysical) / localToPhysical;
-                xRight = qRound(xRight * localToPhysical) / localToPhysical;
-            }
+            const qreal y = button->snapValue(painter, i * spacing, dpr);
+            const qreal xLeft = button->snapValue(painter, -5.5, dpr);
+            const qreal xRight = button->snapValue(painter, 5.5, dpr);
             const QPointF left { xLeft, y };
             const QPointF right { xRight, y };
 

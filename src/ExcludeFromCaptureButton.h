@@ -55,17 +55,8 @@ public:
         }
         button->setPenWidth(painter, 1.25 * KDecoration3::pixelSize(deco->window()->scale()));
 
-        const qreal scaleX = qAbs(painter->transform().m11());
-        const qreal localToPhysical = scaleX * dpr;
-
-        auto snapPoint = [localToPhysical](const QPointF &p) -> QPointF {
-            if (localToPhysical > 0.0) {
-                return QPointF(
-                    qRound(p.x() * localToPhysical) / localToPhysical,
-                    qRound(p.y() * localToPhysical) / localToPhysical
-                );
-            }
-            return p;
+        auto snapPoint = [button, painter, dpr](const QPointF &p) -> QPointF {
+            return button->snapPoint(painter, p, dpr);
         };
 
         // A spy hat (like view-private.svg icon)
@@ -85,12 +76,8 @@ public:
         painter->drawLine(snapPoint(QPointF(-6.2, -0.5)), snapPoint(QPointF(6.2, -0.5)));
 
         // Glasses' lenses
-        qreal rx = 2.3;
-        qreal ry = 2.3;
-        if (localToPhysical > 0.0) {
-            rx = qRound(rx * localToPhysical) / localToPhysical;
-            ry = qRound(ry * localToPhysical) / localToPhysical;
-        }
+        const qreal rx = button->snapValue(painter, 2.3, dpr);
+        const qreal ry = button->snapValue(painter, 2.3, dpr);
         painter->drawEllipse(snapPoint(QPointF(-4.0, 3.8)), rx, ry);
         painter->drawEllipse(snapPoint(QPointF(4.0, 3.8)), rx, ry);
 

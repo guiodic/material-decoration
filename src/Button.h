@@ -65,6 +65,8 @@ public:
 
     //virtual qreal iconLineWidth(const qreal size) const;
     void setPenWidth(QPainter *painter, const qreal scale);
+    QPointF snapPoint(QPainter *painter, const QPointF &p, const qreal dpr) const;
+    qreal snapValue(QPainter *painter, const qreal v, const qreal dpr) const;
 
     bool animationEnabled() const;
     void setAnimationEnabled(bool value);

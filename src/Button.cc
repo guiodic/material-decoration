@@ -464,6 +464,29 @@ void Button::setPenWidth(QPainter *painter, const qreal scale)
     painter->setPen(pen);
 }
 
+QPointF Button::snapPoint(QPainter *painter, const QPointF &p, const qreal dpr) const
+{
+    const qreal scaleX = qAbs(painter->transform().m11());
+    const qreal localToPhysical = scaleX * dpr;
+    if (localToPhysical > 0.0) {
+        return QPointF(
+            qRound(p.x() * localToPhysical) / localToPhysical,
+            qRound(p.y() * localToPhysical) / localToPhysical
+        );
+    }
+    return p;
+}
+
+qreal Button::snapValue(QPainter *painter, const qreal v, const qreal dpr) const
+{
+    const qreal scaleX = qAbs(painter->transform().m11());
+    const qreal localToPhysical = scaleX * dpr;
+    if (localToPhysical > 0.0) {
+        return qRound(v * localToPhysical) / localToPhysical;
+    }
+    return v;
+}
+
 QColor Button::backgroundColor() const
 {
     const auto *deco = qobject_cast<Decoration *>(this->decoration());

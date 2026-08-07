@@ -61,7 +61,7 @@ void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qrea
     // TODO: Use Qt::TextShowMnemonic when Alt is pressed
     const bool isAltPressed = false;
     const Qt::TextFlag mnemonicFlag = isAltPressed ? Qt::TextShowMnemonic : Qt::TextHideMnemonic;
-    painter->drawText(snappedRect, mnemonicFlag | Qt::AlignCenter | Qt::TextSingleLine, m_text); // translating 1 physical pixel seems the only way to perfect centering the text.
+    painter->drawText(snappedRect, mnemonicFlag | Qt::AlignCenter | Qt::TextSingleLine, m_text); 
 }
 
 QSizeF TextButton::getTextSize() const

@@ -42,17 +42,8 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal dpr) {
         Q_UNUSED(iconRect)
-        const qreal scaleX = qAbs(painter->transform().m11());
-        const qreal localToPhysical = scaleX * dpr;
-
-        auto snapPoint = [localToPhysical](const QPointF &p) -> QPointF {
-            if (localToPhysical > 0.0) {
-                return QPointF(
-                    qRound(p.x() * localToPhysical) / localToPhysical,
-                    qRound(p.y() * localToPhysical) / localToPhysical
-                );
-            }
-            return p;
+        auto snapPoint = [button, painter, dpr](const QPointF &p) -> QPointF {
+            return button->snapPoint(painter, p, dpr);
         };
 
         const QPointF offset(-5.0, -5.0);

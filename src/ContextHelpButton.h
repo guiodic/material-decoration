@@ -49,29 +49,16 @@ public:
         button->setPenWidth(painter, 1.25);
 
         //painter->setRenderHints(QPainter::Antialiasing, true);
-        
-        const qreal scaleX = qAbs(painter->transform().m11());
-        const qreal localToPhysical = scaleX * dpr;
 
-        auto snapPoint = [localToPhysical](const QPointF &p) -> QPointF {
-            if (localToPhysical > 0.0) {
-                return QPointF(
-                    qRound(p.x() * localToPhysical) / localToPhysical,
-                    qRound(p.y() * localToPhysical) / localToPhysical
-                );
-            }
-            return p;
+        auto snapPoint = [button, painter, dpr](const QPointF &p) -> QPointF {
+            return button->snapPoint(painter, p, dpr);
         };
 
         const QPointF offset(-5.5, -5.5);
 
         const QPointF p1 = snapPoint(QPointF( 1.5, 0.5 ) + offset);
-        qreal topCurveW = 8.0;
-        qreal topCurveH = 6.0;
-        if (localToPhysical > 0.0) {
-            topCurveW = qRound(topCurveW * localToPhysical) / localToPhysical;
-            topCurveH = qRound(topCurveH * localToPhysical) / localToPhysical;
-        }
+        const qreal topCurveW = button->snapValue(painter, 8.0, dpr);
+        const qreal topCurveH = button->snapValue(painter, 6.0, dpr);
         const QRectF topCurveRect(p1, QSizeF(topCurveW, topCurveH));
 
         QPainterPath path;
@@ -90,12 +77,8 @@ public:
 
         // Dot
         const QPointF dotPos = snapPoint(QPointF( 5.0, 10.0 ) + offset);
-        qreal dotW = 0.5;
-        qreal dotH = 0.5;
-        if (localToPhysical > 0.0) {
-            dotW = qRound(dotW * localToPhysical) / localToPhysical;
-            dotH = qRound(dotH * localToPhysical) / localToPhysical;
-        }
+        const qreal dotW = button->snapValue(painter, 0.5, dpr);
+        const qreal dotH = button->snapValue(painter, 0.5, dpr);
         painter->drawRect(QRectF(dotPos, QSizeF(dotW, dotH)));
     }
 };

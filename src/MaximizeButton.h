@@ -43,26 +43,14 @@ public:
         Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.5);
 
-        const qreal scaleX = qAbs(painter->transform().m11());
-        const qreal localToPhysical = scaleX * dpr;
-
-        qreal x = -5.0;
-        qreal y = -5.0;
-        qreal w = 10.0;
-        qreal h = 10.0;
-        if (localToPhysical > 0.0) {
-            x = qRound(x * localToPhysical) / localToPhysical;
-            y = qRound(y * localToPhysical) / localToPhysical;
-            w = qRound(w * localToPhysical) / localToPhysical;
-            h = qRound(h * localToPhysical) / localToPhysical;
-        }
+        const qreal x = button->snapValue(painter, -5.0, dpr);
+        const qreal y = button->snapValue(painter, -5.0, dpr);
+        const qreal w = button->snapValue(painter, 10.0, dpr);
+        const qreal h = button->snapValue(painter, 10.0, dpr);
         const QRectF innerRect(x, y, w, h);
 
         if (button->isChecked()) {
-            qreal offset = 2.0;
-            if (localToPhysical > 0.0) {
-                offset = qRound(offset * localToPhysical) / localToPhysical;
-            }
+            const qreal offset = button->snapValue(painter, 2.0, dpr);
             // Outline of first square, "on top", aligned bottom left.
             painter->drawPolygon(QVector<QPointF> {
                 innerRect.bottomLeft(),
