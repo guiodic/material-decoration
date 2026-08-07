@@ -38,16 +38,33 @@ void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qr
     //painter->setRenderHint(QPainter::Antialiasing, true);
     setPenWidth(painter, 1.25);
 
-    const qreal circleRadius = 4.0;
-    const QPointF circleCenter(-2, -2);
+    const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
+    const qreal scaleX = qAbs(painter->transform().m11());
+    const qreal localToPhysical = scaleX * dpr;
+
+    auto snapPoint = [localToPhysical](const QPointF &p) -> QPointF {
+        if (localToPhysical > 0.0) {
+            return QPointF(
+                qRound(p.x() * localToPhysical) / localToPhysical,
+                qRound(p.y() * localToPhysical) / localToPhysical
+            );
+        }
+        return p;
+    };
+
+    qreal circleRadius = 4.0;
+    if (localToPhysical > 0.0) {
+        circleRadius = qRound(circleRadius * localToPhysical) / localToPhysical;
+    }
+    const QPointF circleCenter = snapPoint(QPointF(-2.0, -2.0));
     painter->drawEllipse(circleCenter, circleRadius, circleRadius);
 
     const qreal handleLength = 5.0;
-    const qreal sqrt2 = qSqrt(2);
+    const qreal sqrt2 = qSqrt(2.0);
     const qreal handleAttachOffset = circleRadius / sqrt2;
-    const QPointF handleStart = circleCenter + QPointF(handleAttachOffset, handleAttachOffset);
+    const QPointF handleStart = snapPoint(circleCenter + QPointF(handleAttachOffset, handleAttachOffset));
     const qreal handleEndOffset = (circleRadius + handleLength) / sqrt2;
-    const QPointF handleEnd = circleCenter + QPointF(handleEndOffset, handleEndOffset);
+    const QPointF handleEnd = snapPoint(circleCenter + QPointF(handleEndOffset, handleEndOffset));
     painter->drawLine(handleStart, handleEnd);
 }
 

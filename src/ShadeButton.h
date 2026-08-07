@@ -42,31 +42,45 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
         Q_UNUSED(iconRect)
-        const QPointF offset(-5, -5);
+        const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
+        const qreal scaleX = qAbs(painter->transform().m11());
+        const qreal localToPhysical = scaleX * dpr;
+
+        auto snapPoint = [localToPhysical](const QPointF &p) -> QPointF {
+            if (localToPhysical > 0.0) {
+                return QPointF(
+                    qRound(p.x() * localToPhysical) / localToPhysical,
+                    qRound(p.y() * localToPhysical) / localToPhysical
+                );
+            }
+            return p;
+        };
+
+        const QPointF offset(-5.0, -5.0);
 
         if (button->isChecked()) {
             button->setPenWidth(painter, 1.25);
             painter->drawLine( 
-                QPointF( 0, 2 ) + offset,
-                QPointF( 10, 2 ) + offset
+                snapPoint(QPointF( 0, 2 ) + offset),
+                snapPoint(QPointF( 10, 2 ) + offset)
             );
             button->setPenWidth(painter, 1.25);
             painter->drawPolyline(  QVector<QPointF> {
-                QPointF( 0.5, 5.25 ) + offset,
-                QPointF( 5.0, 9.75 ) + offset,
-                QPointF( 9.5, 5.25 ) + offset
+                snapPoint(QPointF( 0.5, 5.25 ) + offset),
+                snapPoint(QPointF( 5.0, 9.75 ) + offset),
+                snapPoint(QPointF( 9.5, 5.25 ) + offset)
             });
         } else {
             button->setPenWidth(painter, 1.25);
             painter->drawLine( 
-                QPointF( 0, 2 ) + offset,
-                QPointF( 10, 2 ) + offset
+                snapPoint(QPointF( 0, 2 ) + offset),
+                snapPoint(QPointF( 10, 2 ) + offset)
             );
             button->setPenWidth(painter, 1.25);
             painter->drawPolyline( QVector<QPointF> {
-                QPointF( 0.5, 9.75 ) + offset,
-                QPointF( 5.0, 5.25 ) + offset,
-                QPointF( 9.5, 9.75 ) + offset
+                snapPoint(QPointF( 0.5, 9.75 ) + offset),
+                snapPoint(QPointF( 5.0, 5.25 ) + offset),
+                snapPoint(QPointF( 9.5, 5.25 ) + offset)
             });
         }
     }

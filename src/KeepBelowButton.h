@@ -43,17 +43,31 @@ public:
         Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.25);
 
-        const QPointF offset(-5, -5);
+        const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
+        const qreal scaleX = qAbs(painter->transform().m11());
+        const qreal localToPhysical = scaleX * dpr;
+
+        auto snapPoint = [localToPhysical](const QPointF &p) -> QPointF {
+            if (localToPhysical > 0.0) {
+                return QPointF(
+                    qRound(p.x() * localToPhysical) / localToPhysical,
+                    qRound(p.y() * localToPhysical) / localToPhysical
+                );
+            }
+            return p;
+        };
+
+        const QPointF offset(-5.0, -5.0);
         painter->drawPolyline(  QVector<QPointF> {
-            QPointF( 0.5, 0.25 ) + offset,
-            QPointF( 5.0, 4.75 ) + offset,
-            QPointF( 9.5, 0.25 ) + offset
+            snapPoint(QPointF( 0.5, 0.25 ) + offset),
+            snapPoint(QPointF( 5.0, 4.75 ) + offset),
+            snapPoint(QPointF( 9.5, 0.25 ) + offset)
         });
 
         painter->drawPolyline(  QVector<QPointF> {
-            QPointF( 0.5, 5.25 ) + offset,
-            QPointF( 5.0, 9.75 ) + offset,
-            QPointF( 9.5, 5.25 ) + offset
+            snapPoint(QPointF( 0.5, 5.25 ) + offset),
+            snapPoint(QPointF( 5.0, 9.75 ) + offset),
+            snapPoint(QPointF( 9.5, 5.25 ) + offset)
         });
     }
 };

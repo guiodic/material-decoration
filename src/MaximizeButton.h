@@ -41,10 +41,29 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
         Q_UNUSED(iconRect)
-        const QRectF innerRect(-5, -5, 10, 10);
         button->setPenWidth(painter, 1.5);
+
+        const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
+        const qreal scaleX = qAbs(painter->transform().m11());
+        const qreal localToPhysical = scaleX * dpr;
+
+        qreal x = -5.0;
+        qreal y = -5.0;
+        qreal w = 10.0;
+        qreal h = 10.0;
+        if (localToPhysical > 0.0) {
+            x = qRound(x * localToPhysical) / localToPhysical;
+            y = qRound(y * localToPhysical) / localToPhysical;
+            w = qRound(w * localToPhysical) / localToPhysical;
+            h = qRound(h * localToPhysical) / localToPhysical;
+        }
+        const QRectF innerRect(x, y, w, h);
+
         if (button->isChecked()) {
-            const int offset = 2;
+            qreal offset = 2.0;
+            if (localToPhysical > 0.0) {
+                offset = qRound(offset * localToPhysical) / localToPhysical;
+            }
             // Outline of first square, "on top", aligned bottom left.
             painter->drawPolygon(QVector<QPointF> {
                 innerRect.bottomLeft(),

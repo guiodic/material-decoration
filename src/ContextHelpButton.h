@@ -50,31 +50,54 @@ public:
 
         //painter->setRenderHints(QPainter::Antialiasing, true);
         
+        const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
+        const qreal scaleX = qAbs(painter->transform().m11());
+        const qreal localToPhysical = scaleX * dpr;
+
+        auto snapPoint = [localToPhysical](const QPointF &p) -> QPointF {
+            if (localToPhysical > 0.0) {
+                return QPointF(
+                    qRound(p.x() * localToPhysical) / localToPhysical,
+                    qRound(p.y() * localToPhysical) / localToPhysical
+                );
+            }
+            return p;
+        };
+
         const QPointF offset(-5.5, -5.5);
 
-        const QRectF topCurveRect = QRectF(
-            QPointF( 1.5, 0.5 ) + offset,
-            QSizeF( 8, 6 )
-        );
+        const QPointF p1 = snapPoint(QPointF( 1.5, 0.5 ) + offset);
+        qreal topCurveW = 8.0;
+        qreal topCurveH = 6.0;
+        if (localToPhysical > 0.0) {
+            topCurveW = qRound(topCurveW * localToPhysical) / localToPhysical;
+            topCurveH = qRound(topCurveH * localToPhysical) / localToPhysical;
+        }
+        const QRectF topCurveRect(p1, QSizeF(topCurveW, topCurveH));
+
         QPainterPath path;
-        path.moveTo( topCurveRect.center() - QPointF(topCurveRect.width()/2, 0) );
+        path.moveTo(snapPoint(topCurveRect.center() - QPointF(topCurveRect.width() / 2.0, 0.0)));
         path.arcTo(
             topCurveRect,
             180,
             -180
         );
         path.cubicTo(
-            QPointF( 7.8125, 5.9375 ) + offset,
-            QPointF( 5.625, 4.6875 ) + offset,
-            QPointF( 5, 8 ) + offset
+            snapPoint(QPointF( 7.8125, 5.9375 ) + offset),
+            snapPoint(QPointF( 5.625, 4.6875 ) + offset),
+            snapPoint(QPointF( 5.0, 8.0 ) + offset)
         );
         painter->drawPath(path);
 
         // Dot
-        painter->drawRect( QRectF(
-            QPointF( 5, 10 ) + offset,
-            QSizeF( 0.5, 0.5 )
-        ));
+        const QPointF dotPos = snapPoint(QPointF( 5.0, 10.0 ) + offset);
+        qreal dotW = 0.5;
+        qreal dotH = 0.5;
+        if (localToPhysical > 0.0) {
+            dotW = qRound(dotW * localToPhysical) / localToPhysical;
+            dotH = qRound(dotH * localToPhysical) / localToPhysical;
+        }
+        painter->drawRect(QRectF(dotPos, QSizeF(dotW, dotH)));
     }
 };
 

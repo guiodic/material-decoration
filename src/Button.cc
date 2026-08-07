@@ -349,15 +349,20 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
             size = qMin(width, height) * 0.6; // 60% of the Kwin Deco
         }
 
-        // For a sharper image, we use integer-based positioning
-        const int iconSize = qRound(size);
+        const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
 
-        // Translate to a rounded center
+        // For a sharper image, we use physical-pixel-aligned positioning and scaling
+        const qreal physicalIconSize = qRound(size * dpr);
+        const qreal iconLogicalSize = physicalIconSize / dpr;
+
+        // Translate to a center aligned with physical pixel grid
         const QPointF center = contentRect.center();
-        painter->translate(qRound(center.x()), qRound(center.y()));
+        const qreal centerX = qRound(center.x() * dpr) / dpr;
+        const qreal centerY = qRound(center.y() * dpr) / dpr;
+        painter->translate(centerX, centerY);
 
-        // Scale by an integer-based factor
-        painter->scale(static_cast<qreal>(iconSize) / 18.0, static_cast<qreal>(iconSize) / 18.0);
+        // Scale by physical-aligned factor
+        painter->scale(iconLogicalSize / 18.0, iconLogicalSize / 18.0);
         
         setPenWidth(painter, KDecoration3::pixelSize(deco->window()->scale()));
 
@@ -441,10 +446,20 @@ void Button::setPenWidth(QPainter *painter, const qreal scale)
     QPen pen(foregroundColor());
     pen.setCapStyle(Qt::RoundCap);
     pen.setJoinStyle(Qt::MiterJoin);
-    // Set the base pen width. This will be correctly scaled by the painter's
-    // transformation in the paint() method, preserving the behavior of
-    // lines getting thicker as the icon scales up.
-    pen.setWidthF(PenWidth::Symbol * scale);
+
+    const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
+    const QTransform transform = painter->transform();
+    const qreal scaleX = qAbs(transform.m11());
+    const qreal localToPhysicalScale = scaleX * dpr;
+
+    if (localToPhysicalScale > 0.0) {
+        const qreal nominalPhysicalWidth = PenWidth::Symbol * scale * localToPhysicalScale;
+        const qreal snappedPhysicalWidth = qMax(1.0, qRound(nominalPhysicalWidth * 2.0) / 2.0);
+        pen.setWidthF(snappedPhysicalWidth / localToPhysicalScale);
+    } else {
+        pen.setWidthF(PenWidth::Symbol * scale);
+    }
+
     painter->setPen(pen);
 }
 

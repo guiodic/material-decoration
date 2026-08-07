@@ -55,28 +55,48 @@ public:
         }
         button->setPenWidth(painter, 1.25 * KDecoration3::pixelSize(deco->window()->scale()));
 
+        const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
+        const qreal scaleX = qAbs(painter->transform().m11());
+        const qreal localToPhysical = scaleX * dpr;
+
+        auto snapPoint = [localToPhysical](const QPointF &p) -> QPointF {
+            if (localToPhysical > 0.0) {
+                return QPointF(
+                    qRound(p.x() * localToPhysical) / localToPhysical,
+                    qRound(p.y() * localToPhysical) / localToPhysical
+                );
+            }
+            return p;
+        };
+
         // A spy hat (like view-private.svg icon)
         // Hat crown with dip/crease at top (filled)
         const QVector<QPointF> crownPoints {
-            QPointF(-4.1, -2.5),
-            QPointF(-3.2, -6.1),
-            QPointF(0, -5),
-            QPointF(3.2, -6.1),
-            QPointF(4.1, -2.5)
+            snapPoint(QPointF(-4.1, -2.5)),
+            snapPoint(QPointF(-3.2, -6.1)),
+            snapPoint(QPointF(0, -5)),
+            snapPoint(QPointF(3.2, -6.1)),
+            snapPoint(QPointF(4.1, -2.5))
         };
         painter->setBrush(painter->pen().color());
         painter->drawPolygon(crownPoints);
         painter->setBrush(Qt::NoBrush);
 
         // Hat brim
-        painter->drawLine(QPointF(-6.2, -0.5), QPointF(6.2, -0.5));
+        painter->drawLine(snapPoint(QPointF(-6.2, -0.5)), snapPoint(QPointF(6.2, -0.5)));
 
         // Glasses' lenses
-        painter->drawEllipse(QPointF(-4, 3.8), 2.3, 2.3);
-        painter->drawEllipse(QPointF(4, 3.8), 2.3, 2.3);
+        qreal rx = 2.3;
+        qreal ry = 2.3;
+        if (localToPhysical > 0.0) {
+            rx = qRound(rx * localToPhysical) / localToPhysical;
+            ry = qRound(ry * localToPhysical) / localToPhysical;
+        }
+        painter->drawEllipse(snapPoint(QPointF(-4.0, 3.8)), rx, ry);
+        painter->drawEllipse(snapPoint(QPointF(4.0, 3.8)), rx, ry);
 
         // Bridge between lenses
-        painter->drawLine(QPointF(-1.5, 3.8), QPointF(1.5, 3.8));
+        painter->drawLine(snapPoint(QPointF(-1.5, 3.8)), snapPoint(QPointF(1.5, 3.8)));
     }
 };
 #endif

@@ -40,14 +40,21 @@ public:
         button->setVisible(decoratedClient->isCloseable());
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
-        Q_UNUSED(button)
         Q_UNUSED(iconRect)
 
         //painter->setRenderHints(QPainter::Antialiasing, true);
 
         button->setPenWidth(painter, 1.5);
 
-        const qreal s = 5;
+        const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
+        const qreal scaleX = qAbs(painter->transform().m11());
+        const qreal localToPhysical = scaleX * dpr;
+
+        qreal s = 5.0;
+        if (localToPhysical > 0.0) {
+            s = qRound(s * localToPhysical) / localToPhysical;
+        }
+
         painter->drawLine(QPointF(-s, -s), QPointF(s, s));
         painter->drawLine(QPointF(s, -s), QPointF(-s, s));
     }

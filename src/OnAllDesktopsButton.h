@@ -44,7 +44,15 @@ public:
         //painter->setRenderHints(QPainter::Antialiasing, true);
         button->setPenWidth(painter, 1.25);
 
-        const int radius = 6;
+        const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
+        const qreal scaleX = qAbs(painter->transform().m11());
+        const qreal localToPhysical = scaleX * dpr;
+
+        qreal radius = 6.0;
+        if (localToPhysical > 0.0) {
+            radius = qRound(radius * localToPhysical) / localToPhysical;
+        }
+
         painter->drawPolygon( QVector<QPointF> {
             QPointF(-radius, 0),
             QPointF(0, -radius),
