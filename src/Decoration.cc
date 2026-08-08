@@ -30,6 +30,7 @@
 #include "TextButton.h"
 #include "InternalSettings.h"
 #include "Material.h"
+#include "PixelSnapper.h"
 
 // KDecoration
 #include <KDecoration3/DecoratedWindow>
@@ -1272,6 +1273,9 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     painter->save();
     painter->setFont(font);
     painter->setPen(titleBarForegroundColor());
+
+    PixelSnapper snapper(painter);
+    drawingRect = snapper.snap(drawingRect);
 
     // Opacity logic
     if (appMenuVisible) {
