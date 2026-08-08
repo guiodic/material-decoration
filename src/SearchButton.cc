@@ -50,11 +50,12 @@ void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const Pi
     const QPointF circleCenter = circleRect.center();
     const qreal rx = circleRect.width() / 2.0;
     const qreal ry = circleRect.height() / 2.0;
-    const QPointF handleStart(circleCenter.x() + rx / sqrt2, circleCenter.y() + ry / sqrt2);
-
-    const QPointF center(-2.0, -2.0);
-    const QPointF endLogical = center + QPointF((radius + handleLength) / sqrt2, (radius + handleLength) / sqrt2);
-    const QPointF handleEnd = snapper.snap(endLogical);
+    const QPointF handleStart = snapper.snap(
+        circleCenter + QPointF(rx / sqrt2, ry / sqrt2));
+    const QPointF handleEnd = snapper.snap(
+        circleCenter + QPointF(
+            (rx + handleLength) / sqrt2,
+            (ry + handleLength) / sqrt2));
     painter->drawLine(handleStart, handleEnd);
 }
 
