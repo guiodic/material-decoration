@@ -40,7 +40,7 @@ TextButton::~TextButton()
 {
 }
 
-void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal)
+void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper)
 {
     const auto *deco = qobject_cast<Decoration *>(decoration());
 
@@ -49,10 +49,13 @@ void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qrea
     painter->setPen(foregroundColor());
     painter->setRenderHint(QPainter::TextAntialiasing);
 
+    // Compute stable, physical-pixel-aligned dimensions to prevent subpixel text blurring
+    const QRectF snappedRect = snapper.snap(iconRect);
+
     // TODO: Use Qt::TextShowMnemonic when Alt is pressed
     const bool isAltPressed = false;
     const Qt::TextFlag mnemonicFlag = isAltPressed ? Qt::TextShowMnemonic : Qt::TextHideMnemonic;
-    painter->drawText(iconRect.translated(1.0, 0.0), mnemonicFlag | Qt::AlignCenter | Qt::TextSingleLine, m_text); // translating 1 pixel seems the only way to perfect centering the text.
+    painter->drawText(snappedRect, mnemonicFlag | Qt::AlignCenter | Qt::TextSingleLine, m_text); 
 }
 
 QSizeF TextButton::getTextSize() const

@@ -32,7 +32,7 @@ public:
     ~SearchButton() override;
 
 protected:
-    void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal) override;
+    void paintIcon(QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) override;
 };
 
 } // namespace Material

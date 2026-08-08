@@ -39,12 +39,15 @@ public:
 
         button->setVisible(decoratedClient->isMinimizeable());
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
-        //Q_UNUSED(button)
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
         
         button->setPenWidth(painter, 1.75);
-        painter->drawLine(QPointF(-5, 0), QPointF(5, 0));
+
+        const QPointF p1 = snapper.snap(QPointF(-5.0, 0.0));
+        const QPointF p2 = snapper.snap(QPointF(5.0, 0.0));
+
+        painter->drawLine(p1, p2);
     }
 };
 

@@ -39,17 +39,15 @@ public:
 
         button->setVisible(true);
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
-        //painter->setRenderHints(QPainter::Antialiasing, true);
         button->setPenWidth(painter, 1.25);
 
-        const int radius = 6;
         painter->drawPolygon( QVector<QPointF> {
-            QPointF(-radius, 0),
-            QPointF(0, -radius),
-            QPointF(radius, 0),
-            QPointF(0, radius)
+            snapper.snap(QPointF(-6.0, 0.0)),
+            snapper.snap(QPointF(0.0, -6.0)),
+            snapper.snap(QPointF(6.0, 0.0)),
+            snapper.snap(QPointF(0.0, 6.0))
         });
     }
 };

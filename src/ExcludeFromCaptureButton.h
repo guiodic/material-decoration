@@ -47,7 +47,7 @@ public:
     }
     
     //--- copied from Breeze for now. Copyright goes to KDE Developers
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
         const auto *deco = qobject_cast<Decoration *>(button->decoration());
         if (!deco) {
@@ -58,25 +58,25 @@ public:
         // A spy hat (like view-private.svg icon)
         // Hat crown with dip/crease at top (filled)
         const QVector<QPointF> crownPoints {
-            QPointF(-4.1, -2.5),
-            QPointF(-3.2, -6.1),
-            QPointF(0, -5),
-            QPointF(3.2, -6.1),
-            QPointF(4.1, -2.5)
+            snapper.snap(QPointF(-4.1, -2.5)),
+            snapper.snap(QPointF(-3.2, -6.1)),
+            snapper.snap(QPointF(0, -5)),
+            snapper.snap(QPointF(3.2, -6.1)),
+            snapper.snap(QPointF(4.1, -2.5))
         };
         painter->setBrush(painter->pen().color());
         painter->drawPolygon(crownPoints);
         painter->setBrush(Qt::NoBrush);
 
         // Hat brim
-        painter->drawLine(QPointF(-6.2, -0.5), QPointF(6.2, -0.5));
+        painter->drawLine(snapper.snap(QPointF(-6.2, -0.5)), snapper.snap(QPointF(6.2, -0.5)));
 
         // Glasses' lenses
-        painter->drawEllipse(QPointF(-4, 3.8), 2.3, 2.3);
-        painter->drawEllipse(QPointF(4, 3.8), 2.3, 2.3);
+        painter->drawEllipse(snapper.snap(QRectF(QPointF(-6.3, 1.5), QPointF(-1.7, 6.1))));
+        painter->drawEllipse(snapper.snap(QRectF(QPointF(1.7, 1.5), QPointF(6.3, 6.1))));
 
         // Bridge between lenses
-        painter->drawLine(QPointF(-1.5, 3.8), QPointF(1.5, 3.8));
+        painter->drawLine(snapper.snap(QPointF(-1.5, 3.8)), snapper.snap(QPointF(1.5, 3.8)));
     }
 };
 #endif
