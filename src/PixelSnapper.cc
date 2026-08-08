@@ -44,7 +44,8 @@ QPointF PixelSnapper::snap(const QPointF &p) const
 
 QRectF PixelSnapper::snap(const QRectF &rect) const
 {
-    return QRectF(snap(rect.topLeft()), snap(rect.bottomRight()));
+    const QRectF normRect = rect.normalized();
+    return QRectF(snap(normRect.topLeft()), snap(normRect.bottomRight()));
 }
 
 qreal PixelSnapper::localToPhysicalScale() const
