@@ -30,6 +30,7 @@
 #include "TextButton.h"
 #include "InternalSettings.h"
 #include "Material.h"
+#include "PixelSnapper.h"
 
 // KDecoration
 #include <KDecoration3/DecoratedWindow>
@@ -1263,6 +1264,9 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     drawingRect.translate(0, offset);
+
+    PixelSnapper snapper(painter);
+    drawingRect = snapper.snap(drawingRect);
 
     if (!drawingRect.intersects(repaintRegion)) {
         return;
