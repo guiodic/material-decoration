@@ -44,7 +44,6 @@ void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const Pi
     painter->drawEllipse(circleRect);
 
     const qreal sqrt2 = std::sqrt(2.0);
-    const qreal radius = 4.0;
     const qreal handleLength = 5.0;
 
     const QPointF circleCenter = circleRect.center();
