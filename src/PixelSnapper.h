@@ -32,8 +32,6 @@ public:
 
     QPointF snap(const QPointF &p) const;
     qreal snap(const qreal v) const;
-    qreal snapX(const qreal v) const;
-    qreal snapY(const qreal v) const;
     qreal localToPhysicalScale() const;
     qreal dpr() const { return m_dpr; }
 

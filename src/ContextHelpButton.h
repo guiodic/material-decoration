@@ -50,13 +50,12 @@ public:
 
         const QPointF offset(-5.5, -5.5);
 
-        const QPointF p1 = snapper.snap(QPointF( 1.5, 0.5 ) + offset);
-        const qreal topCurveW = snapper.snapX(8.0);
-        const qreal topCurveH = snapper.snapY(6.0);
-        const QRectF topCurveRect(p1, QSizeF(topCurveW, topCurveH));
+        const QPointF topCurveTopLeft = snapper.snap(QPointF(1.5, 0.5) + offset);
+        const QPointF topCurveBottomRight = snapper.snap(QPointF(9.5, 6.5) + offset);
+        const QRectF topCurveRect(topCurveTopLeft, topCurveBottomRight);
 
         QPainterPath path;
-        path.moveTo(snapper.snap(topCurveRect.center() - QPointF(topCurveRect.width() / 2.0, 0.0)));
+        path.moveTo(snapper.snap(QPointF(1.5, 3.5) + offset));
         path.arcTo(
             topCurveRect,
             180,
@@ -70,10 +69,9 @@ public:
         painter->drawPath(path);
 
         // Dot
-        const QPointF dotPos = snapper.snap(QPointF( 5.0, 10.0 ) + offset);
-        const qreal dotW = snapper.snapX(0.5);
-        const qreal dotH = snapper.snapY(0.5);
-        painter->drawRect(QRectF(dotPos, QSizeF(dotW, dotH)));
+        const QPointF dotTopLeft = snapper.snap(QPointF(5.0, 10.0) + offset);
+        const QPointF dotBottomRight = snapper.snap(QPointF(5.5, 10.5) + offset);
+        painter->drawRect(QRectF(dotTopLeft, dotBottomRight));
     }
 };
 

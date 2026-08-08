@@ -43,31 +43,28 @@ public:
         Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.5);
 
-        const qreal x = snapper.snapX(-5.0);
-        const qreal y = snapper.snapY(-5.0);
-        const qreal w = snapper.snapX(10.0);
-        const qreal h = snapper.snapY(10.0);
-        const QRectF innerRect(x, y, w, h);
-
         if (button->isChecked()) {
             const qreal offset = painter->pen().widthF() * 1.5;
             // Outline of first square, "on top", aligned bottom left.
             painter->drawPolygon(QVector<QPointF> {
-                innerRect.bottomLeft(),
-                innerRect.topLeft() + QPointF(0, offset),
-                innerRect.topRight() + QPointF(-offset, offset),
-                innerRect.bottomRight() + QPointF(-offset, 0)
+                snapper.snap(QPointF(-5.0, 5.0)),
+                snapper.snap(QPointF(-5.0, -5.0 + offset)),
+                snapper.snap(QPointF(5.0 - offset, -5.0 + offset)),
+                snapper.snap(QPointF(5.0 - offset, 5.0))
             });
 
             // Partially occluded square, "below" first square, aligned top right.
             painter->drawPolyline(QVector<QPointF> {
-                innerRect.topLeft() + QPointF(offset, offset),
-                innerRect.topLeft() + QPointF(offset, 0),
-                innerRect.topRight(),
-                innerRect.bottomRight() + QPointF(0, -offset),
-                innerRect.bottomRight() + QPointF(-offset, -offset)
+                snapper.snap(QPointF(-5.0 + offset, -5.0 + offset)),
+                snapper.snap(QPointF(-5.0 + offset, -5.0)),
+                snapper.snap(QPointF(5.0, -5.0)),
+                snapper.snap(QPointF(5.0, 5.0 - offset)),
+                snapper.snap(QPointF(5.0 - offset, 5.0 - offset))
             });
         } else {
+            const QPointF topLeft = snapper.snap(QPointF(-5.0, -5.0));
+            const QPointF bottomRight = snapper.snap(QPointF(5.0, 5.0));
+            const QRectF innerRect(topLeft, bottomRight);
             painter->drawRect(innerRect);
         }
     }

@@ -42,25 +42,12 @@ QPointF PixelSnapper::snap(const QPointF &p) const
     return p;
 }
 
-qreal PixelSnapper::snapX(const qreal v) const
-{
-    const QPointF p0 = snap(QPointF(0.0, 0.0));
-    const QPointF pV = snap(QPointF(v, 0.0));
-    const qreal len = std::hypot(pV.x() - p0.x(), pV.y() - p0.y());
-    return (v < 0.0) ? -len : len;
-}
-
-qreal PixelSnapper::snapY(const qreal v) const
-{
-    const QPointF p0 = snap(QPointF(0.0, 0.0));
-    const QPointF pV = snap(QPointF(0.0, v));
-    const qreal len = std::hypot(pV.x() - p0.x(), pV.y() - p0.y());
-    return (v < 0.0) ? -len : len;
-}
-
 qreal PixelSnapper::snap(const qreal v) const
 {
-    return snapX(v);
+    if (m_dpr > 0.0) {
+        return qRound(v * m_dpr) / m_dpr;
+    }
+    return v;
 }
 
 qreal PixelSnapper::localToPhysicalScale() const
