@@ -28,7 +28,7 @@ namespace Material
 class PixelSnapper
 {
 public:
-    PixelSnapper(QPainter *painter, const qreal dpr);
+    explicit PixelSnapper(QPainter *painter);
 
     QPointF snap(const QPointF &p) const;
     qreal localToPhysicalScale() const;

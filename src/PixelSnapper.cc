@@ -22,9 +22,9 @@
 namespace Material
 {
 
-PixelSnapper::PixelSnapper(QPainter *painter, const qreal dpr)
-    : m_trans(painter->transform())
-    , m_dpr(dpr)
+PixelSnapper::PixelSnapper(QPainter *painter)
+    : m_trans(painter ? painter->transform() : QTransform())
+    , m_dpr(painter && painter->device() ? painter->device()->devicePixelRatioF() : 1.0)
     , m_invertible(false)
 {
     m_inv = m_trans.inverted(&m_invertible);
@@ -44,7 +44,10 @@ QPointF PixelSnapper::snap(const QPointF &p) const
 
 qreal PixelSnapper::localToPhysicalScale() const
 {
-    return std::hypot(m_trans.m11(), m_trans.m12()) * m_dpr;
+    if (m_dpr > 0.0 && m_invertible) {
+        return std::hypot(m_trans.m11(), m_trans.m12()) * m_dpr;
+    }
+    return 0.0;
 }
 
 } // namespace Material

@@ -321,11 +321,9 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->setRenderHint(QPainter::Antialiasing, true);
     painter->setBrush(Qt::NoBrush);
 
-    const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
-
     const QRectF contentRect = contentArea();
 
-    PixelSnapper snapper(painter, dpr);
+    PixelSnapper snapper(painter);
 
     // TextButton and AppIconButton are special, so we don't scale the painter
     if (auto textButton = qobject_cast<TextButton*>(this)) {
@@ -356,8 +354,8 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 
         // For a sharper image, we use physical-pixel-aligned positioning and scaling
         const qreal localToPhysicalScale = snapper.localToPhysicalScale();
-        const qreal physicalIconSize = (localToPhysicalScale > 0.0) ? qRound(size * localToPhysicalScale) : qRound(size * dpr);
-        const qreal iconLogicalSize = (localToPhysicalScale > 0.0) ? (physicalIconSize / localToPhysicalScale) : (physicalIconSize / dpr);
+        const qreal physicalIconSize = (localToPhysicalScale > 0.0) ? qRound(size * localToPhysicalScale) : qRound(size * snapper.dpr());
+        const qreal iconLogicalSize = (localToPhysicalScale > 0.0) ? (physicalIconSize / localToPhysicalScale) : (physicalIconSize / snapper.dpr());
 
         // Translate to a center aligned with physical pixel grid
         const QPointF center = contentRect.center();
@@ -369,7 +367,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         
         setPenWidth(painter, KDecoration3::pixelSize(deco->window()->scale()));
 
-        PixelSnapper iconSnapper(painter, dpr);
+        PixelSnapper iconSnapper(painter);
 
         // Icons
         const QRectF iconRect(-9, -9, 18, 18);
@@ -453,8 +451,7 @@ void Button::setPenWidth(QPainter *painter, const qreal scale)
     pen.setCapStyle(Qt::RoundCap);
     pen.setJoinStyle(Qt::MiterJoin);
 
-    const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
-    PixelSnapper snapper(painter, dpr);
+    PixelSnapper snapper(painter);
     const qreal localToPhysicalScale = snapper.localToPhysicalScale();
 
     if (localToPhysicalScale > 0.0) {
