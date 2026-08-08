@@ -44,37 +44,34 @@ public:
 
         button->setVisible(decoratedClient->providesContextHelp());
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.25);
 
-        //painter->setRenderHints(QPainter::Antialiasing, true);
-        
         const QPointF offset(-5.5, -5.5);
 
-        const QRectF topCurveRect = QRectF(
-            QPointF( 1.5, 0.5 ) + offset,
-            QSizeF( 8, 6 )
-        );
+        const QPointF topCurveTopLeft = snapper.snap(QPointF(1.5, 0.5) + offset);
+        const QPointF topCurveBottomRight = snapper.snap(QPointF(9.5, 6.5) + offset);
+        const QRectF topCurveRect(topCurveTopLeft, topCurveBottomRight);
+
         QPainterPath path;
-        path.moveTo( topCurveRect.center() - QPointF(topCurveRect.width()/2, 0) );
+        path.moveTo(QPointF(topCurveRect.left(), topCurveRect.top() + topCurveRect.height() / 2.0));
         path.arcTo(
             topCurveRect,
             180,
             -180
         );
         path.cubicTo(
-            QPointF( 7.8125, 5.9375 ) + offset,
-            QPointF( 5.625, 4.6875 ) + offset,
-            QPointF( 5, 8 ) + offset
+            snapper.snap(QPointF( 7.8125, 5.9375 ) + offset),
+            snapper.snap(QPointF( 5.625, 4.6875 ) + offset),
+            snapper.snap(QPointF( 5.0, 8.0 ) + offset)
         );
         painter->drawPath(path);
 
         // Dot
-        painter->drawRect( QRectF(
-            QPointF( 5, 10 ) + offset,
-            QSizeF( 0.5, 0.5 )
-        ));
+        const QPointF dotTopLeft = snapper.snap(QPointF(5.0, 10.0) + offset);
+        const QPointF dotBottomRight = snapper.snap(QPointF(5.5, 10.5) + offset);
+        painter->drawRect(QRectF(dotTopLeft, dotBottomRight));
     }
 };
 

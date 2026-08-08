@@ -63,6 +63,7 @@ set (decoration_SRCS
     Button.cc
     Decoration.cc
     MenuOverflowButton.cc
+    PixelSnapper.cc
     SearchButton.cc
     TextButton.cc
     plugin.cc

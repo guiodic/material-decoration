@@ -39,29 +39,32 @@ public:
 
         button->setVisible(decoratedClient->isMaximizeable());
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
-        const QRectF innerRect(-5, -5, 10, 10);
         button->setPenWidth(painter, 1.5);
+
         if (button->isChecked()) {
-            const int offset = 2;
+            const qreal offset = painter->pen().widthF() * 1.5;
             // Outline of first square, "on top", aligned bottom left.
             painter->drawPolygon(QVector<QPointF> {
-                innerRect.bottomLeft(),
-                innerRect.topLeft() + QPointF(0, offset),
-                innerRect.topRight() + QPointF(-offset, offset),
-                innerRect.bottomRight() + QPointF(-offset, 0)
+                snapper.snap(QPointF(-5.0, 5.0)),
+                snapper.snap(QPointF(-5.0, -5.0 + offset)),
+                snapper.snap(QPointF(5.0 - offset, -5.0 + offset)),
+                snapper.snap(QPointF(5.0 - offset, 5.0))
             });
 
             // Partially occluded square, "below" first square, aligned top right.
             painter->drawPolyline(QVector<QPointF> {
-                innerRect.topLeft() + QPointF(offset, offset),
-                innerRect.topLeft() + QPointF(offset, 0),
-                innerRect.topRight(),
-                innerRect.bottomRight() + QPointF(0, -offset),
-                innerRect.bottomRight() + QPointF(-offset, -offset)
+                snapper.snap(QPointF(-5.0 + offset, -5.0 + offset)),
+                snapper.snap(QPointF(-5.0 + offset, -5.0)),
+                snapper.snap(QPointF(5.0, -5.0)),
+                snapper.snap(QPointF(5.0, 5.0 - offset)),
+                snapper.snap(QPointF(5.0 - offset, 5.0 - offset))
             });
         } else {
+            const QPointF topLeft = snapper.snap(QPointF(-5.0, -5.0));
+            const QPointF bottomRight = snapper.snap(QPointF(5.0, 5.0));
+            const QRectF innerRect(topLeft, bottomRight);
             painter->drawRect(innerRect);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * * Copyright (C) 2025 Guido Iodice <guido[dot]iodice[at]gmail[dot]com>
+ * Copyright (C) 2026 Guido Iodice <guido[dot]iodice[at]gmail[dot]com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,22 +17,28 @@
 
 #pragma once
 
-#include "AppMenuButton.h"
+#include <QTransform>
+#include <QPointF>
+
+class QPainter;
 
 namespace Material
 {
 
-class Decoration;
-
-class SearchButton : public AppMenuButton
+class PixelSnapper
 {
-    Q_OBJECT
 public:
-    explicit SearchButton(Decoration *decoration, const int buttonIndex, QObject *parent = nullptr);
-    ~SearchButton() override;
+    PixelSnapper(QPainter *painter, const qreal dpr);
 
-protected:
-    void paintIcon(QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) override;
+    QPointF snap(const QPointF &p) const;
+    qreal localToPhysicalScale() const;
+    qreal dpr() const { return m_dpr; }
+
+private:
+    QTransform m_trans;
+    QTransform m_inv;
+    qreal m_dpr;
+    bool m_invertible;
 };
 
 } // namespace Material

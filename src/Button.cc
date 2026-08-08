@@ -59,6 +59,7 @@
 #include <QTimer>
 #include <QDBusConnection>
 #include <QDBusMessage>
+#include <cmath>
 
 #define UPDATE_GEOM() update(geometry().adjusted(-1, -1, 1, 1))
 
@@ -320,13 +321,17 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->setRenderHint(QPainter::Antialiasing, true);
     painter->setBrush(Qt::NoBrush);
 
+    const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
+
     const QRectF contentRect = contentArea();
+
+    PixelSnapper snapper(painter, dpr);
 
     // TextButton and AppIconButton are special, so we don't scale the painter
     if (auto textButton = qobject_cast<TextButton*>(this)) {
-        textButton->paintIcon(painter, contentRect, 0);
+        textButton->paintIcon(painter, contentRect, snapper);
     } else if (type() == KDecoration3::DecorationButtonType::Menu) {
-        AppIconButton::paintIcon(this, painter, contentRect, 0);
+        AppIconButton::paintIcon(this, painter, contentRect, snapper);
     } else {
         // All further rendering is performed inside a 18x18 square
         const qreal width = contentRect.width();
@@ -349,64 +354,69 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
             size = qMin(width, height) * 0.6; // 60% of the Kwin Deco
         }
 
-        // For a sharper image, we use integer-based positioning
-        const int iconSize = qRound(size);
+        // For a sharper image, we use physical-pixel-aligned positioning and scaling
+        const qreal localToPhysicalScale = snapper.localToPhysicalScale();
+        const qreal physicalIconSize = (localToPhysicalScale > 0.0) ? qRound(size * localToPhysicalScale) : qRound(size * dpr);
+        const qreal iconLogicalSize = (localToPhysicalScale > 0.0) ? (physicalIconSize / localToPhysicalScale) : (physicalIconSize / dpr);
 
-        // Translate to a rounded center
+        // Translate to a center aligned with physical pixel grid
         const QPointF center = contentRect.center();
-        painter->translate(qRound(center.x()), qRound(center.y()));
+        const QPointF centerSnapped = snapper.snap(center);
+        painter->translate(centerSnapped);
 
-        // Scale by an integer-based factor
-        painter->scale(static_cast<qreal>(iconSize) / 18.0, static_cast<qreal>(iconSize) / 18.0);
+        // Scale by physical-aligned factor
+        painter->scale(iconLogicalSize / 18.0, iconLogicalSize / 18.0);
         
         setPenWidth(painter, KDecoration3::pixelSize(deco->window()->scale()));
+
+        PixelSnapper iconSnapper(painter, dpr);
 
         // Icons
         const QRectF iconRect(-9, -9, 18, 18);
         switch (type()) {
         // NOTE: Menu and ApplicationMenu are handled above
         case KDecoration3::DecorationButtonType::OnAllDesktops:
-            OnAllDesktopsButton::paintIcon(this, painter, iconRect, 0);
+            OnAllDesktopsButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
 
         case KDecoration3::DecorationButtonType::ContextHelp:
-            ContextHelpButton::paintIcon(this, painter, iconRect, 0);
+            ContextHelpButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
 
         case KDecoration3::DecorationButtonType::Shade:
-            ShadeButton::paintIcon(this, painter, iconRect, 0);
+            ShadeButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
 
         case KDecoration3::DecorationButtonType::KeepAbove:
-            KeepAboveButton::paintIcon(this, painter, iconRect, 0);
+            KeepAboveButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
 
         case KDecoration3::DecorationButtonType::KeepBelow:
-            KeepBelowButton::paintIcon(this, painter, iconRect, 0);
+            KeepBelowButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
 
         case KDecoration3::DecorationButtonType::Close:
-            CloseButton::paintIcon(this, painter, iconRect, 0);
+            CloseButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
 
         case KDecoration3::DecorationButtonType::Maximize:
-            MaximizeButton::paintIcon(this, painter, iconRect, 0);
+            MaximizeButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
 
         case KDecoration3::DecorationButtonType::Minimize:
-            MinimizeButton::paintIcon(this, painter, iconRect, 0);
+            MinimizeButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
         case KDecoration3::DecorationButtonType::Spacer:  
             break;            
 
 #if HAVE_EXCLUDE_FROM_CAPTURE
         case KDecoration3::DecorationButtonType::ExcludeFromCapture:
-            ExcludeFromCaptureButton::paintIcon(this, painter, iconRect, 0);
+            ExcludeFromCaptureButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
 #endif
 
         default:
-            paintIcon(painter, iconRect, 0);
+            paintIcon(painter, iconRect, iconSnapper);
             break;
         }
     }
@@ -414,10 +424,11 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->restore();
 }
 
-void Button::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal)
+void Button::paintIcon(QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper)
 {
     Q_UNUSED(painter)
     Q_UNUSED(iconRect)
+    Q_UNUSED(snapper)
 }
 
 void Button::updateSize(qreal contentWidth, qreal contentHeight)
@@ -441,12 +452,22 @@ void Button::setPenWidth(QPainter *painter, const qreal scale)
     QPen pen(foregroundColor());
     pen.setCapStyle(Qt::RoundCap);
     pen.setJoinStyle(Qt::MiterJoin);
-    // Set the base pen width. This will be correctly scaled by the painter's
-    // transformation in the paint() method, preserving the behavior of
-    // lines getting thicker as the icon scales up.
-    pen.setWidthF(PenWidth::Symbol * scale);
+
+    const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
+    PixelSnapper snapper(painter, dpr);
+    const qreal localToPhysicalScale = snapper.localToPhysicalScale();
+
+    if (localToPhysicalScale > 0.0) {
+        const qreal nominalPhysicalWidth = PenWidth::Symbol * scale * localToPhysicalScale;
+        const qreal snappedPhysicalWidth = qMax(1.0, qRound(nominalPhysicalWidth * 2.0) / 2.0);
+        pen.setWidthF(snappedPhysicalWidth / localToPhysicalScale);
+    } else {
+        pen.setWidthF(PenWidth::Symbol * scale);
+    }
+
     painter->setPen(pen);
 }
+
 
 QColor Button::backgroundColor() const
 {

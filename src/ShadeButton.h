@@ -40,33 +40,34 @@ public:
 
         button->setVisible(decoratedClient->isShadeable());
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
-        const QPointF offset(-5, -5);
+
+        const QPointF offset(-5.0, -5.0);
 
         if (button->isChecked()) {
             button->setPenWidth(painter, 1.25);
             painter->drawLine( 
-                QPointF( 0, 2 ) + offset,
-                QPointF( 10, 2 ) + offset
+                snapper.snap(QPointF( 0, 2 ) + offset),
+                snapper.snap(QPointF( 10, 2 ) + offset)
             );
             button->setPenWidth(painter, 1.25);
             painter->drawPolyline(  QVector<QPointF> {
-                QPointF( 0.5, 5.25 ) + offset,
-                QPointF( 5.0, 9.75 ) + offset,
-                QPointF( 9.5, 5.25 ) + offset
+                snapper.snap(QPointF( 0.0, 5.0 ) + offset),
+                snapper.snap(QPointF( 5.0, 10.0 ) + offset),
+                snapper.snap(QPointF( 10.0, 5.0 ) + offset)
             });
         } else {
             button->setPenWidth(painter, 1.25);
             painter->drawLine( 
-                QPointF( 0, 2 ) + offset,
-                QPointF( 10, 2 ) + offset
+                snapper.snap(QPointF( 0, 2 ) + offset),
+                snapper.snap(QPointF( 10, 2 ) + offset)
             );
             button->setPenWidth(painter, 1.25);
             painter->drawPolyline( QVector<QPointF> {
-                QPointF( 0.5, 9.75 ) + offset,
-                QPointF( 5.0, 5.25 ) + offset,
-                QPointF( 9.5, 9.75 ) + offset
+                snapper.snap(QPointF( 0.0, 10.0 ) + offset),
+                snapper.snap(QPointF( 5.0, 5.0 ) + offset),
+                snapper.snap(QPointF( 10.0, 10.0 ) + offset)
             });
         }
     }

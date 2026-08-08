@@ -27,8 +27,12 @@
 #include <QMouseEvent>
 #include <QRectF>
 #include <QVariantAnimation>
+#include <QTransform>
 
 class QTimer;
+class QPainter;
+
+#include "PixelSnapper.h"
 
 namespace Material
 {
@@ -93,7 +97,7 @@ signals:
     void paddingChanged();
 
 protected:
-    virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal);
+    virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper);
     virtual void updateSize(qreal contentWidth, qreal contentHeight);
     virtual void setHeight(qreal buttonHeight);
 
