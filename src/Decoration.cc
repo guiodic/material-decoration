@@ -1265,6 +1265,9 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
 
     drawingRect.translate(0, offset);
 
+    PixelSnapper snapper(painter);
+    drawingRect = snapper.snap(drawingRect);
+
     if (!drawingRect.intersects(repaintRegion)) {
         return;
     }
@@ -1273,9 +1276,6 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     painter->save();
     painter->setFont(font);
     painter->setPen(titleBarForegroundColor());
-
-    PixelSnapper snapper(painter);
-    drawingRect = snapper.snap(drawingRect);
 
     // Opacity logic
     if (appMenuVisible) {
