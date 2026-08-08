@@ -40,9 +40,8 @@ public:
 
         button->setVisible(decoratedClient->isShadeable());
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal dpr) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
-        PixelSnapper snapper(painter, dpr);
 
         const QPointF offset(-5.0, -5.0);
 

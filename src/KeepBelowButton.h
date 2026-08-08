@@ -39,11 +39,9 @@ public:
 
         button->setVisible(true);
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal dpr) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.25);
-
-        PixelSnapper snapper(painter, dpr);
 
         const QPointF offset(-5.0, -5.0);
         painter->drawPolyline(  QVector<QPointF> {

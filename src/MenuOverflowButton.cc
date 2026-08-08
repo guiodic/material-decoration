@@ -41,9 +41,9 @@ MenuOverflowButton::~MenuOverflowButton()
 {
 }
 
-void MenuOverflowButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal)
+void MenuOverflowButton::paintIcon(QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper)
 {
-    ApplicationMenuButton::paintIcon(this, painter, iconRect, 0);
+    ApplicationMenuButton::paintIcon(this, painter, iconRect, snapper);
 }
 
 } // namespace Material

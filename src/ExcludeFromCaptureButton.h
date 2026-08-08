@@ -47,15 +47,13 @@ public:
     }
     
     //--- copied from Breeze for now. Copyright goes to KDE Developers
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal dpr) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
         const auto *deco = qobject_cast<Decoration *>(button->decoration());
         if (!deco) {
             return;
         }
         button->setPenWidth(painter, 1.25 * KDecoration3::pixelSize(deco->window()->scale()));
-
-        PixelSnapper snapper(painter, dpr);
 
         // A spy hat (like view-private.svg icon)
         // Hat crown with dip/crease at top (filled)

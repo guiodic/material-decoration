@@ -32,13 +32,11 @@ SearchButton::SearchButton(Decoration *decoration, const int buttonIndex, QObjec
 
 SearchButton::~SearchButton() = default;
 
-void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal dpr)
+void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper)
 {
     Q_UNUSED(iconRect)
     //painter->setRenderHint(QPainter::Antialiasing, true);
     setPenWidth(painter, 1.25);
-
-    PixelSnapper snapper(painter, dpr);
 
     const qreal circleRadius = snapper.snapX(4.0);
     const QPointF circleCenter = snapper.snap(QPointF(-2.0, -2.0));

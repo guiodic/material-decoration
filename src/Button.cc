@@ -325,11 +325,13 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 
     const QRectF contentRect = contentArea();
 
+    PixelSnapper snapper(painter, dpr);
+
     // TextButton and AppIconButton are special, so we don't scale the painter
     if (auto textButton = qobject_cast<TextButton*>(this)) {
-        textButton->paintIcon(painter, contentRect, dpr);
+        textButton->paintIcon(painter, contentRect, snapper);
     } else if (type() == KDecoration3::DecorationButtonType::Menu) {
-        AppIconButton::paintIcon(this, painter, contentRect, dpr);
+        AppIconButton::paintIcon(this, painter, contentRect, snapper);
     } else {
         // All further rendering is performed inside a 18x18 square
         const qreal width = contentRect.width();
@@ -353,7 +355,6 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         }
 
         // For a sharper image, we use physical-pixel-aligned positioning and scaling
-        PixelSnapper snapper(painter, dpr);
         const qreal localToPhysicalScale = snapper.localToPhysicalScale();
         const qreal physicalIconSize = (localToPhysicalScale > 0.0) ? qRound(size * localToPhysicalScale) : qRound(size * dpr);
         const qreal iconLogicalSize = (localToPhysicalScale > 0.0) ? (physicalIconSize / localToPhysicalScale) : (physicalIconSize / dpr);
@@ -368,52 +369,54 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         
         setPenWidth(painter, KDecoration3::pixelSize(deco->window()->scale()));
 
+        PixelSnapper iconSnapper(painter, dpr);
+
         // Icons
         const QRectF iconRect(-9, -9, 18, 18);
         switch (type()) {
         // NOTE: Menu and ApplicationMenu are handled above
         case KDecoration3::DecorationButtonType::OnAllDesktops:
-            OnAllDesktopsButton::paintIcon(this, painter, iconRect, dpr);
+            OnAllDesktopsButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
 
         case KDecoration3::DecorationButtonType::ContextHelp:
-            ContextHelpButton::paintIcon(this, painter, iconRect, dpr);
+            ContextHelpButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
 
         case KDecoration3::DecorationButtonType::Shade:
-            ShadeButton::paintIcon(this, painter, iconRect, dpr);
+            ShadeButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
 
         case KDecoration3::DecorationButtonType::KeepAbove:
-            KeepAboveButton::paintIcon(this, painter, iconRect, dpr);
+            KeepAboveButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
 
         case KDecoration3::DecorationButtonType::KeepBelow:
-            KeepBelowButton::paintIcon(this, painter, iconRect, dpr);
+            KeepBelowButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
 
         case KDecoration3::DecorationButtonType::Close:
-            CloseButton::paintIcon(this, painter, iconRect, dpr);
+            CloseButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
 
         case KDecoration3::DecorationButtonType::Maximize:
-            MaximizeButton::paintIcon(this, painter, iconRect, dpr);
+            MaximizeButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
 
         case KDecoration3::DecorationButtonType::Minimize:
-            MinimizeButton::paintIcon(this, painter, iconRect, dpr);
+            MinimizeButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
         case KDecoration3::DecorationButtonType::Spacer:  
             break;            
 
 #if HAVE_EXCLUDE_FROM_CAPTURE
         case KDecoration3::DecorationButtonType::ExcludeFromCapture:
-            ExcludeFromCaptureButton::paintIcon(this, painter, iconRect, dpr);
+            ExcludeFromCaptureButton::paintIcon(this, painter, iconRect, iconSnapper);
             break;
 #endif
 
         default:
-            paintIcon(painter, iconRect, dpr);
+            paintIcon(painter, iconRect, iconSnapper);
             break;
         }
     }
@@ -421,11 +424,11 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->restore();
 }
 
-void Button::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal dpr)
+void Button::paintIcon(QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper)
 {
     Q_UNUSED(painter)
     Q_UNUSED(iconRect)
-    Q_UNUSED(dpr)
+    Q_UNUSED(snapper)
 }
 
 void Button::updateSize(qreal contentWidth, qreal contentHeight)
@@ -465,17 +468,6 @@ void Button::setPenWidth(QPainter *painter, const qreal scale)
     painter->setPen(pen);
 }
 
-QPointF Button::snapPoint(QPainter *painter, const QPointF &p, const qreal dpr) const
-{
-    PixelSnapper snapper(painter, dpr);
-    return snapper.snap(p);
-}
-
-qreal Button::snapValue(QPainter *painter, const qreal v, const qreal dpr) const
-{
-    PixelSnapper snapper(painter, dpr);
-    return snapper.snapX(v);
-}
 
 QColor Button::backgroundColor() const
 {

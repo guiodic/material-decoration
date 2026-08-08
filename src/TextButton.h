@@ -40,7 +40,7 @@ public:
     Q_PROPERTY(QAction* action READ action WRITE setAction NOTIFY actionChanged)
     Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
 
-    void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal dpr) override;
+    void paintIcon(QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) override;
 
     QAction* action() const;
     void setAction(QAction *set);

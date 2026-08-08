@@ -69,8 +69,6 @@ public:
 
     //virtual qreal iconLineWidth(const qreal size) const;
     void setPenWidth(QPainter *painter, const qreal scale);
-    QPointF snapPoint(QPainter *painter, const QPointF &p, const qreal dpr) const;
-    qreal snapValue(QPainter *painter, const qreal v, const qreal dpr) const;
 
     bool animationEnabled() const;
     void setAnimationEnabled(bool value);
@@ -99,7 +97,7 @@ signals:
     void paddingChanged();
 
 protected:
-    virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const qreal dpr);
+    virtual void paintIcon(QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper);
     virtual void updateSize(qreal contentWidth, qreal contentHeight);
     virtual void setHeight(qreal buttonHeight);
 

@@ -40,7 +40,7 @@ TextButton::~TextButton()
 {
 }
 
-void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qreal dpr)
+void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper)
 {
     const auto *deco = qobject_cast<Decoration *>(decoration());
 
@@ -49,7 +49,6 @@ void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const qrea
     painter->setPen(foregroundColor());
     painter->setRenderHint(QPainter::TextAntialiasing);
 
-    PixelSnapper snapper(painter, dpr);
     const QPointF snappedTopLeft = snapper.snap(iconRect.topLeft());
     const QRectF snappedRect(snappedTopLeft, iconRect.size());
 

@@ -39,11 +39,10 @@ public:
 
         button->setVisible(decoratedClient->isMaximizeable());
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal dpr) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.5);
 
-        PixelSnapper snapper(painter, dpr);
         const qreal x = snapper.snapX(-5.0);
         const qreal y = snapper.snapY(-5.0);
         const qreal w = snapper.snapX(10.0);

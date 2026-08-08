@@ -37,11 +37,10 @@ public:
     static void init(Button *button, KDecoration3::DecoratedWindow *decoratedClient) {
         button->setVisible(decoratedClient->hasApplicationMenu());
     }
-    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const qreal dpr) {
+    static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
         button->setPenWidth(painter, 1.5);
         
-        PixelSnapper snapper(painter, dpr);
         const qreal spacing = painter->pen().widthF() * 2.5;
         for (int i = -1; i <= 1; ++i) {
             const qreal y = i * spacing;
