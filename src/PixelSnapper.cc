@@ -42,8 +42,16 @@ QPointF PixelSnapper::snap(const QPointF &p) const
     return p;
 }
 
+QRectF PixelSnapper::snap(const QRectF &rect) const
+{
+    return QRectF(snap(rect.topLeft()), snap(rect.bottomRight()));
+}
+
 qreal PixelSnapper::localToPhysicalScale() const
 {
+    // Semantics & Assumptions check:
+    // This assumes uniform scale and no rotation/shear. If those assumptions are violated, 
+    // it computes the scale factor of the X-axis mapping under the transformation.
     if (m_dpr > 0.0 && m_invertible) {
         return std::hypot(m_trans.m11(), m_trans.m12()) * m_dpr;
     }

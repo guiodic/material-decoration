@@ -72,13 +72,8 @@ public:
         painter->drawLine(snapper.snap(QPointF(-6.2, -0.5)), snapper.snap(QPointF(6.2, -0.5)));
 
         // Glasses' lenses
-        const QPointF lensLeftTopLeft = snapper.snap(QPointF(-6.3, 1.5));
-        const QPointF lensLeftBottomRight = snapper.snap(QPointF(-1.7, 6.1));
-        painter->drawEllipse(QRectF(lensLeftTopLeft, lensLeftBottomRight));
-
-        const QPointF lensRightTopLeft = snapper.snap(QPointF(1.7, 1.5));
-        const QPointF lensRightBottomRight = snapper.snap(QPointF(6.3, 6.1));
-        painter->drawEllipse(QRectF(lensRightTopLeft, lensRightBottomRight));
+        painter->drawEllipse(snapper.snap(QRectF(QPointF(-6.3, 1.5), QPointF(-1.7, 6.1))));
+        painter->drawEllipse(snapper.snap(QRectF(QPointF(1.7, 1.5), QPointF(6.3, 6.1))));
 
         // Bridge between lenses
         painter->drawLine(snapper.snap(QPointF(-1.5, 3.8)), snapper.snap(QPointF(1.5, 3.8)));

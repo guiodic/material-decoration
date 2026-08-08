@@ -19,6 +19,7 @@
 
 #include <QTransform>
 #include <QPointF>
+#include <QRectF>
 
 class QPainter;
 
@@ -31,7 +32,20 @@ public:
     explicit PixelSnapper(QPainter *painter);
 
     QPointF snap(const QPointF &p) const;
+    QRectF snap(const QRectF &rect) const;
+
+    /**
+     * @brief Computes the scaling factor from local coordinates to physical device pixels.
+     * 
+     * @note Semantics & Assumptions:
+     * - This method assumes uniform scaling (scaling on the X axis is identical to the Y axis).
+     * - It assumes there is no rotation or shear applied to the transformation matrix.
+     * - In the presence of non-uniform scaling or rotation/shear, it returns the scaling factor
+     *   along the transformed X axis (calculating the magnitude/hypotenuse of the first column
+     *   of the transformation matrix), multiplied by the device pixel ratio (DPR).
+     */
     qreal localToPhysicalScale() const;
+    
     qreal dpr() const { return m_dpr; }
 
 private:

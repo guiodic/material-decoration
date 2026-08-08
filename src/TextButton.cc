@@ -50,9 +50,7 @@ void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const Pixe
     painter->setRenderHint(QPainter::TextAntialiasing);
 
     // Compute stable, physical-pixel-aligned dimensions to prevent subpixel text blurring
-    const QPointF snappedTopLeft = snapper.snap(iconRect.topLeft());
-    const QPointF snappedBottomRight = snapper.snap(iconRect.bottomRight());
-    const QRectF snappedRect(snappedTopLeft, snappedBottomRight);
+    const QRectF snappedRect = snapper.snap(iconRect);
 
     // TODO: Use Qt::TextShowMnemonic when Alt is pressed
     const bool isAltPressed = false;

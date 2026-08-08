@@ -62,10 +62,7 @@ public:
                 snapper.snap(QPointF(5.0 - offset, 5.0 - offset))
             });
         } else {
-            const QPointF topLeft = snapper.snap(QPointF(-5.0, -5.0));
-            const QPointF bottomRight = snapper.snap(QPointF(5.0, 5.0));
-            const QRectF innerRect(topLeft, bottomRight);
-            painter->drawRect(innerRect);
+            painter->drawRect(snapper.snap(QRectF(QPointF(-5.0, -5.0), QPointF(5.0, 5.0))));
         }
     }
 };
