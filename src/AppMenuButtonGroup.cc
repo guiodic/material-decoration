@@ -639,7 +639,10 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
         const int buttonCount = m_textButtons.size();
         // Cache geometry widths in first pass so second pass can reuse them without calling geometry() again.
         // Re-use class member vector to completely avoid repeat dynamic allocations during layout updates.
-        m_cachedWidths.resize(buttonCount);
+        if (m_cachedWidths.size() != buttonCount) {
+            m_cachedWidths.resize(buttonCount);
+        }
+        Q_ASSERT(m_cachedWidths.size() == buttonCount);
 
         for (int i = 0; i < buttonCount; ++i) {
             auto &tb = m_textButtons[i];
