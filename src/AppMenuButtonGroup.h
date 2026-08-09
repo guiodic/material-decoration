@@ -30,6 +30,7 @@
 #include <QMenu>
 #include <QLineEdit>
 #include <QPointer>
+#include <QVector>
 
 class QTimer;
 class QVariantAnimation;
@@ -189,6 +190,8 @@ private:
     QPointer<SearchButton> m_searchButton;
 
     QPointer<KDecoration3::DecorationButton> m_hoveredButton = nullptr;
+
+    QVector<qreal> m_cachedWidths;
 
     friend class AppMenuButton;
     friend class Decoration;
