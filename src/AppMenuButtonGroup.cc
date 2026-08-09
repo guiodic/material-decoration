@@ -52,6 +52,7 @@
 #include <QWidgetAction>
 
 #include <utility>
+#include <vector>
 
 namespace Material
 {
@@ -635,9 +636,15 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
         qreal totalTextWidth = 0;
         int enabledCount = 0;
         bool allFit = true;
-        for (auto &tb : std::as_const(m_textButtons)) {
+        const int buttonCount = m_textButtons.size();
+        std::vector<qreal> cachedWidths(buttonCount, -1.0);
+
+        for (int i = 0; i < buttonCount; ++i) {
+            auto &tb = m_textButtons[i];
             if (tb && tb->isEnabled()) {
-                totalTextWidth += tb->geometry().width();
+                const qreal w = tb->geometry().width();
+                cachedWidths[i] = w;
+                totalTextWidth += w;
                 enabledCount++;
                 if (fixedWidth + totalTextWidth > availableWidth) {
                     allFit = false;
@@ -662,12 +669,16 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 
             // Second pass: apply visibility and calculate final width
             bool fits = true;
-            for (auto &tb : std::as_const(m_textButtons)) {
+            for (int i = 0; i < buttonCount; ++i) {
+                auto &tb = m_textButtons[i];
                 if (!tb) {
                     continue;
                 }
                 if (fits && tb->isEnabled()) {
-                    const qreal w = tb->geometry().width();
+                    qreal w = cachedWidths[i];
+                    if (w < 0) {
+                        w = tb->geometry().width();
+                    }
                     if (w <= remainingWidth) {
                         tb->setVisible(true);
                         currentVisibleWidth += w;
