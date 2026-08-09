@@ -52,7 +52,6 @@
 #include <QWidgetAction>
 
 #include <utility>
-#include <vector>
 
 namespace Material
 {
@@ -637,7 +636,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
         int enabledCount = 0;
         bool allFit = true;
         const int buttonCount = m_textButtons.size();
-        std::vector<qreal> cachedWidths(buttonCount, -1.0);
+        QList<qreal> cachedWidths(buttonCount, 0.0);
 
         for (int i = 0; i < buttonCount; ++i) {
             auto &tb = m_textButtons[i];
@@ -675,10 +674,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
                     continue;
                 }
                 if (fits && tb->isEnabled()) {
-                    qreal w = cachedWidths[i];
-                    if (w < 0) {
-                        w = tb->geometry().width();
-                    }
+                    const qreal w = cachedWidths[i];
                     if (w <= remainingWidth) {
                         tb->setVisible(true);
                         currentVisibleWidth += w;
