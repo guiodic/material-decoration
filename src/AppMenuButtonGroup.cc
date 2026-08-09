@@ -636,7 +636,8 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
         int enabledCount = 0;
         bool allFit = true;
         const int buttonCount = m_textButtons.size();
-        QList<qreal> cachedWidths(buttonCount, 0.0);
+        // Cache geometry widths in first pass so second pass can reuse them without calling geometry() again.
+        QVector<qreal> cachedWidths(buttonCount, 0.0);
 
         for (int i = 0; i < buttonCount; ++i) {
             auto &tb = m_textButtons[i];
@@ -674,6 +675,7 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
                     continue;
                 }
                 if (fits && tb->isEnabled()) {
+                    Q_ASSERT(i < cachedWidths.size());
                     const qreal w = cachedWidths[i];
                     if (w <= remainingWidth) {
                         tb->setVisible(true);
