@@ -20,6 +20,7 @@
  */
 
 #include <atomic>
+#include <optional>
 
 // own
 #include "Decoration.h"
@@ -1185,9 +1186,19 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     }
 
     const QFont font = settings()->font();
-    const QFontMetricsF fontMetrics(font);
     const QString fullCaption = decoratedClient->caption();
     const qreal offset = topOffset();
+
+    // Defer QFontMetricsF construction until actually needed to avoid unnecessary work during painting.
+    // QFontMetricsF construction can be non-trivial; create it only when bounding/eliding is required.
+    std::optional<QFontMetricsF> lazyFontMetrics;
+    // Capture only the variables we need: lazyFontMetrics by reference and font by value.
+    auto getFontMetrics = [&lazyFontMetrics, font]() -> const QFontMetricsF & {
+        if (!lazyFontMetrics) {
+            lazyFontMetrics.emplace(font);
+        }
+        return *lazyFontMetrics;
+    };
 
     // 2. Baseline constrained geometry (used to determine if space is limited)
     QRectF constrainedRect = centerRect();
@@ -1204,7 +1215,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     if (m_captionCache.textWidth < 0 || m_captionCache.fullCaption != fullCaption || m_captionCache.font != font) {
         m_captionCache.fullCaption = fullCaption;
         m_captionCache.font = font;
-        m_captionCache.textWidth = fontMetrics.boundingRect(fullCaption).width();
+        m_captionCache.textWidth = getFontMetrics().boundingRect(fullCaption).width();
         m_captionCache.availableWidth = -1.0;
     }
     const qreal textWidth = m_captionCache.textWidth;
@@ -1287,7 +1298,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     if (m_captionCache.availableWidth != drawingRect.width() || m_captionCache.alignment != alignment) {
         m_captionCache.availableWidth = drawingRect.width();
         m_captionCache.alignment = alignment;
-        m_captionCache.elidedCaption = fontMetrics.elidedText(fullCaption, Qt::ElideMiddle, drawingRect.width());
+        m_captionCache.elidedCaption = getFontMetrics().elidedText(fullCaption, Qt::ElideMiddle, drawingRect.width());
     }    
     
 
