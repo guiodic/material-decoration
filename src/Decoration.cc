@@ -1189,8 +1189,11 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     const QString fullCaption = decoratedClient->caption();
     const qreal offset = topOffset();
 
+    // Defer QFontMetricsF construction until actually needed to avoid unnecessary work during painting.
+    // QFontMetricsF construction can be non-trivial; create it only when bounding/eliding is required.
     std::optional<QFontMetricsF> lazyFontMetrics;
-    auto getFontMetrics = [&]() -> const QFontMetricsF & {
+    // Capture only the variables we need: lazyFontMetrics by reference and font by value.
+    auto getFontMetrics = [&lazyFontMetrics, font]() -> const QFontMetricsF & {
         if (!lazyFontMetrics) {
             lazyFontMetrics.emplace(font);
         }
