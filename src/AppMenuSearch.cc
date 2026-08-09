@@ -57,8 +57,11 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
         return;
     }
 
-    auto cleanupCache = qScopeGuard([this]() {
-        m_actionTextCache.clear();
+    QPointer<AppMenuSearch> safeThis(this);
+    auto cleanupCache = qScopeGuard([safeThis]() {
+        if (safeThis) {
+            safeThis->m_actionTextCache.clear();
+        }
     });
 
     // Clear results if search text is too short or model is unavailable
