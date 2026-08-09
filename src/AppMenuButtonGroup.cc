@@ -366,6 +366,7 @@ void AppMenuButtonGroup::resetButtons()
     m_searchButton = nullptr;
     m_overflowIndex = -1;
     m_searchIndex = -1;
+    m_cachedWidths.clear();
 
     if (m_overflowMenu) {
         m_overflowMenu->deleteLater();
@@ -639,8 +640,6 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
         // Cache geometry widths in first pass so second pass can reuse them without calling geometry() again.
         // Re-use class member vector to completely avoid repeat dynamic allocations during layout updates.
         m_cachedWidths.resize(buttonCount);
-        m_cachedWidths.fill(0.0);
-        Q_ASSERT(m_cachedWidths.size() == buttonCount);
 
         for (int i = 0; i < buttonCount; ++i) {
             auto &tb = m_textButtons[i];
