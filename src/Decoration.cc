@@ -20,6 +20,7 @@
  */
 
 #include <atomic>
+#include <optional>
 
 // own
 #include "Decoration.h"
@@ -1188,6 +1189,14 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     const QString fullCaption = decoratedClient->caption();
     const qreal offset = topOffset();
 
+    std::optional<QFontMetricsF> lazyFontMetrics;
+    auto getFontMetrics = [&]() -> const QFontMetricsF & {
+        if (!lazyFontMetrics) {
+            lazyFontMetrics.emplace(font);
+        }
+        return *lazyFontMetrics;
+    };
+
     // 2. Baseline constrained geometry (used to determine if space is limited)
     QRectF constrainedRect = centerRect();
     if (appMenuVisible && m_menuButtons->alwaysShow()) {
@@ -1203,8 +1212,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     if (m_captionCache.textWidth < 0 || m_captionCache.fullCaption != fullCaption || m_captionCache.font != font) {
         m_captionCache.fullCaption = fullCaption;
         m_captionCache.font = font;
-        const QFontMetricsF fontMetrics(font);
-        m_captionCache.textWidth = fontMetrics.boundingRect(fullCaption).width();
+        m_captionCache.textWidth = getFontMetrics().boundingRect(fullCaption).width();
         m_captionCache.availableWidth = -1.0;
     }
     const qreal textWidth = m_captionCache.textWidth;
@@ -1287,8 +1295,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     if (m_captionCache.availableWidth != drawingRect.width() || m_captionCache.alignment != alignment) {
         m_captionCache.availableWidth = drawingRect.width();
         m_captionCache.alignment = alignment;
-        const QFontMetricsF fontMetrics(font);
-        m_captionCache.elidedCaption = fontMetrics.elidedText(fullCaption, Qt::ElideMiddle, drawingRect.width());
+        m_captionCache.elidedCaption = getFontMetrics().elidedText(fullCaption, Qt::ElideMiddle, drawingRect.width());
     }    
     
 
