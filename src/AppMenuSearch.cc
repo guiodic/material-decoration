@@ -23,6 +23,7 @@
 
 // Qt
 #include <QDebug>
+#include <QScopeGuard>
 #include <utility>
 
 static constexpr int MAX_SEARCH_RESULTS = 100;
@@ -55,6 +56,10 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
     if (!m_searchMenu) {
         return;
     }
+
+    auto cleanupCache = qScopeGuard([this]() {
+        m_actionTextCache.clear();
+    });
 
     // Clear results if search text is too short or model is unavailable
     if (isQueryTooShort(text) || !m_appMenuModel) {
@@ -435,13 +440,13 @@ QString AppMenuSearch::getActionText(QAction *action) const
     if (!action) {
         return QString();
     }
-    const QString rawText = action->text();
-    auto it = m_actionTextCache.find(rawText);
+    auto it = m_actionTextCache.find(action);
     if (it != m_actionTextCache.end()) {
         return it.value();
     }
+    const QString rawText = action->text();
     const QString cleanedText = KLocalizedString::removeAcceleratorMarker(rawText.trimmed());
-    m_actionTextCache.insert(rawText, cleanedText);
+    m_actionTextCache.insert(action, cleanedText);
     return cleanedText;
 }
 

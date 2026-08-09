@@ -132,7 +132,7 @@ private:
     bool m_menuIsRendered = false;
     bool m_candidateTruncationLogged = false;
     QList<QPointer<QActionGroup>> m_searchResultGroups;
-    mutable QHash<QString, QString> m_actionTextCache;
+    mutable QHash<QAction *, QString> m_actionTextCache;
 };
 
 } // namespace Material
