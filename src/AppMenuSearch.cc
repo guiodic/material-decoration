@@ -53,6 +53,8 @@ void AppMenuSearch::setSearchMenu(QMenu *searchMenu)
 
 void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
 {
+    // Synchronous lifetime cache guard: the text cache lives 
+    // only during the synchronous execution of this filter() call. 
     QPointer<AppMenuSearch> safeThis(this);
     auto clearActionTextCacheGuard = qScopeGuard([safeThis]() {
         if (safeThis) {
