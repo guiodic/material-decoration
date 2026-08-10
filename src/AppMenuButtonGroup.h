@@ -191,6 +191,8 @@ private:
 
     QPointer<KDecoration3::DecorationButton> m_hoveredButton = nullptr;
 
+    // Cached text button widths to avoid querying geometry().width() twice during overflow layout.
+    // Invariant: m_cachedWidths.size() == m_textButtons.size() when in use.
     QVector<qreal> m_cachedWidths;
 
     friend class AppMenuButton;
