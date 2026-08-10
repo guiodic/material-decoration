@@ -477,6 +477,7 @@ void AppMenuButtonGroup::performDebouncedMenuUpdate()
 void AppMenuButtonGroup::updateAppMenuModel()
 {
     m_search->invalidateCandidates();
+    m_cachedWidths.clear();
 
     auto *deco = qobject_cast<Decoration *>(decoration());
     if (!deco) {
@@ -642,7 +643,6 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
         if (m_cachedWidths.size() != buttonCount) {
             m_cachedWidths.resize(buttonCount);
         }
-        Q_ASSERT(m_cachedWidths.size() == buttonCount);
 
         for (int i = 0; i < buttonCount; ++i) {
             auto &tb = m_textButtons[i];
