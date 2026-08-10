@@ -132,7 +132,10 @@ private:
     bool m_menuIsRendered = false;
     bool m_candidateTruncationLogged = false;
     QList<QPointer<QActionGroup>> m_searchResultGroups;
-    mutable QHash<QString, QString> m_actionTextCache;
+    
+    // This cache maps QAction* pointers directly to their cleansed text labels (accelerator markers removed).
+    // It is automatically cleared on exit of each filter() pass using a qScopeGuard.
+    mutable QHash<QAction *, QString> m_actionTextCache;
 };
 
 } // namespace Material

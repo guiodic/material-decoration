@@ -23,6 +23,7 @@
 
 // Qt
 #include <QDebug>
+#include <QScopeGuard>
 #include <utility>
 
 static constexpr int MAX_SEARCH_RESULTS = 100;
@@ -52,6 +53,15 @@ void AppMenuSearch::setSearchMenu(QMenu *searchMenu)
 
 void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
 {
+    // Synchronous lifetime cache guard: the text cache lives 
+    // only during the synchronous execution of this filter() call. 
+    QPointer<AppMenuSearch> safeThis(this);
+    auto clearActionTextCacheGuard = qScopeGuard([safeThis]() {
+        if (safeThis) {
+            safeThis->m_actionTextCache.clear();
+        }
+    });
+
     if (!m_searchMenu) {
         return;
     }
@@ -435,13 +445,13 @@ QString AppMenuSearch::getActionText(QAction *action) const
     if (!action) {
         return QString();
     }
-    const QString rawText = action->text();
-    auto it = m_actionTextCache.find(rawText);
+    auto it = m_actionTextCache.find(action);
     if (it != m_actionTextCache.end()) {
         return it.value();
     }
+    const QString rawText = action->text();
     const QString cleanedText = KLocalizedString::removeAcceleratorMarker(rawText.trimmed());
-    m_actionTextCache.insert(rawText, cleanedText);
+    m_actionTextCache.insert(action, cleanedText);
     return cleanedText;
 }
 
