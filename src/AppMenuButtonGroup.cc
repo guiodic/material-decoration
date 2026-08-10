@@ -643,6 +643,8 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
         if (m_cachedWidths.size() != buttonCount) {
             m_cachedWidths.resize(buttonCount);
         }
+        // Ensure all entries are initialized to avoid stale reads if we bail early from the first pass.
+        m_cachedWidths.fill(0);
 
         for (int i = 0; i < buttonCount; ++i) {
             auto &tb = m_textButtons[i];
