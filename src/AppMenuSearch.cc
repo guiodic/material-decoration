@@ -53,16 +53,16 @@ void AppMenuSearch::setSearchMenu(QMenu *searchMenu)
 
 void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
 {
-    if (!m_searchMenu) {
-        return;
-    }
-
     QPointer<AppMenuSearch> safeThis(this);
-    auto cleanupCache = qScopeGuard([safeThis]() {
+    auto clearActionTextCacheGuard = qScopeGuard([safeThis]() {
         if (safeThis) {
             safeThis->m_actionTextCache.clear();
         }
     });
+
+    if (!m_searchMenu) {
+        return;
+    }
 
     // Clear results if search text is too short or model is unavailable
     if (isQueryTooShort(text) || !m_appMenuModel) {
