@@ -127,7 +127,10 @@ void AppMenuButton::trigger() {
     // qCDebug(category) << "AppMenuButton::trigger" << m_buttonIndex;
 
     auto *buttonGroup = qobject_cast<AppMenuButtonGroup *>(parent());
-    buttonGroup->trigger(m_buttonIndex);
+    if (buttonGroup) {
+        buttonGroup->m_navigationDirection = AppMenuButtonGroup::NavigationDirection::None;
+        buttonGroup->trigger(m_buttonIndex);
+    }
 }
 
 } // namespace Material
