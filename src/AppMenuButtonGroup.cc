@@ -749,6 +749,7 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
     setCurrentIndex(buttonIndex);
     button->setChecked(true);
     m_currentMenu = menu;
+    m_buttonIndexWaitingForPopup = -1;
     resetNavigationDirection();
 
     // 2. Calculate position and show the new menu. This must happen before hiding the old one to prevent flicker.
@@ -1015,6 +1016,7 @@ void AppMenuButtonGroup::onMenuAboutToHide()
     setCurrentIndex(-1);
     m_currentMenu = nullptr;
     m_hoveredButton = nullptr;
+    m_buttonIndexWaitingForPopup = -1;
     resetNavigationDirection();
 }
 
@@ -1186,6 +1188,7 @@ void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
 
     if (m_hoveredButton != newHoveredButton) {
         m_hoveredButton = newHoveredButton;
+        m_buttonIndexWaitingForPopup = -1;
 
         if (m_hoveredButton) {
             // All buttons in this group are AppMenuButtons
