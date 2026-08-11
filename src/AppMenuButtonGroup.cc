@@ -979,6 +979,11 @@ void AppMenuButtonGroup::updateShowing()
     }
 }
 
+void AppMenuButtonGroup::resetNavigationDirection()
+{
+    m_navigationDirection = NavigationDirection::None;
+}
+
 void AppMenuButtonGroup::onMenuAboutToHide()
 {
     QMenu *menu = qobject_cast<QMenu *>(sender());
@@ -1095,6 +1100,9 @@ void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
                 const int desiredIndex = findNextVisibleButtonIndex(buttonIndex, forward);
                 if (desiredIndex != -1 && desiredIndex != buttonIndex && desiredIndex != m_currentIndex) {
                     trigger(desiredIndex);
+                } else {
+                    popupMenu(menu, buttonIndex);
+                    m_navigationDirection = NavigationDirection::None;
                 }
             } else {
                 popupMenu(menu, buttonIndex);

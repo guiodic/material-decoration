@@ -89,6 +89,7 @@ public:
     void updateAppMenuModel();
     void updateOverflow(QRectF availableRect);
     void updateShowing();
+    void resetNavigationDirection();
 
 private:
     void onMenuReadyForSearch();
@@ -195,14 +196,12 @@ private:
     // Invariant: m_cachedWidths.size() == m_textButtons.size() when in use.
     QVector<qreal> m_cachedWidths;
 
-public:
     enum class NavigationDirection {
         None,
         Left,
         Right
     };
 
-private:
     NavigationDirection m_navigationDirection = NavigationDirection::None;
     
     friend class AppMenuButton;

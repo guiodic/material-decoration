@@ -128,7 +128,7 @@ void AppMenuButton::trigger() {
 
     auto *buttonGroup = qobject_cast<AppMenuButtonGroup *>(parent());
     if (buttonGroup) {
-        buttonGroup->m_navigationDirection = AppMenuButtonGroup::NavigationDirection::None;
+        buttonGroup->resetNavigationDirection();
         buttonGroup->trigger(m_buttonIndex);
     }
 }
