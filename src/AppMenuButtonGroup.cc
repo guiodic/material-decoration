@@ -1123,9 +1123,8 @@ void AppMenuButtonGroup::handleEmptySubMenu(QMenu *menu, int buttonIndex)
     if (m_navigationDirection == NavigationDirection::Left || m_navigationDirection == NavigationDirection::Right) {
         const bool forward = (m_navigationDirection == NavigationDirection::Right);
         const int desiredIndex = findNextVisibleButtonIndex(buttonIndex, forward);
-        const bool isCurrentMenuNonEmpty = m_currentMenu && !m_currentMenu->actions().isEmpty();
         
-        if (desiredIndex != -1 && desiredIndex != buttonIndex && (desiredIndex != m_currentIndex || isCurrentMenuNonEmpty)) {
+        if (desiredIndex != -1 && desiredIndex != buttonIndex && desiredIndex != m_currentIndex) {
             trigger(desiredIndex);
         } else {
             popupMenu(menu, buttonIndex);
