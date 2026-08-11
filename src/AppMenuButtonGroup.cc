@@ -354,6 +354,9 @@ KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(QPoint pos) const
 
 void AppMenuButtonGroup::resetButtons()
 {
+    m_buttonIndexWaitingForPopup = -1;
+    resetNavigationDirection();
+
     if (buttons().isEmpty()) {
         return;
     }
@@ -1024,14 +1027,22 @@ void AppMenuButtonGroup::onHitLeft()
 {
     m_navigationDirection = NavigationDirection::Left;
     int desiredIndex = findNextVisibleButtonIndex(m_currentIndex, false);
-    trigger(desiredIndex);
+    if (desiredIndex == -1 || desiredIndex == m_currentIndex) {
+        resetNavigationDirection();
+    } else {
+        trigger(desiredIndex);
+    }
 }
 
 void AppMenuButtonGroup::onHitRight()
 {
     m_navigationDirection = NavigationDirection::Right;
     int desiredIndex = findNextVisibleButtonIndex(m_currentIndex, true);
-    trigger(desiredIndex);
+    if (desiredIndex == -1 || desiredIndex == m_currentIndex) {
+        resetNavigationDirection();
+    } else {
+        trigger(desiredIndex);
+    }
 }
 
 void AppMenuButtonGroup::onShowingChanged(bool showing)
