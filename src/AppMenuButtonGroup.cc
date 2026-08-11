@@ -749,6 +749,7 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
     setCurrentIndex(buttonIndex);
     button->setChecked(true);
     m_currentMenu = menu;
+    m_navigationDirection = NavigationDirection::None;
 
     // 2. Calculate position and show the new menu. This must happen before hiding the old one to prevent flicker.
     if (auto navMenu = qobject_cast<NavigableMenu *>(menu)) {
@@ -1009,16 +1010,19 @@ void AppMenuButtonGroup::onMenuAboutToHide()
     setCurrentIndex(-1);
     m_currentMenu = nullptr;
     m_hoveredButton = nullptr;
+    m_navigationDirection = NavigationDirection::None;
 }
 
 void AppMenuButtonGroup::onHitLeft()
 {
+    m_navigationDirection = NavigationDirection::Left;
     int desiredIndex = findNextVisibleButtonIndex(m_currentIndex, false);
     trigger(desiredIndex);
 }
 
 void AppMenuButtonGroup::onHitRight()
 {
+    m_navigationDirection = NavigationDirection::Right;
     int desiredIndex = findNextVisibleButtonIndex(m_currentIndex, true);
     trigger(desiredIndex);
 }
@@ -1086,7 +1090,15 @@ void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
         m_buttonIndexWaitingForPopup = -1;
 
         if (menu->actions().isEmpty()) {
-            popupMenu(menu, buttonIndex);
+            if (m_navigationDirection == NavigationDirection::Left || m_navigationDirection == NavigationDirection::Right) {
+                const bool forward = (m_navigationDirection == NavigationDirection::Right);
+                const int desiredIndex = findNextVisibleButtonIndex(buttonIndex, forward);
+                if (desiredIndex != -1 && desiredIndex != buttonIndex && desiredIndex != m_currentIndex) {
+                    trigger(desiredIndex);
+                }
+            } else {
+                popupMenu(menu, buttonIndex);
+            }
         } else {
             trigger(buttonIndex);
         }
@@ -1155,6 +1167,7 @@ void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
         return;
     }
 
+    m_navigationDirection = NavigationDirection::None;
     KDecoration3::DecorationButton *newHoveredButton = buttonAt(pos.toPoint());
 
     if (m_hoveredButton != newHoveredButton) {
