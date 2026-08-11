@@ -127,6 +127,8 @@ void AppMenuButton::trigger() {
     // qCDebug(category) << "AppMenuButton::trigger" << m_buttonIndex;
 
     auto *buttonGroup = qobject_cast<AppMenuButtonGroup *>(parent());
+    Q_ASSERT_X(buttonGroup, "AppMenuButton::trigger", "Parent of AppMenuButton must be an AppMenuButtonGroup");
+    
     if (buttonGroup) {
         buttonGroup->resetNavigationDirection();
         buttonGroup->trigger(m_buttonIndex);
