@@ -62,6 +62,7 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     , m_currentIndex(-1)
     , m_overflowIndex(-1)
     , m_searchIndex(-1)
+    , m_overflowing(false)
     , m_hamburgerMenu(false)
     , m_hovered(false)
     , m_showing(true)
@@ -354,6 +355,7 @@ KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(QPoint pos) const
 
 void AppMenuButtonGroup::resetButtons()
 {
+    m_buttonIndexWaitingForPopup = -1;
     if (buttons().isEmpty()) {
         return;
     }
@@ -476,6 +478,7 @@ void AppMenuButtonGroup::performDebouncedMenuUpdate()
 
 void AppMenuButtonGroup::updateAppMenuModel()
 {
+    m_buttonIndexWaitingForPopup = -1;
     m_search->invalidateCandidates();
     m_cachedWidths.clear();
 
@@ -732,6 +735,7 @@ bool AppMenuButtonGroup::isWaitingForMenu() const
 
 void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
 {
+    m_buttonIndexWaitingForPopup = -1;
     // Stop any caching that may be in progress from a previously opened menu.
     m_appMenuModel->stopCaching();
 
@@ -980,6 +984,7 @@ void AppMenuButtonGroup::updateShowing()
 
 void AppMenuButtonGroup::onMenuAboutToHide()
 {
+    m_buttonIndexWaitingForPopup = -1;
     QMenu *menu = qobject_cast<QMenu *>(sender());
     if (!menu) {
         return;
@@ -1066,7 +1071,7 @@ void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
         }
     }
 
-    if (m_buttonIndexWaitingForPopup == -1 || !m_appMenuModel || !m_appMenuModel->menu()) {
+    if (m_buttonIndexWaitingForPopup < 0 || !m_appMenuModel || !m_appMenuModel->menu()) {
         return;
     }
 
@@ -1158,6 +1163,7 @@ void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
     KDecoration3::DecorationButton *newHoveredButton = buttonAt(pos.toPoint());
 
     if (m_hoveredButton != newHoveredButton) {
+        m_buttonIndexWaitingForPopup = -1;
         m_hoveredButton = newHoveredButton;
 
         if (m_hoveredButton) {
