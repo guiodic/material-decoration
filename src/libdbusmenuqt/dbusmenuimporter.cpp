@@ -54,7 +54,7 @@ static constexpr auto DBUSMENU_PROPERTY_ICON_DATA_HASH = "_dbusmenu_icon_data_ha
 static constexpr int MAX_ACTIONS_PER_MENU = 1000;
 static constexpr int MAX_TOTAL_ACTIONS = 5000;
 
-static QAction *createKdeTitle(QAction *action, QWidget *parent)
+static QAction *createKdeTitle(const QAction *action, QWidget *parent)
 {
     QToolButton *titleWidget = new QToolButton(nullptr);
     QFont font = titleWidget->font();
@@ -138,7 +138,9 @@ public:
         updateAction(action, map);
 
         if (isKdeTitle) {
-            action = createKdeTitle(action, parent);
+            QAction *oldAction = action;
+            action = createKdeTitle(oldAction, parent);
+            oldAction->deleteLater();
         }
 
         return action;
