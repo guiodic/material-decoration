@@ -68,6 +68,7 @@ protected:
 
 AppMenuModel::AppMenuModel(QObject *parent)
     : QObject(parent),
+      m_menuAvailable(false),
       m_serviceWatcher(new QDBusServiceWatcher(this))
 {
     m_serviceWatcher->setConnection(QDBusConnection::sessionBus());
