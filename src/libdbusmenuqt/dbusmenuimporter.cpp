@@ -138,7 +138,9 @@ public:
         updateAction(action, map);
 
         if (isKdeTitle) {
-            action = createKdeTitle(action, parent);
+            QAction *oldAction = action;
+            action = createKdeTitle(oldAction, parent);
+            oldAction->deleteLater();
         }
 
         return action;
