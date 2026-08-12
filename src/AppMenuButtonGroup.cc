@@ -478,7 +478,6 @@ void AppMenuButtonGroup::performDebouncedMenuUpdate()
 
 void AppMenuButtonGroup::updateAppMenuModel()
 {
-    m_buttonIndexWaitingForPopup = -1;
     m_search->invalidateCandidates();
     m_cachedWidths.clear();
 
