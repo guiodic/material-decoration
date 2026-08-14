@@ -213,6 +213,7 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
         return;
     }
     m_searchCandidates.clear();
+    m_searchCandidates.reserve(MAX_SEARCH_CANDIDATES);
     m_candidateTruncationLogged = false;
 
     if (!m_appMenuModel) {
@@ -379,6 +380,13 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
             }
             if (!ancestor->isEnabled()) {
                 isEffectivelyEnabled = false;
+                // Early exit optimization. If an ancestor is disabled and showDisabledActions is false, 
+                // `isEffectivelyEnabled` is set to false, meaning the search candidate will be skipped. 
+                // Immediately break out of the ancestor loop since further iterations cannot change 
+                // this outcome.
+                if (!showDisabledActions) {
+                    break;
+                }
             }
         }
 
@@ -416,8 +424,10 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
                 if (it != matchCache.end()) {
                     text = it.value().text;
                 } else {
+                    // Optimized: If the ancestor is not in matchCache, get the text from the fast
+                    // action text cache directly. We do not insert it into matchCache with a fake
+                    // matched status to prevent polluting match results of other candidates.
                     text = getActionText(ancestor);
-                    matchCache.insert(ancestor, {text, matcher.indexIn(text) != -1});
                 }
                 if (!text.isEmpty()) {
                     currentPath.append(text);
