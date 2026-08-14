@@ -380,6 +380,13 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
             }
             if (!ancestor->isEnabled()) {
                 isEffectivelyEnabled = false;
+                // Early exit optimization. If an ancestor is disabled and showDisabledActions is false, 
+                // `isEffectivelyEnabled` is set to false, meaning the search candidate will be skipped. 
+                // Immediately break out of the ancestor loop since further iterations cannot change 
+                // this outcome.
+                if (!showDisabledActions) {
+                    break;
+                }
             }
         }
 
