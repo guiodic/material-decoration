@@ -213,6 +213,7 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
         return;
     }
     m_searchCandidates.clear();
+    m_searchCandidates.reserve(MAX_SEARCH_CANDIDATES);
     m_candidateTruncationLogged = false;
 
     if (!m_appMenuModel) {
