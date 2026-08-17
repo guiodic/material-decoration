@@ -20,20 +20,7 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
                                             i18n("Right"),
                                             i18n("Hidden")});
 
-    m_ui->buttonSizeComboBox->addItems({i18n("Tiny"),
-                                        i18n("Small"),
-                                        i18n("Default"),
-                                        i18n("Large"),
-                                        i18n("Very Large")});
-
-    m_ui->shadowSizeComboBox->addItems({i18n("None"),
-                                        i18n("Small"),
-                                        i18n("Medium"),
-                                        i18n("Large"),
-                                        i18n("Very Large")});
-
     m_checkboxes.insert(TitleAlignment, m_ui->titleAlignmentCheckBox);
-    m_checkboxes.insert(ButtonSize, m_ui->buttonSizeCheckBox);
     m_checkboxes.insert(CornerRadius, m_ui->cornerRadiusCheckBox);
     m_checkboxes.insert(Opacity, m_ui->opacityCheckBox);
     m_checkboxes.insert(OutlineActive, m_ui->outlineActiveCheckBox);
@@ -44,15 +31,13 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
 
     connect(m_ui->exceptionType, qOverload<int>(&QComboBox::currentIndexChanged), this, &ExceptionDialog::updateChanged);
     connect(m_ui->exceptionEditor, &QLineEdit::textChanged, this, &ExceptionDialog::updateChanged);
-    connect(m_ui->hideTitleBar, &QCheckBox::toggled, this, &ExceptionDialog::updateChanged);
 
     connect(m_ui->titleAlignmentComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &ExceptionDialog::updateChanged);
-    connect(m_ui->buttonSizeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &ExceptionDialog::updateChanged);
     connect(m_ui->cornerRadiusSpinBox, qOverload<int>(&QSpinBox::valueChanged), this, &ExceptionDialog::updateChanged);
     connect(m_ui->activeOpacitySpinBox, qOverload<int>(&QSpinBox::valueChanged), this, &ExceptionDialog::updateChanged);
     connect(m_ui->inactiveOpacitySpinBox, qOverload<int>(&QSpinBox::valueChanged), this, &ExceptionDialog::updateChanged);
     connect(m_ui->outlineActiveVal, &QCheckBox::toggled, this, &ExceptionDialog::updateChanged);
-    connect(m_ui->shadowSizeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &ExceptionDialog::updateChanged);
+    connect(m_ui->hideShadowVal, &QCheckBox::toggled, this, &ExceptionDialog::updateChanged);
     connect(m_ui->menuAlwaysShowVal, &QCheckBox::toggled, this, &ExceptionDialog::updateChanged);
 
     for (auto it = m_checkboxes.begin(); it != m_checkboxes.end(); ++it) {
@@ -61,15 +46,27 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
 
     // Enable/disable sub-controls depending on checkboxes
     connect(m_ui->titleAlignmentCheckBox, &QCheckBox::toggled, m_ui->titleAlignmentComboBox, &QWidget::setEnabled);
-    connect(m_ui->buttonSizeCheckBox, &QCheckBox::toggled, m_ui->buttonSizeComboBox, &QWidget::setEnabled);
     connect(m_ui->cornerRadiusCheckBox, &QCheckBox::toggled, m_ui->cornerRadiusSpinBox, &QWidget::setEnabled);
     connect(m_ui->opacityCheckBox, &QCheckBox::toggled, m_ui->activeOpacitySpinBox, &QWidget::setEnabled);
     connect(m_ui->opacityCheckBox, &QCheckBox::toggled, m_ui->inactiveOpacitySpinBox, &QWidget::setEnabled);
     connect(m_ui->opacityCheckBox, &QCheckBox::toggled, m_ui->labelActiveOpacity, &QWidget::setEnabled);
     connect(m_ui->opacityCheckBox, &QCheckBox::toggled, m_ui->labelInactiveOpacity, &QWidget::setEnabled);
     connect(m_ui->outlineActiveCheckBox, &QCheckBox::toggled, m_ui->outlineActiveVal, &QWidget::setEnabled);
-    connect(m_ui->shadowSizeCheckBox, &QCheckBox::toggled, m_ui->shadowSizeComboBox, &QWidget::setEnabled);
+    connect(m_ui->shadowSizeCheckBox, &QCheckBox::toggled, m_ui->hideShadowVal, &QWidget::setEnabled);
     connect(m_ui->menuAlwaysShowCheckBox, &QCheckBox::toggled, m_ui->menuAlwaysShowVal, &QWidget::setEnabled);
+
+    // Disable "Allineamento del titolo" if "Hide window title bar" is checked
+    connect(m_ui->hideTitleBar, &QCheckBox::toggled, this, [this](bool hideChecked) {
+        if (hideChecked) {
+            m_ui->titleAlignmentCheckBox->setChecked(false);
+            m_ui->titleAlignmentCheckBox->setEnabled(false);
+            m_ui->titleAlignmentComboBox->setEnabled(false);
+        } else {
+            m_ui->titleAlignmentCheckBox->setEnabled(true);
+            m_ui->titleAlignmentComboBox->setEnabled(m_ui->titleAlignmentCheckBox->isChecked());
+        }
+        updateChanged();
+    });
 }
 
 ExceptionDialog::~ExceptionDialog() = default;
@@ -83,27 +80,37 @@ void ExceptionDialog::setException(InternalSettingsPtr exception)
     m_ui->hideTitleBar->setChecked(m_exception->hideTitleBar());
 
     m_ui->titleAlignmentComboBox->setCurrentIndex(m_exception->titleAlignment());
-    m_ui->buttonSizeComboBox->setCurrentIndex(m_exception->buttonSize());
     m_ui->cornerRadiusSpinBox->setValue(m_exception->cornerRadius());
     m_ui->activeOpacitySpinBox->setValue(qRound(m_exception->activeOpacity() * 100));
     m_ui->inactiveOpacitySpinBox->setValue(qRound(m_exception->inactiveOpacity() * 100));
     m_ui->outlineActiveVal->setChecked(m_exception->outlineActive());
-    m_ui->shadowSizeComboBox->setCurrentIndex(m_exception->shadowSize());
+
+    // "Don't draw the shadow" check
+    m_ui->hideShadowVal->setChecked(m_exception->shadowSize() == InternalSettings::ShadowNone);
+
     m_ui->menuAlwaysShowVal->setChecked(m_exception->menuAlwaysShow());
 
     for (auto it = m_checkboxes.begin(); it != m_checkboxes.end(); ++it) {
         it.value()->setChecked(m_exception->mask() & it.key());
     }
 
-    m_ui->titleAlignmentComboBox->setEnabled(m_ui->titleAlignmentCheckBox->isChecked());
-    m_ui->buttonSizeComboBox->setEnabled(m_ui->buttonSizeCheckBox->isChecked());
+    const bool hideChecked = m_ui->hideTitleBar->isChecked();
+    if (hideChecked) {
+        m_ui->titleAlignmentCheckBox->setChecked(false);
+        m_ui->titleAlignmentCheckBox->setEnabled(false);
+        m_ui->titleAlignmentComboBox->setEnabled(false);
+    } else {
+        m_ui->titleAlignmentCheckBox->setEnabled(true);
+        m_ui->titleAlignmentComboBox->setEnabled(m_ui->titleAlignmentCheckBox->isChecked());
+    }
+
     m_ui->cornerRadiusSpinBox->setEnabled(m_ui->cornerRadiusCheckBox->isChecked());
     m_ui->activeOpacitySpinBox->setEnabled(m_ui->opacityCheckBox->isChecked());
     m_ui->inactiveOpacitySpinBox->setEnabled(m_ui->opacityCheckBox->isChecked());
     m_ui->labelActiveOpacity->setEnabled(m_ui->opacityCheckBox->isChecked());
     m_ui->labelInactiveOpacity->setEnabled(m_ui->opacityCheckBox->isChecked());
     m_ui->outlineActiveVal->setEnabled(m_ui->outlineActiveCheckBox->isChecked());
-    m_ui->shadowSizeComboBox->setEnabled(m_ui->shadowSizeCheckBox->isChecked());
+    m_ui->hideShadowVal->setEnabled(m_ui->shadowSizeCheckBox->isChecked());
     m_ui->menuAlwaysShowVal->setEnabled(m_ui->menuAlwaysShowCheckBox->isChecked());
 
     setChanged(false);
@@ -116,12 +123,18 @@ void ExceptionDialog::save()
     m_exception->setHideTitleBar(m_ui->hideTitleBar->isChecked());
 
     m_exception->setTitleAlignment(m_ui->titleAlignmentComboBox->currentIndex());
-    m_exception->setButtonSize(m_ui->buttonSizeComboBox->currentIndex());
     m_exception->setCornerRadius(m_ui->cornerRadiusSpinBox->value());
     m_exception->setActiveOpacity(static_cast<double>(m_ui->activeOpacitySpinBox->value()) / 100.0);
     m_exception->setInactiveOpacity(static_cast<double>(m_ui->inactiveOpacitySpinBox->value()) / 100.0);
     m_exception->setOutlineActive(m_ui->outlineActiveVal->isChecked());
-    m_exception->setShadowSize(m_ui->shadowSizeComboBox->currentIndex());
+
+    // "Don't draw the shadow" setting
+    if (m_ui->hideShadowVal->isChecked()) {
+        m_exception->setShadowSize(InternalSettings::ShadowNone);
+    } else {
+        m_exception->setShadowSize(InternalSettings::ShadowVeryLarge); // Standard active setting
+    }
+
     m_exception->setMenuAlwaysShow(m_ui->menuAlwaysShowVal->isChecked());
 
     unsigned int mask = None;
@@ -153,16 +166,17 @@ void ExceptionDialog::updateChanged()
         modified = true;
     } else if (m_ui->titleAlignmentCheckBox->isChecked() && m_exception->titleAlignment() != m_ui->titleAlignmentComboBox->currentIndex()) {
         modified = true;
-    } else if (m_ui->buttonSizeCheckBox->isChecked() && m_exception->buttonSize() != m_ui->buttonSizeComboBox->currentIndex()) {
-        modified = true;
     } else if (m_ui->cornerRadiusCheckBox->isChecked() && m_exception->cornerRadius() != m_ui->cornerRadiusSpinBox->value()) {
         modified = true;
     } else if (m_ui->opacityCheckBox->isChecked() && (m_exception->activeOpacity() != static_cast<double>(m_ui->activeOpacitySpinBox->value()) / 100.0 || m_exception->inactiveOpacity() != static_cast<double>(m_ui->inactiveOpacitySpinBox->value()) / 100.0)) {
         modified = true;
     } else if (m_ui->outlineActiveCheckBox->isChecked() && m_exception->outlineActive() != m_ui->outlineActiveVal->isChecked()) {
         modified = true;
-    } else if (m_ui->shadowSizeCheckBox->isChecked() && m_exception->shadowSize() != m_ui->shadowSizeComboBox->currentIndex()) {
-        modified = true;
+    } else if (m_ui->shadowSizeCheckBox->isChecked()) {
+        int targetShadowSize = m_ui->hideShadowVal->isChecked() ? InternalSettings::ShadowNone : InternalSettings::ShadowVeryLarge;
+        if (m_exception->shadowSize() != targetShadowSize) {
+            modified = true;
+        }
     } else if (m_ui->menuAlwaysShowCheckBox->isChecked() && m_exception->menuAlwaysShow() != m_ui->menuAlwaysShowVal->isChecked()) {
         modified = true;
     } else {

@@ -35,6 +35,7 @@ void SettingsProvider::reconfigure()
         m_defaultSettings->setCurrentGroup(QStringLiteral("Windeco"));
     }
 
+    m_config->reparseConfiguration();
     m_defaultSettings->load();
 
     ExceptionList exceptions;

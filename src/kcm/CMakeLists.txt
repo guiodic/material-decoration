@@ -55,6 +55,8 @@ target_link_libraries(materialdecoration_kcm
 target_include_directories(materialdecoration_kcm
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_BINARY_DIR}/src
 )
 
 install(TARGETS materialdecoration_kcm DESTINATION ${KDE_INSTALL_PLUGINDIR}/org.kde.kdecoration3.kcm/)
