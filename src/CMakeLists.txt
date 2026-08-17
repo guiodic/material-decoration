@@ -115,13 +115,22 @@ if(KWinX11_FOUND)
 endif()
 
 # Core library with shared code (e.g., settings)
-set(core_SRCS)
+set(core_SRCS
+    ExceptionList.cc
+    SettingsProvider.cc
+)
 kconfig_add_kcfg_files(core_SRCS InternalSettings.kcfgc)
 add_library(materialdecoration_core STATIC ${core_SRCS})
+set_target_properties(materialdecoration_core PROPERTIES AUTOMOC ON)
+target_include_directories(materialdecoration_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(materialdecoration_core PUBLIC
     KF6::ConfigCore
     KF6::ConfigGui
     KF6::ConfigWidgets
+    Qt6::Core
+    Qt6::Gui
+    Qt6::DBus
+    KDecoration3::KDecoration
 )
 
 set_property(TARGET materialdecoration_core PROPERTY POSITION_INDEPENDENT_CODE ON)

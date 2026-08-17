@@ -4,6 +4,7 @@
 #include <QObject>
 
 #include "../InternalSettings.h"
+#include "../ExceptionList.h"
 
 #include <ui_config.h>
 
@@ -23,6 +24,7 @@ MaterialDecorationKCM::MaterialDecorationKCM(QObject *parent, const KPluginMetaD
     : KCModule(qobject_cast<QWidget*>(parent), data)
     , m_ui(std::make_unique<Ui::Config>())
     , m_settings(std::make_unique<Material::InternalSettings>())
+    , m_config(KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc")))
 {
     m_ui->setupUi(widget());
 
@@ -124,12 +126,19 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_LongPressDuration, qOverload<int>(&QSpinBox::valueChanged), this, &MaterialDecorationKCM::updateChanged);
 
     connect(m_ui->kcfg_DragFromButtonsEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
+
+    connect(m_ui->exceptions, &Material::ExceptionListWidget::changed, this, &MaterialDecorationKCM::updateChanged);
 }
 
 void MaterialDecorationKCM::load()
 {
     m_settings->load();
     updateUI();
+
+    Material::ExceptionList exceptions;
+    exceptions.readConfig(m_config);
+    m_ui->exceptions->setExceptions(exceptions.get());
+
     updateChanged();
 }
 
@@ -215,6 +224,10 @@ void MaterialDecorationKCM::save()
     m_settings->setDragFromButtonsEnabled(m_ui->kcfg_DragFromButtonsEnabled->isChecked());
 
     m_settings->save();
+
+    Material::InternalSettingsList exceptions(m_ui->exceptions->exceptions());
+    Material::ExceptionList(exceptions).writeConfig(m_config);
+    m_config->sync();
     QDBusConnection::sessionBus().call(QDBusMessage::createMethodCall(QStringLiteral("org.kde.KWin"),
                                                                      QStringLiteral("/KWin"),
                                                                      QStringLiteral("org.kde.KWin"),
@@ -304,6 +317,8 @@ bool MaterialDecorationKCM::isChanged() const
     if (m_ui->kcfg_LongPressEnabled->isChecked() != m_settings->longPressEnabled()) return true;
     if (m_ui->kcfg_LongPressDuration->value() != m_settings->longPressDuration()) return true;
     if (m_ui->kcfg_DragFromButtonsEnabled->isChecked() != m_settings->dragFromButtonsEnabled()) return true;
+
+    if (m_ui->exceptions->isChanged()) return true;
 
     return false;
 }

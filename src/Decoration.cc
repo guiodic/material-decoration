@@ -30,6 +30,7 @@
 #include "Button.h"
 #include "TextButton.h"
 #include "InternalSettings.h"
+#include "SettingsProvider.h"
 #include "Material.h"
 #include "PixelSnapper.h"
 
@@ -257,7 +258,7 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 
 bool Decoration::init()
 {    
-    m_internalSettings = QSharedPointer<InternalSettings>(new InternalSettings());
+    m_internalSettings = SettingsProvider::self()->internalSettings(this);
     m_bottomCornersFlag = m_internalSettings->bottomCornerRadiusFlag();
         
     const auto *decoratedClient = window();
@@ -299,7 +300,13 @@ bool Decoration::init()
             this, &Decoration::onShadedChanged);
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::captionChanged,
-            this, repaintTitleBar);
+            this, [this, repaintTitleBar]() {
+                m_internalSettings = SettingsProvider::self()->internalSettings(this);
+                m_bottomCornersFlag = m_internalSettings->bottomCornerRadiusFlag();
+                updateBordersCornersBlurShadow();
+                updateTitleBar();
+                repaintTitleBar();
+            });
     
     connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
         this, &Decoration::onActiveChanged);
@@ -384,7 +391,8 @@ bool Decoration::init()
 void Decoration::reconfigure()
 {
     resetDragMove();
-    m_internalSettings->load();
+    SettingsProvider::self()->reconfigure();
+    m_internalSettings = SettingsProvider::self()->internalSettings(this);
     m_bottomCornersFlag = m_internalSettings->bottomCornerRadiusFlag();
 
     m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
@@ -865,6 +873,9 @@ qreal Decoration::buttonPadding() const
 
 qreal Decoration::titleBarHeight() const
 {
+    if (m_internalSettings && m_internalSettings->hideTitleBar()) {
+        return 0;
+    }
     const QFontMetricsF fontMetrics(settings()->font());
     return buttonPadding()*2 + fontMetrics.height();
 }

@@ -428,6 +428,16 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="exceptionsTab">
+      <attribute name="title">
+       <string>Window-Specific Overrides</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayoutExceptions">
+       <item>
+        <widget class="Material::ExceptionListWidget" name="exceptions" native="true"/>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>
@@ -450,6 +460,12 @@
    <class>KColorButton</class>
    <extends>QPushButton</extends>
    <header>kcolorbutton.h</header>
+  </customwidget>
+  <customwidget>
+   <class>Material::ExceptionListWidget</class>
+   <extends>QWidget</extends>
+   <header>ExceptionListWidget.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -21,13 +21,20 @@ find_package(KF6 REQUIRED COMPONENTS
 
 set(KCM_SRCS
     kcm.cpp
+    DetectDialog.cc
+    ExceptionModel.cc
+    ExceptionDialog.cc
+    ExceptionListWidget.cc
 )
 
 ki18n_wrap_ui(KCM_SRCS
     config.ui
+    ExceptionDialog.ui
+    ExceptionListWidget.ui
 )
 
 add_library(materialdecoration_kcm MODULE ${KCM_SRCS})
+set_target_properties(materialdecoration_kcm PROPERTIES AUTOMOC ON)
 
 target_link_libraries(materialdecoration_kcm
     PUBLIC

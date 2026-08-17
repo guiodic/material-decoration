@@ -1,6 +1,7 @@
 #pragma once
 
 #include <KCModule>
+#include <KSharedConfig>
 #include <memory>
 
 class KConfig;
@@ -35,6 +36,7 @@ private:
 private:
     std::unique_ptr<Ui::Config> m_ui;
     std::unique_ptr<Material::InternalSettings> m_settings;
+    KSharedConfigPtr m_config;
 
     void setupConnections();
     bool isChanged() const;
