@@ -21,7 +21,8 @@ enum ExceptionMask {
     OutlineActive = 1 << 5,
     ShadowSize = 1 << 6,
     MenuAlwaysShow = 1 << 7,
-    All = TitleAlignment | ButtonSize | CornerRadius | Opacity | HideTitleBar | OutlineActive | ShadowSize | MenuAlwaysShow
+    HamburgerMenu = 1 << 8,
+    All = TitleAlignment | ButtonSize | CornerRadius | Opacity | HideTitleBar | OutlineActive | ShadowSize | MenuAlwaysShow | HamburgerMenu
 };
 
 class ExceptionList

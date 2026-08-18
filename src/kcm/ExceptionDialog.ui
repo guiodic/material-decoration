@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>520</width>
-    <height>480</height>
+    <height>500</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -174,9 +174,16 @@
        </widget>
       </item>
       <item row="6" column="0" colspan="2">
-       <widget class="QCheckBox" name="hideMenuVal">
+       <widget class="QCheckBox" name="showMenuOnHoverVal">
         <property name="text">
-         <string>Don't show application menu</string>
+         <string>Show the menu on mouse over</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0" colspan="2">
+       <widget class="QCheckBox" name="hamburgerMenuVal">
+        <property name="text">
+         <string>Use hamburger menu</string>
         </property>
        </widget>
       </item>

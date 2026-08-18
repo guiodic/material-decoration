@@ -35,7 +35,8 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
     connect(m_ui->inactiveOpacitySpinBox, qOverload<int>(&QSpinBox::valueChanged), this, &ExceptionDialog::updateChanged);
     connect(m_ui->outlineActiveVal, &QCheckBox::toggled, this, &ExceptionDialog::updateChanged);
     connect(m_ui->hideShadowVal, &QCheckBox::toggled, this, &ExceptionDialog::updateChanged);
-    connect(m_ui->hideMenuVal, &QCheckBox::toggled, this, &ExceptionDialog::updateChanged);
+    connect(m_ui->showMenuOnHoverVal, &QCheckBox::toggled, this, &ExceptionDialog::updateChanged);
+    connect(m_ui->hamburgerMenuVal, &QCheckBox::toggled, this, &ExceptionDialog::updateChanged);
 
     for (auto it = m_checkboxes.begin(); it != m_checkboxes.end(); ++it) {
         connect(it.value(), &QCheckBox::toggled, this, &ExceptionDialog::updateChanged);
@@ -80,7 +81,8 @@ void ExceptionDialog::setException(InternalSettingsPtr exception)
 
     m_ui->outlineActiveVal->setChecked((m_exception->mask() & OutlineActive) && m_exception->outlineActive());
     m_ui->hideShadowVal->setChecked((m_exception->mask() & ShadowSize) && m_exception->shadowSize() == InternalSettings::ShadowNone);
-    m_ui->hideMenuVal->setChecked((m_exception->mask() & MenuAlwaysShow) && m_exception->menuAlwaysShow() == false);
+    m_ui->showMenuOnHoverVal->setChecked((m_exception->mask() & MenuAlwaysShow) && m_exception->menuAlwaysShow() == false);
+    m_ui->hamburgerMenuVal->setChecked((m_exception->mask() & HamburgerMenu) && m_exception->hamburgerMenu());
 
     for (auto it = m_checkboxes.begin(); it != m_checkboxes.end(); ++it) {
         it.value()->setChecked(m_exception->mask() & it.key());
@@ -137,11 +139,18 @@ void ExceptionDialog::save()
         m_exception->setShadowSize(InternalSettings::ShadowVeryLarge);
     }
 
-    if (m_ui->hideMenuVal->isChecked()) {
+    if (m_ui->showMenuOnHoverVal->isChecked()) {
         mask |= MenuAlwaysShow;
         m_exception->setMenuAlwaysShow(false);
     } else {
         m_exception->setMenuAlwaysShow(true);
+    }
+
+    if (m_ui->hamburgerMenuVal->isChecked()) {
+        mask |= HamburgerMenu;
+        m_exception->setHamburgerMenu(true);
+    } else {
+        m_exception->setHamburgerMenu(false);
     }
 
     m_exception->setMask(mask);
@@ -175,7 +184,9 @@ void ExceptionDialog::updateChanged()
         modified = true;
     } else if (m_ui->hideShadowVal->isChecked() != ((m_exception->mask() & ShadowSize) && m_exception->shadowSize() == InternalSettings::ShadowNone)) {
         modified = true;
-    } else if (m_ui->hideMenuVal->isChecked() != ((m_exception->mask() & MenuAlwaysShow) && m_exception->menuAlwaysShow() == false)) {
+    } else if (m_ui->showMenuOnHoverVal->isChecked() != ((m_exception->mask() & MenuAlwaysShow) && m_exception->menuAlwaysShow() == false)) {
+        modified = true;
+    } else if (m_ui->hamburgerMenuVal->isChecked() != ((m_exception->mask() & HamburgerMenu) && m_exception->hamburgerMenu())) {
         modified = true;
     } else {
         for (auto it = m_checkboxes.begin(); it != m_checkboxes.end(); ++it) {

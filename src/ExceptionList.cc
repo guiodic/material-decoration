@@ -50,6 +50,9 @@ void ExceptionList::readConfig(KSharedConfig::Ptr config)
         if (exception.mask() & MenuAlwaysShow) {
             configuration->setMenuAlwaysShow(exception.menuAlwaysShow());
         }
+        if (exception.mask() & HamburgerMenu) {
+            configuration->setHamburgerMenu(exception.hamburgerMenu());
+        }
 
         m_exceptions.append(configuration);
     }
@@ -89,7 +92,8 @@ void ExceptionList::writeConfig(KCoreConfigSkeleton *skeleton, KConfig *config, 
         QStringLiteral("InactiveOpacity"),
         QStringLiteral("OutlineActive"),
         QStringLiteral("ShadowSize"),
-        QStringLiteral("MenuAlwaysShow")
+        QStringLiteral("MenuAlwaysShow"),
+        QStringLiteral("HamburgerMenu")
     };
 
     for (const auto &key : keys) {
