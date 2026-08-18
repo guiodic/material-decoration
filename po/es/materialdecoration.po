@@ -219,3 +219,90 @@ msgstr "Dibujar un contorno fino alrededor de la ventana"
 
 msgid "Show window title on mouse over"
 msgstr "Mostrar el título de la ventana al pasar el ratón"
+
+msgid "Window-Specific Overrides"
+msgstr "Excepciones para ventanas específicas"
+
+msgid "Window Matching"
+msgstr "Coincidencia de ventana"
+
+msgid "Matching type:"
+msgstr "Tipo de coincidencia:"
+
+msgid "Window Class Name"
+msgstr "Nombre de la clase de ventana"
+
+msgid "Window Title"
+msgstr "Título de la ventana"
+
+msgid "Regular expression:"
+msgstr "Expresión regular:"
+
+msgid "Detect Window Properties"
+msgstr "Detectar propiedades de la ventana"
+
+msgid "Properties Overrides"
+msgstr "Sustitución de propiedades"
+
+msgid "Hide window title bar"
+msgstr "Ocultar barra de título de la ventana"
+
+msgid "Active / Inactive opacity"
+msgstr "Opacidad activa / inactiva"
+
+msgid "Active:"
+msgstr "Activa:"
+
+msgid "Inactive:"
+msgstr "Inactiva:"
+
+msgid "Paint a thin outline around window"
+msgstr "Dibujar un contorno fino alrededor de la ventana"
+
+msgid "Don't draw the shadow"
+msgstr "No dibujar la sombra"
+
+msgid "Show the menu on mouse over"
+msgstr "Mostrar el menú al pasar el ratón"
+
+msgid "Add..."
+msgstr "Añadir..."
+
+msgid "Edit..."
+msgstr "Editar..."
+
+msgid "Remove"
+msgstr "Eliminar"
+
+msgid "Move Up"
+msgstr "Mover arriba"
+
+msgid "Move Down"
+msgstr "Mover abajo"
+
+msgid "New Window-Specific Override"
+msgstr "Nueva excepción para ventana específica"
+
+msgid "Edit Window-Specific Override"
+msgstr "Editar excepción para ventana específica"
+
+msgid "Remove selected window-specific override?"
+msgstr "¿Eliminar la excepción seleccionada?"
+
+msgid "Question - Material Settings"
+msgstr "Pregunta - Configuración de Material"
+
+msgid "Warning - Material Settings"
+msgstr "Advertencia - Configuración de Material"
+
+msgid "Regular Expression syntax is incorrect"
+msgstr "La sintaxis de la expresión regular es incorrecta"
+
+msgid "Enable/disable this exception"
+msgstr "Activar/desactivar esta excepción"
+
+msgid "Exception Type"
+msgstr "Tipo de excepción"
+
+msgid "Regular Expression"
+msgstr "Expresión regular"

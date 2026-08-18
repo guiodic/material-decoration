@@ -219,3 +219,90 @@ msgstr "Disegna un sottile contorno attorno alla finestra"
 
 msgid "Show window title on mouse over"
 msgstr "Mostra il titolo della finestra al passaggio del mouse"
+
+msgid "Window-Specific Overrides"
+msgstr "Eccezioni per finestre specifiche"
+
+msgid "Window Matching"
+msgstr "Corrispondenza della finestra"
+
+msgid "Matching type:"
+msgstr "Tipo di corrispondenza:"
+
+msgid "Window Class Name"
+msgstr "Nome della classe della finestra"
+
+msgid "Window Title"
+msgstr "Titolo della finestra"
+
+msgid "Regular expression:"
+msgstr "Espressione regolare:"
+
+msgid "Detect Window Properties"
+msgstr "Rileva proprietà della finestra"
+
+msgid "Properties Overrides"
+msgstr "Riscritura delle proprietà"
+
+msgid "Hide window title bar"
+msgstr "Nascondi la barra del titolo della finestra"
+
+msgid "Active / Inactive opacity"
+msgstr "Opacità attiva / inattiva"
+
+msgid "Active:"
+msgstr "Attiva:"
+
+msgid "Inactive:"
+msgstr "Inattiva:"
+
+msgid "Paint a thin outline around window"
+msgstr "Disegna un sottile contorno attorno alla finestra"
+
+msgid "Don't draw the shadow"
+msgstr "Non disegnare l'ombra"
+
+msgid "Show the menu on mouse over"
+msgstr "Mostra il menu al passaggio del mouse"
+
+msgid "Add..."
+msgstr "Aggiungi..."
+
+msgid "Edit..."
+msgstr "Modifica..."
+
+msgid "Remove"
+msgstr "Rimuovi"
+
+msgid "Move Up"
+msgstr "Sposta su"
+
+msgid "Move Down"
+msgstr "Sposta giù"
+
+msgid "New Window-Specific Override"
+msgstr "Nuova eccezione per finestra specifica"
+
+msgid "Edit Window-Specific Override"
+msgstr "Modifica eccezione per finestra specifica"
+
+msgid "Remove selected window-specific override?"
+msgstr "Rimuovere l'eccezione per la finestra selezionata?"
+
+msgid "Question - Material Settings"
+msgstr "Domanda - Impostazioni Material"
+
+msgid "Warning - Material Settings"
+msgstr "Avviso - Impostazioni Material"
+
+msgid "Regular Expression syntax is incorrect"
+msgstr "La sintassi dell'espressione regolare non è corretta"
+
+msgid "Enable/disable this exception"
+msgstr "Abilita/disabilita questa eccezione"
+
+msgid "Exception Type"
+msgstr "Tipo di eccezione"
+
+msgid "Regular Expression"
+msgstr "Espressione regolare"

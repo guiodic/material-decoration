@@ -219,3 +219,90 @@ msgstr "在窗口周围绘制细轮廓"
 
 msgid "Show window title on mouse over"
 msgstr "鼠标悬停时显示窗口标题"
+
+msgid "Window-Specific Overrides"
+msgstr "特定窗口覆盖设置"
+
+msgid "Window Matching"
+msgstr "窗口匹配"
+
+msgid "Matching type:"
+msgstr "匹配类型："
+
+msgid "Window Class Name"
+msgstr "窗口类名"
+
+msgid "Window Title"
+msgstr "窗口标题"
+
+msgid "Regular expression:"
+msgstr "正则表达式："
+
+msgid "Detect Window Properties"
+msgstr "检测窗口属性"
+
+msgid "Properties Overrides"
+msgstr "属性覆盖"
+
+msgid "Hide window title bar"
+msgstr "隐藏窗口标题栏"
+
+msgid "Active / Inactive opacity"
+msgstr "活动/非活动不透明度"
+
+msgid "Active:"
+msgstr "活动："
+
+msgid "Inactive:"
+msgstr "非活动："
+
+msgid "Paint a thin outline around window"
+msgstr "在窗口周围绘制细轮廓"
+
+msgid "Don't draw the shadow"
+msgstr "不绘制阴影"
+
+msgid "Show the menu on mouse over"
+msgstr "鼠标悬停时显示菜单"
+
+msgid "Add..."
+msgstr "添加..."
+
+msgid "Edit..."
+msgstr "编辑..."
+
+msgid "Remove"
+msgstr "删除"
+
+msgid "Move Up"
+msgstr "上移"
+
+msgid "Move Down"
+msgstr "下移"
+
+msgid "New Window-Specific Override"
+msgstr "新建特定窗口覆盖"
+
+msgid "Edit Window-Specific Override"
+msgstr "编辑特定窗口覆盖"
+
+msgid "Remove selected window-specific override?"
+msgstr "删除所选的特定窗口覆盖？"
+
+msgid "Question - Material Settings"
+msgstr "问题 - Material 设置"
+
+msgid "Warning - Material Settings"
+msgstr "警告 - Material 设置"
+
+msgid "Regular Expression syntax is incorrect"
+msgstr "正则表达式语法不正确"
+
+msgid "Enable/disable this exception"
+msgstr "启用/禁用此例外"
+
+msgid "Exception Type"
+msgstr "例外类型"
+
+msgid "Regular Expression"
+msgstr "正则表达式"

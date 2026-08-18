@@ -192,3 +192,90 @@ msgstr ""
 
 msgid "Show window title on mouse over"
 msgstr ""
+
+msgid "Window-Specific Overrides"
+msgstr ""
+
+msgid "Window Matching"
+msgstr ""
+
+msgid "Matching type:"
+msgstr ""
+
+msgid "Window Class Name"
+msgstr ""
+
+msgid "Window Title"
+msgstr ""
+
+msgid "Regular expression:"
+msgstr ""
+
+msgid "Detect Window Properties"
+msgstr ""
+
+msgid "Properties Overrides"
+msgstr ""
+
+msgid "Hide window title bar"
+msgstr ""
+
+msgid "Active / Inactive opacity"
+msgstr ""
+
+msgid "Active:"
+msgstr ""
+
+msgid "Inactive:"
+msgstr ""
+
+msgid "Paint a thin outline around window"
+msgstr ""
+
+msgid "Don't draw the shadow"
+msgstr ""
+
+msgid "Show the menu on mouse over"
+msgstr ""
+
+msgid "Add..."
+msgstr ""
+
+msgid "Edit..."
+msgstr ""
+
+msgid "Remove"
+msgstr ""
+
+msgid "Move Up"
+msgstr ""
+
+msgid "Move Down"
+msgstr ""
+
+msgid "New Window-Specific Override"
+msgstr ""
+
+msgid "Edit Window-Specific Override"
+msgstr ""
+
+msgid "Remove selected window-specific override?"
+msgstr ""
+
+msgid "Question - Material Settings"
+msgstr ""
+
+msgid "Warning - Material Settings"
+msgstr ""
+
+msgid "Regular Expression syntax is incorrect"
+msgstr ""
+
+msgid "Enable/disable this exception"
+msgstr ""
+
+msgid "Exception Type"
+msgstr ""
+
+msgid "Regular Expression"
+msgstr ""

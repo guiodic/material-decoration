@@ -219,3 +219,90 @@ msgstr "Dessiner un contour fin autour de la fenêtre"
 
 msgid "Show window title on mouse over"
 msgstr "Afficher le titre de la fenêtre au survol de la souris"
+
+msgid "Window-Specific Overrides"
+msgstr "Exceptions pour fenêtres spécifiques"
+
+msgid "Window Matching"
+msgstr "Correspondance de fenêtre"
+
+msgid "Matching type:"
+msgstr "Type de correspondance :"
+
+msgid "Window Class Name"
+msgstr "Nom de classe de fenêtre"
+
+msgid "Window Title"
+msgstr "Titre de la fenêtre"
+
+msgid "Regular expression:"
+msgstr "Expression régulière :"
+
+msgid "Detect Window Properties"
+msgstr "Détecter les propriétés de la fenêtre"
+
+msgid "Properties Overrides"
+msgstr "Substitution de propriétés"
+
+msgid "Hide window title bar"
+msgstr "Masquer la barre de titre de la fenêtre"
+
+msgid "Active / Inactive opacity"
+msgstr "Opacité active / inactive"
+
+msgid "Active:"
+msgstr "Active :"
+
+msgid "Inactive:"
+msgstr "Inactive :"
+
+msgid "Paint a thin outline around window"
+msgstr "Dessiner un contour fin autour de la fenêtre"
+
+msgid "Don't draw the shadow"
+msgstr "Ne pas dessiner l'ombre"
+
+msgid "Show the menu on mouse over"
+msgstr "Afficher le menu au survol de la souris"
+
+msgid "Add..."
+msgstr "Ajouter..."
+
+msgid "Edit..."
+msgstr "Modifier..."
+
+msgid "Remove"
+msgstr "Supprimer"
+
+msgid "Move Up"
+msgstr "Monter"
+
+msgid "Move Down"
+msgstr "Descendre"
+
+msgid "New Window-Specific Override"
+msgstr "Nouvelle exception pour fenêtre spécifique"
+
+msgid "Edit Window-Specific Override"
+msgstr "Modifier l'exception pour fenêtre spécifique"
+
+msgid "Remove selected window-specific override?"
+msgstr "Supprimer l'exception sélectionnée ?"
+
+msgid "Question - Material Settings"
+msgstr "Question - Paramètres Material"
+
+msgid "Warning - Material Settings"
+msgstr "Avertissement - Paramètres Material"
+
+msgid "Regular Expression syntax is incorrect"
+msgstr "La syntaxe de l'expression régulière est incorrecte"
+
+msgid "Enable/disable this exception"
+msgstr "Activer/désactiver cette exception"
+
+msgid "Exception Type"
+msgstr "Type d'exception"
+
+msgid "Regular Expression"
+msgstr "Expression régulière"

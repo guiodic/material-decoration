@@ -219,3 +219,90 @@ msgstr "Een dunne omtrek om het venster tekenen"
 
 msgid "Show window title on mouse over"
 msgstr "Venstertitel tonen bij aanwijzen met muis"
+
+msgid "Window-Specific Overrides"
+msgstr "Vensterspecifieke instellingen"
+
+msgid "Window Matching"
+msgstr "Vensterovereenkomst"
+
+msgid "Matching type:"
+msgstr "Type overeenkomst:"
+
+msgid "Window Class Name"
+msgstr "Vensterklassenaam"
+
+msgid "Window Title"
+msgstr "Venstertitel"
+
+msgid "Regular expression:"
+msgstr "Reguliere expressie:"
+
+msgid "Detect Window Properties"
+msgstr "Venstereigenschappen detecteren"
+
+msgid "Properties Overrides"
+msgstr "Eigenschappen overschrijven"
+
+msgid "Hide window title bar"
+msgstr "Venstertitelbalk verbergen"
+
+msgid "Active / Inactive opacity"
+msgstr "Actieve / inactieve dekking"
+
+msgid "Active:"
+msgstr "Actief:"
+
+msgid "Inactive:"
+msgstr "Inactief:"
+
+msgid "Paint a thin outline around window"
+msgstr "Een dunne omtrek om het venster tekenen"
+
+msgid "Don't draw the shadow"
+msgstr "Geen schaduw tekenen"
+
+msgid "Show the menu on mouse over"
+msgstr "Menu tonen bij aanwijzen met muis"
+
+msgid "Add..."
+msgstr "Toevoegen..."
+
+msgid "Edit..."
+msgstr "Bewerken..."
+
+msgid "Remove"
+msgstr "Verwijderen"
+
+msgid "Move Up"
+msgstr "Omhoog"
+
+msgid "Move Down"
+msgstr "Omlaag"
+
+msgid "New Window-Specific Override"
+msgstr "Nieuwe vensterspecifieke instelling"
+
+msgid "Edit Window-Specific Override"
+msgstr "Vensterspecifieke instelling bewerken"
+
+msgid "Remove selected window-specific override?"
+msgstr "Geselecteerde vensterspecifieke instelling verwijderen?"
+
+msgid "Question - Material Settings"
+msgstr "Vraag - Material-instellingen"
+
+msgid "Warning - Material Settings"
+msgstr "Waarschuwing - Material-instellingen"
+
+msgid "Regular Expression syntax is incorrect"
+msgstr "De syntaxis van de reguliere expressie is onjuist"
+
+msgid "Enable/disable this exception"
+msgstr "Deze uitzondering in-/uitschakelen"
+
+msgid "Exception Type"
+msgstr "Type uitzondering"
+
+msgid "Regular Expression"
+msgstr "Reguliere expressie"
