@@ -125,6 +125,14 @@ void ExceptionModel::add(InternalSettingsPtr exception)
     endInsertRows();
 }
 
+void ExceptionModel::update(InternalSettingsPtr exception)
+{
+    int row = m_exceptions.indexOf(exception);
+    if (row >= 0) {
+        Q_EMIT dataChanged(createIndex(row, 0), createIndex(row, nColumns - 1));
+    }
+}
+
 void ExceptionModel::remove(const InternalSettingsList &exceptions)
 {
     for (const InternalSettingsPtr &exception : exceptions) {

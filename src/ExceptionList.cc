@@ -43,8 +43,10 @@ void ExceptionList::readConfig(KSharedConfig::Ptr config)
         configuration->setExceptionType(exception.exceptionType());
         configuration->setExceptionPattern(exception.exceptionPattern());
         configuration->setMask(exception.mask());
-        configuration->setHideTitleBar(exception.hideTitleBar());
 
+        if (exception.mask() & HideTitleBar) {
+            configuration->setHideTitleBar(exception.hideTitleBar());
+        }
         if (exception.mask() & TitleAlignment) {
             configuration->setTitleAlignment(exception.titleAlignment());
         }

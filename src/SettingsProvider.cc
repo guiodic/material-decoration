@@ -18,7 +18,6 @@
 #include "SettingsProvider.h"
 #include "Decoration.h"
 #include <KDecoration3/DecoratedWindow>
-#include <QRegularExpression>
 #include <utility>
 
 namespace Material
@@ -58,6 +57,13 @@ void SettingsProvider::reconfigure()
     ExceptionList exceptions;
     exceptions.readConfig(m_config);
     m_exceptions = exceptions.get();
+
+    m_compiledExceptions.clear();
+    for (const auto &ex : std::as_const(m_exceptions)) {
+        if (ex->enabled() && !ex->exceptionPattern().isEmpty()) {
+            m_compiledExceptions.push_back({ex, QRegularExpression(ex->exceptionPattern())});
+        }
+    }
 }
 
 InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration) const
@@ -69,12 +75,9 @@ InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration) c
     QString windowTitle;
     QString windowClass;
 
-    for (const auto &internalSettings : std::as_const(m_exceptions)) {
-        if (!internalSettings->enabled()) {
-            continue;
-        }
-
-        if (internalSettings->exceptionPattern().isEmpty()) {
+    for (const auto &item : m_compiledExceptions) {
+        const auto &internalSettings = item.settings;
+        if (!internalSettings->enabled() || internalSettings->exceptionPattern().isEmpty()) {
             continue;
         }
 
@@ -91,8 +94,7 @@ InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration) c
         }
         }
 
-        QRegularExpression rx(internalSettings->exceptionPattern());
-        if (rx.match(value).hasMatch()) {
+        if (item.regex.match(value).hasMatch()) {
             return internalSettings;
         }
     }

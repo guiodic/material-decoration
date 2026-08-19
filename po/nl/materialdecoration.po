@@ -248,7 +248,7 @@ msgid "Hide window title bar"
 msgstr "Venstertitelbalk verbergen"
 
 msgid "Active / Inactive opacity"
-msgstr "Actieve / inactieve dekking"
+msgstr "Actieve / inactieve doorzichtigheid"
 
 msgid "Active:"
 msgstr "Actief:"

@@ -49,6 +49,7 @@ public:
     InternalSettingsList get(const QModelIndexList &indexes) const;
 
     void add(InternalSettingsPtr exception);
+    void update(InternalSettingsPtr exception);
     void remove(const InternalSettingsList &exceptions);
 
     bool contains(const QModelIndex &index) const;

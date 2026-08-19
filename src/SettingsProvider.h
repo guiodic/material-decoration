@@ -20,6 +20,8 @@
 #include "ExceptionList.h"
 #include <KSharedConfig>
 #include <QObject>
+#include <QRegularExpression>
+#include <vector>
 
 namespace Material
 {
@@ -43,8 +45,14 @@ public Q_SLOTS:
 private:
     SettingsProvider();
 
+    struct CompiledException {
+        InternalSettingsPtr settings;
+        QRegularExpression regex;
+    };
+
     InternalSettingsPtr m_defaultSettings;
     InternalSettingsList m_exceptions;
+    std::vector<CompiledException> m_compiledExceptions;
     KSharedConfigPtr m_config;
 
     static SettingsProvider *s_self;

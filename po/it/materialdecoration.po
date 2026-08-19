@@ -242,7 +242,7 @@ msgid "Detect Window Properties"
 msgstr "Rileva proprietà della finestra"
 
 msgid "Properties Overrides"
-msgstr "Riscritura delle proprietà"
+msgstr "Riscrittura delle proprietà"
 
 msgid "Hide window title bar"
 msgstr "Nascondi la barra del titolo della finestra"

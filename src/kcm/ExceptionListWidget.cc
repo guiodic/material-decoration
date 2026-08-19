@@ -24,6 +24,7 @@
 #include <QMessageBox>
 #include <QPointer>
 #include <QRegularExpression>
+#include <QSet>
 
 namespace Material
 {
@@ -126,9 +127,25 @@ void ExceptionListWidget::edit()
 
     InternalSettingsPtr exception = model().get(current);
 
+    InternalSettingsPtr workingException(new InternalSettings());
+    workingException->setEnabled(exception->enabled());
+    workingException->setExceptionType(exception->exceptionType());
+    workingException->setExceptionPattern(exception->exceptionPattern());
+    workingException->setMask(exception->mask());
+    workingException->setHideTitleBar(exception->hideTitleBar());
+    workingException->setTitleAlignment(exception->titleAlignment());
+    workingException->setButtonSize(exception->buttonSize());
+    workingException->setCornerRadius(exception->cornerRadius());
+    workingException->setActiveOpacity(exception->activeOpacity());
+    workingException->setInactiveOpacity(exception->inactiveOpacity());
+    workingException->setOutlineActive(exception->outlineActive());
+    workingException->setShadowSize(exception->shadowSize());
+    workingException->setMenuAlwaysShow(exception->menuAlwaysShow());
+    workingException->setHamburgerMenu(exception->hamburgerMenu());
+
     QPointer<ExceptionDialog> dialog = new ExceptionDialog(this);
     dialog->setWindowTitle(i18n("Edit Window-Specific Override"));
-    dialog->setException(exception);
+    dialog->setException(workingException);
 
     if (!dialog->exec()) {
         delete dialog;
@@ -143,7 +160,26 @@ void ExceptionListWidget::edit()
     dialog->save();
     delete dialog;
 
-    checkException(exception);
+    if (!checkException(workingException)) {
+        return;
+    }
+
+    exception->setEnabled(workingException->enabled());
+    exception->setExceptionType(workingException->exceptionType());
+    exception->setExceptionPattern(workingException->exceptionPattern());
+    exception->setMask(workingException->mask());
+    exception->setHideTitleBar(workingException->hideTitleBar());
+    exception->setTitleAlignment(workingException->titleAlignment());
+    exception->setButtonSize(workingException->buttonSize());
+    exception->setCornerRadius(workingException->cornerRadius());
+    exception->setActiveOpacity(workingException->activeOpacity());
+    exception->setInactiveOpacity(workingException->inactiveOpacity());
+    exception->setOutlineActive(workingException->outlineActive());
+    exception->setShadowSize(workingException->shadowSize());
+    exception->setMenuAlwaysShow(workingException->menuAlwaysShow());
+    exception->setHamburgerMenu(workingException->hamburgerMenu());
+
+    model().update(exception);
     resizeColumns();
     setChanged(true);
 }
@@ -176,6 +212,7 @@ void ExceptionListWidget::toggle(const QModelIndex &index)
     InternalSettingsPtr exception = model().get(index);
     if (exception) {
         exception->setEnabled(!exception->enabled());
+        model().update(exception);
         setChanged(true);
     }
 }
@@ -187,12 +224,19 @@ void ExceptionListWidget::up()
         return;
     }
 
+    QSet<int> selectedRows;
+    selectedRows.reserve(selectedIndices.size());
+    for (const auto &idx : selectedIndices) {
+        selectedRows.insert(idx.row());
+    }
+
     InternalSettingsList selectedExceptions = model().get(selectedIndices);
     InternalSettingsList currentExceptions = model().get();
     InternalSettingsList newExceptions;
 
-    for (const auto &item : currentExceptions) {
-        if (!newExceptions.empty() && selectedIndices.indexOf(model().index(item)) != -1 && selectedIndices.indexOf(model().index(newExceptions.back())) == -1) {
+    for (int i = 0; i < currentExceptions.size(); ++i) {
+        const auto &item = currentExceptions.at(i);
+        if (!newExceptions.empty() && selectedRows.contains(i) && !selectedRows.contains(i - 1)) {
             InternalSettingsPtr last = newExceptions.back();
             newExceptions.removeLast();
             newExceptions.append(item);
@@ -221,13 +265,19 @@ void ExceptionListWidget::down()
         return;
     }
 
+    QSet<int> selectedRows;
+    selectedRows.reserve(selectedIndices.size());
+    for (const auto &idx : selectedIndices) {
+        selectedRows.insert(idx.row());
+    }
+
     InternalSettingsList selectedExceptions = model().get(selectedIndices);
     InternalSettingsList currentExceptions = model().get();
     InternalSettingsList newExceptions;
 
     for (int i = currentExceptions.size() - 1; i >= 0; --i) {
         const auto &current = currentExceptions.at(i);
-        if (!newExceptions.empty() && selectedIndices.indexOf(model().index(current)) != -1 && selectedIndices.indexOf(model().index(newExceptions.front())) == -1) {
+        if (!newExceptions.empty() && selectedRows.contains(i) && !selectedRows.contains(i + 1)) {
             InternalSettingsPtr first = newExceptions.front();
             newExceptions.removeFirst();
             newExceptions.prepend(current);

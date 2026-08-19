@@ -107,6 +107,7 @@ private:
     qreal bottomOffset() const { return bottomBorderVisible() ? bottomBorderSize() : 0; }
 
     void setupMenu();
+    void applySettings();
     void updateBlur();
     void updateBordersCornersBlurShadow();
     void updateResizeBorders();

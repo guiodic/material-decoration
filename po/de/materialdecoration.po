@@ -257,7 +257,7 @@ msgid "Inactive:"
 msgstr "Inaktiv:"
 
 msgid "Paint a thin outline around window"
-msgstr "Dünnen Umriss um das Fenster zeichnen"
+msgstr "Einen dünnen Umriss um das Fenster zeichnen"
 
 msgid "Don't draw the shadow"
 msgstr "Keinen Schatten zeichnen"

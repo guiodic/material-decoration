@@ -302,9 +302,7 @@ bool Decoration::init()
     connect(decoratedClient, &KDecoration3::DecoratedWindow::captionChanged,
             this, [this, repaintTitleBar]() {
                 m_internalSettings = SettingsProvider::self()->internalSettings(this);
-                m_bottomCornersFlag = m_internalSettings->bottomCornerRadiusFlag();
-                updateBordersCornersBlurShadow();
-                updateTitleBar();
+                applySettings();
                 repaintTitleBar();
             });
     
@@ -388,25 +386,32 @@ bool Decoration::init()
     return true;
 }
 
-void Decoration::reconfigure()
+void Decoration::applySettings()
 {
-    resetDragMove();
-    SettingsProvider::self()->reconfigure();
-    m_internalSettings = SettingsProvider::self()->internalSettings(this);
     m_bottomCornersFlag = m_internalSettings->bottomCornerRadiusFlag();
 
-    m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
-    m_menuButtons->updateAppMenuModel();
-    m_menuButtons->setAlwaysShow(menuAlwaysShow());
-    
+    if (m_menuButtons) {
+        m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
+        m_menuButtons->updateAppMenuModel();
+        m_menuButtons->setAlwaysShow(menuAlwaysShow());
+    }
+
     invalidateCaptionCache();
     updateColors();
     updateButtonAnimation();
     updateBordersCornersBlurShadow();
     updateResizeBorders();
     updateTitleBar();
-    updateButtonsGeometryDelayed(); // avoid wrong geometry (for example Spectacle)
+    updateButtonsGeometryDelayed();
     update();
+}
+
+void Decoration::reconfigure()
+{
+    resetDragMove();
+    SettingsProvider::self()->reconfigure();
+    m_internalSettings = SettingsProvider::self()->internalSettings(this);
+    applySettings();
 }
 
 void Decoration::mousePressEvent(QMouseEvent *event)
@@ -539,7 +544,11 @@ void Decoration::updateResizeBorders()
 
 void Decoration::updateTitleBar()
 {
-    setTitleBar(titleBarRect());
+    if (m_internalSettings && m_internalSettings->hideTitleBar()) {
+        setTitleBar(QRectF());
+    } else {
+        setTitleBar(titleBarRect());
+    }
     invalidateCaptionCache();
 }
 
@@ -1166,6 +1175,9 @@ void Decoration::updateColors()
 
 void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repaintRegion) const
 {
+    if (m_internalSettings && m_internalSettings->hideTitleBar()) {
+        return;
+    }
     if (!m_titleBarPath.boundingRect().intersects(repaintRegion)) {
         return;
     }
@@ -1182,6 +1194,10 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
 
 void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) const
 {
+    if (m_internalSettings && m_internalSettings->hideTitleBar()) {
+        return;
+    }
+
     // 1. Pre-checks and data gathering
     const auto *decoratedClient = window();
     const bool appMenuVisible = !m_menuButtons->buttons().isEmpty();
@@ -1319,6 +1335,9 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
 
 void Decoration::paintButtons(QPainter *painter, const QRectF &repaintRegion) const
 {
+    if (m_internalSettings && m_internalSettings->hideTitleBar()) {
+        return;
+    }
     if (m_leftButtons) {
         m_leftButtons->paint(painter, repaintRegion);
     }

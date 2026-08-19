@@ -46,6 +46,7 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
     connect(m_ui->exceptionType, qOverload<int>(&QComboBox::currentIndexChanged), this, &ExceptionDialog::updateChanged);
     connect(m_ui->exceptionEditor, &QLineEdit::textChanged, this, &ExceptionDialog::updateChanged);
 
+    connect(m_ui->hideTitleBar, &QCheckBox::toggled, this, &ExceptionDialog::updateChanged);
     connect(m_ui->titleAlignmentComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &ExceptionDialog::updateChanged);
     connect(m_ui->cornerRadiusSpinBox, qOverload<int>(&QSpinBox::valueChanged), this, &ExceptionDialog::updateChanged);
     connect(m_ui->activeOpacitySpinBox, qOverload<int>(&QSpinBox::valueChanged), this, &ExceptionDialog::updateChanged);
@@ -140,6 +141,10 @@ void ExceptionDialog::save()
         if (it.value()->isChecked()) {
             mask |= it.key();
         }
+    }
+
+    if (m_ui->hideTitleBar->isChecked()) {
+        mask |= HideTitleBar;
     }
 
     if (m_ui->outlineActiveVal->isChecked()) {
