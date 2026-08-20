@@ -23,25 +23,18 @@
 namespace Material
 {
 
-SettingsProvider *SettingsProvider::s_self = nullptr;
-
 SettingsProvider::SettingsProvider()
     : m_config(KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc")))
 {
     reconfigure();
 }
 
-SettingsProvider::~SettingsProvider()
-{
-    s_self = nullptr;
-}
+SettingsProvider::~SettingsProvider() = default;
 
 SettingsProvider *SettingsProvider::self()
 {
-    if (!s_self) {
-        s_self = new SettingsProvider();
-    }
-    return s_self;
+    static SettingsProvider s_self;
+    return &s_self;
 }
 
 void SettingsProvider::reconfigure()
@@ -61,7 +54,75 @@ void SettingsProvider::reconfigure()
     m_compiledExceptions.clear();
     for (const auto &ex : std::as_const(m_exceptions)) {
         if (ex->enabled() && !ex->exceptionPattern().isEmpty()) {
-            m_compiledExceptions.push_back({ex, QRegularExpression(ex->exceptionPattern())});
+            InternalSettingsPtr mergedSettings(new InternalSettings());
+
+            mergedSettings->setEnabled(m_defaultSettings->enabled());
+            mergedSettings->setHideTitleBar(m_defaultSettings->hideTitleBar());
+            mergedSettings->setTitleAlignment(m_defaultSettings->titleAlignment());
+            mergedSettings->setButtonSize(m_defaultSettings->buttonSize());
+            mergedSettings->setCornerRadius(m_defaultSettings->cornerRadius());
+            mergedSettings->setActiveOpacity(m_defaultSettings->activeOpacity());
+            mergedSettings->setInactiveOpacity(m_defaultSettings->inactiveOpacity());
+            mergedSettings->setOutlineActive(m_defaultSettings->outlineActive());
+            mergedSettings->setShadowSize(m_defaultSettings->shadowSize());
+            mergedSettings->setMenuAlwaysShow(m_defaultSettings->menuAlwaysShow());
+            mergedSettings->setHamburgerMenu(m_defaultSettings->hamburgerMenu());
+            mergedSettings->setUseCustomBorderColors(m_defaultSettings->useCustomBorderColors());
+            mergedSettings->setActiveBorderColor(m_defaultSettings->activeBorderColor());
+            mergedSettings->setInactiveBorderColor(m_defaultSettings->inactiveBorderColor());
+            mergedSettings->setBottomCornerRadiusFlag(m_defaultSettings->bottomCornerRadiusFlag());
+            mergedSettings->setHideCaptionWhenLimitedSpace(m_defaultSettings->hideCaptionWhenLimitedSpace());
+            mergedSettings->setShowCaptionOnHover(m_defaultSettings->showCaptionOnHover());
+            mergedSettings->setSearchEnabled(m_defaultSettings->searchEnabled());
+            mergedSettings->setShowDisabledActions(m_defaultSettings->showDisabledActions());
+            mergedSettings->setSearchIgnoreTopLevel(m_defaultSettings->searchIgnoreTopLevel());
+            mergedSettings->setSearchIgnoreSubMenus(m_defaultSettings->searchIgnoreSubMenus());
+            mergedSettings->setMenuButtonHorzPadding(m_defaultSettings->menuButtonHorzPadding());
+            mergedSettings->setShadowColor(m_defaultSettings->shadowColor());
+            mergedSettings->setShadowStrength(m_defaultSettings->shadowStrength());
+            mergedSettings->setAnimationsEnabled(m_defaultSettings->animationsEnabled());
+            mergedSettings->setAnimationsDuration(m_defaultSettings->animationsDuration());
+            mergedSettings->setUseSystemMenuFont(m_defaultSettings->useSystemMenuFont());
+            mergedSettings->setMinWidthForCaption(m_defaultSettings->minWidthForCaption());
+            mergedSettings->setDragFromButtonsEnabled(m_defaultSettings->dragFromButtonsEnabled());
+            mergedSettings->setLongPressEnabled(m_defaultSettings->longPressEnabled());
+            mergedSettings->setLongPressDuration(m_defaultSettings->longPressDuration());
+
+            mergedSettings->setExceptionType(ex->exceptionType());
+            mergedSettings->setExceptionPattern(ex->exceptionPattern());
+            mergedSettings->setMask(ex->mask());
+
+            const int mask = ex->mask();
+            if (mask & HideTitleBar) {
+                mergedSettings->setHideTitleBar(ex->hideTitleBar());
+            }
+            if (mask & TitleAlignment) {
+                mergedSettings->setTitleAlignment(ex->titleAlignment());
+            }
+            if (mask & ButtonSize) {
+                mergedSettings->setButtonSize(ex->buttonSize());
+            }
+            if (mask & CornerRadius) {
+                mergedSettings->setCornerRadius(ex->cornerRadius());
+            }
+            if (mask & Opacity) {
+                mergedSettings->setActiveOpacity(ex->activeOpacity());
+                mergedSettings->setInactiveOpacity(ex->inactiveOpacity());
+            }
+            if (mask & OutlineActive) {
+                mergedSettings->setOutlineActive(ex->outlineActive());
+            }
+            if (mask & ShadowSize) {
+                mergedSettings->setShadowSize(ex->shadowSize());
+            }
+            if (mask & MenuAlwaysShow) {
+                mergedSettings->setMenuAlwaysShow(ex->menuAlwaysShow());
+            }
+            if (mask & HamburgerMenu) {
+                mergedSettings->setHamburgerMenu(ex->hamburgerMenu());
+            }
+
+            m_compiledExceptions.push_back({mergedSettings, QRegularExpression(ex->exceptionPattern())});
         }
     }
 }

@@ -33,46 +33,9 @@ void ExceptionList::readConfig(KSharedConfig::Ptr config)
 
     QString groupName;
     for (int index = 0; config->hasGroup(groupName = exceptionGroupName(index)); ++index) {
-        InternalSettings exception;
-        readConfig(&exception, config.data(), groupName);
-
         InternalSettingsPtr configuration(new InternalSettings());
         configuration->load();
-
-        configuration->setEnabled(exception.enabled());
-        configuration->setExceptionType(exception.exceptionType());
-        configuration->setExceptionPattern(exception.exceptionPattern());
-        configuration->setMask(exception.mask());
-
-        if (exception.mask() & HideTitleBar) {
-            configuration->setHideTitleBar(exception.hideTitleBar());
-        }
-        if (exception.mask() & TitleAlignment) {
-            configuration->setTitleAlignment(exception.titleAlignment());
-        }
-        if (exception.mask() & ButtonSize) {
-            configuration->setButtonSize(exception.buttonSize());
-        }
-        if (exception.mask() & CornerRadius) {
-            configuration->setCornerRadius(exception.cornerRadius());
-        }
-        if (exception.mask() & Opacity) {
-            configuration->setActiveOpacity(exception.activeOpacity());
-            configuration->setInactiveOpacity(exception.inactiveOpacity());
-        }
-        if (exception.mask() & OutlineActive) {
-            configuration->setOutlineActive(exception.outlineActive());
-        }
-        if (exception.mask() & ShadowSize) {
-            configuration->setShadowSize(exception.shadowSize());
-        }
-        if (exception.mask() & MenuAlwaysShow) {
-            configuration->setMenuAlwaysShow(exception.menuAlwaysShow());
-        }
-        if (exception.mask() & HamburgerMenu) {
-            configuration->setHamburgerMenu(exception.hamburgerMenu());
-        }
-
+        readConfig(configuration.data(), config.data(), groupName);
         m_exceptions.append(configuration);
     }
 }

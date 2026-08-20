@@ -412,6 +412,7 @@ void Decoration::applySettings()
     updateBordersCornersBlurShadow();
     updateResizeBorders();
     updateTitleBar();
+    updateTitleBarHoverState();
     updateButtonsGeometryDelayed();
     update();
 }
@@ -566,7 +567,9 @@ void Decoration::updateTitleBarHoverState()
 {
     bool isHovered = titleBarIsHovered();
 
-    if (showCaptionOnHover() && m_captionLimited) {
+    if (m_internalSettings && m_internalSettings->hideTitleBar()) {
+        isHovered = false;
+    } else if (showCaptionOnHover() && m_captionLimited) {
         if (!m_captionRect.contains(m_lastHoverPos)) {
             isHovered = false;
         }

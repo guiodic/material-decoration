@@ -55,7 +55,6 @@ private:
     std::vector<CompiledException> m_compiledExceptions;
     KSharedConfigPtr m_config;
 
-    static SettingsProvider *s_self;
 };
 
 } // namespace Material

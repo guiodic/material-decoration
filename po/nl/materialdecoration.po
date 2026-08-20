@@ -218,10 +218,10 @@ msgid "Paint a thin outline around the window"
 msgstr "Een dunne omtrek om het venster tekenen"
 
 msgid "Show window title on mouse over"
-msgstr "Venstertitel tonen bij aanwijzen met muis"
+msgstr "Venstertitel tonen bij aanwijzen met de muis"
 
 msgid "Window-Specific Overrides"
-msgstr "Vensterspecifieke instellingen"
+msgstr "Vensterspecifieke uitzonderingen"
 
 msgid "Window Matching"
 msgstr "Vensterovereenkomst"
@@ -263,7 +263,7 @@ msgid "Don't draw the shadow"
 msgstr "Geen schaduw tekenen"
 
 msgid "Show the menu on mouse over"
-msgstr "Menu tonen bij aanwijzen met muis"
+msgstr "Menu tonen bij aanwijzen met de muis"
 
 msgid "Add..."
 msgstr "Toevoegen..."
@@ -281,13 +281,13 @@ msgid "Move Down"
 msgstr "Omlaag"
 
 msgid "New Window-Specific Override"
-msgstr "Nieuwe vensterspecifieke instelling"
+msgstr "Nieuwe vensterspecifieke uitzondering"
 
 msgid "Edit Window-Specific Override"
-msgstr "Vensterspecifieke instelling bewerken"
+msgstr "Vensterspecifieke uitzondering bewerken"
 
 msgid "Remove selected window-specific override?"
-msgstr "Geselecteerde vensterspecifieke instelling verwijderen?"
+msgstr "Geselecteerde vensterspecifieke uitzondering verwijderen?"
 
 msgid "Question - Material Settings"
 msgstr "Vraag - Material-instellingen"
