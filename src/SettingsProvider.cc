@@ -134,6 +134,8 @@ void SettingsProvider::reconfigure()
             m_compiledExceptions.push_back({mergedSettings, QRegularExpression(ex->exceptionPattern())});
         }
     }
+
+    Q_EMIT configChanged();
 }
 
 InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration) const

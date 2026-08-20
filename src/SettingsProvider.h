@@ -39,6 +39,9 @@ public:
 
     InternalSettingsPtr internalSettings(Decoration *decoration) const;
 
+Q_SIGNALS:
+    void configChanged();
+
 public Q_SLOTS:
     void reconfigure();
 

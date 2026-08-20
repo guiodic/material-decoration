@@ -338,17 +338,12 @@ bool Decoration::init()
     updateTitleBarHoverState();
 
 
-    // use DBus connection to update on global configuration change
-    auto dbus = QDBusConnection::sessionBus();
-    dbus.connect(QString(),
-                 QStringLiteral("/KGlobalSettings"),
-                 QStringLiteral("org.kde.KGlobalSettings"),
-                 QStringLiteral("notifyChange"),
-                 this,
-                 SLOT(reconfigure()));
+    connect(SettingsProvider::self(), &SettingsProvider::configChanged,
+            this, &Decoration::reconfigure);
 
 #if HAVE_WAYLAND
     if (KWindowSystem::isPlatformWayland()) {
+        auto dbus = QDBusConnection::sessionBus();
         dbus.connect(QStringLiteral("org.kde.KWin"),
                      QStringLiteral("/org/kde/KWin"),
                      QStringLiteral("org.kde.KWin.TabletModeManager"),
@@ -424,7 +419,6 @@ void Decoration::applySettings()
 void Decoration::reconfigure()
 {
     resetDragMove();
-    SettingsProvider::self()->reconfigure();
     setInternalSettings(SettingsProvider::self()->internalSettings(this));
     applySettings();
 }
