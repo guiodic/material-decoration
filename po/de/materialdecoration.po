@@ -221,7 +221,7 @@ msgid "Show window title on mouse over"
 msgstr "Fenstertitel bei Maus-Hover anzeigen"
 
 msgid "Window-Specific Overrides"
-msgstr "Fensterspezifische Einstellungen"
+msgstr "Fensterspezifische Ausnahmen"
 
 msgid "Window Matching"
 msgstr "Fenster-Zuordnung"
@@ -281,13 +281,13 @@ msgid "Move Down"
 msgstr "Nach unten"
 
 msgid "New Window-Specific Override"
-msgstr "Neue fensterspezifische Einstellung"
+msgstr "Neue fensterspezifische Ausnahme"
 
 msgid "Edit Window-Specific Override"
-msgstr "Fensterspezifische Einstellung bearbeiten"
+msgstr "Fensterspezifische Ausnahme bearbeiten"
 
 msgid "Remove selected window-specific override?"
-msgstr "Ausgewählte fensterspezifische Einstellung entfernen?"
+msgstr "Ausgewählte fensterspezifische Ausnahme entfernen?"
 
 msgid "Question - Material Settings"
 msgstr "Frage - Material-Einstellungen"

@@ -31,20 +31,46 @@ void ExceptionList::readConfig(KSharedConfig::Ptr config)
 {
     m_exceptions.clear();
 
-    QString groupName;
-    for (int index = 0; config->hasGroup(groupName = exceptionGroupName(index)); ++index) {
+    const QString prefix = QStringLiteral("Windeco Exception ");
+    const QStringList groups = config->groupList();
+
+    struct IndexedGroup {
+        int index;
+        QString name;
+    };
+    QList<IndexedGroup> exceptionGroups;
+
+    for (const QString &group : groups) {
+        if (group.startsWith(prefix)) {
+            bool ok = false;
+            int index = QStringView(group).mid(prefix.length()).toInt(&ok);
+            if (ok) {
+                exceptionGroups.append({index, group});
+            }
+        }
+    }
+
+    std::sort(exceptionGroups.begin(), exceptionGroups.end(), [](const IndexedGroup &a, const IndexedGroup &b) {
+        return a.index < b.index;
+    });
+
+    for (const auto &item : exceptionGroups) {
         InternalSettingsPtr configuration(new InternalSettings());
         configuration->load();
-        readConfig(configuration.data(), config.data(), groupName);
+        readConfig(configuration.data(), config.data(), item.name);
         m_exceptions.append(configuration);
     }
 }
 
 void ExceptionList::writeConfig(KSharedConfig::Ptr config)
 {
-    QString groupName;
-    for (int index = 0; config->hasGroup(groupName = exceptionGroupName(index)); ++index) {
-        config->deleteGroup(groupName);
+    const QString prefix = QStringLiteral("Windeco Exception ");
+    const QStringList groups = config->groupList();
+
+    for (const QString &group : groups) {
+        if (group.startsWith(prefix)) {
+            config->deleteGroup(group);
+        }
     }
 
     int index = 0;

@@ -398,6 +398,10 @@ bool Decoration::init()
 
 void Decoration::applySettings()
 {
+    if (!m_internalSettings) {
+        return;
+    }
+
     m_bottomCornersFlag = m_internalSettings->bottomCornerRadiusFlag();
 
     if (m_menuButtons) {

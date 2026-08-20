@@ -18,6 +18,7 @@
 #include "SettingsProvider.h"
 #include "Decoration.h"
 #include <KDecoration3/DecoratedWindow>
+#include <QDBusConnection>
 #include <utility>
 
 namespace Material
@@ -27,6 +28,14 @@ SettingsProvider::SettingsProvider()
     : m_config(KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc")))
 {
     reconfigure();
+
+    auto dbus = QDBusConnection::sessionBus();
+    dbus.connect(QString(),
+                 QStringLiteral("/KGlobalSettings"),
+                 QStringLiteral("org.kde.KGlobalSettings"),
+                 QStringLiteral("notifyChange"),
+                 this,
+                 SLOT(reconfigure()));
 }
 
 SettingsProvider::~SettingsProvider() = default;
