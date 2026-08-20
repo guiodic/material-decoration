@@ -224,6 +224,9 @@ void ExceptionListWidget::up()
         return;
     }
 
+    QModelIndex currentIndex = m_ui->exceptionListView->selectionModel()->currentIndex();
+    InternalSettingsPtr currentException = model().contains(currentIndex) ? model().get(currentIndex) : nullptr;
+
     QSet<int> selectedRows;
     selectedRows.reserve(selectedIndices.size());
     for (const auto &idx : selectedIndices) {
@@ -256,6 +259,13 @@ void ExceptionListWidget::up()
         }
     }
 
+    if (currentException) {
+        QModelIndex newCurrentIndex = model().index(currentException);
+        if (newCurrentIndex.isValid()) {
+            m_ui->exceptionListView->selectionModel()->setCurrentIndex(newCurrentIndex, QItemSelectionModel::Current | QItemSelectionModel::Rows);
+        }
+    }
+
     setChanged(true);
 }
 
@@ -265,6 +275,9 @@ void ExceptionListWidget::down()
     if (selectedIndices.empty()) {
         return;
     }
+
+    QModelIndex currentIndex = m_ui->exceptionListView->selectionModel()->currentIndex();
+    InternalSettingsPtr currentException = model().contains(currentIndex) ? model().get(currentIndex) : nullptr;
 
     QSet<int> selectedRows;
     selectedRows.reserve(selectedIndices.size());
@@ -295,6 +308,13 @@ void ExceptionListWidget::down()
             if (idx.isValid()) {
                 m_ui->exceptionListView->selectionModel()->select(idx, QItemSelectionModel::Select | QItemSelectionModel::Rows);
             }
+        }
+    }
+
+    if (currentException) {
+        QModelIndex newCurrentIndex = model().index(currentException);
+        if (newCurrentIndex.isValid()) {
+            m_ui->exceptionListView->selectionModel()->setCurrentIndex(newCurrentIndex, QItemSelectionModel::Current | QItemSelectionModel::Rows);
         }
     }
 

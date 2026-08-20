@@ -256,9 +256,20 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
     paintCaption(painter, repaintRegion);
 }
 
+void Decoration::setInternalSettings(const QSharedPointer<InternalSettings> &settings)
+{
+    if (m_internalSettings) {
+        disconnect(m_internalSettings.data(), &InternalSettings::configChanged, this, &Decoration::reconfigure);
+    }
+    m_internalSettings = settings;
+    if (m_internalSettings) {
+        connect(m_internalSettings.data(), &InternalSettings::configChanged, this, &Decoration::reconfigure);
+    }
+}
+
 bool Decoration::init()
 {    
-    m_internalSettings = SettingsProvider::self()->internalSettings(this);
+    setInternalSettings(SettingsProvider::self()->internalSettings(this));
     m_bottomCornersFlag = m_internalSettings->bottomCornerRadiusFlag();
         
     const auto *decoratedClient = window();
@@ -302,7 +313,7 @@ bool Decoration::init()
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::captionChanged,
             this, [this, repaintTitleBar]() {
-                m_internalSettings = SettingsProvider::self()->internalSettings(this);
+                setInternalSettings(SettingsProvider::self()->internalSettings(this));
                 applySettings();
                 repaintTitleBar();
             });
@@ -367,8 +378,6 @@ bool Decoration::init()
     // individual signals for the preview in the KCM.
     connect(settings().get(), &KDecoration3::DecorationSettings::reconfigured,
         this, &Decoration::reconfigure);
-    connect(m_internalSettings.data(), &InternalSettings::configChanged,
-        this, &Decoration::reconfigure);
     connect(settings().get(), &KDecoration3::DecorationSettings::alphaChannelSupportedChanged,
         this, &Decoration::reconfigure);
     connect(settings().get(), &KDecoration3::DecorationSettings::borderSizeChanged, 
@@ -411,7 +420,7 @@ void Decoration::reconfigure()
 {
     resetDragMove();
     SettingsProvider::self()->reconfigure();
-    m_internalSettings = SettingsProvider::self()->internalSettings(this);
+    setInternalSettings(SettingsProvider::self()->internalSettings(this));
     applySettings();
 }
 

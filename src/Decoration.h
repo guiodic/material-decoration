@@ -107,6 +107,7 @@ private:
     qreal bottomOffset() const { return bottomBorderVisible() ? bottomBorderSize() : 0; }
 
     void setupMenu();
+    void setInternalSettings(const QSharedPointer<InternalSettings> &settings);
     void applySettings();
     void updateBlur();
     void updateBordersCornersBlurShadow();
