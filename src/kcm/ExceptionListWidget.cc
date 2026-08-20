@@ -232,26 +232,27 @@ void ExceptionListWidget::up()
 
     InternalSettingsList selectedExceptions = model().get(selectedIndices);
     InternalSettingsList currentExceptions = model().get();
-    InternalSettingsList newExceptions;
 
-    for (int i = 0; i < currentExceptions.size(); ++i) {
-        const auto &item = currentExceptions.at(i);
-        if (!newExceptions.empty() && selectedRows.contains(i) && !selectedRows.contains(i - 1)) {
-            InternalSettingsPtr last = newExceptions.back();
-            newExceptions.removeLast();
-            newExceptions.append(item);
-            newExceptions.append(last);
-        } else {
-            newExceptions.append(item);
+    for (int i = 1; i < currentExceptions.size(); ++i) {
+        if (selectedRows.contains(i) && !selectedRows.contains(i - 1)) {
+            int j = i;
+            while (j < currentExceptions.size() && selectedRows.contains(j)) {
+                j++;
+            }
+            std::rotate(currentExceptions.begin() + (i - 1), currentExceptions.begin() + i, currentExceptions.begin() + j);
+            i = j;
         }
     }
 
-    model().set(newExceptions);
+    model().set(currentExceptions);
 
     if (!selectedExceptions.empty()) {
-        m_ui->exceptionListView->selectionModel()->select(model().index(selectedExceptions.front()), QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        m_ui->exceptionListView->selectionModel()->clearSelection();
         for (const auto &item : selectedExceptions) {
-            m_ui->exceptionListView->selectionModel()->select(model().index(item), QItemSelectionModel::Select | QItemSelectionModel::Rows);
+            QModelIndex idx = model().index(item);
+            if (idx.isValid()) {
+                m_ui->exceptionListView->selectionModel()->select(idx, QItemSelectionModel::Select | QItemSelectionModel::Rows);
+            }
         }
     }
 
@@ -273,26 +274,27 @@ void ExceptionListWidget::down()
 
     InternalSettingsList selectedExceptions = model().get(selectedIndices);
     InternalSettingsList currentExceptions = model().get();
-    InternalSettingsList newExceptions;
 
-    for (int i = currentExceptions.size() - 1; i >= 0; --i) {
-        const auto &current = currentExceptions.at(i);
-        if (!newExceptions.empty() && selectedRows.contains(i) && !selectedRows.contains(i + 1)) {
-            InternalSettingsPtr first = newExceptions.front();
-            newExceptions.removeFirst();
-            newExceptions.prepend(current);
-            newExceptions.prepend(first);
-        } else {
-            newExceptions.prepend(current);
+    for (int i = currentExceptions.size() - 2; i >= 0; --i) {
+        if (selectedRows.contains(i) && !selectedRows.contains(i + 1)) {
+            int j = i;
+            while (j >= 0 && selectedRows.contains(j)) {
+                j--;
+            }
+            std::rotate(currentExceptions.begin() + (j + 1), currentExceptions.begin() + (i + 1), currentExceptions.begin() + (i + 2));
+            i = j;
         }
     }
 
-    model().set(newExceptions);
+    model().set(currentExceptions);
 
     if (!selectedExceptions.empty()) {
-        m_ui->exceptionListView->selectionModel()->select(model().index(selectedExceptions.front()), QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        m_ui->exceptionListView->selectionModel()->clearSelection();
         for (const auto &item : selectedExceptions) {
-            m_ui->exceptionListView->selectionModel()->select(model().index(item), QItemSelectionModel::Select | QItemSelectionModel::Rows);
+            QModelIndex idx = model().index(item);
+            if (idx.isValid()) {
+                m_ui->exceptionListView->selectionModel()->select(idx, QItemSelectionModel::Select | QItemSelectionModel::Rows);
+            }
         }
     }
 

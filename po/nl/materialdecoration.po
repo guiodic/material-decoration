@@ -224,7 +224,7 @@ msgid "Window-Specific Overrides"
 msgstr "Vensterspecifieke instellingen"
 
 msgid "Window Matching"
-msgstr "Vensterovereenkomst"
+msgstr "Vensters overeen laten komen"
 
 msgid "Matching type:"
 msgstr "Type overeenkomst:"

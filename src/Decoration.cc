@@ -278,6 +278,7 @@ bool Decoration::init()
         &Button::create);
 
     setupMenu();
+    applySettings();
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::sizeChanged,
             this, &Decoration::onSizeChanged);
@@ -1390,7 +1391,11 @@ void Decoration::updatePaths()
                                  m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
                                  m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible());
 
-    
+    if (m_internalSettings && m_internalSettings->hideTitleBar()) {
+        m_titleBarPath = QPainterPath();
+        return;
+    }
+
     const qreal left = leftOffset();
     const qreal top = topOffset();
     const qreal right = rightOffset();
