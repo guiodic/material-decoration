@@ -63,6 +63,12 @@ void SettingsProvider::reconfigure()
     m_compiledExceptions.clear();
     for (const auto &ex : std::as_const(m_exceptions)) {
         if (ex->enabled() && !ex->exceptionPattern().isEmpty()) {
+            QRegularExpression regex(ex->exceptionPattern());
+            if (!regex.isValid()) {
+                qWarning() << "Invalid regular expression pattern" << ex->exceptionPattern() << ":" << regex.errorString();
+                continue;
+            }
+
             InternalSettingsPtr mergedSettings(new InternalSettings());
 
             mergedSettings->setEnabled(m_defaultSettings->enabled());
@@ -131,7 +137,7 @@ void SettingsProvider::reconfigure()
                 mergedSettings->setHamburgerMenu(ex->hamburgerMenu());
             }
 
-            m_compiledExceptions.push_back({mergedSettings, QRegularExpression(ex->exceptionPattern())});
+            m_compiledExceptions.push_back({mergedSettings, regex});
         }
     }
 

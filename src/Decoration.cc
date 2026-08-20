@@ -1206,6 +1206,8 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
 void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) const
 {
     if (m_internalSettings && m_internalSettings->hideTitleBar()) {
+        m_captionLimited = false;
+        m_captionRect = QRectF();
         return;
     }
 
