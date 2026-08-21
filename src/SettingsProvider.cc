@@ -124,6 +124,10 @@ InternalSettingsPtr SettingsProvider::createMergedSettings(const InternalSetting
         }
     }
 
+    if (mask & ExceptionMask::OutlineActive) {
+        merged->setOutlineActive(exceptionSettings->outlineActive());
+    }
+
     return merged;
 }
 

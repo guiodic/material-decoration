@@ -46,6 +46,7 @@ enum ExceptionMask {
     HamburgerMenu = 1 << 2,
     HideShadow = 1 << 3,
     SquareCorners = 1 << 4,
+    OutlineActive = 1 << 5,
 };
 
 void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettingsPtr &dst);

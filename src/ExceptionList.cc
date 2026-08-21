@@ -69,6 +69,7 @@ void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettings
     dst->setHamburgerMenu(src->hamburgerMenu());
     dst->setSquareCorners(src->squareCorners());
     dst->setHideShadow(src->hideShadow());
+    dst->setOutlineActive(src->outlineActive());
 }
 
 InternalSettingsPtr cloneInternalSettings(const InternalSettingsPtr &src)
@@ -124,6 +125,7 @@ void ExceptionList::readConfig(const KSharedConfig::Ptr &config)
         exception->setHamburgerMenu(group.readEntry("HamburgerMenu", exception->hamburgerMenu()));
         exception->setHideShadow(group.readEntry("HideShadow", exception->hideShadow()));
         exception->setSquareCorners(group.readEntry("SquareCorners", exception->squareCorners()));
+        exception->setOutlineActive(group.readEntry("OutlineActive", exception->outlineActive()));
 
         m_exceptions.append(exception);
     }
@@ -159,6 +161,7 @@ void ExceptionList::writeConfig(KSharedConfig::Ptr config)
         group.writeEntry("HamburgerMenu", exception->hamburgerMenu());
         group.writeEntry("HideShadow", exception->hideShadow());
         group.writeEntry("SquareCorners", exception->squareCorners());
+        group.writeEntry("OutlineActive", exception->outlineActive());
     }
 
     config->sync();
