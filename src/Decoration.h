@@ -127,6 +127,10 @@ private:
     void updateCornerRadiusAndOutline();
     void updatePaths();
 
+    bool hideTitleBar() const;
+    void setInternalSettings(const QSharedPointer<InternalSettings> &settings);
+    void applySettings();
+
     bool menuAlwaysShow() const;
     bool useSystemMenuFont() const;
     bool hamburgerMenu() const;

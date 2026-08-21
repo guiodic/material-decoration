@@ -124,11 +124,14 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_LongPressDuration, qOverload<int>(&QSpinBox::valueChanged), this, &MaterialDecorationKCM::updateChanged);
 
     connect(m_ui->kcfg_DragFromButtonsEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
+
+    connect(m_ui->exceptionsWidget, &Material::ExceptionListWidget::changed, this, &MaterialDecorationKCM::updateChanged);
 }
 
 void MaterialDecorationKCM::load()
 {
     m_settings->load();
+    m_ui->exceptionsWidget->load();
     updateUI();
     updateChanged();
 }
@@ -181,6 +184,8 @@ void MaterialDecorationKCM::updateUI()
 
 void MaterialDecorationKCM::save()
 {
+    m_ui->exceptionsWidget->save();
+
     m_settings->setTitleAlignment(m_ui->kcfg_TitleAlignment->currentIndex());
     m_settings->setButtonSize(m_ui->kcfg_ButtonSize->currentIndex());
     m_settings->setActiveOpacity(static_cast<double>(m_ui->kcfg_ActiveOpacity->value()) / 100.0);
@@ -224,6 +229,8 @@ void MaterialDecorationKCM::save()
 
 void MaterialDecorationKCM::defaults()
 {
+    m_ui->exceptionsWidget->defaults();
+
     Material::InternalSettings s;
     s.setDefaults();
 
@@ -304,6 +311,8 @@ bool MaterialDecorationKCM::isChanged() const
     if (m_ui->kcfg_LongPressEnabled->isChecked() != m_settings->longPressEnabled()) return true;
     if (m_ui->kcfg_LongPressDuration->value() != m_settings->longPressDuration()) return true;
     if (m_ui->kcfg_DragFromButtonsEnabled->isChecked() != m_settings->dragFromButtonsEnabled()) return true;
+
+    if (m_ui->exceptionsWidget->isChanged()) return true;
 
     return false;
 }
