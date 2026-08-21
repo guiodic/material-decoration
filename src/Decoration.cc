@@ -30,6 +30,7 @@
 #include "Button.h"
 #include "TextButton.h"
 #include "InternalSettings.h"
+#include "SettingsProvider.h"
 #include "Material.h"
 #include "PixelSnapper.h"
 
@@ -257,14 +258,10 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 
 bool Decoration::init()
 {    
-    m_internalSettings = QSharedPointer<InternalSettings>(new InternalSettings());
-    m_bottomCornersFlag = m_internalSettings->bottomCornerRadiusFlag();
-        
-    const auto *decoratedClient = window();
+    setInternalSettings(SettingsProvider::self()->internalSettings(this));
+    connect(SettingsProvider::self(), &SettingsProvider::configChanged, this, &Decoration::reconfigure);
 
-    auto repaintTitleBar = [this] {
-        update(titleBar());
-    };
+    const auto *decoratedClient = window();
 
     m_leftButtons = new KDecoration3::DecorationButtonGroup(
         KDecoration3::DecorationButtonGroup::Position::Left,
@@ -299,7 +296,16 @@ bool Decoration::init()
             this, &Decoration::onShadedChanged);
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::captionChanged,
-            this, repaintTitleBar);
+            this, [this] {
+                auto newSettings = SettingsProvider::self()->internalSettings(this);
+                if (newSettings != m_internalSettings) {
+                    setInternalSettings(newSettings);
+                    applySettings();
+                } else {
+                    invalidateCaptionCache();
+                    update(titleBar());
+                }
+            });
     
     connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
         this, &Decoration::onActiveChanged);
@@ -360,8 +366,8 @@ bool Decoration::init()
     // The reconfigure signal will update active windows, but we need to hook
     // individual signals for the preview in the KCM.
     connect(settings().get(), &KDecoration3::DecorationSettings::reconfigured,
-        this, &Decoration::reconfigure);
-    connect(m_internalSettings.data(), &InternalSettings::configChanged,
+        SettingsProvider::self(), &SettingsProvider::reconfigure, Qt::UniqueConnection);
+    connect(settings().get(), &KDecoration3::DecorationSettings::reconfigured,
         this, &Decoration::reconfigure);
     connect(settings().get(), &KDecoration3::DecorationSettings::alphaChannelSupportedChanged,
         this, &Decoration::reconfigure);
@@ -376,29 +382,56 @@ bool Decoration::init()
     connect(settings().get(), &KDecoration3::DecorationSettings::decorationButtonsRightChanged,
         this, &Decoration::updateButtonsGeometryDelayed);
     
-    
+    applySettings();
 
     return true;
 }
 
-void Decoration::reconfigure()
+bool Decoration::hideTitleBar() const
 {
-    resetDragMove();
-    m_internalSettings->load();
+    return m_internalSettings ? m_internalSettings->hideTitleBar() : false;
+}
+
+void Decoration::setInternalSettings(const QSharedPointer<InternalSettings> &settings)
+{
+    if (m_internalSettings == settings) {
+        return;
+    }
+    m_internalSettings = settings;
+    if (m_internalSettings) {
+        connect(m_internalSettings.data(), &InternalSettings::configChanged, this, &Decoration::reconfigure, Qt::UniqueConnection);
+    }
+}
+
+void Decoration::applySettings()
+{
+    if (!m_internalSettings) {
+        return;
+    }
     m_bottomCornersFlag = m_internalSettings->bottomCornerRadiusFlag();
 
-    m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
-    m_menuButtons->updateAppMenuModel();
-    m_menuButtons->setAlwaysShow(menuAlwaysShow());
-    
+    if (m_menuButtons) {
+        m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
+        m_menuButtons->updateAppMenuModel();
+        m_menuButtons->setAlwaysShow(menuAlwaysShow());
+    }
+
     invalidateCaptionCache();
     updateColors();
     updateButtonAnimation();
     updateBordersCornersBlurShadow();
     updateResizeBorders();
     updateTitleBar();
-    updateButtonsGeometryDelayed(); // avoid wrong geometry (for example Spectacle)
+    updateButtonsGeometryDelayed();
+    updateTitleBarHoverState();
     update();
+}
+
+void Decoration::reconfigure()
+{
+    resetDragMove();
+    setInternalSettings(SettingsProvider::self()->internalSettings(this));
+    applySettings();
 }
 
 void Decoration::mousePressEvent(QMouseEvent *event)
@@ -537,6 +570,16 @@ void Decoration::updateTitleBar()
 
 void Decoration::updateTitleBarHoverState()
 {
+    if (hideTitleBar()) {
+        if (m_titleBarHoverActive) {
+            m_titleBarHoverActive = false;
+            if (m_menuButtons) {
+                m_menuButtons->setHovered(false);
+            }
+        }
+        return;
+    }
+
     bool isHovered = titleBarIsHovered();
 
     if (showCaptionOnHover() && m_captionLimited) {
@@ -705,6 +748,11 @@ void Decoration::updateButtonAnimation()
 
 void Decoration::updateShadow()
 {
+    if (m_internalSettings->hideShadow()) {
+        setShadow(nullptr);
+        return;
+    }
+
     const QColor shadowColor = m_internalSettings->shadowColor();
     const int shadowStrengthInt = m_internalSettings->shadowStrength();
     const int shadowSizePreset = m_internalSettings->shadowSize();
@@ -787,6 +835,9 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
 
 bool Decoration::menuAlwaysShow() const
 {
+    if (m_internalSettings->hideApplicationMenu()) {
+        return false;
+    }
     return m_internalSettings->menuAlwaysShow();
 }
 
@@ -865,6 +916,9 @@ qreal Decoration::buttonPadding() const
 
 qreal Decoration::titleBarHeight() const
 {
+    if (hideTitleBar()) {
+        return 0;
+    }
     const QFontMetricsF fontMetrics(settings()->font());
     return buttonPadding()*2 + fontMetrics.height();
 }
@@ -1155,7 +1209,7 @@ void Decoration::updateColors()
 
 void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repaintRegion) const
 {
-    if (!m_titleBarPath.boundingRect().intersects(repaintRegion)) {
+    if (hideTitleBar() || !m_titleBarPath.boundingRect().intersects(repaintRegion)) {
         return;
     }
 
@@ -1179,7 +1233,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     const bool hasAppMenu = decoratedClient->hasApplicationMenu();
     const bool isTitleHidden = m_internalSettings->titleAlignment() == InternalSettings::TitleHidden;
 
-    if (isTitleHidden || (!menuLoadedOnce && (isWaitingForMenu || hasAppMenu))) {
+    if (hideTitleBar() || isTitleHidden || (!menuLoadedOnce && (isWaitingForMenu || hasAppMenu))) {
         m_captionLimited = false;
         m_captionRect = QRectF();
         return;
@@ -1308,6 +1362,9 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
 
 void Decoration::paintButtons(QPainter *painter, const QRectF &repaintRegion) const
 {
+    if (hideTitleBar()) {
+        return;
+    }
     if (m_leftButtons) {
         m_leftButtons->paint(painter, repaintRegion);
     }
@@ -1321,7 +1378,7 @@ void Decoration::paintButtons(QPainter *painter, const QRectF &repaintRegion) co
 
 void Decoration::updateCornerRadiusAndOutline()
 {    
-    if (window()->isMaximized() || !settings()->isAlphaChannelSupported()) {
+    if (m_internalSettings->squareCorners() || window()->isMaximized() || !settings()->isAlphaChannelSupported()) {
         m_cornerRadius = 0.0;
     } else {
         // m_cornerRadius = m_internalSettings->cornerRadius();

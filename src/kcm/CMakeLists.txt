@@ -21,6 +21,10 @@ find_package(KF6 REQUIRED COMPONENTS
 
 set(KCM_SRCS
     kcm.cpp
+    DetectDialog.cc
+    ExceptionDialog.cc
+    ExceptionModel.cc
+    ExceptionListWidget.cc
 )
 
 ki18n_wrap_ui(KCM_SRCS
