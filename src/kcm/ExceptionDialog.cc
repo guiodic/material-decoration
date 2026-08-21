@@ -27,6 +27,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QVBoxLayout>
@@ -92,6 +93,24 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }
 
+void ExceptionDialog::accept()
+{
+    if (m_patternLineEdit->text().trimmed().isEmpty()) {
+        QMessageBox::warning(this, i18n("Warning"), i18n("Pattern cannot be empty."));
+        return;
+    }
+
+    if (static_cast<MatchingMode>(m_matchingModeCombo->currentIndex()) == MatchingMode::RegularExpression) {
+        QRegularExpression regex(m_patternLineEdit->text().trimmed());
+        if (!regex.isValid()) {
+            QMessageBox::warning(this, i18n("Warning"), i18n("Regular Expression syntax error: %1", regex.errorString()));
+            return;
+        }
+    }
+
+    QDialog::accept();
+}
+
 void ExceptionDialog::onHideTitleBarToggled(bool checked)
 {
     m_hideApplicationMenuCheckBox->setEnabled(!checked);
@@ -110,9 +129,6 @@ void ExceptionDialog::onDetectClicked()
         }
 
         if (!text.isEmpty()) {
-            if (static_cast<MatchingMode>(m_matchingModeCombo->currentIndex()) == MatchingMode::RegularExpression) {
-                text = QRegularExpression::escape(text);
-            }
             m_patternLineEdit->setText(text);
         }
     }
@@ -132,13 +148,19 @@ void ExceptionDialog::setException(const InternalSettingsPtr &exception)
 
     const int mask = exception->mask();
 
-    m_hideTitleBarCheckBox->setChecked((mask & ExceptionMask::HideTitleBar) && exception->hideTitleBar());
-    m_hideApplicationMenuCheckBox->setChecked((mask & ExceptionMask::HideApplicationMenu) && exception->hideApplicationMenu());
-    m_hamburgerMenuCheckBox->setChecked((mask & ExceptionMask::HamburgerMenu) && exception->hamburgerMenu());
-    m_hideShadowCheckBox->setChecked((mask & ExceptionMask::HideShadow) && exception->hideShadow());
-    m_squareCornersCheckBox->setChecked((mask & ExceptionMask::SquareCorners) && exception->squareCorners());
+    const bool hideTitleBar = (mask & ExceptionMask::HideTitleBar) && exception->hideTitleBar();
+    const bool hideAppMenu = (mask & ExceptionMask::HideApplicationMenu) && exception->hideApplicationMenu();
+    const bool hamburger = (mask & ExceptionMask::HamburgerMenu) && exception->hamburgerMenu();
+    const bool hideShadow = (mask & ExceptionMask::HideShadow) && exception->hideShadow();
+    const bool squareCorners = (mask & ExceptionMask::SquareCorners) && exception->squareCorners();
 
-    onHideTitleBarToggled((mask & ExceptionMask::HideTitleBar) && exception->hideTitleBar());
+    m_hideTitleBarCheckBox->setChecked(hideTitleBar);
+    m_hideApplicationMenuCheckBox->setChecked(hideAppMenu);
+    m_hamburgerMenuCheckBox->setChecked(hamburger);
+    m_hideShadowCheckBox->setChecked(hideShadow);
+    m_squareCornersCheckBox->setChecked(squareCorners);
+
+    onHideTitleBarToggled(hideTitleBar);
 }
 
 void ExceptionDialog::applyToException(InternalSettingsPtr &exception)
@@ -147,7 +169,7 @@ void ExceptionDialog::applyToException(InternalSettingsPtr &exception)
         exception = InternalSettingsPtr(new InternalSettings());
     }
 
-    exception->setExceptionPattern(m_patternLineEdit->text());
+    exception->setExceptionPattern(m_patternLineEdit->text().trimmed());
     exception->setExceptionType(m_exceptionTypeCombo->currentIndex());
     exception->setMatchingMode(m_matchingModeCombo->currentIndex());
 

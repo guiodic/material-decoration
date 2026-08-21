@@ -156,11 +156,9 @@ void ExceptionListWidget::add()
 
     if (dialog.exec() == QDialog::Accepted) {
         dialog.applyToException(exception);
-        if (checkException(exception)) {
-            m_model->add(exception);
-            const QModelIndex index = m_model->index(m_model->rowCount() - 1, 0);
-            m_listView->setCurrentIndex(index);
-        }
+        m_model->add(exception);
+        const QModelIndex index = m_model->index(m_model->rowCount() - 1, 0);
+        m_listView->setCurrentIndex(index);
     }
 }
 
@@ -183,9 +181,7 @@ void ExceptionListWidget::edit()
 
     if (dialog.exec() == QDialog::Accepted) {
         dialog.applyToException(workingCopy);
-        if (checkException(workingCopy)) {
-            m_model->update(index.row(), workingCopy);
-        }
+        m_model->update(index.row(), workingCopy);
     }
 }
 

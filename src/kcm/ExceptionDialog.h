@@ -40,6 +40,8 @@ public:
     void setException(const InternalSettingsPtr &exception);
     void applyToException(InternalSettingsPtr &exception);
 
+    void accept() override;
+
 private slots:
     void onDetectClicked();
     void onHideTitleBarToggled(bool checked);
