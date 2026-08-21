@@ -66,12 +66,13 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, DBusMenuLayoutIte
     argument.beginStructure();
     argument >> obj.id >> obj.properties;
     argument.beginArray();
+    obj.children.clear();
     while (!argument.atEnd()) {
         QDBusVariant dbusVariant;
         argument >> dbusVariant;
         QDBusArgument childArgument = dbusVariant.variant().value<QDBusArgument>();
 
-        DBusMenuLayoutItem child;
+        DBusMenuLayoutItem child{};
         childArgument >> child;
         obj.children.append(std::move(child));
     }
