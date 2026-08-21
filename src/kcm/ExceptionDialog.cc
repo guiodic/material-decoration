@@ -146,21 +146,13 @@ void ExceptionDialog::setException(const InternalSettingsPtr &exception)
     const int modeIndex = qBound(0, exception->matchingMode(), m_matchingModeCombo->count() - 1);
     m_matchingModeCombo->setCurrentIndex(modeIndex);
 
-    const int mask = exception->mask();
+    m_hideTitleBarCheckBox->setChecked(exception->hideTitleBar());
+    m_hideApplicationMenuCheckBox->setChecked(exception->hideApplicationMenu());
+    m_hamburgerMenuCheckBox->setChecked(exception->hamburgerMenu());
+    m_hideShadowCheckBox->setChecked(exception->hideShadow());
+    m_squareCornersCheckBox->setChecked(exception->squareCorners());
 
-    const bool hideTitleBar = (mask & ExceptionMask::HideTitleBar) && exception->hideTitleBar();
-    const bool hideAppMenu = (mask & ExceptionMask::HideApplicationMenu) && exception->hideApplicationMenu();
-    const bool hamburger = (mask & ExceptionMask::HamburgerMenu) && exception->hamburgerMenu();
-    const bool hideShadow = (mask & ExceptionMask::HideShadow) && exception->hideShadow();
-    const bool squareCorners = (mask & ExceptionMask::SquareCorners) && exception->squareCorners();
-
-    m_hideTitleBarCheckBox->setChecked(hideTitleBar);
-    m_hideApplicationMenuCheckBox->setChecked(hideAppMenu);
-    m_hamburgerMenuCheckBox->setChecked(hamburger);
-    m_hideShadowCheckBox->setChecked(hideShadow);
-    m_squareCornersCheckBox->setChecked(squareCorners);
-
-    onHideTitleBarToggled(hideTitleBar);
+    onHideTitleBarToggled(exception->hideTitleBar());
 }
 
 void ExceptionDialog::applyToException(InternalSettingsPtr &exception)
@@ -173,37 +165,17 @@ void ExceptionDialog::applyToException(InternalSettingsPtr &exception)
     exception->setExceptionType(m_exceptionTypeCombo->currentIndex());
     exception->setMatchingMode(m_matchingModeCombo->currentIndex());
 
-    int mask = ExceptionMask::None;
+    int mask = ExceptionMask::HideTitleBar |
+               ExceptionMask::HideApplicationMenu |
+               ExceptionMask::HamburgerMenu |
+               ExceptionMask::HideShadow |
+               ExceptionMask::SquareCorners;
 
-    const bool hideTitleBar = m_hideTitleBarCheckBox->isChecked();
-    if (hideTitleBar) {
-        mask |= ExceptionMask::HideTitleBar;
-    }
-    exception->setHideTitleBar(hideTitleBar);
-
-    const bool hideAppMenu = m_hideApplicationMenuCheckBox->isChecked();
-    if (hideAppMenu) {
-        mask |= ExceptionMask::HideApplicationMenu;
-    }
-    exception->setHideApplicationMenu(hideAppMenu);
-
-    const bool hamburger = m_hamburgerMenuCheckBox->isChecked();
-    if (hamburger) {
-        mask |= ExceptionMask::HamburgerMenu;
-    }
-    exception->setHamburgerMenu(hamburger);
-
-    const bool hideShadow = m_hideShadowCheckBox->isChecked();
-    if (hideShadow) {
-        mask |= ExceptionMask::HideShadow;
-    }
-    exception->setHideShadow(hideShadow);
-
-    const bool squareCorners = m_squareCornersCheckBox->isChecked();
-    if (squareCorners) {
-        mask |= ExceptionMask::SquareCorners;
-    }
-    exception->setSquareCorners(squareCorners);
+    exception->setHideTitleBar(m_hideTitleBarCheckBox->isChecked());
+    exception->setHideApplicationMenu(m_hideApplicationMenuCheckBox->isChecked());
+    exception->setHamburgerMenu(m_hamburgerMenuCheckBox->isChecked());
+    exception->setHideShadow(m_hideShadowCheckBox->isChecked());
+    exception->setSquareCorners(m_squareCornersCheckBox->isChecked());
 
     exception->setMask(mask);
 }
