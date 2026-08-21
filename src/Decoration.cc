@@ -367,8 +367,6 @@ bool Decoration::init()
     // individual signals for the preview in the KCM.
     connect(settings().get(), &KDecoration3::DecorationSettings::reconfigured,
         SettingsProvider::self(), &SettingsProvider::reconfigure, Qt::UniqueConnection);
-    connect(settings().get(), &KDecoration3::DecorationSettings::reconfigured,
-        this, &Decoration::reconfigure);
     connect(settings().get(), &KDecoration3::DecorationSettings::alphaChannelSupportedChanged,
         this, &Decoration::reconfigure);
     connect(settings().get(), &KDecoration3::DecorationSettings::borderSizeChanged, 

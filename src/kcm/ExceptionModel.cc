@@ -47,7 +47,7 @@ QVariant ExceptionModel::data(const QModelIndex &index, int role) const
     if (role == Qt::DisplayRole) {
         QString pattern = exception->exceptionPattern();
         if (pattern.isEmpty()) {
-            pattern = i18n("Regular Expression syntax error");
+            pattern = i18n("Empty pattern");
         }
         const QString typeStr = (exception->exceptionType() == 0) ? i18n("Title") : i18n("Class");
         return QStringLiteral("%1 (%2)").arg(pattern, typeStr);
@@ -133,7 +133,7 @@ void ExceptionModel::moveUp(int index)
 void ExceptionModel::moveDown(int index)
 {
     if (index >= 0 && index < m_exceptions.size() - 1) {
-        beginMoveRows(QModelIndex(), index + 1, index + 1, QModelIndex(), index);
+        beginMoveRows(QModelIndex(), index, index, QModelIndex(), index + 2);
         std::swap(m_exceptions[index], m_exceptions[index + 1]);
         endMoveRows();
     }

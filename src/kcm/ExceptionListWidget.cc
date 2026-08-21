@@ -34,21 +34,7 @@ namespace
 
 InternalSettingsPtr cloneException(const InternalSettingsPtr &src)
 {
-    if (!src) {
-        return nullptr;
-    }
-    InternalSettingsPtr copy(new InternalSettings());
-    copy->setExceptionPattern(src->exceptionPattern());
-    copy->setExceptionType(src->exceptionType());
-    copy->setMatchingMode(src->matchingMode());
-    copy->setEnabled(src->enabled());
-    copy->setMask(src->mask());
-    copy->setHideTitleBar(src->hideTitleBar());
-    copy->setHideApplicationMenu(src->hideApplicationMenu());
-    copy->setHamburgerMenu(src->hamburgerMenu());
-    copy->setHideShadow(src->hideShadow());
-    copy->setSquareCorners(src->squareCorners());
-    return copy;
+    return cloneInternalSettings(src);
 }
 
 InternalSettingsList cloneExceptionList(const InternalSettingsList &src)
@@ -104,6 +90,10 @@ ExceptionListWidget::ExceptionListWidget(QWidget *parent)
         updateButtons();
         emit changed(isChanged());
     });
+    connect(m_model, &QAbstractItemModel::rowsMoved, this, [this] {
+        updateButtons();
+        emit changed(isChanged());
+    });
     connect(m_model, &QAbstractItemModel::rowsInserted, this, [this] {
         updateButtons();
         emit changed(isChanged());
@@ -136,7 +126,7 @@ bool ExceptionListWidget::checkException(const InternalSettingsPtr &exception)
     }
 
     if (exception->exceptionPattern().trimmed().isEmpty()) {
-        QMessageBox::warning(this, i18n("Warning"), i18n("Regular Expression syntax error: Pattern cannot be empty."));
+        QMessageBox::warning(this, i18n("Warning"), i18n("Pattern cannot be empty."));
         return false;
     }
 
@@ -179,17 +169,7 @@ void ExceptionListWidget::edit()
         return;
     }
 
-    InternalSettingsPtr workingCopy(new InternalSettings());
-    workingCopy->setExceptionPattern(current->exceptionPattern());
-    workingCopy->setExceptionType(current->exceptionType());
-    workingCopy->setMatchingMode(current->matchingMode());
-    workingCopy->setEnabled(current->enabled());
-    workingCopy->setMask(current->mask());
-    workingCopy->setHideTitleBar(current->hideTitleBar());
-    workingCopy->setHideApplicationMenu(current->hideApplicationMenu());
-    workingCopy->setHamburgerMenu(current->hamburgerMenu());
-    workingCopy->setHideShadow(current->hideShadow());
-    workingCopy->setSquareCorners(current->squareCorners());
+    InternalSettingsPtr workingCopy = cloneInternalSettings(current);
 
     ExceptionDialog dialog(this);
     dialog.setException(workingCopy);

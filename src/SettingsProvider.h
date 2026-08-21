@@ -39,12 +39,13 @@ public:
     SettingsProvider();
     ~SettingsProvider() override = default;
 
-    void reconfigure();
-
     InternalSettingsPtr internalSettings(Decoration *decoration);
 
     InternalSettingsPtr createMergedSettings(const InternalSettingsPtr &defaultSettings,
                                               const InternalSettingsPtr &exceptionSettings);
+
+public slots:
+    void reconfigure();
 
 signals:
     void configChanged();

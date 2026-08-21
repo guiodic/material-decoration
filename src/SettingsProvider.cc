@@ -91,37 +91,7 @@ InternalSettingsPtr SettingsProvider::createMergedSettings(const InternalSetting
                                                              const InternalSettingsPtr &exceptionSettings)
 {
     InternalSettingsPtr merged(new InternalSettings());
-
-    merged->setTitleAlignment(defaultSettings->titleAlignment());
-    merged->setButtonSize(defaultSettings->buttonSize());
-    merged->setActiveOpacity(defaultSettings->activeOpacity());
-    merged->setInactiveOpacity(defaultSettings->inactiveOpacity());
-    merged->setCornerRadius(defaultSettings->cornerRadius());
-    merged->setBottomCornerRadiusFlag(defaultSettings->bottomCornerRadiusFlag());
-    merged->setOutlineActive(defaultSettings->outlineActive());
-    merged->setUseSystemColors(defaultSettings->useSystemColors());
-    merged->setUseCustomBorderColors(defaultSettings->useCustomBorderColors());
-    merged->setActiveBorderColor(defaultSettings->activeBorderColor());
-    merged->setInactiveBorderColor(defaultSettings->inactiveBorderColor());
-    merged->setHideCaptionWhenLimitedSpace(defaultSettings->hideCaptionWhenLimitedSpace());
-    merged->setShowCaptionOnHover(defaultSettings->showCaptionOnHover());
-    merged->setMinWidthForCaption(defaultSettings->minWidthForCaption());
-    merged->setMenuAlwaysShow(defaultSettings->menuAlwaysShow());
-    merged->setSearchEnabled(defaultSettings->searchEnabled());
-    merged->setHamburgerMenu(defaultSettings->hamburgerMenu());
-    merged->setShowDisabledActions(defaultSettings->showDisabledActions());
-    merged->setSearchIgnoreTopLevel(defaultSettings->searchIgnoreTopLevel());
-    merged->setSearchIgnoreSubMenus(defaultSettings->searchIgnoreSubMenus());
-    merged->setMenuButtonHorzPadding(defaultSettings->menuButtonHorzPadding());
-    merged->setUseSystemMenuFont(defaultSettings->useSystemMenuFont());
-    merged->setAnimationsEnabled(defaultSettings->animationsEnabled());
-    merged->setAnimationsDuration(defaultSettings->animationsDuration());
-    merged->setShadowSize(defaultSettings->shadowSize());
-    merged->setShadowColor(defaultSettings->shadowColor());
-    merged->setShadowStrength(defaultSettings->shadowStrength());
-    merged->setLongPressEnabled(defaultSettings->longPressEnabled());
-    merged->setLongPressDuration(defaultSettings->longPressDuration());
-    merged->setDragFromButtonsEnabled(defaultSettings->dragFromButtonsEnabled());
+    copyInternalSettings(defaultSettings, merged);
 
     const int mask = exceptionSettings->mask();
 

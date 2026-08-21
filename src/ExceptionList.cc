@@ -23,6 +23,64 @@
 namespace Material
 {
 
+void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettingsPtr &dst)
+{
+    if (!src || !dst) {
+        return;
+    }
+    dst->setTitleAlignment(src->titleAlignment());
+    dst->setButtonSize(src->buttonSize());
+    dst->setActiveOpacity(src->activeOpacity());
+    dst->setInactiveOpacity(src->inactiveOpacity());
+    dst->setCornerRadius(src->cornerRadius());
+    dst->setBottomCornerRadiusFlag(src->bottomCornerRadiusFlag());
+    dst->setOutlineActive(src->outlineActive());
+    dst->setUseSystemColors(src->useSystemColors());
+    dst->setUseCustomBorderColors(src->useCustomBorderColors());
+    dst->setActiveBorderColor(src->activeBorderColor());
+    dst->setInactiveBorderColor(src->inactiveBorderColor());
+    dst->setHideCaptionWhenLimitedSpace(src->hideCaptionWhenLimitedSpace());
+    dst->setShowCaptionOnHover(src->showCaptionOnHover());
+    dst->setMinWidthForCaption(src->minWidthForCaption());
+    dst->setMenuAlwaysShow(src->menuAlwaysShow());
+    dst->setSearchEnabled(src->searchEnabled());
+    dst->setHamburgerMenu(src->hamburgerMenu());
+    dst->setShowDisabledActions(src->showDisabledActions());
+    dst->setSearchIgnoreTopLevel(src->searchIgnoreTopLevel());
+    dst->setSearchIgnoreSubMenus(src->searchIgnoreSubMenus());
+    dst->setMenuButtonHorzPadding(src->menuButtonHorzPadding());
+    dst->setUseSystemMenuFont(src->useSystemMenuFont());
+    dst->setAnimationsEnabled(src->animationsEnabled());
+    dst->setAnimationsDuration(src->animationsDuration());
+    dst->setShadowSize(src->shadowSize());
+    dst->setShadowColor(src->shadowColor());
+    dst->setShadowStrength(src->shadowStrength());
+    dst->setLongPressEnabled(src->longPressEnabled());
+    dst->setLongPressDuration(src->longPressDuration());
+    dst->setDragFromButtonsEnabled(src->dragFromButtonsEnabled());
+
+    dst->setExceptionPattern(src->exceptionPattern());
+    dst->setExceptionType(src->exceptionType());
+    dst->setMatchingMode(src->matchingMode());
+    dst->setEnabled(src->enabled());
+    dst->setMask(src->mask());
+    dst->setHideTitleBar(src->hideTitleBar());
+    dst->setHideApplicationMenu(src->hideApplicationMenu());
+    dst->setHamburgerMenu(src->hamburgerMenu());
+    dst->setSquareCorners(src->squareCorners());
+    dst->setHideShadow(src->hideShadow());
+}
+
+InternalSettingsPtr cloneInternalSettings(const InternalSettingsPtr &src)
+{
+    if (!src) {
+        return nullptr;
+    }
+    InternalSettingsPtr copy(new InternalSettings());
+    copyInternalSettings(src, copy);
+    return copy;
+}
+
 void ExceptionList::readConfig(const KSharedConfig::Ptr &config)
 {
     m_exceptions.clear();
@@ -78,7 +136,11 @@ void ExceptionList::writeConfig(KSharedConfig::Ptr config)
 
     for (const QString &groupName : groupList) {
         if (groupName.startsWith(prefix)) {
-            config->deleteGroup(groupName);
+            bool ok = false;
+            groupName.mid(prefix.length()).toInt(&ok);
+            if (ok) {
+                config->deleteGroup(groupName);
+            }
         }
     }
 

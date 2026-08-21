@@ -55,6 +55,7 @@ DetectDialog::DetectDialog(QWidget *parent)
 
 void DetectDialog::detectWindow()
 {
+    m_detectButton->setEnabled(false);
     m_statusLabel->setText(i18n("Querying KWin for window information..."));
 
     QDBusMessage message = QDBusMessage::createMethodCall(
@@ -65,6 +66,7 @@ void DetectDialog::detectWindow()
 
     auto watcher = new QDBusPendingCallWatcher(QDBusConnection::sessionBus().asyncCall(message), this);
     connect(watcher, &QDBusPendingCallWatcher::finished, this, [this, watcher]() {
+        m_detectButton->setEnabled(true);
         QDBusPendingReply<QVariantMap> reply = *watcher;
         if (!reply.isError()) {
             QVariantMap info = reply.value();

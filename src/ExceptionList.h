@@ -38,6 +38,9 @@ enum ExceptionMask {
     SquareCorners = 1 << 4,
 };
 
+void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettingsPtr &dst);
+InternalSettingsPtr cloneInternalSettings(const InternalSettingsPtr &src);
+
 class ExceptionList
 {
 public:
