@@ -69,7 +69,6 @@ void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettings
     dst->setHamburgerMenu(src->hamburgerMenu());
     dst->setSquareCorners(src->squareCorners());
     dst->setHideShadow(src->hideShadow());
-    dst->setOutlineActive(src->outlineActive());
 }
 
 InternalSettingsPtr cloneInternalSettings(const InternalSettingsPtr &src)
