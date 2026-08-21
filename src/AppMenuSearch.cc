@@ -417,18 +417,11 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
 
         QStringList currentPath;
         currentPath.reserve(candidate.ancestors.size() + 1);
-        for (QAction *ancestor : candidate.ancestors) {
+        for (QAction *ancestor : std::as_const(candidate.ancestors)) {
             if (ancestor) {
-                QString text;
-                auto it = matchCache.find(ancestor);
-                if (it != matchCache.end()) {
-                    text = it.value().text;
-                } else {
-                    // Optimized: If the ancestor is not in matchCache, get the text from the fast
-                    // action text cache directly. We do not insert it into matchCache with a fake
-                    // matched status to prevent polluting match results of other candidates.
-                    text = getActionText(ancestor);
-                }
+                // getActionText returns the exact same normalized text (without accelerator markers)
+                // that is inserted into matchCache, eliminating redundant matchCache hash lookups.
+                const QString text = getActionText(ancestor);
                 if (!text.isEmpty()) {
                     currentPath.append(text);
                 }
