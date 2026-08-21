@@ -152,7 +152,7 @@
             <default></default>
         </entry>
         <entry name="ExceptionType" type="Int">
-            <default>0</default>
+            <default>1</default>
         </entry>
         <entry name="MatchingMode" type="Int">
             <default>0</default>

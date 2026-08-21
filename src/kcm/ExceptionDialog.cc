@@ -55,6 +55,7 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
 
     m_exceptionTypeCombo = new QComboBox(this);
     m_exceptionTypeCombo->addItems({i18n("Window Title"), i18n("Window Class")});
+    m_exceptionTypeCombo->setCurrentIndex(1); // Window Class default
     criteriaLayout->addRow(i18n("Match against:"), m_exceptionTypeCombo);
 
     m_matchingModeCombo = new QComboBox(this);
@@ -68,7 +69,7 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
     auto optionsLayout = new QVBoxLayout(optionsGroup);
 
     m_hideTitleBarCheckBox = new QCheckBox(i18n("Hide window title bar"), this);
-    m_hideApplicationMenuCheckBox = new QCheckBox(i18n("Never show LIM menu"), this);
+    m_hideApplicationMenuCheckBox = new QCheckBox(i18n("Show the window title and hide the menu"), this);
     m_hamburgerMenuCheckBox = new QCheckBox(i18n("Show menu as hamburger"), this);
     m_hideShadowCheckBox = new QCheckBox(i18n("Don't draw window shadow"), this);
     m_squareCornersCheckBox = new QCheckBox(i18n("Don't round window corners"), this);

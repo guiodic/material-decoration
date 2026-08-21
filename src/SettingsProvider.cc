@@ -185,8 +185,6 @@ InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration)
                         break;
                     }
                 }
-            } else if (compiled.type == 0) { // Window Title match
-                matches = valueToMatch.contains(compiled.pattern, Qt::CaseInsensitive);
             }
         } else if (compiled.matchingMode == 1) { // Regular Expression
             matches = compiled.regex.match(valueToMatch).hasMatch();
