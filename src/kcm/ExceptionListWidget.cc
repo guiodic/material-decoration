@@ -271,7 +271,8 @@ bool ExceptionListWidget::isChanged() const
             a->hideApplicationMenu() != b->hideApplicationMenu() ||
             a->hamburgerMenu() != b->hamburgerMenu() ||
             a->hideShadow() != b->hideShadow() ||
-            a->squareCorners() != b->squareCorners()) {
+            a->squareCorners() != b->squareCorners() ||
+            a->outlineActive() != b->outlineActive()) {
             return true;
         }
     }

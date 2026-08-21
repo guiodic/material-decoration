@@ -75,12 +75,14 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
     m_hamburgerMenuCheckBox = new QCheckBox(i18n("Show menu as hamburger"), this);
     m_hideShadowCheckBox = new QCheckBox(i18n("Don't draw window shadow"), this);
     m_squareCornersCheckBox = new QCheckBox(i18n("Don't round window corners"), this);
+    m_outlineActiveCheckBox = new QCheckBox(i18n("Paint a thin line around the window"), this);
 
     optionsLayout->addWidget(m_hideTitleBarCheckBox);
     optionsLayout->addWidget(m_hideApplicationMenuCheckBox);
     optionsLayout->addWidget(m_hamburgerMenuCheckBox);
     optionsLayout->addWidget(m_hideShadowCheckBox);
     optionsLayout->addWidget(m_squareCornersCheckBox);
+    optionsLayout->addWidget(m_outlineActiveCheckBox);
 
     mainLayout->addWidget(optionsGroup);
 
@@ -151,6 +153,7 @@ void ExceptionDialog::setException(const InternalSettingsPtr &exception)
     m_hamburgerMenuCheckBox->setChecked(exception->hamburgerMenu());
     m_hideShadowCheckBox->setChecked(exception->hideShadow());
     m_squareCornersCheckBox->setChecked(exception->squareCorners());
+    m_outlineActiveCheckBox->setChecked(exception->outlineActive());
 
     onHideTitleBarToggled(exception->hideTitleBar());
 }
@@ -169,13 +172,15 @@ void ExceptionDialog::applyToException(InternalSettingsPtr &exception)
                ExceptionMask::HideApplicationMenu |
                ExceptionMask::HamburgerMenu |
                ExceptionMask::HideShadow |
-               ExceptionMask::SquareCorners;
+               ExceptionMask::SquareCorners |
+               ExceptionMask::OutlineActive;
 
     exception->setHideTitleBar(m_hideTitleBarCheckBox->isChecked());
     exception->setHideApplicationMenu(m_hideApplicationMenuCheckBox->isChecked());
     exception->setHamburgerMenu(m_hamburgerMenuCheckBox->isChecked());
     exception->setHideShadow(m_hideShadowCheckBox->isChecked());
     exception->setSquareCorners(m_squareCornersCheckBox->isChecked());
+    exception->setOutlineActive(m_outlineActiveCheckBox->isChecked());
 
     exception->setMask(mask);
 }

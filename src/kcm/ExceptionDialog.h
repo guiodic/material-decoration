@@ -57,6 +57,7 @@ private:
     QCheckBox *m_hamburgerMenuCheckBox = nullptr;
     QCheckBox *m_hideShadowCheckBox = nullptr;
     QCheckBox *m_squareCornersCheckBox = nullptr;
+    QCheckBox *m_outlineActiveCheckBox = nullptr;
 };
 
 } // namespace Material
