@@ -423,7 +423,9 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         newIds.insert(rootItem.children.at(i).id);
     }
 
-    // 1. Remove actions no longer present
+    // 1. Remove actions no longer present and keep valid ones in currentActions
+    QList<QAction *> currentActions;
+    currentActions.reserve(actions.count());
     for (QAction *action : std::as_const(actions)) {
         const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
         if (!newIds.contains(id)) {
@@ -433,15 +435,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
             }
             action->deleteLater();
             d->m_actionForId.remove(id);
-        }
-    }
-
-    // Filter currentActions to keep only those that are not obsolete
-    QList<QAction *> currentActions;
-    currentActions.reserve(actions.count());
-    for (QAction *action : std::as_const(actions)) {
-        const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
-        if (newIds.contains(id)) {
+        } else {
             currentActions.append(action);
         }
     }

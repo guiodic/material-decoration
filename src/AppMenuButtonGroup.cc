@@ -665,9 +665,9 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
         if (allFit && enabledCount > 0) {
             showOverflow = false;
             currentVisibleWidth += totalTextWidth;
-            // Second pass: apply visibility
+            // Second pass: apply visibility only if changed
             for (auto &tb : std::as_const(m_textButtons)) {
-                if (tb) {
+                if (tb && tb->isVisible() != tb->isEnabled()) {
                     tb->setVisible(tb->isEnabled());
                 }
             }
@@ -683,22 +683,27 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
                 if (!tb) {
                     continue;
                 }
+                bool targetVisible = false;
                 if (fits && tb->isEnabled()) {
                     const qreal w = m_cachedWidths[i];
                     if (w <= remainingWidth) {
-                        tb->setVisible(true);
+                        targetVisible = true;
                         currentVisibleWidth += w;
                         remainingWidth -= w;
-                        continue;
+                    } else {
+                        fits = false;
                     }
-                    fits = false;
                 }
-                tb->setVisible(false);
+                if (tb->isVisible() != targetVisible) {
+                    tb->setVisible(targetVisible);
+                }
             }
         } else {
             showOverflow = false;
             for (auto &tb : std::as_const(m_textButtons)) {
-                if (tb) tb->setVisible(false);
+                if (tb && tb->isVisible()) {
+                    tb->setVisible(false);
+                }
             }
         }
     }
