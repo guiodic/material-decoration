@@ -49,7 +49,7 @@ QVariant ExceptionModel::data(const QModelIndex &index, int role) const
         if (pattern.isEmpty()) {
             pattern = i18n("Empty pattern");
         }
-        const QString typeStr = (exception->exceptionType() == 0) ? i18n("Title") : i18n("Class");
+        const QString typeStr = (static_cast<ExceptionType>(exception->exceptionType()) == ExceptionType::WindowTitle) ? i18n("Title") : i18n("Class");
         return QStringLiteral("%1 (%2)").arg(pattern, typeStr);
     } else if (role == Qt::CheckStateRole) {
         return exception->enabled() ? Qt::Checked : Qt::Unchecked;

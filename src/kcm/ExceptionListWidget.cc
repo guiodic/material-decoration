@@ -20,6 +20,7 @@
 
 #include <KLocalizedString>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QListView>
 #include <QMessageBox>
 #include <QPushButton>
@@ -56,10 +57,11 @@ ExceptionListWidget::ExceptionListWidget(QWidget *parent)
 {
     m_listView->setModel(m_model);
 
-    auto mainLayout = new QHBoxLayout(this);
+    auto mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
-    mainLayout->addWidget(m_listView);
+    auto listAndButtonsLayout = new QHBoxLayout();
+    listAndButtonsLayout->addWidget(m_listView);
 
     auto buttonLayout = new QVBoxLayout();
 
@@ -76,7 +78,12 @@ ExceptionListWidget::ExceptionListWidget(QWidget *parent)
     buttonLayout->addWidget(m_moveDownButton);
     buttonLayout->addStretch();
 
-    mainLayout->addLayout(buttonLayout);
+    listAndButtonsLayout->addLayout(buttonLayout);
+    mainLayout->addLayout(listAndButtonsLayout);
+
+    auto hintLabel = new QLabel(i18n("Rules are evaluated from top to bottom; the first matching rule will be applied."), this);
+    hintLabel->setWordWrap(true);
+    mainLayout->addWidget(hintLabel);
 
     connect(m_addButton, &QPushButton::clicked, this, &ExceptionListWidget::add);
     connect(m_editButton, &QPushButton::clicked, this, &ExceptionListWidget::edit);

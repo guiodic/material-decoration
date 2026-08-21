@@ -55,8 +55,8 @@ private:
         InternalSettingsPtr mergedSettings;
         QRegularExpression regex;
         QString pattern;
-        int type = 0; // 0: Window Title, 1: Window Class
-        int matchingMode = 0; // 0: Exact Match, 1: Regular Expression
+        ExceptionType type = ExceptionType::WindowTitle;
+        MatchingMode matchingMode = MatchingMode::ExactMatch;
         bool enabled = true;
     };
 

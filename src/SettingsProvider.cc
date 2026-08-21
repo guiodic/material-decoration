@@ -62,8 +62,8 @@ void SettingsProvider::reconfigure()
         }
 
         CompiledException compiled;
-        compiled.type = exceptionSettings->exceptionType();
-        compiled.matchingMode = exceptionSettings->matchingMode();
+        compiled.type = static_cast<ExceptionType>(exceptionSettings->exceptionType());
+        compiled.matchingMode = static_cast<MatchingMode>(exceptionSettings->matchingMode());
         compiled.pattern = exceptionSettings->exceptionPattern().trimmed();
         compiled.enabled = exceptionSettings->enabled();
 
@@ -71,7 +71,7 @@ void SettingsProvider::reconfigure()
             continue;
         }
 
-        if (compiled.matchingMode == 1) { // Regular Expression
+        if (compiled.matchingMode == MatchingMode::RegularExpression) {
             QRegularExpression regex(compiled.pattern, QRegularExpression::CaseInsensitiveOption);
             if (!regex.isValid()) {
                 qWarning() << "Invalid exception regular expression pattern:" << compiled.pattern << regex.errorString();
@@ -95,29 +95,29 @@ InternalSettingsPtr SettingsProvider::createMergedSettings(const InternalSetting
 
     const int mask = exceptionSettings->mask();
 
-    if ((mask & ExceptionMask::HideTitleBar) || exceptionSettings->hideTitleBar()) {
+    if (mask & ExceptionMask::HideTitleBar) {
         merged->setHideTitleBar(exceptionSettings->hideTitleBar());
     }
 
-    if ((mask & ExceptionMask::HideApplicationMenu) || exceptionSettings->hideApplicationMenu()) {
+    if (mask & ExceptionMask::HideApplicationMenu) {
         merged->setHideApplicationMenu(exceptionSettings->hideApplicationMenu());
         if (exceptionSettings->hideApplicationMenu()) {
             merged->setMenuAlwaysShow(false);
         }
     }
 
-    if ((mask & ExceptionMask::HamburgerMenu) || exceptionSettings->hamburgerMenu()) {
+    if (mask & ExceptionMask::HamburgerMenu) {
         merged->setHamburgerMenu(exceptionSettings->hamburgerMenu());
     }
 
-    if ((mask & ExceptionMask::HideShadow) || exceptionSettings->hideShadow()) {
+    if (mask & ExceptionMask::HideShadow) {
         merged->setHideShadow(exceptionSettings->hideShadow());
         if (exceptionSettings->hideShadow()) {
             merged->setShadowSize(InternalSettings::ShadowNone);
         }
     }
 
-    if ((mask & ExceptionMask::SquareCorners) || exceptionSettings->squareCorners()) {
+    if (mask & ExceptionMask::SquareCorners) {
         merged->setSquareCorners(exceptionSettings->squareCorners());
         if (exceptionSettings->squareCorners()) {
             merged->setCornerRadius(0);
@@ -141,13 +141,13 @@ InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration)
             continue;
         }
 
-        const QString valueToMatch = (compiled.type == 0) ? caption : windowClass;
+        const QString valueToMatch = (compiled.type == ExceptionType::WindowTitle) ? caption : windowClass;
         bool matches = false;
 
-        if (compiled.matchingMode == 0) { // Exact Match
+        if (compiled.matchingMode == MatchingMode::ExactMatch) {
             if (valueToMatch.compare(compiled.pattern, Qt::CaseInsensitive) == 0) {
                 matches = true;
-            } else if (compiled.type == 1) { // Window Class component match
+            } else if (compiled.type == ExceptionType::WindowClass) { // Window Class component match
                 const QStringList components = valueToMatch.split(QRegularExpression(QStringLiteral("[\\s\\r\\n\\t\\x00]+")), Qt::SkipEmptyParts);
                 for (const QString &comp : components) {
                     if (comp.compare(compiled.pattern, Qt::CaseInsensitive) == 0) {
@@ -156,7 +156,7 @@ InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration)
                     }
                 }
             }
-        } else if (compiled.matchingMode == 1) { // Regular Expression
+        } else if (compiled.matchingMode == MatchingMode::RegularExpression) {
             matches = compiled.regex.match(valueToMatch).hasMatch();
         }
 

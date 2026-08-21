@@ -29,6 +29,16 @@ namespace Material
 using InternalSettingsPtr = QSharedPointer<InternalSettings>;
 using InternalSettingsList = QList<InternalSettingsPtr>;
 
+enum class ExceptionType {
+    WindowTitle = 0,
+    WindowClass = 1,
+};
+
+enum class MatchingMode {
+    ExactMatch = 0,
+    RegularExpression = 1,
+};
+
 enum ExceptionMask {
     None = 0,
     HideTitleBar = 1 << 0,

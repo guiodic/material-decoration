@@ -746,7 +746,7 @@ void Decoration::updateButtonAnimation()
 
 void Decoration::updateShadow()
 {
-    if (m_internalSettings->hideShadow()) {
+    if (!m_internalSettings || m_internalSettings->hideShadow()) {
         setShadow(nullptr);
         return;
     }
@@ -833,6 +833,9 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
 
 bool Decoration::menuAlwaysShow() const
 {
+    if (!m_internalSettings) {
+        return true;
+    }
     if (m_internalSettings->hideApplicationMenu()) {
         return false;
     }
@@ -841,57 +844,57 @@ bool Decoration::menuAlwaysShow() const
 
 bool Decoration::useSystemMenuFont() const
 {
-    return m_internalSettings->useSystemMenuFont();
+    return m_internalSettings ? m_internalSettings->useSystemMenuFont() : false;
 }
 
 bool Decoration::hamburgerMenu() const
 {
-    return m_internalSettings->hamburgerMenu();
+    return m_internalSettings ? m_internalSettings->hamburgerMenu() : false;
 }
 
 bool Decoration::searchEnabled() const
 {
-    return m_internalSettings->searchEnabled();
+    return m_internalSettings ? m_internalSettings->searchEnabled() : true;
 }
 
 bool Decoration::showDisabledActions() const
 {
-    return m_internalSettings->showDisabledActions();
+    return m_internalSettings ? m_internalSettings->showDisabledActions() : false;
 }
 
 bool Decoration::searchIgnoreTopLevel() const
 {
-    return m_internalSettings->searchIgnoreTopLevel();
+    return m_internalSettings ? m_internalSettings->searchIgnoreTopLevel() : true;
 }
 
 bool Decoration::searchIgnoreSubMenus() const
 {
-    return m_internalSettings->searchIgnoreSubMenus();
+    return m_internalSettings ? m_internalSettings->searchIgnoreSubMenus() : false;
 }
 
 bool Decoration::animationsEnabled() const
 {
-    return m_internalSettings->animationsEnabled();
+    return m_internalSettings ? m_internalSettings->animationsEnabled() : true;
 }
 
 int Decoration::animationsDuration() const
 {
-    return m_internalSettings->animationsDuration();
+    return m_internalSettings ? m_internalSettings->animationsDuration() : 250;
 }
 
 bool Decoration::dragFromButtonsEnabled() const
 {
-    return m_internalSettings->dragFromButtonsEnabled();
+    return m_internalSettings ? m_internalSettings->dragFromButtonsEnabled() : true;
 }
 
 bool Decoration::hideCaptionWhenLimitedSpace() const
 {
-    return m_internalSettings->hideCaptionWhenLimitedSpace();
+    return m_internalSettings ? m_internalSettings->hideCaptionWhenLimitedSpace() : true;
 }
 
 bool Decoration::showCaptionOnHover() const
 {
-    return m_internalSettings->showCaptionOnHover();
+    return m_internalSettings ? m_internalSettings->showCaptionOnHover() : false;
 }
 
 qreal Decoration::buttonPadding() const
@@ -1376,6 +1379,9 @@ void Decoration::paintButtons(QPainter *painter, const QRectF &repaintRegion) co
 
 void Decoration::updateCornerRadiusAndOutline()
 {    
+    if (!m_internalSettings) {
+        return;
+    }
     if (m_internalSettings->squareCorners() || window()->isMaximized() || !settings()->isAlphaChannelSupported()) {
         m_cornerRadius = 0.0;
     } else {
