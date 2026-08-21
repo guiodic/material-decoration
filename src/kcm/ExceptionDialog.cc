@@ -28,6 +28,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QVBoxLayout>
 
 namespace Material
@@ -101,14 +102,18 @@ void ExceptionDialog::onDetectClicked()
 {
     DetectDialog dialog(this);
     if (dialog.exec() == QDialog::Accepted) {
+        QString text;
         if (m_exceptionTypeCombo->currentIndex() == 1) { // Window Class
-            if (!dialog.windowClass().isEmpty()) {
-                m_patternLineEdit->setText(dialog.windowClass());
-            }
+            text = dialog.windowClass();
         } else { // Window Title
-            if (!dialog.caption().isEmpty()) {
-                m_patternLineEdit->setText(dialog.caption());
+            text = dialog.caption();
+        }
+
+        if (!text.isEmpty()) {
+            if (static_cast<MatchingMode>(m_matchingModeCombo->currentIndex()) == MatchingMode::RegularExpression) {
+                text = QRegularExpression::escape(text);
             }
+            m_patternLineEdit->setText(text);
         }
     }
 }

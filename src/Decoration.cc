@@ -1421,7 +1421,11 @@ void Decoration::updatePaths()
                                  m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
                                  m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible());
 
-    
+    if (hideTitleBar()) {
+        m_titleBarPath = QPainterPath();
+        return;
+    }
+
     const qreal left = leftOffset();
     const qreal top = topOffset();
     const qreal right = rightOffset();

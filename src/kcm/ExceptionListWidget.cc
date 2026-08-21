@@ -251,6 +251,7 @@ void ExceptionListWidget::save()
 void ExceptionListWidget::defaults()
 {
     m_model->set({});
+    updateButtons();
     emit changed(isChanged());
 }
 
