@@ -261,8 +261,9 @@ void AppMenuModel::registerSubMenus(QMenu *menu)
     }
     for (QAction *a : menu->actions()) {
         if (auto subMenu = a->menu()) {
-            if (!m_seenMenus.contains(subMenu)) {
-                m_seenMenus.insert(subMenu);
+            const auto oldSize = m_seenMenus.size();
+            m_seenMenus.insert(subMenu);
+            if (m_seenMenus.size() > oldSize) {
                 connect(subMenu, &QObject::destroyed, this, [this, subMenu]() {
                     m_seenMenus.remove(subMenu);
                     if (m_pendingDeepCacheUpdates.remove(subMenu)) {
