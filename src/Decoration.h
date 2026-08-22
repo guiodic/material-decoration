@@ -138,6 +138,7 @@ private:
     bool showDisabledActions() const;
     bool searchIgnoreTopLevel() const;
     bool searchIgnoreSubMenus() const;
+    bool searchFuzzyMatching() const;
     bool animationsEnabled() const;
     int animationsDuration() const;
     bool dragFromButtonsEnabled() const;

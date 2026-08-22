@@ -864,6 +864,11 @@ bool Decoration::searchIgnoreSubMenus() const
     return m_internalSettings ? m_internalSettings->searchIgnoreSubMenus() : false;
 }
 
+bool Decoration::searchFuzzyMatching() const
+{
+    return m_internalSettings ? m_internalSettings->searchFuzzyMatching() : false;
+}
+
 bool Decoration::animationsEnabled() const
 {
     return m_internalSettings ? m_internalSettings->animationsEnabled() : true;

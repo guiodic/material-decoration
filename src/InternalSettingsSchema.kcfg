@@ -97,6 +97,9 @@
         <entry name="SearchIgnoreSubMenus" type="Bool">
             <default>false</default>
         </entry>
+        <entry name="SearchFuzzyMatching" type="Bool">
+            <default>false</default>
+        </entry>
         <entry name="MenuButtonHorzPadding" type="Int">
             <default>4</default>
         </entry>

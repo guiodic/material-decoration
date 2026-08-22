@@ -48,6 +48,7 @@ void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettings
     dst->setShowDisabledActions(src->showDisabledActions());
     dst->setSearchIgnoreTopLevel(src->searchIgnoreTopLevel());
     dst->setSearchIgnoreSubMenus(src->searchIgnoreSubMenus());
+    dst->setSearchFuzzyMatching(src->searchFuzzyMatching());
     dst->setMenuButtonHorzPadding(src->menuButtonHorzPadding());
     dst->setUseSystemMenuFont(src->useSystemMenuFont());
     dst->setAnimationsEnabled(src->animationsEnabled());

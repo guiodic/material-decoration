@@ -82,7 +82,7 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
         // Find results
         rebuildSearchCandidatesIfNeeded();
         QStringMatcher matcher(simplifiedText, Qt::CaseInsensitive);
-        QList<SearchResult> results = matchSearchCandidates(matcher, options.ignoreTopLevel, options.ignoreSubMenus, options.showDisabledActions);
+        QList<SearchResult> results = matchSearchCandidates(matcher, options, simplifiedText);
 
         // If results and options are the same as last time, do nothing to prevent the freeze.
         if (m_menuIsRendered && m_lastProcessedMenu == m_searchMenu && m_lastResults == results && m_lastOptions == options) {
@@ -355,12 +355,82 @@ bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, con
     return false;
 }
 
-QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions) const
+static int calculateFuzzyScore(const QString &pattern, const QString &text)
+{
+    if (pattern.isEmpty() || text.isEmpty()) {
+        return 0;
+    }
+
+    const int patternLen = pattern.length();
+    const int textLen = text.length();
+
+    // 1. Contiguous exact substring match check
+    const int exactIdx = text.indexOf(pattern, 0, Qt::CaseInsensitive);
+    if (exactIdx != -1) {
+        int score = 1000 + (100 * patternLen) - (exactIdx * 2);
+        if (exactIdx == 0 || !text.at(exactIdx - 1).isLetterOrNumber()) {
+            score += 500; // Word boundary bonus
+        }
+        return score;
+    }
+
+    // 2. Sequential character matching & scoring
+    int patternIdx = 0;
+    int score = 0;
+    int consecutive = 0;
+    int prevMatchIdx = -1;
+
+    for (int textIdx = 0; textIdx < textLen && patternIdx < patternLen; ++textIdx) {
+        const QChar pChar = pattern.at(patternIdx).toLower();
+        const QChar tChar = text.at(textIdx).toLower();
+
+        if (pChar == tChar) {
+            patternIdx++;
+            int charScore = 10;
+
+            const bool isStart = (textIdx == 0);
+            const bool isBoundary = (!isStart && !text.at(textIdx - 1).isLetterOrNumber());
+            const bool isCamel = (text.at(textIdx).isUpper() && textIdx > 0 && text.at(textIdx - 1).isLower());
+
+            if (isStart || isBoundary) {
+                charScore += 50;
+            } else if (isCamel) {
+                charScore += 40;
+            }
+
+            if (prevMatchIdx != -1 && textIdx == prevMatchIdx + 1) {
+                consecutive++;
+                charScore += (20 * consecutive);
+            } else {
+                consecutive = 0;
+                if (prevMatchIdx != -1) {
+                    charScore -= (textIdx - prevMatchIdx - 1);
+                }
+            }
+
+            prevMatchIdx = textIdx;
+            score += charScore;
+        }
+    }
+
+    if (patternIdx < patternLen) {
+        return 0; // Not all pattern characters matched in sequence
+    }
+
+    return std::max(1, score);
+}
+
+QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, const FilterOptions &options, const QString &query) const
 {
     QList<SearchResult> results;
     QHash<QAction *, MatchState> matchCache;
     QHash<QAction *, bool> pathMatchCache;
     MatchContext context{matchCache, pathMatchCache};
+
+    const bool ignoreTopLevel = options.ignoreTopLevel;
+    const bool ignoreSubMenus = options.ignoreSubMenus;
+    const bool showDisabledActions = options.showDisabledActions;
+    const bool fuzzyMatching = options.fuzzyMatching;
 
     for (const SearchCandidate &candidate : std::as_const(m_searchCandidates)) {
         if (results.size() >= MAX_SEARCH_RESULTS) {
@@ -400,32 +470,61 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
 
         const QString itemText = getActionText(action);
         bool match = false;
-
-        if (ignoreSubMenus) {
-            if (ignoreTopLevel && !candidate.hasNamedAncestor) {
-                match = false;
-            } else {
-                match = (matcher.indexIn(itemText) != -1);
-            }
-        } else {
-            match = matchesAncestorsOrText(candidate, itemText, matcher, ignoreTopLevel, context);
-        }
-
-        if (!match) {
-            continue;
-        }
+        int candidateScore = 0;
 
         QStringList currentPath;
         currentPath.reserve(candidate.ancestors.size() + 1);
         for (QAction *ancestor : std::as_const(candidate.ancestors)) {
             if (ancestor) {
-                // getActionText returns the exact same normalized text (without accelerator markers)
-                // that is inserted into matchCache, eliminating redundant matchCache hash lookups.
                 const QString text = getActionText(ancestor);
                 if (!text.isEmpty()) {
                     currentPath.append(text);
                 }
             }
+        }
+        currentPath.append(itemText);
+        const QString fullPath = currentPath.join(QStringLiteral(" » "));
+
+        if (fuzzyMatching) {
+            if (ignoreSubMenus) {
+                if (ignoreTopLevel && !candidate.hasNamedAncestor) {
+                    match = false;
+                } else {
+                    candidateScore = calculateFuzzyScore(query, itemText);
+                    match = (candidateScore > 0);
+                }
+            } else {
+                if (ignoreTopLevel && !candidate.hasNamedAncestor) {
+                    candidateScore = calculateFuzzyScore(query, itemText);
+                    match = (candidateScore > 0);
+                } else {
+                    const int itemScore = calculateFuzzyScore(query, itemText);
+                    if (itemScore > 0) {
+                        candidateScore = itemScore + 500;
+                        match = true;
+                    } else {
+                        const int pathScore = calculateFuzzyScore(query, fullPath);
+                        if (pathScore > 0) {
+                            candidateScore = pathScore;
+                            match = true;
+                        }
+                    }
+                }
+            }
+        } else {
+            if (ignoreSubMenus) {
+                if (ignoreTopLevel && !candidate.hasNamedAncestor) {
+                    match = false;
+                } else {
+                    match = (matcher.indexIn(itemText) != -1);
+                }
+            } else {
+                match = matchesAncestorsOrText(candidate, itemText, matcher, ignoreTopLevel, context);
+            }
+        }
+
+        if (!match) {
+            continue;
         }
 
         ActionInfo info;
@@ -433,11 +532,15 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         info.isEffectivelyEnabled = isEffectivelyEnabled;
         info.isChecked = action->isChecked();
         info.isCheckable = action->isCheckable();
+        info.path = fullPath;
 
-        currentPath.append(itemText);
-        info.path = currentPath.join(QStringLiteral(" » "));
+        results.append({action, info, action->icon().cacheKey(), candidateScore});
+    }
 
-        results.append({action, info, action->icon().cacheKey()});
+    if (fuzzyMatching) {
+        std::stable_sort(results.begin(), results.end(), [](const SearchResult &a, const SearchResult &b) {
+            return a.score > b.score;
+        });
     }
 
     return results;
