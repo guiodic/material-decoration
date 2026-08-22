@@ -448,7 +448,7 @@ void Button::setHeight(qreal buttonHeight)
 void Button::setPenWidth(QPainter *painter, const qreal scale)
 {
     QPen pen(foregroundColor());
-    pen.setCapStyle(Qt::RoundCap);
+    pen.setCapStyle(Qt::SquareCap);
     pen.setJoinStyle(Qt::MiterJoin);
 
     PixelSnapper snapper(painter);
