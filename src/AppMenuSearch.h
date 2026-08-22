@@ -68,6 +68,7 @@ public:
         QPointer<QAction> action;
         ActionInfo info;
         qint64 iconCacheKey = 0;
+        int score = 0;
 
         bool operator==(const SearchResult &other) const {
             return action == other.action
@@ -75,7 +76,8 @@ public:
             && info.isEffectivelyEnabled == other.info.isEffectivelyEnabled
             && info.path == other.info.path
             && info.isChecked == other.info.isChecked
-            && info.isCheckable == other.info.isCheckable;
+            && info.isCheckable == other.info.isCheckable
+            && score == other.score;
         }
     };
 
@@ -83,6 +85,7 @@ public:
         bool ignoreTopLevel = false;
         bool ignoreSubMenus = false;
         bool showDisabledActions = false;
+        bool fuzzyMatching = false;
 
         bool operator==(const FilterOptions &other) const = default;
     };
@@ -117,7 +120,7 @@ private:
 
     bool matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, MatchContext &context) const;
     
-    QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, bool ignoreTopLevel, bool ignoreSubMenus, bool showDisabledActions) const;
+    QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, const FilterOptions &options, const QString &query) const;
     QString getActionText(QAction *action) const;
     void resetSearchState();
 

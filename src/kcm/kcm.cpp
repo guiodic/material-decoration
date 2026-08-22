@@ -80,6 +80,7 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, m_ui->kcfg_ShowDisabledActions, &QWidget::setEnabled);
     connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, m_ui->kcfg_SearchIgnoreTopLevel, &QWidget::setEnabled);
     connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, m_ui->kcfg_SearchIgnoreSubMenus, &QWidget::setEnabled);
+    connect(m_ui->kcfg_SearchEnabled, &QCheckBox::toggled, m_ui->kcfg_SearchFuzzyMatching, &QWidget::setEnabled);
 
     connect(m_ui->kcfg_SearchIgnoreSubMenus, &QCheckBox::toggled, this, [this](bool checked) {
         if (checked) {
@@ -105,6 +106,7 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_ShowDisabledActions, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_SearchIgnoreTopLevel, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_SearchIgnoreSubMenus, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_SearchFuzzyMatching, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_MenuButtonHorzPadding, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_UseSystemMenuFont, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_ShadowSize, &QComboBox::currentIndexChanged, this, &MaterialDecorationKCM::updateChanged);
@@ -157,10 +159,12 @@ void MaterialDecorationKCM::updateUI()
     m_ui->kcfg_ShowDisabledActions->setEnabled(m_settings->searchEnabled());
     m_ui->kcfg_SearchIgnoreTopLevel->setEnabled(m_settings->searchEnabled());
     m_ui->kcfg_SearchIgnoreSubMenus->setEnabled(m_settings->searchEnabled());
+    m_ui->kcfg_SearchFuzzyMatching->setEnabled(m_settings->searchEnabled());
     m_ui->kcfg_HamburgerMenu->setChecked(m_settings->hamburgerMenu());
     m_ui->kcfg_ShowDisabledActions->setChecked(m_settings->showDisabledActions());
     m_ui->kcfg_SearchIgnoreTopLevel->setChecked(m_settings->searchIgnoreTopLevel());
     m_ui->kcfg_SearchIgnoreSubMenus->setChecked(m_settings->searchIgnoreSubMenus());
+    m_ui->kcfg_SearchFuzzyMatching->setChecked(m_settings->searchFuzzyMatching());
     m_ui->kcfg_MenuButtonHorzPadding->setValue(m_settings->menuButtonHorzPadding());
     m_ui->kcfg_UseSystemMenuFont->setChecked(m_settings->useSystemMenuFont());
     m_ui->kcfg_ShadowSize->setCurrentIndex(m_settings->shadowSize());
@@ -202,6 +206,7 @@ void MaterialDecorationKCM::save()
     m_settings->setShowDisabledActions(m_ui->kcfg_ShowDisabledActions->isChecked());
     m_settings->setSearchIgnoreTopLevel(m_ui->kcfg_SearchIgnoreTopLevel->isChecked());
     m_settings->setSearchIgnoreSubMenus(m_ui->kcfg_SearchIgnoreSubMenus->isChecked());
+    m_settings->setSearchFuzzyMatching(m_ui->kcfg_SearchFuzzyMatching->isChecked());
     m_settings->setMenuButtonHorzPadding(m_ui->kcfg_MenuButtonHorzPadding->value());
     m_settings->setUseSystemMenuFont(m_ui->kcfg_UseSystemMenuFont->isChecked());
     m_settings->setShadowSize(m_ui->kcfg_ShadowSize->currentIndex());
@@ -253,10 +258,12 @@ void MaterialDecorationKCM::defaults()
     m_ui->kcfg_ShowDisabledActions->setEnabled(s.searchEnabled());
     m_ui->kcfg_SearchIgnoreTopLevel->setEnabled(s.searchEnabled());
     m_ui->kcfg_SearchIgnoreSubMenus->setEnabled(s.searchEnabled());
+    m_ui->kcfg_SearchFuzzyMatching->setEnabled(s.searchEnabled());
     m_ui->kcfg_HamburgerMenu->setChecked(s.hamburgerMenu());
     m_ui->kcfg_ShowDisabledActions->setChecked(s.showDisabledActions());
     m_ui->kcfg_SearchIgnoreTopLevel->setChecked(s.searchIgnoreTopLevel());
     m_ui->kcfg_SearchIgnoreSubMenus->setChecked(s.searchIgnoreSubMenus());
+    m_ui->kcfg_SearchFuzzyMatching->setChecked(s.searchFuzzyMatching());
     m_ui->kcfg_MenuButtonHorzPadding->setValue(s.menuButtonHorzPadding());
     m_ui->kcfg_UseSystemMenuFont->setChecked(s.useSystemMenuFont());
     m_ui->kcfg_ShadowSize->setCurrentIndex(s.shadowSize());
@@ -297,6 +304,7 @@ bool MaterialDecorationKCM::isChanged() const
     if (m_ui->kcfg_ShowDisabledActions->isChecked() != m_settings->showDisabledActions()) return true;
     if (m_ui->kcfg_SearchIgnoreTopLevel->isChecked() != m_settings->searchIgnoreTopLevel()) return true;
     if (m_ui->kcfg_SearchIgnoreSubMenus->isChecked() != m_settings->searchIgnoreSubMenus()) return true;
+    if (m_ui->kcfg_SearchFuzzyMatching->isChecked() != m_settings->searchFuzzyMatching()) return true;
     if (m_ui->kcfg_MenuButtonHorzPadding->value() != m_settings->menuButtonHorzPadding()) return true;
     if (m_ui->kcfg_UseSystemMenuFont->isChecked() != m_settings->useSystemMenuFont()) return true;
     if (m_ui->kcfg_ShadowSize->currentIndex() != m_settings->shadowSize()) return true;

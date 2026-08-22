@@ -1059,6 +1059,7 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
     options.ignoreTopLevel = deco && deco->searchIgnoreTopLevel();
     options.ignoreSubMenus = deco && deco->searchIgnoreSubMenus();
     options.showDisabledActions = deco && deco->showDisabledActions();
+    options.fuzzyMatching = deco && deco->searchFuzzyMatching();
 
     m_search->filter(text, options);
 
