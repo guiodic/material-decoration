@@ -22,9 +22,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListView>
-#include <QMessageBox>
 #include <QPushButton>
-#include <QRegularExpression>
 #include <QVBoxLayout>
 
 namespace Material
