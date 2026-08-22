@@ -371,7 +371,7 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text)
         if (exactIdx == 0 || !text.at(exactIdx - 1).isLetterOrNumber()) {
             score += 500; // Word boundary bonus
         }
-        return score;
+        return std::max(1, score);
     }
 
     // 2. Sequential character matching & scoring
@@ -433,7 +433,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
     const bool fuzzyMatching = options.fuzzyMatching;
 
     for (const SearchCandidate &candidate : std::as_const(m_searchCandidates)) {
-        if (results.size() >= MAX_SEARCH_RESULTS) {
+        if (!fuzzyMatching && results.size() >= MAX_SEARCH_RESULTS) {
             break;
         }
         QAction *action = candidate.action;
@@ -473,41 +473,46 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         int candidateScore = 0;
 
         QStringList currentPath;
+        QStringList evalPathList;
         currentPath.reserve(candidate.ancestors.size() + 1);
+        evalPathList.reserve(candidate.ancestors.size() + 1);
+
+        bool skippedTopLevel = false;
         for (QAction *ancestor : std::as_const(candidate.ancestors)) {
             if (ancestor) {
                 const QString text = getActionText(ancestor);
                 if (!text.isEmpty()) {
                     currentPath.append(text);
+                    if (ignoreTopLevel && !skippedTopLevel) {
+                        skippedTopLevel = true;
+                    } else {
+                        evalPathList.append(text);
+                    }
                 }
             }
         }
         currentPath.append(itemText);
+        evalPathList.append(itemText);
+
         const QString fullPath = currentPath.join(QStringLiteral(" » "));
+        const QString evalPath = evalPathList.join(QStringLiteral(" » "));
 
         if (fuzzyMatching) {
-            if (ignoreSubMenus) {
-                if (ignoreTopLevel && !candidate.hasNamedAncestor) {
-                    match = false;
-                } else {
-                    candidateScore = calculateFuzzyScore(query, itemText);
-                    match = (candidateScore > 0);
-                }
+            if (ignoreTopLevel && !candidate.hasNamedAncestor) {
+                match = false;
+            } else if (ignoreSubMenus) {
+                candidateScore = calculateFuzzyScore(query, itemText);
+                match = (candidateScore > 0);
             } else {
-                if (ignoreTopLevel && !candidate.hasNamedAncestor) {
-                    candidateScore = calculateFuzzyScore(query, itemText);
-                    match = (candidateScore > 0);
+                const int itemScore = calculateFuzzyScore(query, itemText);
+                if (itemScore > 0) {
+                    candidateScore = itemScore + 500;
+                    match = true;
                 } else {
-                    const int itemScore = calculateFuzzyScore(query, itemText);
-                    if (itemScore > 0) {
-                        candidateScore = itemScore + 500;
+                    const int pathScore = calculateFuzzyScore(query, evalPath);
+                    if (pathScore > 0) {
+                        candidateScore = pathScore;
                         match = true;
-                    } else {
-                        const int pathScore = calculateFuzzyScore(query, fullPath);
-                        if (pathScore > 0) {
-                            candidateScore = pathScore;
-                            match = true;
-                        }
                     }
                 }
             }
@@ -541,6 +546,9 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         std::stable_sort(results.begin(), results.end(), [](const SearchResult &a, const SearchResult &b) {
             return a.score > b.score;
         });
+        if (results.size() > MAX_SEARCH_RESULTS) {
+            results.resize(MAX_SEARCH_RESULTS);
+        }
     }
 
     return results;
