@@ -118,7 +118,15 @@ void ExceptionList::readConfig(const KSharedConfig::Ptr &config)
         exception->setExceptionType(group.readEntry("ExceptionType", exception->exceptionType()));
         exception->setMatchingMode(group.readEntry("MatchingMode", exception->matchingMode()));
         exception->setEnabled(group.readEntry("Enabled", exception->enabled()));
-        exception->setMask(group.readEntry("Mask", exception->mask()));
+
+        const int defaultMask = ExceptionMask::HideTitleBar |
+                                ExceptionMask::HideApplicationMenu |
+                                ExceptionMask::HamburgerMenu |
+                                ExceptionMask::HideShadow |
+                                ExceptionMask::SquareCorners |
+                                ExceptionMask::OutlineActive;
+        const int mask = group.readEntry("Mask", defaultMask);
+        exception->setMask(mask);
         exception->setHideTitleBar(group.readEntry("HideTitleBar", exception->hideTitleBar()));
         exception->setHideApplicationMenu(group.readEntry("HideApplicationMenu", exception->hideApplicationMenu()));
         exception->setHamburgerMenu(group.readEntry("HamburgerMenu", exception->hamburgerMenu()));

@@ -152,7 +152,8 @@ InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration)
             if (valueToMatch.compare(compiled.pattern, Qt::CaseInsensitive) == 0) {
                 matches = true;
             } else if (compiled.type == ExceptionType::WindowClass) { // Window Class component match
-                const QStringList components = valueToMatch.split(QRegularExpression(QStringLiteral("[\\s\\r\\n\\t\\x00]+")), Qt::SkipEmptyParts);
+                static const QRegularExpression splitRegex(QStringLiteral("[\\s\\r\\n\\t\\x00]+"));
+                const QStringList components = valueToMatch.split(splitRegex, Qt::SkipEmptyParts);
                 for (const QString &comp : components) {
                     if (comp.compare(compiled.pattern, Qt::CaseInsensitive) == 0) {
                         matches = true;

@@ -22,9 +22,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListView>
-#include <QMessageBox>
 #include <QPushButton>
-#include <QRegularExpression>
 #include <QVBoxLayout>
 
 namespace Material
@@ -126,28 +124,6 @@ void ExceptionListWidget::updateButtons()
     m_moveDownButton->setEnabled(hasSelection && row < count - 1);
 }
 
-bool ExceptionListWidget::checkException(const InternalSettingsPtr &exception)
-{
-    if (!exception) {
-        return false;
-    }
-
-    if (exception->exceptionPattern().trimmed().isEmpty()) {
-        QMessageBox::warning(this, i18n("Warning"), i18n("Pattern cannot be empty."));
-        return false;
-    }
-
-    if (exception->matchingMode() == 1) { // Regular Expression
-        QRegularExpression regex(exception->exceptionPattern());
-        if (!regex.isValid()) {
-            QMessageBox::warning(this, i18n("Warning"), i18n("Regular Expression syntax error: %1", regex.errorString()));
-            return false;
-        }
-    }
-
-    return true;
-}
-
 void ExceptionListWidget::add()
 {
     InternalSettingsPtr exception(new InternalSettings());
@@ -192,7 +168,14 @@ void ExceptionListWidget::remove()
         return;
     }
 
-    m_model->remove(index.row());
+    const int row = index.row();
+    m_model->remove(row);
+
+    const int newCount = m_model->rowCount();
+    if (newCount > 0) {
+        const int newRow = qMin(row, newCount - 1);
+        m_listView->setCurrentIndex(m_model->index(newRow, 0));
+    }
     updateButtons();
 }
 
@@ -225,6 +208,7 @@ void ExceptionListWidget::down()
 void ExceptionListWidget::load()
 {
     auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+    config->reparseConfiguration();
     ExceptionList list;
     list.readConfig(config);
 

@@ -54,8 +54,6 @@ private slots:
     void updateButtons();
 
 private:
-    bool checkException(const InternalSettingsPtr &exception);
-
     QListView *m_listView = nullptr;
     ExceptionModel *m_model = nullptr;
 
