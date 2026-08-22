@@ -219,3 +219,155 @@ msgstr "Een dunne omtrek om het venster tekenen"
 
 msgid "Show window title on mouse over"
 msgstr "Venstertitel tonen bij aanwijzen met muis"
+
+#: src/kcm/ExceptionListWidget.cc:66
+msgid "Add..."
+msgstr "Toevoegen..."
+
+#: src/kcm/DetectDialog.cc:79
+msgid ""
+"Captured Window Class: %1\n"
+"Captured Window Title: %2"
+msgstr ""
+"Opgevangen vensterklasse: %1\n"
+"Opgevangen venstertitel: %2"
+
+#: src/kcm/ExceptionModel.cc:52
+msgid "Class"
+msgstr "Klasse"
+
+#: src/kcm/DetectDialog.cc:41
+msgid "Click 'Detect' and then click on the target window to capture its properties."
+msgstr "Klik op 'Detecteren' en klik vervolgens op het doelvenster om de eigenschappen ervan op te vangen."
+
+#: src/kcm/DetectDialog.cc:45
+msgid "Detect"
+msgstr "Detecteren"
+
+#: src/kcm/DetectDialog.cc:37
+msgid "Detect Window Properties"
+msgstr "Venstereigenschappen detecteren"
+
+#: src/kcm/ExceptionDialog.cc:50
+msgid "Detect Window Properties..."
+msgstr "Venstereigenschappen detecteren..."
+
+#: src/kcm/ExceptionDialog.cc:76
+msgid "Don't draw window shadow"
+msgstr "Geen vensterschaduw tekenen"
+
+#: src/kcm/ExceptionDialog.cc:77
+msgid "Don't round window corners"
+msgstr "Vensterhoeken niet afronden"
+
+#: src/kcm/ExceptionListWidget.cc:67
+msgid "Edit..."
+msgstr "Bewerken..."
+
+#: src/kcm/ExceptionModel.cc:50
+msgid "Empty pattern"
+msgstr "Leeg patroon"
+
+#: src/kcm/config.ui:238
+msgid "Enable fuzzy search"
+msgstr "Tolerant zoeken inschakelen"
+
+#: src/kcm/ExceptionDialog.cc:64
+msgid "Exact Match"
+msgstr "Exacte overeenkomst"
+
+#: src/kcm/DetectDialog.cc:82
+msgid "Failed to detect window info: %1"
+msgstr "Venster-informatie detecteren mislukt: %1"
+
+#: src/kcm/ExceptionDialog.cc:73
+msgid "Hide window title bar"
+msgstr "Venstertitelbalk verbergen"
+
+#: src/kcm/ExceptionDialog.cc:61
+msgid "Match against:"
+msgstr "Vergelijken met:"
+
+#: src/kcm/ExceptionDialog.cc:65
+msgid "Matching mode:"
+msgstr "Vergelijkingsmodus:"
+
+#: src/kcm/ExceptionListWidget.cc:70
+msgid "Move Down"
+msgstr "Omlaag verplaatsen"
+
+#: src/kcm/ExceptionListWidget.cc:69
+msgid "Move Up"
+msgstr "Omhoog verplaatsen"
+
+#: src/kcm/ExceptionDialog.cc:78
+msgid "Paint a thin line around the window"
+msgstr "Een dunne lijn om het venster tekenen"
+
+#: src/kcm/ExceptionDialog.cc:101
+msgid "Pattern cannot be empty."
+msgstr "Patroon mag niet leeg zijn."
+
+#: src/kcm/DetectDialog.cc:59
+msgid "Querying KWin for window information..."
+msgstr "Venster-informatie opvragen bij KWin..."
+
+#: src/kcm/ExceptionDialog.cc:64
+msgid "Regular Expression"
+msgstr "Reguliere expressie"
+
+#: src/kcm/ExceptionDialog.cc:108
+msgid "Regular Expression syntax error: %1"
+msgstr "Syntaxisfout in reguliere expressie: %1"
+
+#: src/kcm/ExceptionListWidget.cc:68
+msgid "Remove"
+msgstr "Verwijderen"
+
+#: src/kcm/ExceptionListWidget.cc:82
+msgid "Rules are evaluated from top to bottom; the first matching rule will be applied."
+msgstr "Regels worden van boven naar beneden geëvalueerd; de eerste overeenkomende regel wordt toegepast."
+
+#: src/kcm/ExceptionDialog.cc:75
+msgid "Show menu as hamburger"
+msgstr "Menu als hamburgermenu tonen"
+
+#: src/kcm/ExceptionDialog.cc:74
+msgid "Show the window title and hide the menu"
+msgstr "Venstertitel tonen en menu verbergen"
+
+#: src/kcm/ExceptionModel.cc:52
+msgid "Title"
+msgstr "Titel"
+
+#: src/kcm/ExceptionDialog.cc:101 src/kcm/ExceptionDialog.cc:108
+msgid "Warning"
+msgstr "Waarschuwing"
+
+#: src/kcm/ExceptionDialog.cc:59
+msgid "Window Class"
+msgstr "Vensterklasse"
+
+#: src/kcm/ExceptionDialog.cc:41
+msgid "Window Exception Settings"
+msgstr "Instellingen voor venster-uitzonderingen"
+
+#: src/kcm/ExceptionDialog.cc:46
+msgid "Window Identification"
+msgstr "Vensteridentificatie"
+
+#: src/kcm/ExceptionDialog.cc:70
+msgid "Window Options"
+msgstr "Vensteropties"
+
+#: src/kcm/ExceptionDialog.cc:56
+msgid "Window Property / Pattern:"
+msgstr "Venstereigenschap / patroon:"
+
+#: src/kcm/ExceptionDialog.cc:59
+msgid "Window Title"
+msgstr "Venstertitel"
+
+#: src/kcm/config.ui:440
+msgid "Window-Specific Overrides"
+msgstr "Vensterspecifieke uitzonderingen"

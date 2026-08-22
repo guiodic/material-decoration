@@ -192,3 +192,165 @@ msgstr ""
 
 msgid "Show window title on mouse over"
 msgstr ""
+
+#: src/kcm/ExceptionListWidget.cc:66
+msgid "Add..."
+msgstr ""
+
+#: src/kcm/config.ui:231
+msgid "Also ignore submenu labels"
+msgstr ""
+
+#: src/kcm/DetectDialog.cc:79
+msgid ""
+"Captured Window Class: %1\n"
+"Captured Window Title: %2"
+msgstr ""
+
+#: src/kcm/ExceptionModel.cc:52
+msgid "Class"
+msgstr ""
+
+#: src/kcm/DetectDialog.cc:41
+msgid "Click 'Detect' and then click on the target window to capture its properties."
+msgstr ""
+
+#: src/kcm/DetectDialog.cc:45
+msgid "Detect"
+msgstr ""
+
+#: src/kcm/DetectDialog.cc:37
+msgid "Detect Window Properties"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:50
+msgid "Detect Window Properties..."
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:76
+msgid "Don't draw window shadow"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:77
+msgid "Don't round window corners"
+msgstr ""
+
+#: src/kcm/ExceptionListWidget.cc:67
+msgid "Edit..."
+msgstr ""
+
+#: src/kcm/ExceptionModel.cc:50
+msgid "Empty pattern"
+msgstr ""
+
+#: src/kcm/config.ui:238
+msgid "Enable fuzzy search"
+msgstr ""
+
+#: src/kcm/config.ui:374
+msgid "Enable long-press actions on window buttons"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:64
+msgid "Exact Match"
+msgstr ""
+
+#: src/kcm/DetectDialog.cc:82
+msgid "Failed to detect window info: %1"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:73
+msgid "Hide window title bar"
+msgstr ""
+
+#: src/kcm/config.ui:412
+msgid "Long-press duration"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:61
+msgid "Match against:"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:65
+msgid "Matching mode:"
+msgstr ""
+
+#: src/kcm/ExceptionListWidget.cc:70
+msgid "Move Down"
+msgstr ""
+
+#: src/kcm/ExceptionListWidget.cc:69
+msgid "Move Up"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:78
+msgid "Paint a thin line around the window"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:101
+msgid "Pattern cannot be empty."
+msgstr ""
+
+#: src/kcm/DetectDialog.cc:59
+msgid "Querying KWin for window information..."
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:64
+msgid "Regular Expression"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:108
+msgid "Regular Expression syntax error: %1"
+msgstr ""
+
+#: src/kcm/ExceptionListWidget.cc:68
+msgid "Remove"
+msgstr ""
+
+#: src/kcm/ExceptionListWidget.cc:82
+msgid "Rules are evaluated from top to bottom; the first matching rule will be applied."
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:75
+msgid "Show menu as hamburger"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:74
+msgid "Show the window title and hide the menu"
+msgstr ""
+
+#: src/kcm/ExceptionModel.cc:52
+msgid "Title"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:101 src/kcm/ExceptionDialog.cc:108
+msgid "Warning"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:59
+msgid "Window Class"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:41
+msgid "Window Exception Settings"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:46
+msgid "Window Identification"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:70
+msgid "Window Options"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:56
+msgid "Window Property / Pattern:"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:59
+msgid "Window Title"
+msgstr ""
+
+#: src/kcm/config.ui:440
+msgid "Window-Specific Overrides"
+msgstr ""

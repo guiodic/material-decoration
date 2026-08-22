@@ -219,3 +219,155 @@ msgstr "Einen dünnen Umriss um das Fenster zeichnen"
 
 msgid "Show window title on mouse over"
 msgstr "Fenstertitel bei Maus-Hover anzeigen"
+
+#: src/kcm/ExceptionListWidget.cc:66
+msgid "Add..."
+msgstr "Hinzufügen..."
+
+#: src/kcm/DetectDialog.cc:79
+msgid ""
+"Captured Window Class: %1\n"
+"Captured Window Title: %2"
+msgstr ""
+"Erfasste Fensterklasse: %1\n"
+"Erfasster Fenstertitel: %2"
+
+#: src/kcm/ExceptionModel.cc:52
+msgid "Class"
+msgstr "Klasse"
+
+#: src/kcm/DetectDialog.cc:41
+msgid "Click 'Detect' and then click on the target window to capture its properties."
+msgstr "Klicken Sie auf „Erkennen“ und dann auf das Zielfenster, um dessen Eigenschaften zu erfassen."
+
+#: src/kcm/DetectDialog.cc:45
+msgid "Detect"
+msgstr "Erkennen"
+
+#: src/kcm/DetectDialog.cc:37
+msgid "Detect Window Properties"
+msgstr "Fenstereigenschaften erkennen"
+
+#: src/kcm/ExceptionDialog.cc:50
+msgid "Detect Window Properties..."
+msgstr "Fenstereigenschaften erkennen..."
+
+#: src/kcm/ExceptionDialog.cc:76
+msgid "Don't draw window shadow"
+msgstr "Fensterschatten nicht zeichnen"
+
+#: src/kcm/ExceptionDialog.cc:77
+msgid "Don't round window corners"
+msgstr "Fensterecken nicht abrunden"
+
+#: src/kcm/ExceptionListWidget.cc:67
+msgid "Edit..."
+msgstr "Bearbeiten..."
+
+#: src/kcm/ExceptionModel.cc:50
+msgid "Empty pattern"
+msgstr "Leeres Muster"
+
+#: src/kcm/config.ui:238
+msgid "Enable fuzzy search"
+msgstr "Unscharfe Suche aktivieren"
+
+#: src/kcm/ExceptionDialog.cc:64
+msgid "Exact Match"
+msgstr "Exakte Übereinstimmung"
+
+#: src/kcm/DetectDialog.cc:82
+msgid "Failed to detect window info: %1"
+msgstr "Fensterinformationen konnten nicht erkannt werden: %1"
+
+#: src/kcm/ExceptionDialog.cc:73
+msgid "Hide window title bar"
+msgstr "Fenstertitelleiste ausblenden"
+
+#: src/kcm/ExceptionDialog.cc:61
+msgid "Match against:"
+msgstr "Abgleichen mit:"
+
+#: src/kcm/ExceptionDialog.cc:65
+msgid "Matching mode:"
+msgstr "Übereinstimmungsmodus:"
+
+#: src/kcm/ExceptionListWidget.cc:70
+msgid "Move Down"
+msgstr "Nach unten"
+
+#: src/kcm/ExceptionListWidget.cc:69
+msgid "Move Up"
+msgstr "Nach oben"
+
+#: src/kcm/ExceptionDialog.cc:78
+msgid "Paint a thin line around the window"
+msgstr "Einen dünnen Rahmen um das Fenster zeichnen"
+
+#: src/kcm/ExceptionDialog.cc:101
+msgid "Pattern cannot be empty."
+msgstr "Muster darf nicht leer sein."
+
+#: src/kcm/DetectDialog.cc:59
+msgid "Querying KWin for window information..."
+msgstr "Fensterinformationen werden von KWin abgefragt..."
+
+#: src/kcm/ExceptionDialog.cc:64
+msgid "Regular Expression"
+msgstr "Regulärer Ausdruck"
+
+#: src/kcm/ExceptionDialog.cc:108
+msgid "Regular Expression syntax error: %1"
+msgstr "Syntaxfehler im regulären Ausdruck: %1"
+
+#: src/kcm/ExceptionListWidget.cc:68
+msgid "Remove"
+msgstr "Entfernen"
+
+#: src/kcm/ExceptionListWidget.cc:82
+msgid "Rules are evaluated from top to bottom; the first matching rule will be applied."
+msgstr "Regeln werden von oben nach unten ausgewertet; die erste zutreffende Regel wird angewendet."
+
+#: src/kcm/ExceptionDialog.cc:75
+msgid "Show menu as hamburger"
+msgstr "Menü als Hamburger anzeigen"
+
+#: src/kcm/ExceptionDialog.cc:74
+msgid "Show the window title and hide the menu"
+msgstr "Fenstertitel anzeigen und Menü ausblenden"
+
+#: src/kcm/ExceptionModel.cc:52
+msgid "Title"
+msgstr "Titel"
+
+#: src/kcm/ExceptionDialog.cc:101 src/kcm/ExceptionDialog.cc:108
+msgid "Warning"
+msgstr "Warnung"
+
+#: src/kcm/ExceptionDialog.cc:59
+msgid "Window Class"
+msgstr "Fensterklasse"
+
+#: src/kcm/ExceptionDialog.cc:41
+msgid "Window Exception Settings"
+msgstr "Fenster-Ausnahmeeinstellungen"
+
+#: src/kcm/ExceptionDialog.cc:46
+msgid "Window Identification"
+msgstr "Fensteridentifikation"
+
+#: src/kcm/ExceptionDialog.cc:70
+msgid "Window Options"
+msgstr "Fensteroptionen"
+
+#: src/kcm/ExceptionDialog.cc:56
+msgid "Window Property / Pattern:"
+msgstr "Fenstereigenschaft / Muster:"
+
+#: src/kcm/ExceptionDialog.cc:59
+msgid "Window Title"
+msgstr "Fenstertitel"
+
+#: src/kcm/config.ui:440
+msgid "Window-Specific Overrides"
+msgstr "Fensterspezifische Ausnahmen"

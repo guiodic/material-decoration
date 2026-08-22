@@ -219,3 +219,155 @@ msgstr "Dibujar un contorno fino alrededor de la ventana"
 
 msgid "Show window title on mouse over"
 msgstr "Mostrar el título de la ventana al pasar el ratón"
+
+#: src/kcm/ExceptionListWidget.cc:66
+msgid "Add..."
+msgstr "Añadir..."
+
+#: src/kcm/DetectDialog.cc:79
+msgid ""
+"Captured Window Class: %1\n"
+"Captured Window Title: %2"
+msgstr ""
+"Clase de ventana capturada: %1\n"
+"Título de ventana capturado: %2"
+
+#: src/kcm/ExceptionModel.cc:52
+msgid "Class"
+msgstr "Clase"
+
+#: src/kcm/DetectDialog.cc:41
+msgid "Click 'Detect' and then click on the target window to capture its properties."
+msgstr "Haga clic en «Detectar» y luego en la ventana de destino para capturar sus propiedades."
+
+#: src/kcm/DetectDialog.cc:45
+msgid "Detect"
+msgstr "Detectar"
+
+#: src/kcm/DetectDialog.cc:37
+msgid "Detect Window Properties"
+msgstr "Detectar propiedades de la ventana"
+
+#: src/kcm/ExceptionDialog.cc:50
+msgid "Detect Window Properties..."
+msgstr "Detectar propiedades de la ventana..."
+
+#: src/kcm/ExceptionDialog.cc:76
+msgid "Don't draw window shadow"
+msgstr "No dibujar la sombra de la ventana"
+
+#: src/kcm/ExceptionDialog.cc:77
+msgid "Don't round window corners"
+msgstr "No redondear las esquinas de la ventana"
+
+#: src/kcm/ExceptionListWidget.cc:67
+msgid "Edit..."
+msgstr "Editar..."
+
+#: src/kcm/ExceptionModel.cc:50
+msgid "Empty pattern"
+msgstr "Patrón vacío"
+
+#: src/kcm/config.ui:238
+msgid "Enable fuzzy search"
+msgstr "Activar búsqueda difusa"
+
+#: src/kcm/ExceptionDialog.cc:64
+msgid "Exact Match"
+msgstr "Coincidencia exacta"
+
+#: src/kcm/DetectDialog.cc:82
+msgid "Failed to detect window info: %1"
+msgstr "Error al detectar la información de la ventana: %1"
+
+#: src/kcm/ExceptionDialog.cc:73
+msgid "Hide window title bar"
+msgstr "Ocultar la barra de título de la ventana"
+
+#: src/kcm/ExceptionDialog.cc:61
+msgid "Match against:"
+msgstr "Coincidir con:"
+
+#: src/kcm/ExceptionDialog.cc:65
+msgid "Matching mode:"
+msgstr "Modo de coincidencia:"
+
+#: src/kcm/ExceptionListWidget.cc:70
+msgid "Move Down"
+msgstr "Bajar"
+
+#: src/kcm/ExceptionListWidget.cc:69
+msgid "Move Up"
+msgstr "Subir"
+
+#: src/kcm/ExceptionDialog.cc:78
+msgid "Paint a thin line around the window"
+msgstr "Dibujar una línea fina alrededor de la ventana"
+
+#: src/kcm/ExceptionDialog.cc:101
+msgid "Pattern cannot be empty."
+msgstr "El patrón no puede estar vacío."
+
+#: src/kcm/DetectDialog.cc:59
+msgid "Querying KWin for window information..."
+msgstr "Consultando la información de la ventana a KWin..."
+
+#: src/kcm/ExceptionDialog.cc:64
+msgid "Regular Expression"
+msgstr "Expresión regular"
+
+#: src/kcm/ExceptionDialog.cc:108
+msgid "Regular Expression syntax error: %1"
+msgstr "Error de sintaxis en la expresión regular: %1"
+
+#: src/kcm/ExceptionListWidget.cc:68
+msgid "Remove"
+msgstr "Eliminar"
+
+#: src/kcm/ExceptionListWidget.cc:82
+msgid "Rules are evaluated from top to bottom; the first matching rule will be applied."
+msgstr "Las reglas se evalúan de arriba a abajo; se aplicará la primera regla que coincida."
+
+#: src/kcm/ExceptionDialog.cc:75
+msgid "Show menu as hamburger"
+msgstr "Mostrar menú como hamburguesa"
+
+#: src/kcm/ExceptionDialog.cc:74
+msgid "Show the window title and hide the menu"
+msgstr "Mostrar el título de la ventana y ocultar el menú"
+
+#: src/kcm/ExceptionModel.cc:52
+msgid "Title"
+msgstr "Título"
+
+#: src/kcm/ExceptionDialog.cc:101 src/kcm/ExceptionDialog.cc:108
+msgid "Warning"
+msgstr "Advertencia"
+
+#: src/kcm/ExceptionDialog.cc:59
+msgid "Window Class"
+msgstr "Clase de ventana"
+
+#: src/kcm/ExceptionDialog.cc:41
+msgid "Window Exception Settings"
+msgstr "Configuración de excepciones de ventana"
+
+#: src/kcm/ExceptionDialog.cc:46
+msgid "Window Identification"
+msgstr "Identificación de la ventana"
+
+#: src/kcm/ExceptionDialog.cc:70
+msgid "Window Options"
+msgstr "Opciones de la ventana"
+
+#: src/kcm/ExceptionDialog.cc:56
+msgid "Window Property / Pattern:"
+msgstr "Propiedad / Patrón de ventana:"
+
+#: src/kcm/ExceptionDialog.cc:59
+msgid "Window Title"
+msgstr "Título de la ventana"
+
+#: src/kcm/config.ui:440
+msgid "Window-Specific Overrides"
+msgstr "Excepciones específicas de ventana"

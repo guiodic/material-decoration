@@ -219,3 +219,155 @@ msgstr "在窗口周围绘制细轮廓"
 
 msgid "Show window title on mouse over"
 msgstr "鼠标悬停时显示窗口标题"
+
+#: src/kcm/ExceptionListWidget.cc:66
+msgid "Add..."
+msgstr "添加..."
+
+#: src/kcm/DetectDialog.cc:79
+msgid ""
+"Captured Window Class: %1\n"
+"Captured Window Title: %2"
+msgstr ""
+"捕获的窗口类：%1\n"
+"捕获的窗口标题：%2"
+
+#: src/kcm/ExceptionModel.cc:52
+msgid "Class"
+msgstr "类"
+
+#: src/kcm/DetectDialog.cc:41
+msgid "Click 'Detect' and then click on the target window to capture its properties."
+msgstr "点击“检测”，然后点击目标窗口以捕获其属性。"
+
+#: src/kcm/DetectDialog.cc:45
+msgid "Detect"
+msgstr "检测"
+
+#: src/kcm/DetectDialog.cc:37
+msgid "Detect Window Properties"
+msgstr "检测窗口属性"
+
+#: src/kcm/ExceptionDialog.cc:50
+msgid "Detect Window Properties..."
+msgstr "检测窗口属性..."
+
+#: src/kcm/ExceptionDialog.cc:76
+msgid "Don't draw window shadow"
+msgstr "不绘制窗口阴影"
+
+#: src/kcm/ExceptionDialog.cc:77
+msgid "Don't round window corners"
+msgstr "不圆润窗口角"
+
+#: src/kcm/ExceptionListWidget.cc:67
+msgid "Edit..."
+msgstr "编辑..."
+
+#: src/kcm/ExceptionModel.cc:50
+msgid "Empty pattern"
+msgstr "空模式"
+
+#: src/kcm/config.ui:238
+msgid "Enable fuzzy search"
+msgstr "启用模糊搜索"
+
+#: src/kcm/ExceptionDialog.cc:64
+msgid "Exact Match"
+msgstr "精确匹配"
+
+#: src/kcm/DetectDialog.cc:82
+msgid "Failed to detect window info: %1"
+msgstr "未能检测到窗口信息：%1"
+
+#: src/kcm/ExceptionDialog.cc:73
+msgid "Hide window title bar"
+msgstr "隐藏窗口标题栏"
+
+#: src/kcm/ExceptionDialog.cc:61
+msgid "Match against:"
+msgstr "匹配对象："
+
+#: src/kcm/ExceptionDialog.cc:65
+msgid "Matching mode:"
+msgstr "匹配模式："
+
+#: src/kcm/ExceptionListWidget.cc:70
+msgid "Move Down"
+msgstr "下移"
+
+#: src/kcm/ExceptionListWidget.cc:69
+msgid "Move Up"
+msgstr "上移"
+
+#: src/kcm/ExceptionDialog.cc:78
+msgid "Paint a thin line around the window"
+msgstr "在窗口周围绘制细线"
+
+#: src/kcm/ExceptionDialog.cc:101
+msgid "Pattern cannot be empty."
+msgstr "模式不能为空。"
+
+#: src/kcm/DetectDialog.cc:59
+msgid "Querying KWin for window information..."
+msgstr "正在向 KWin 查询窗口信息..."
+
+#: src/kcm/ExceptionDialog.cc:64
+msgid "Regular Expression"
+msgstr "正则表达式"
+
+#: src/kcm/ExceptionDialog.cc:108
+msgid "Regular Expression syntax error: %1"
+msgstr "正则表达式语法错误：%1"
+
+#: src/kcm/ExceptionListWidget.cc:68
+msgid "Remove"
+msgstr "移除"
+
+#: src/kcm/ExceptionListWidget.cc:82
+msgid "Rules are evaluated from top to bottom; the first matching rule will be applied."
+msgstr "规则将从上到下依序评估；将应用第一个匹配的规则。"
+
+#: src/kcm/ExceptionDialog.cc:75
+msgid "Show menu as hamburger"
+msgstr "将菜单显示为折叠菜单"
+
+#: src/kcm/ExceptionDialog.cc:74
+msgid "Show the window title and hide the menu"
+msgstr "显示窗口标题并隐藏菜单"
+
+#: src/kcm/ExceptionModel.cc:52
+msgid "Title"
+msgstr "标题"
+
+#: src/kcm/ExceptionDialog.cc:101 src/kcm/ExceptionDialog.cc:108
+msgid "Warning"
+msgstr "警告"
+
+#: src/kcm/ExceptionDialog.cc:59
+msgid "Window Class"
+msgstr "窗口类"
+
+#: src/kcm/ExceptionDialog.cc:41
+msgid "Window Exception Settings"
+msgstr "窗口例外设置"
+
+#: src/kcm/ExceptionDialog.cc:46
+msgid "Window Identification"
+msgstr "窗口标识"
+
+#: src/kcm/ExceptionDialog.cc:70
+msgid "Window Options"
+msgstr "窗口选项"
+
+#: src/kcm/ExceptionDialog.cc:56
+msgid "Window Property / Pattern:"
+msgstr "窗口属性 / 模式："
+
+#: src/kcm/ExceptionDialog.cc:59
+msgid "Window Title"
+msgstr "窗口标题"
+
+#: src/kcm/config.ui:440
+msgid "Window-Specific Overrides"
+msgstr "特定窗口覆盖"
