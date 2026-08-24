@@ -46,7 +46,7 @@ public:
         const auto penWidth = painter->pen().widthF();
         
         
-        const qreal spacing = penWidth * 3;
+        const qreal spacing = penWidth * 2;
         for (int i = -1; i <= 1; ++i) {
             const qreal y = i * spacing;
             const QPointF left = snapper.snapForPen(QPointF { -5.5, y }, penWidth);

@@ -363,13 +363,14 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         const QPointF centerSnapped = snapper.snap(center);
         painter->translate(centerSnapped);
 
+                
         // Scale by physical-aligned factor
         painter->scale(iconLogicalSize / 18.0, iconLogicalSize / 18.0);
         
         // default pen width, not snapped
-        m_penScale = 1.0;
-        setPenWidth(painter, m_penScale, false);
-
+        m_penScale = 1.5;
+        setPenWidth(painter, m_penScale, false);       
+        
         PixelSnapper iconSnapper(painter);
 
         // Icons
