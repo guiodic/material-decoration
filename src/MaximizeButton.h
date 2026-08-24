@@ -39,31 +39,46 @@ public:
 
         button->setVisible(decoratedClient->isMaximizeable());
     }
+    
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
+        Q_UNUSED(button)
         
         const auto penWidth = painter->pen().widthF();
 
+        // We use drawLine() instead of drawPolyline() and drawRect() 
+        // to avoid artifacts at corners using snapForPen()
+        const auto snap = [&snapper, painter, penWidth](const QPointF &point) {
+            return snapper.snapForPen(point, penWidth);
+        };
+        const auto drawSegment = [painter, &snap](const QPointF &start, const QPointF &end) {
+            painter->drawLine(snap(start), snap(end));
+        };
+        const auto drawOutline = [&drawSegment](qreal left, qreal top, qreal right, qreal bottom) {
+            const QPointF topLeft(left, top);
+            const QPointF topRight(right, top);
+            const QPointF bottomRight(right, bottom);
+            const QPointF bottomLeft(left, bottom);
+
+            drawSegment(topLeft, topRight);
+            drawSegment(topRight, bottomRight);
+            drawSegment(bottomRight, bottomLeft);
+            drawSegment(bottomLeft, topLeft);
+        };
+
         if (button->isChecked()) {
             const qreal offset = penWidth * 1.5;
-            // Outline of first square, "on top", aligned bottom left.
-            painter->drawPolygon(QVector<QPointF> {
-                snapper.snapForPen(QPointF(-5.0, 5.0), penWidth),
-                snapper.snapForPen(QPointF(-5.0, -5.0 + offset), penWidth),
-                snapper.snapForPen(QPointF(5.0 - offset, -5.0 + offset), penWidth),
-                snapper.snapForPen(QPointF(5.0 - offset, 5.0), penWidth)
-            });
 
-            // Partially occluded square, "below" first square, aligned top right.
-            painter->drawPolyline(QVector<QPointF> {
-                snapper.snapForPen(QPointF(-5.0 + offset, -5.0 + offset), penWidth),
-                snapper.snapForPen(QPointF(-5.0 + offset, -5.0), penWidth),
-                snapper.snapForPen(QPointF(5.0, -5.0), penWidth),
-                snapper.snapForPen(QPointF(5.0, 5.0 - offset), penWidth),
-                snapper.snapForPen(QPointF(5.0 - offset, 5.0 - offset), penWidth)
-            });
+            // Foreground square, aligned bottom-left.
+            drawOutline(-5.0, -5.0 + offset, 5.0 - offset, 5.0);
+
+            // Visible parts of the background square, aligned top-right.
+            drawSegment(QPointF(-5.0 + offset, -5.0 + offset), QPointF(-5.0 + offset, -5.0));
+            drawSegment(QPointF(-5.0 + offset, -5.0), QPointF(5.0, -5.0));
+            drawSegment(QPointF(5.0, -5.0), QPointF(5.0, 5.0 - offset));
+            drawSegment(QPointF(5.0, 5.0 - offset), QPointF(5.0 - offset, 5.0 - offset));
         } else {
-            painter->drawRect(snapper.snapForPen(QRectF(QPointF(-5.0, -5.0), QPointF(5.0, 5.0)), penWidth));
+            drawOutline(-5.0, -5.0, 5.0, 5.0);
         }
     }
 };
