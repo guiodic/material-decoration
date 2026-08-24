@@ -42,7 +42,6 @@ public:
     
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
-        Q_UNUSED(button)
         
         const auto penScale = button->penScale();
         button->setPenWidth(painter, penScale, true); // we have horizontal/vertical drawing, so we snap the pen
@@ -69,7 +68,7 @@ public:
         };
 
         if (button->isChecked()) {
-            const qreal offset = penWidth * 1.5;
+            const qreal offset = penScale * 1.5;
 
             // Foreground square, aligned bottom-left.
             drawOutline(-5.0, -5.0 + offset, 5.0 - offset, 5.0);

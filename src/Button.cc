@@ -469,7 +469,7 @@ void Button::setPenWidth(QPainter *painter, const qreal scale, bool snapped)
     painter->setPen(pen);
 }
 
-qreal Button::penScale() 
+qreal Button::penScale() const
 {
     return m_penScale;
 }    

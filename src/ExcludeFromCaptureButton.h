@@ -53,7 +53,7 @@ public:
         if (!deco) {
             return;
         }
-        button->setPenWidth(painter, 1.25);
+        button->setPenWidth(painter, 1.25, false);
         auto penWidth = painter->pen().widthF();
 
         // A spy hat (like view-private.svg icon)
@@ -75,7 +75,7 @@ public:
         
         const auto penScale = button->penScale();
         // Now we have horizontal/vertical drawing, so we snap the pen        
-        button->setPenWidth(painter, penScale, true);
+        button->setPenWidth(painter, 1.25, true);
         penWidth = painter->pen().widthF();
         
         // Hat brim

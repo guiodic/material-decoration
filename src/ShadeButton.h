@@ -54,7 +54,6 @@ public:
         );
         
         button->setPenWidth(painter, penScale, false); // reset to default
-        penWidth = painter->pen().widthF();
         
         if (button->isChecked()) {
             painter->drawPolyline(  QVector<QPointF> {

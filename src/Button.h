@@ -85,7 +85,7 @@ public:
     void setIsLeftmost(bool isLeftmost);
     void setIsRightmost(bool isRightmost);
     
-    qreal penScale();
+    qreal penScale() const;
 
 private:
     void updateAnimationState(bool hovered);
