@@ -91,6 +91,7 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     , m_padding()
     , m_isGtkButton(false)
     , m_holdTimer(new QTimer(this))
+    , m_penScale(1.0)
 {
     m_holdTimer->setSingleShot(true);
     connect(m_holdTimer, &QTimer::timeout, this, &Button::handleHoldTimeout);
@@ -365,7 +366,9 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         // Scale by physical-aligned factor
         painter->scale(iconLogicalSize / 18.0, iconLogicalSize / 18.0);
         
-        setPenWidth(painter, 1.0);
+        // default pen width, not snapped
+        m_penScale = 1.0;
+        setPenWidth(painter, m_penScale, false);
 
         PixelSnapper iconSnapper(painter);
 
@@ -445,16 +448,16 @@ void Button::setHeight(qreal buttonHeight)
     updateSize(buttonHeight * 1.1, buttonHeight);
 }
 
-void Button::setPenWidth(QPainter *painter, const qreal scale)
+void Button::setPenWidth(QPainter *painter, const qreal scale, bool snapped)
 {
     QPen pen(foregroundColor());
     pen.setCapStyle(Qt::SquareCap);
     pen.setJoinStyle(Qt::MiterJoin);
-
+    
     PixelSnapper snapper(painter);
     const qreal localToPhysicalScale = snapper.localToPhysicalScale();
 
-    if (localToPhysicalScale > 0.0) {
+    if ((localToPhysicalScale > 0.0) && snapped) {
         const qreal nominalPhysicalWidth = PenWidth::Symbol * scale * localToPhysicalScale;
         const qreal snappedPhysicalWidth = qMax<qreal>(1.0, qRound(nominalPhysicalWidth));
         pen.setWidthF(snappedPhysicalWidth / localToPhysicalScale);
@@ -465,7 +468,11 @@ void Button::setPenWidth(QPainter *painter, const qreal scale)
     painter->setPen(pen);
 }
 
-
+qreal Button::penScale() 
+{
+    return m_penScale;
+}    
+    
 QColor Button::backgroundColor() const
 {
     const auto *deco = qobject_cast<Decoration *>(this->decoration());

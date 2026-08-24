@@ -42,30 +42,31 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
-        
-        const auto penWidth = painter->pen().widthF();
 
         const QPointF offset(-5.0, -5.0);
-
-        if (button->isChecked()) {
-            painter->drawLine( 
+        const auto penScale = button->penScale();
+        button->setPenWidth(painter, penScale, true); // we have horizontal/vertical drawing, so we snap the pen
+        auto penWidth = painter->pen().widthF();
+        
+        painter->drawLine( 
                 snapper.snapForPen(QPointF( 0, 2 ) + offset, penWidth),
                 snapper.snapForPen(QPointF( 10, 2 ) + offset, penWidth)
-            );
+        );
+        
+        button->setPenWidth(painter, penScale, false); // reset to default
+        penWidth = painter->pen().widthF();
+        
+        if (button->isChecked()) {
             painter->drawPolyline(  QVector<QPointF> {
-                snapper.snap(QPointF( 0.0, 5.0 ) + offset),
-                snapper.snap(QPointF( 5.0, 10.0 ) + offset),
-                snapper.snap(QPointF( 10.0, 5.0 ) + offset)
+                QPointF( 0.0, 5.0 ) + offset,
+                QPointF( 5.0, 10.0 ) + offset,
+                QPointF( 10.0, 5.0 ) + offset
             });
         } else {
-            painter->drawLine( 
-                snapper.snapForPen(QPointF( 0, 2 ) + offset, penWidth),
-                snapper.snapForPen(QPointF( 10, 2 ) + offset, penWidth)
-            );
             painter->drawPolyline( QVector<QPointF> {
-                snapper.snap(QPointF( 0.0, 10.0 ) + offset),
-                snapper.snap(QPointF( 5.0, 5.0 ) + offset),
-                snapper.snap(QPointF( 10.0, 10.0 ) + offset)
+                QPointF( 0.0, 10.0 ) + offset,
+                QPointF( 5.0, 5.0 ) + offset,
+                QPointF( 10.0, 10.0 ) + offset
             });
         }
     }

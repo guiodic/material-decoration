@@ -44,6 +44,8 @@ public:
         Q_UNUSED(iconRect)
         Q_UNUSED(button)
         
+        const auto penScale = button->penScale();
+        button->setPenWidth(painter, penScale, true); // we have horizontal/vertical drawing, so we snap the pen
         const auto penWidth = painter->pen().widthF();
 
         // We use drawLine() instead of drawPolyline() and drawRect() 
@@ -80,6 +82,8 @@ public:
         } else {
             drawOutline(-5.0, -5.0, 5.0, 5.0);
         }
+        
+        button->setPenWidth(painter, penScale, false); // reset to default
     }
 };
 

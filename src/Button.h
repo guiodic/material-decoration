@@ -68,7 +68,7 @@ public:
     void forceUnpress();
 
     //virtual qreal iconLineWidth(const qreal size) const;
-    void setPenWidth(QPainter *painter, const qreal scale);
+    void setPenWidth(QPainter *painter, const qreal scale, bool snapped = false);
 
     bool animationEnabled() const;
     void setAnimationEnabled(bool value);
@@ -84,6 +84,8 @@ public:
 
     void setIsLeftmost(bool isLeftmost);
     void setIsRightmost(bool isRightmost);
+    
+    qreal penScale();
 
 private:
     void updateAnimationState(bool hovered);
@@ -126,6 +128,7 @@ protected:
 
     QTimer *m_holdTimer = nullptr;
     bool m_longPressTriggered = false;
+    qreal m_penScale = 1.0;
 
     friend class Decoration;
 };

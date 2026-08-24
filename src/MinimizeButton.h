@@ -41,14 +41,17 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
-        Q_UNUSED(button)
         
+        const auto penScale = button->penScale();
+        button->setPenWidth(painter, penScale, true); // we have horizontal/vertical drawing, so we snap the pen
         const auto penWidth = painter->pen().widthF();
 
         const QPointF p1 = snapper.snapForPen(QPointF(-5.0, 0.0), penWidth);
         const QPointF p2 = snapper.snapForPen(QPointF(5.0, 0.0), penWidth);
 
         painter->drawLine(p1, p2);
+        
+        button->setPenWidth(painter, penScale, false); // reset to default
     }
 };
 
