@@ -41,8 +41,7 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
-
-        button->setPenWidth(painter, 1.5);
+        Q_UNUSED(button)
 
         const QPointF p1 = snapper.snap(QPointF(-5.0, -5.0));
         const QPointF p2 = snapper.snap(QPointF(5.0, 5.0));

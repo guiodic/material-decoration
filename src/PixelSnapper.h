@@ -35,6 +35,17 @@ public:
     QRectF snap(const QRectF &rect) const;
 
     /**
+     * @brief Snaps stroked geometry to the physical pixel grid.
+     *
+     * A stroke with an odd physical-pixel width is centered between pixels;
+     * an even-width stroke is centered on a pixel.  This keeps the complete
+     * stroke on physical pixel boundaries instead of distributing it over
+     * adjacent pixels during antialiasing.
+     */
+    QPointF snapForPen(const QPointF &p, qreal penWidth) const;
+    QRectF snapForPen(const QRectF &rect, qreal penWidth) const;
+
+    /**
      * @brief Computes the scaling factor from local coordinates to physical device pixels.
      * 
      * @note Semantics & Assumptions:

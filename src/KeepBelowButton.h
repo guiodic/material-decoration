@@ -41,7 +41,7 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
-        button->setPenWidth(painter, 1.25);
+        Q_UNUSED(button)
 
         const QPointF offset(-5.0, -5.0);
         painter->drawPolyline(  QVector<QPointF> {

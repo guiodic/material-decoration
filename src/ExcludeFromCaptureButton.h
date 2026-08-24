@@ -53,7 +53,8 @@ public:
         if (!deco) {
             return;
         }
-        button->setPenWidth(painter, 1.25 * KDecoration3::pixelSize(deco->window()->scale()));
+        button->setPenWidth(painter, 1.25);
+        const auto penWidth = painter->pen().widthF();
 
         // A spy hat (like view-private.svg icon)
         // Hat crown with dip/crease at top (filled)
@@ -69,14 +70,14 @@ public:
         painter->setBrush(Qt::NoBrush);
 
         // Hat brim
-        painter->drawLine(snapper.snap(QPointF(-6.2, -0.5)), snapper.snap(QPointF(6.2, -0.5)));
+        painter->drawLine(snapper.snapForPen(QPointF(-6.2, -0.5), penWidth), snapper.snapForPen(QPointF(6.2, -0.5), penWidth));
 
         // Glasses' lenses
         painter->drawEllipse(snapper.snap(QRectF(QPointF(-6.3, 1.5), QPointF(-1.7, 6.1))));
         painter->drawEllipse(snapper.snap(QRectF(QPointF(1.7, 1.5), QPointF(6.3, 6.1))));
 
         // Bridge between lenses
-        painter->drawLine(snapper.snap(QPointF(-1.5, 3.8)), snapper.snap(QPointF(1.5, 3.8)));
+        painter->drawLine(snapper.snapForPen(QPointF(-1.5, 3.8), penWidth), snapper.snapForPen(QPointF(1.5, 3.8), penWidth));
     }
 };
 #endif

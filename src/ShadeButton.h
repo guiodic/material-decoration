@@ -42,28 +42,26 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
+        
+        const auto penWidth = painter->pen().widthF();
 
         const QPointF offset(-5.0, -5.0);
 
         if (button->isChecked()) {
-            button->setPenWidth(painter, 1.25);
             painter->drawLine( 
-                snapper.snap(QPointF( 0, 2 ) + offset),
-                snapper.snap(QPointF( 10, 2 ) + offset)
+                snapper.snapForPen(QPointF( 0, 2 ) + offset, penWidth),
+                snapper.snapForPen(QPointF( 10, 2 ) + offset, penWidth)
             );
-            button->setPenWidth(painter, 1.25);
             painter->drawPolyline(  QVector<QPointF> {
                 snapper.snap(QPointF( 0.0, 5.0 ) + offset),
                 snapper.snap(QPointF( 5.0, 10.0 ) + offset),
                 snapper.snap(QPointF( 10.0, 5.0 ) + offset)
             });
         } else {
-            button->setPenWidth(painter, 1.25);
             painter->drawLine( 
-                snapper.snap(QPointF( 0, 2 ) + offset),
-                snapper.snap(QPointF( 10, 2 ) + offset)
+                snapper.snapForPen(QPointF( 0, 2 ) + offset, penWidth),
+                snapper.snapForPen(QPointF( 10, 2 ) + offset, penWidth)
             );
-            button->setPenWidth(painter, 1.25);
             painter->drawPolyline( QVector<QPointF> {
                 snapper.snap(QPointF( 0.0, 10.0 ) + offset),
                 snapper.snap(QPointF( 5.0, 5.0 ) + offset),

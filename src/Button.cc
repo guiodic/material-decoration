@@ -365,7 +365,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         // Scale by physical-aligned factor
         painter->scale(iconLogicalSize / 18.0, iconLogicalSize / 18.0);
         
-        setPenWidth(painter, KDecoration3::pixelSize(deco->window()->scale()));
+        setPenWidth(painter, 1.5);
 
         PixelSnapper iconSnapper(painter);
 
@@ -456,7 +456,7 @@ void Button::setPenWidth(QPainter *painter, const qreal scale)
 
     if (localToPhysicalScale > 0.0) {
         const qreal nominalPhysicalWidth = PenWidth::Symbol * scale * localToPhysicalScale;
-        const qreal snappedPhysicalWidth = qMax(1.0, qRound(nominalPhysicalWidth * 2.0) / 2.0);
+        const qreal snappedPhysicalWidth = qMax<qreal>(1.0, qRound(nominalPhysicalWidth));
         pen.setWidthF(snappedPhysicalWidth / localToPhysicalScale);
     } else {
         pen.setWidthF(PenWidth::Symbol * scale);

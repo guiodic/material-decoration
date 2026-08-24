@@ -35,9 +35,7 @@ SearchButton::~SearchButton() = default;
 void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper)
 {
     Q_UNUSED(iconRect)
-    //painter->setRenderHint(QPainter::Antialiasing, true);
-    setPenWidth(painter, 1.25);
-
+    
     const QRectF circleRect = snapper.snap(QRectF(QPointF(-6.0, -6.0), QPointF(2.0, 2.0)));
     painter->drawEllipse(circleRect);
 

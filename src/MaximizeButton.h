@@ -41,28 +41,29 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
-        button->setPenWidth(painter, 1.5);
+        
+        const auto penWidth = painter->pen().widthF();
 
         if (button->isChecked()) {
-            const qreal offset = painter->pen().widthF() * 1.5;
+            const qreal offset = penWidth * 1.5;
             // Outline of first square, "on top", aligned bottom left.
             painter->drawPolygon(QVector<QPointF> {
-                snapper.snap(QPointF(-5.0, 5.0)),
-                snapper.snap(QPointF(-5.0, -5.0 + offset)),
-                snapper.snap(QPointF(5.0 - offset, -5.0 + offset)),
-                snapper.snap(QPointF(5.0 - offset, 5.0))
+                snapper.snapForPen(QPointF(-5.0, 5.0), penWidth),
+                snapper.snapForPen(QPointF(-5.0, -5.0 + offset), penWidth),
+                snapper.snapForPen(QPointF(5.0 - offset, -5.0 + offset), penWidth),
+                snapper.snapForPen(QPointF(5.0 - offset, 5.0), penWidth)
             });
 
             // Partially occluded square, "below" first square, aligned top right.
             painter->drawPolyline(QVector<QPointF> {
-                snapper.snap(QPointF(-5.0 + offset, -5.0 + offset)),
-                snapper.snap(QPointF(-5.0 + offset, -5.0)),
-                snapper.snap(QPointF(5.0, -5.0)),
-                snapper.snap(QPointF(5.0, 5.0 - offset)),
-                snapper.snap(QPointF(5.0 - offset, 5.0 - offset))
+                snapper.snapForPen(QPointF(-5.0 + offset, -5.0 + offset), penWidth),
+                snapper.snapForPen(QPointF(-5.0 + offset, -5.0), penWidth),
+                snapper.snapForPen(QPointF(5.0, -5.0), penWidth),
+                snapper.snapForPen(QPointF(5.0, 5.0 - offset), penWidth),
+                snapper.snapForPen(QPointF(5.0 - offset, 5.0 - offset), penWidth)
             });
         } else {
-            painter->drawRect(snapper.snap(QRectF(QPointF(-5.0, -5.0), QPointF(5.0, 5.0))));
+            painter->drawRect(snapper.snapForPen(QRectF(QPointF(-5.0, -5.0), QPointF(5.0, 5.0)), penWidth));
         }
     }
 };
