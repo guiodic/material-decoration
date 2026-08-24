@@ -68,7 +68,7 @@ public:
         painter->drawPath(path);
 
         // Dot
-        painter->drawRect(snapper.snap(QRectF(QPointF(5.0, 10.0) + offset, QPointF(5.5, 10.5) + offset)));
+        painter->drawEllipse(QRectF(QPointF(5.0, 10.0) + offset, QPointF(5.5, 10.5) + offset));
     }
 };
 
