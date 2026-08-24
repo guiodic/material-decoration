@@ -39,31 +39,97 @@ public:
 
         button->setVisible(decoratedClient->isMaximizeable());
     }
+    
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
-        button->setPenWidth(painter, 1.5);
+        
+        const auto penScale = button->penScale();
+        button->setPenWidth(painter, penScale, true); // we have horizontal/vertical drawing, so we snap the pen
+        const auto penWidth = painter->pen().widthF();
 
-        if (button->isChecked()) {
-            const qreal offset = painter->pen().widthF() * 1.5;
-            // Outline of first square, "on top", aligned bottom left.
-            painter->drawPolygon(QVector<QPointF> {
-                snapper.snap(QPointF(-5.0, 5.0)),
-                snapper.snap(QPointF(-5.0, -5.0 + offset)),
-                snapper.snap(QPointF(5.0 - offset, -5.0 + offset)),
-                snapper.snap(QPointF(5.0 - offset, 5.0))
-            });
+        const qreal localToPhys = snapper.localToPhysicalScale();
 
-            // Partially occluded square, "below" first square, aligned top right.
-            painter->drawPolyline(QVector<QPointF> {
-                snapper.snap(QPointF(-5.0 + offset, -5.0 + offset)),
-                snapper.snap(QPointF(-5.0 + offset, -5.0)),
-                snapper.snap(QPointF(5.0, -5.0)),
-                snapper.snap(QPointF(5.0, 5.0 - offset)),
-                snapper.snap(QPointF(5.0 - offset, 5.0 - offset))
-            });
+        if (localToPhys > 0.0 && snapper.dpr() > 0.0) {
+            const qreal nominalPhysBase = 10.0 * localToPhys;
+            const qint64 physBase = qMax<qint64>(1, qRound64(nominalPhysBase));
+            const qreal d_base = static_cast<qreal>(physBase) / localToPhys;
+
+            if (button->isChecked()) {
+                const qreal nominalPhysOffset = penScale * 1.5 * localToPhys;
+                const qint64 physOffset = qMax<qint64>(1, qRound64(nominalPhysOffset));
+                const qint64 physSquare = qMax<qint64>(1, physBase - physOffset);
+
+                const qreal d_offset = static_cast<qreal>(physOffset) / localToPhys;
+                const qreal d_square = static_cast<qreal>(physSquare) / localToPhys;
+
+                // Foreground square: bottom-left aligned reference corner
+                const QPointF fgBottomLeft = snapper.snapForPen(QPointF(-d_base / 2.0, d_base / 2.0), penWidth);
+                const QPointF fgTopLeft(fgBottomLeft.x(), fgBottomLeft.y() - d_square);
+                const QPointF fgTopRight(fgBottomLeft.x() + d_square, fgBottomLeft.y() - d_square);
+                const QPointF fgBottomRight(fgBottomLeft.x() + d_square, fgBottomLeft.y());
+
+                // Draw foreground square
+                painter->drawLine(fgTopLeft, fgTopRight);
+                painter->drawLine(fgTopRight, fgBottomRight);
+                painter->drawLine(fgBottomRight, fgBottomLeft);
+                painter->drawLine(fgBottomLeft, fgTopLeft);
+
+                // Background square: shifted by (+physOffset, -physOffset) physical pixels
+                const QPointF shift(d_offset, -d_offset);
+                const QPointF bgTopLeft = fgTopLeft + shift;
+                const QPointF bgTopRight = fgTopRight + shift;
+                const QPointF bgBottomRight = fgBottomRight + shift;
+
+                // Visible parts of the background square, aligned top-right
+                painter->drawLine(QPointF(bgTopLeft.x(), fgTopLeft.y()), bgTopLeft);
+                painter->drawLine(bgTopLeft, bgTopRight);
+                painter->drawLine(bgTopRight, bgBottomRight);
+                painter->drawLine(bgBottomRight, QPointF(fgBottomRight.x(), bgBottomRight.y()));
+            } else {
+                const QPointF bottomLeft = snapper.snapForPen(QPointF(-d_base / 2.0, d_base / 2.0), penWidth);
+                const QPointF topLeft(bottomLeft.x(), bottomLeft.y() - d_base);
+                const QPointF topRight(bottomLeft.x() + d_base, bottomLeft.y() - d_base);
+                const QPointF bottomRight(bottomLeft.x() + d_base, bottomLeft.y());
+
+                painter->drawLine(topLeft, topRight);
+                painter->drawLine(topRight, bottomRight);
+                painter->drawLine(bottomRight, bottomLeft);
+                painter->drawLine(bottomLeft, topLeft);
+            }
         } else {
-            painter->drawRect(snapper.snap(QRectF(QPointF(-5.0, -5.0), QPointF(5.0, 5.0))));
+            const auto snap = [&snapper, penWidth](const QPointF &point) {
+                return snapper.snapForPen(point, penWidth);
+            };
+            const auto drawSegment = [painter, &snap](const QPointF &start, const QPointF &end) {
+                painter->drawLine(snap(start), snap(end));
+            };
+            const auto drawOutline = [&drawSegment](qreal left, qreal top, qreal right, qreal bottom) {
+                const QPointF topLeft(left, top);
+                const QPointF topRight(right, top);
+                const QPointF bottomRight(right, bottom);
+                const QPointF bottomLeft(left, bottom);
+
+                drawSegment(topLeft, topRight);
+                drawSegment(topRight, bottomRight);
+                drawSegment(bottomRight, bottomLeft);
+                drawSegment(bottomLeft, topLeft);
+            };
+
+            if (button->isChecked()) {
+                const qreal offset = penScale * 1.5;
+
+                drawOutline(-5.0, -5.0 + offset, 5.0 - offset, 5.0);
+
+                drawSegment(QPointF(-5.0 + offset, -5.0 + offset), QPointF(-5.0 + offset, -5.0));
+                drawSegment(QPointF(-5.0 + offset, -5.0), QPointF(5.0, -5.0));
+                drawSegment(QPointF(5.0, -5.0), QPointF(5.0, 5.0 - offset));
+                drawSegment(QPointF(5.0, 5.0 - offset), QPointF(5.0 - offset, 5.0 - offset));
+            } else {
+                drawOutline(-5.0, -5.0, 5.0, 5.0);
+            }
         }
+        
+        button->setPenWidth(painter, penScale, false); // reset to default
     }
 };
 

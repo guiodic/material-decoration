@@ -53,30 +53,38 @@ public:
         if (!deco) {
             return;
         }
-        button->setPenWidth(painter, 1.25 * KDecoration3::pixelSize(deco->window()->scale()));
+        button->setPenWidth(painter, 1.25, false);
+        auto penWidth = painter->pen().widthF();
 
         // A spy hat (like view-private.svg icon)
         // Hat crown with dip/crease at top (filled)
         const QVector<QPointF> crownPoints {
-            snapper.snap(QPointF(-4.1, -2.5)),
-            snapper.snap(QPointF(-3.2, -6.1)),
-            snapper.snap(QPointF(0, -5)),
-            snapper.snap(QPointF(3.2, -6.1)),
-            snapper.snap(QPointF(4.1, -2.5))
+            QPointF(-4.1, -2.5),
+            QPointF(-3.2, -6.1),
+            QPointF(0, -5),
+            QPointF(3.2, -6.1),
+            QPointF(4.1, -2.5)
         };
         painter->setBrush(painter->pen().color());
         painter->drawPolygon(crownPoints);
         painter->setBrush(Qt::NoBrush);
 
-        // Hat brim
-        painter->drawLine(snapper.snap(QPointF(-6.2, -0.5)), snapper.snap(QPointF(6.2, -0.5)));
-
         // Glasses' lenses
-        painter->drawEllipse(snapper.snap(QRectF(QPointF(-6.3, 1.5), QPointF(-1.7, 6.1))));
-        painter->drawEllipse(snapper.snap(QRectF(QPointF(1.7, 1.5), QPointF(6.3, 6.1))));
-
+        painter->drawEllipse(QRectF(QPointF(-6.3, 1.5), QPointF(-1.7, 6.1)));
+        painter->drawEllipse(QRectF(QPointF(1.7, 1.5), QPointF(6.3, 6.1)));
+        
+        const auto penScale = button->penScale();
+        // Now we have horizontal/vertical drawing, so we snap the pen        
+        button->setPenWidth(painter, 1.25, true);
+        penWidth = painter->pen().widthF();
+        
+        // Hat brim
+        painter->drawLine(snapper.snapForPen(QPointF(-6.2, -0.5), penWidth), snapper.snapForPen(QPointF(6.2, -0.5), penWidth));
+        
         // Bridge between lenses
-        painter->drawLine(snapper.snap(QPointF(-1.5, 3.8)), snapper.snap(QPointF(1.5, 3.8)));
+        painter->drawLine(snapper.snapForPen(QPointF(-1.5, 3.8), penWidth), snapper.snapForPen(QPointF(1.5, 3.8), penWidth));
+        
+        button->setPenWidth(painter, penScale, false); // reset to default
     }
 };
 #endif

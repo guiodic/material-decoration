@@ -41,13 +41,13 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
+        Q_UNUSED(button)
+        Q_UNUSED(snapper)
 
-        button->setPenWidth(painter, 1.5);
-
-        const QPointF p1 = snapper.snap(QPointF(-5.0, -5.0));
-        const QPointF p2 = snapper.snap(QPointF(5.0, 5.0));
-        const QPointF p3 = snapper.snap(QPointF(5.0, -5.0));
-        const QPointF p4 = snapper.snap(QPointF(-5.0, 5.0));
+        const QPointF p1 = QPointF(-5.0, -5.0);
+        const QPointF p2 = QPointF(5.0, 5.0);
+        const QPointF p3 = QPointF(5.0, -5.0);
+        const QPointF p4 = QPointF(-5.0, 5.0);
 
         painter->drawLine(p1, p2);
         painter->drawLine(p3, p4);

@@ -91,6 +91,7 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     , m_padding()
     , m_isGtkButton(false)
     , m_holdTimer(new QTimer(this))
+    , m_penScale(1.0)
 {
     m_holdTimer->setSingleShot(true);
     connect(m_holdTimer, &QTimer::timeout, this, &Button::handleHoldTimeout);
@@ -362,11 +363,14 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         const QPointF centerSnapped = snapper.snap(center);
         painter->translate(centerSnapped);
 
+                
         // Scale by physical-aligned factor
         painter->scale(iconLogicalSize / 18.0, iconLogicalSize / 18.0);
         
-        setPenWidth(painter, KDecoration3::pixelSize(deco->window()->scale()));
-
+        // default pen width, not snapped
+        m_penScale = 1.5;
+        setPenWidth(painter, m_penScale, false);       
+        
         PixelSnapper iconSnapper(painter);
 
         // Icons
@@ -445,27 +449,29 @@ void Button::setHeight(qreal buttonHeight)
     updateSize(buttonHeight * 1.1, buttonHeight);
 }
 
-void Button::setPenWidth(QPainter *painter, const qreal scale)
+void Button::setPenWidth(QPainter *painter, const qreal scale, bool snapped)
 {
     QPen pen(foregroundColor());
     pen.setCapStyle(Qt::SquareCap);
     pen.setJoinStyle(Qt::MiterJoin);
-
+    
+    const qreal nominalLocalWidth = PenWidth::Symbol * scale;
     PixelSnapper snapper(painter);
-    const qreal localToPhysicalScale = snapper.localToPhysicalScale();
 
-    if (localToPhysicalScale > 0.0) {
-        const qreal nominalPhysicalWidth = PenWidth::Symbol * scale * localToPhysicalScale;
-        const qreal snappedPhysicalWidth = qMax(1.0, qRound(nominalPhysicalWidth * 2.0) / 2.0);
-        pen.setWidthF(snappedPhysicalWidth / localToPhysicalScale);
+    if (snapped) {
+        pen.setWidthF(snapper.snappedPenWidth(nominalLocalWidth));
     } else {
-        pen.setWidthF(PenWidth::Symbol * scale);
+        pen.setWidthF(nominalLocalWidth);
     }
 
     painter->setPen(pen);
 }
 
-
+qreal Button::penScale() const
+{
+    return m_penScale;
+}    
+    
 QColor Button::backgroundColor() const
 {
     const auto *deco = qobject_cast<Decoration *>(this->decoration());

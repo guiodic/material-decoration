@@ -39,16 +39,45 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
-        button->setPenWidth(painter, 1.5);
         
-        const qreal spacing = painter->pen().widthF() * 2.5;
-        for (int i = -1; i <= 1; ++i) {
-            const qreal y = i * spacing;
-            const QPointF left = snapper.snap(QPointF { -5.5, y });
-            const QPointF right = snapper.snap(QPointF { 5.5, y });
+        const auto penScale = button->penScale();
+        
+        button->setPenWidth(painter, penScale, true); // we have horizontal/vertical drawing, so we snap the pen
+        const auto penWidth = painter->pen().widthF();
+        
+        
+        const qreal localToPhys = snapper.localToPhysicalScale();
+        if (localToPhys > 0.0 && snapper.dpr() > 0.0) {
+            // Calculate spacing in integer physical pixels to ensure perfect symmetry
+            const qreal nominalPhysSpacing = penScale * 3 * localToPhys;
+            const qreal physSpacing = qMax<qreal>(1.0, qRound(nominalPhysSpacing));
+            const qreal localPhysSpacing = physSpacing / localToPhys;
 
-            painter->drawLine(left, right);
+            const QPointF centerLeft = snapper.snapForPen(QPointF(-5.5, 0.0), penWidth);
+            const QPointF centerRight = snapper.snapForPen(QPointF(5.5, 0.0), penWidth);
+
+            // Center line
+            painter->drawLine(centerLeft, centerRight);
+
+            // Top line: exact physical offset -physSpacing
+            painter->drawLine(centerLeft - QPointF(0.0, localPhysSpacing),
+                              centerRight - QPointF(0.0, localPhysSpacing));
+
+            // Bottom line: exact physical offset +physSpacing
+            painter->drawLine(centerLeft + QPointF(0.0, localPhysSpacing),
+                              centerRight + QPointF(0.0, localPhysSpacing));
+        } else {
+            const int spacing = qRound(penScale * 2.5);
+            for (int i = -1; i <= 1; ++i) {
+                const qreal y = i * spacing;
+                const QPointF left = snapper.snapForPen(QPointF { -5.5, y }, penWidth);
+                const QPointF right = snapper.snapForPen(QPointF { 5.5, y }, penWidth);
+
+                painter->drawLine(left, right);
+            }
         }
+        
+        button->setPenWidth(painter, penScale, false); // reset to default
     }
 };
 

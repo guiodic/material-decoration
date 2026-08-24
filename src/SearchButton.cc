@@ -35,10 +35,9 @@ SearchButton::~SearchButton() = default;
 void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper)
 {
     Q_UNUSED(iconRect)
-    //painter->setRenderHint(QPainter::Antialiasing, true);
-    setPenWidth(painter, 1.25);
-
-    const QRectF circleRect = snapper.snap(QRectF(QPointF(-6.0, -6.0), QPointF(2.0, 2.0)));
+    Q_UNUSED(snapper)
+    
+    const QRectF circleRect = QRectF(QPointF(-6.0, -6.0), QPointF(2.0, 2.0));
     painter->drawEllipse(circleRect);
 
     const qreal sqrt2 = std::sqrt(2.0);
@@ -47,12 +46,10 @@ void SearchButton::paintIcon(QPainter *painter, const QRectF &iconRect, const Pi
     const QPointF circleCenter = circleRect.center();
     const qreal rx = circleRect.width() / 2.0;
     const qreal ry = circleRect.height() / 2.0;
-    const QPointF handleStart = snapper.snap(
-        circleCenter + QPointF(rx / sqrt2, ry / sqrt2));
-    const QPointF handleEnd = snapper.snap(
-        circleCenter + QPointF(
+    const QPointF handleStart = circleCenter + QPointF(rx / sqrt2, ry / sqrt2);
+    const QPointF handleEnd = circleCenter + QPointF(
             (rx + handleLength) / sqrt2,
-            (ry + handleLength) / sqrt2));
+            (ry + handleLength) / sqrt2);
     painter->drawLine(handleStart, handleEnd);
 }
 

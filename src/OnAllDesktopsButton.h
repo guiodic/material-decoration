@@ -41,13 +41,14 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
-        button->setPenWidth(painter, 1.25);
+        Q_UNUSED(button)
+        Q_UNUSED(snapper)
 
         painter->drawPolygon( QVector<QPointF> {
-            snapper.snap(QPointF(-6.0, 0.0)),
-            snapper.snap(QPointF(0.0, -6.0)),
-            snapper.snap(QPointF(6.0, 0.0)),
-            snapper.snap(QPointF(0.0, 6.0))
+            QPointF(-6.0, 0.0),
+            QPointF(0.0, -6.0),
+            QPointF(6.0, 0.0),
+            QPointF(0.0, 6.0)
         });
     }
 };

@@ -46,11 +46,12 @@ public:
     }
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
-        button->setPenWidth(painter, 1.25);
+        Q_UNUSED(button)
+        Q_UNUSED(snapper)
 
         const QPointF offset(-5.5, -5.5);
 
-        const QRectF topCurveRect = snapper.snap(QRectF(QPointF(1.5, 0.5) + offset, QPointF(9.5, 6.5) + offset));
+        const QRectF topCurveRect = QRectF(QPointF(1.5, 0.5) + offset, QPointF(9.5, 6.5) + offset);
 
         QPainterPath path;
         path.moveTo(QPointF(topCurveRect.left(), topCurveRect.top() + topCurveRect.height() / 2.0));
@@ -60,14 +61,14 @@ public:
             -180
         );
         path.cubicTo(
-            snapper.snap(QPointF( 7.8125, 5.9375 ) + offset),
-            snapper.snap(QPointF( 5.625, 4.6875 ) + offset),
-            snapper.snap(QPointF( 5.0, 8.0 ) + offset)
+            QPointF( 7.8125, 5.9375 ) + offset,
+            QPointF( 5.625, 4.6875 ) + offset,
+            QPointF( 5.0, 8.0 ) + offset
         );
         painter->drawPath(path);
 
         // Dot
-        painter->drawRect(snapper.snap(QRectF(QPointF(5.0, 10.0) + offset, QPointF(5.5, 10.5) + offset)));
+        painter->drawEllipse(QRectF(QPointF(5.0, 10.0) + offset, QPointF(5.5, 10.5) + offset));
     }
 };
 

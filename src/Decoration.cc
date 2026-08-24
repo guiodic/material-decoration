@@ -899,9 +899,9 @@ qreal Decoration::buttonPadding() const
     const qreal baseUnit = m_tabletMode ? settings()->gridUnit() * 2 : settings()->gridUnit();
     switch (m_internalSettings->buttonSize()) {
     case InternalSettings::ButtonTiny:
-        return baseUnit * 0.2;
-    case InternalSettings::ButtonSmall:
         return baseUnit * 0.4;
+    case InternalSettings::ButtonSmall:
+        return baseUnit * 0.5;
     default:
     case InternalSettings::ButtonDefault:
         return baseUnit * 0.6;

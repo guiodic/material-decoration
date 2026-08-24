@@ -48,6 +48,45 @@ QRectF PixelSnapper::snap(const QRectF &rect) const
     return QRectF(snap(normRect.topLeft()), snap(normRect.bottomRight()));
 }
 
+QPointF PixelSnapper::snapForPen(const QPointF &p, const qreal penWidth) const
+{
+    if (m_dpr > 0.0 && m_invertible) {
+        const QPointF devInd = m_trans.map(p);
+        const QPointF phys(devInd.x() * m_dpr, devInd.y() * m_dpr);
+        const qint64 roundedWidth = physicalPenWidth(penWidth);
+        const qreal offset = (roundedWidth % 2 == 0) ? 0.0 : 0.5;
+        const QPointF physSnapped(
+            std::round(phys.x() - offset) + offset,
+            std::round(phys.y() - offset) + offset);
+        const QPointF devIndSnapped(physSnapped.x() / m_dpr, physSnapped.y() / m_dpr);
+        return m_inv.map(devIndSnapped);
+    }
+    return p;
+}
+
+QRectF PixelSnapper::snapForPen(const QRectF &rect, const qreal penWidth) const
+{
+    const QRectF normRect = rect.normalized();
+    return QRectF(snapForPen(normRect.topLeft(), penWidth),
+                  snapForPen(normRect.bottomRight(), penWidth));
+}
+
+qint64 PixelSnapper::physicalPenWidth(const qreal localPenWidth) const
+{
+    const qreal physWidth = localPenWidth * localToPhysicalScale();
+    return qMax<qint64>(1, qRound64(physWidth));
+}
+
+qreal PixelSnapper::snappedPenWidth(const qreal nominalLocalPenWidth) const
+{
+    const qreal scale = localToPhysicalScale();
+    if (scale <= 0.0) {
+        return nominalLocalPenWidth;
+    }
+    const qint64 physWidth = physicalPenWidth(nominalLocalPenWidth);
+    return static_cast<qreal>(physWidth) / scale;
+}
+
 qreal PixelSnapper::localToPhysicalScale() const
 {
     // Semantics & Assumptions check:
