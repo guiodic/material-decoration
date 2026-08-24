@@ -365,7 +365,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         // Scale by physical-aligned factor
         painter->scale(iconLogicalSize / 18.0, iconLogicalSize / 18.0);
         
-        setPenWidth(painter, 1.5);
+        setPenWidth(painter, 1.0);
 
         PixelSnapper iconSnapper(painter);
 
