@@ -46,6 +46,16 @@ public:
     QRectF snapForPen(const QRectF &rect, qreal penWidth) const;
 
     /**
+     * @brief Computes the integer physical pixel width for a given local pen width.
+     */
+    qint64 physicalPenWidth(qreal localPenWidth) const;
+
+    /**
+     * @brief Computes the snapped local pen width corresponding to an integer physical pixel width.
+     */
+    qreal snappedPenWidth(qreal nominalLocalPenWidth) const;
+
+    /**
      * @brief Computes the scaling factor from local coordinates to physical device pixels.
      * 
      * @note Semantics & Assumptions:

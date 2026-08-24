@@ -455,15 +455,13 @@ void Button::setPenWidth(QPainter *painter, const qreal scale, bool snapped)
     pen.setCapStyle(Qt::SquareCap);
     pen.setJoinStyle(Qt::MiterJoin);
     
+    const qreal nominalLocalWidth = PenWidth::Symbol * scale;
     PixelSnapper snapper(painter);
-    const qreal localToPhysicalScale = snapper.localToPhysicalScale();
 
-    if ((localToPhysicalScale > 0.0) && snapped) {
-        const qreal nominalPhysicalWidth = PenWidth::Symbol * scale * localToPhysicalScale;
-        const qreal snappedPhysicalWidth = qMax<qreal>(1.0, qRound(nominalPhysicalWidth));
-        pen.setWidthF(snappedPhysicalWidth / localToPhysicalScale);
+    if (snapped) {
+        pen.setWidthF(snapper.snappedPenWidth(nominalLocalWidth));
     } else {
-        pen.setWidthF(PenWidth::Symbol * scale);
+        pen.setWidthF(nominalLocalWidth);
     }
 
     painter->setPen(pen);
