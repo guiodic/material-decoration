@@ -479,15 +479,28 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
 
         bool skippedTopLevel = false;
         for (QAction *ancestor : std::as_const(candidate.ancestors)) {
-            if (ancestor) {
-                const QString text = getActionText(ancestor);
-                if (!text.isEmpty()) {
-                    currentPath.append(text);
-                    if (ignoreTopLevel && !skippedTopLevel) {
-                        skippedTopLevel = true;
-                    } else {
-                        evalPathList.append(text);
-                    }
+            if (!ancestor) {
+                continue;
+            }
+            
+            // If we've already computed a MatchState for this ancestor earlier in
+            // this search pass, reuse its .text to avoid an extra getActionText() call.
+            QString text;
+            auto it = matchCache.find(ancestor);
+            if (it != matchCache.end()) {
+                text = it.value().text;
+            } else {
+                // Do not insert a synthetic entry into matchCache here: we only want
+                // to read previously-computed values to avoid polluting the cache.
+                text = getActionText(ancestor);
+            }
+            
+            if (!text.isEmpty()) {
+                currentPath.append(text);
+                if (ignoreTopLevel && !skippedTopLevel) {
+                    skippedTopLevel = true;
+                } else {
+                    evalPathList.append(text);
                 }
             }
         }
