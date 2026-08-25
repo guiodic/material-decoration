@@ -43,6 +43,9 @@ public:
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
         
+        const bool wasAntialiased = painter->testRenderHint(QPainter::Antialiasing);
+        painter->setRenderHint(QPainter::Antialiasing, false);
+
         const auto penScale = button->penScale();
         button->setPenWidth(painter, penScale, true); // we have horizontal/vertical drawing, so we snap the pen
         const auto penWidth = painter->pen().widthF();
@@ -69,10 +72,7 @@ public:
                 const QPointF fgBottomRight(fgBottomLeft.x() + d_square, fgBottomLeft.y());
 
                 // Draw foreground square
-                painter->drawLine(fgTopLeft, fgTopRight);
-                painter->drawLine(fgTopRight, fgBottomRight);
-                painter->drawLine(fgBottomRight, fgBottomLeft);
-                painter->drawLine(fgBottomLeft, fgTopLeft);
+                painter->drawRect(QRectF(fgTopLeft, QSizeF(d_square, d_square)));
 
                 // Background square: shifted by (+physOffset, -physOffset) physical pixels
                 const QPointF shift(d_offset, -d_offset);
@@ -81,38 +81,25 @@ public:
                 const QPointF bgBottomRight = fgBottomRight + shift;
 
                 // Visible parts of the background square, aligned top-right
-                painter->drawLine(QPointF(bgTopLeft.x(), fgTopLeft.y()), bgTopLeft);
-                painter->drawLine(bgTopLeft, bgTopRight);
-                painter->drawLine(bgTopRight, bgBottomRight);
-                painter->drawLine(bgBottomRight, QPointF(fgBottomRight.x(), bgBottomRight.y()));
+                painter->drawPolyline(QVector<QPointF>{
+                    QPointF(bgTopLeft.x(), fgTopLeft.y()),
+                    bgTopLeft,
+                    bgTopRight,
+                    bgBottomRight,
+                    QPointF(fgBottomRight.x(), bgBottomRight.y())
+                });
             } else {
                 const QPointF bottomLeft = snapper.snapForPen(QPointF(-d_base / 2.0, d_base / 2.0), penWidth);
                 const QPointF topLeft(bottomLeft.x(), bottomLeft.y() - d_base);
-                const QPointF topRight(bottomLeft.x() + d_base, bottomLeft.y() - d_base);
-                const QPointF bottomRight(bottomLeft.x() + d_base, bottomLeft.y());
 
-                painter->drawLine(topLeft, topRight);
-                painter->drawLine(topRight, bottomRight);
-                painter->drawLine(bottomRight, bottomLeft);
-                painter->drawLine(bottomLeft, topLeft);
+                painter->drawRect(QRectF(topLeft, QSizeF(d_base, d_base)));
             }
         } else {
             const auto snap = [&snapper, penWidth](const QPointF &point) {
                 return snapper.snapForPen(point, penWidth);
             };
-            const auto drawSegment = [painter, &snap](const QPointF &start, const QPointF &end) {
-                painter->drawLine(snap(start), snap(end));
-            };
-            const auto drawOutline = [&drawSegment](qreal left, qreal top, qreal right, qreal bottom) {
-                const QPointF topLeft(left, top);
-                const QPointF topRight(right, top);
-                const QPointF bottomRight(right, bottom);
-                const QPointF bottomLeft(left, bottom);
-
-                drawSegment(topLeft, topRight);
-                drawSegment(topRight, bottomRight);
-                drawSegment(bottomRight, bottomLeft);
-                drawSegment(bottomLeft, topLeft);
+            const auto drawOutline = [painter, &snap](qreal left, qreal top, qreal right, qreal bottom) {
+                painter->drawRect(QRectF(snap(QPointF(left, top)), snap(QPointF(right, bottom))));
             };
 
             if (button->isChecked()) {
@@ -120,16 +107,20 @@ public:
 
                 drawOutline(-5.0, -5.0 + offset, 5.0 - offset, 5.0);
 
-                drawSegment(QPointF(-5.0 + offset, -5.0 + offset), QPointF(-5.0 + offset, -5.0));
-                drawSegment(QPointF(-5.0 + offset, -5.0), QPointF(5.0, -5.0));
-                drawSegment(QPointF(5.0, -5.0), QPointF(5.0, 5.0 - offset));
-                drawSegment(QPointF(5.0, 5.0 - offset), QPointF(5.0 - offset, 5.0 - offset));
+                painter->drawPolyline(QVector<QPointF>{
+                    snap(QPointF(-5.0 + offset, -5.0 + offset)),
+                    snap(QPointF(-5.0 + offset, -5.0)),
+                    snap(QPointF(5.0, -5.0)),
+                    snap(QPointF(5.0, 5.0 - offset)),
+                    snap(QPointF(5.0 - offset, 5.0 - offset))
+                });
             } else {
                 drawOutline(-5.0, -5.0, 5.0, 5.0);
             }
         }
         
         button->setPenWidth(painter, penScale, false); // reset to default
+        painter->setRenderHint(QPainter::Antialiasing, wasAntialiased);
     }
 };
 
