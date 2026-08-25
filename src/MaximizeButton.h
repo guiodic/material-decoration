@@ -1,5 +1,4 @@
 /*
- * Copyright (C) 2026 Guido Iodice <guido[dot]iodice[at]gmail[dot]com>
  * Copyright (C) 2018 Vlad Zagorodniy <vladzzag@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -44,6 +43,9 @@ public:
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
         
+        const bool wasAntialiased = painter->testRenderHint(QPainter::Antialiasing);
+        painter->setRenderHint(QPainter::Antialiasing, false);
+
         const auto penScale = button->penScale();
         button->setPenWidth(painter, penScale, true); // we have horizontal/vertical drawing, so we snap the pen
         const auto penWidth = painter->pen().widthF();
@@ -118,6 +120,7 @@ public:
         }
         
         button->setPenWidth(painter, penScale, false); // reset to default
+        painter->setRenderHint(QPainter::Antialiasing, wasAntialiased);
     }
 };
 
