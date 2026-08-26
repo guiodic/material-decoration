@@ -379,6 +379,10 @@ bool Decoration::init()
 
 bool Decoration::hideTitleBar() const
 {
+    if (window()->isShaded()) {
+        return false;
+    } 
+    
     return m_internalSettings ? m_internalSettings->hideTitleBar() : false;
 }
 
