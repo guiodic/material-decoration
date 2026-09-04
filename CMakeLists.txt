@@ -23,6 +23,7 @@ include (ECMInstallIcons)
 include (KDEInstallDirs)
 include (KDECMakeSettings)
 include (KDECompilerSettings NO_POLICY_SCOPE)
+include (CTest)
 
 find_package(Qt6 CONFIG REQUIRED COMPONENTS
     Widgets
@@ -37,5 +38,9 @@ ki18n_install(po)
 add_subdirectory (src/libdbusmenuqt)
 add_subdirectory (src)
 add_subdirectory(po)
+
+if (BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
 
 feature_summary(WHAT ALL)

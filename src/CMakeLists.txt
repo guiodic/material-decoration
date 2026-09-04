@@ -56,6 +56,7 @@ configure_file(BuildConfig.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/BuildConfig.h)
 set (decoration_SRCS
     AppMenuModel.cc
     AppMenuSearch.cc
+    AppMenuSearchScore.cc
     NavigableMenu.cc
     AppMenuButton.cc
     AppMenuButtonGroup.cc
@@ -138,4 +139,3 @@ install(TARGETS materialdecoration
         DESTINATION ${KDE_INSTALL_PLUGINDIR}/org.kde.kdecoration3)
         
 add_subdirectory(kcm)
-

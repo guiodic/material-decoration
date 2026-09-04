@@ -17,6 +17,7 @@
 
 #include "AppMenuSearch.h"
 #include "AppMenuModel.h"
+#include "AppMenuSearchScore.h"
 
 // KF
 #include <KLocalizedString>
@@ -355,98 +356,6 @@ bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, con
     return false;
 }
 
-/**
- * Computes a fuzzy match score between a pattern and text.
- *
- * Uses sequential character matching with bonuses for:
- * - Exact substring matches (highest score)
- * - Word boundaries and camelCase matches
- * - Consecutive character matches
- *
- * @param pattern The search pattern to match.
- * @param text The text to search within.
- * @param patternLower Pre-lowercased pattern (optional optimization to avoid redundant toLower() calls).
- * @return Score value (higher is better), or 0 if no match.
- */
-static int calculateFuzzyScore(const QString &pattern, const QString &text, const QString &patternLower = QString())
-{
-    if (pattern.isEmpty() || text.isEmpty()) {
-        return 0;
-    }
-
-    const int patternLen = pattern.length();
-    const int textLen = text.length();
-
-    // 1. Contiguous exact substring match check
-    const int exactIdx = text.indexOf(pattern, 0, Qt::CaseInsensitive);
-    if (exactIdx != -1) {
-        int score = 1000 + (100 * patternLen) - (exactIdx * 2);
-        if (exactIdx == 0 || !text.at(exactIdx - 1).isLetterOrNumber()) {
-            score += 500; // Word boundary bonus
-        }
-        return std::max(1, score);
-    }
-
-    // 2. Sequential character matching & scoring
-    int patternIdx = 0;
-    int score = 0;
-    int consecutive = 0;
-    int prevMatchIdx = -1;
-
-    const QString pLower = patternLower.isEmpty() ? pattern.toLower() : patternLower;
-    const QString textLower = text.toLower();
-
-    const int pLowerLen = pLower.length();
-    const int textLowerLen = textLower.length();
-
-    if (pLowerLen == 0 || textLowerLen == 0) {
-        return 0;
-    }
-
-    QChar pChar = pLower.at(0);
-
-    for (int textIdx = 0; textIdx < textLowerLen && patternIdx < pLowerLen; ++textIdx) {
-        const QChar tChar = textLower.at(textIdx);
-
-        if (pChar == tChar) {
-            patternIdx++;
-            if (patternIdx < pLowerLen) {
-                pChar = pLower.at(patternIdx);
-            }
-            int charScore = 10;
-
-            const bool isStart = (textIdx == 0);
-            const bool isBoundary = (!isStart && textIdx - 1 < textLen && !text.at(textIdx - 1).isLetterOrNumber());
-            const bool isCamel = (textIdx < textLen && text.at(textIdx).isUpper() && textIdx > 0 && text.at(textIdx - 1).isLower());
-
-            if (isStart || isBoundary) {
-                charScore += 50;
-            } else if (isCamel) {
-                charScore += 40;
-            }
-
-            if (prevMatchIdx != -1 && textIdx == prevMatchIdx + 1) {
-                consecutive++;
-                charScore += (20 * consecutive);
-            } else {
-                consecutive = 0;
-                if (prevMatchIdx != -1) {
-                    charScore -= (textIdx - prevMatchIdx - 1);
-                }
-            }
-
-            prevMatchIdx = textIdx;
-            score += charScore;
-        }
-    }
-
-    if (patternIdx < pLowerLen) {
-        return 0; // Not all pattern characters matched in sequence
-    }
-
-    return std::max(1, score);
-}
-
 QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, const FilterOptions &options, const QString &query) const
 {
     QList<SearchResult> results;
@@ -529,15 +438,15 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
             if (ignoreTopLevel && !candidate.hasNamedAncestor) {
                 match = false;
             } else if (ignoreSubMenus) {
-                candidateScore = calculateFuzzyScore(query, itemText, queryLower);
+                candidateScore = AppMenuSearchPrivate::calculateFuzzyScore(query, itemText, queryLower);
                 match = (candidateScore > 0);
             } else {
-                const int itemScore = calculateFuzzyScore(query, itemText, queryLower);
+                const int itemScore = AppMenuSearchPrivate::calculateFuzzyScore(query, itemText, queryLower);
                 if (itemScore > 0) {
                     candidateScore = itemScore + 500;
                     match = true;
                 } else {
-                    const int pathScore = calculateFuzzyScore(query, evalPath, queryLower);
+                    const int pathScore = AppMenuSearchPrivate::calculateFuzzyScore(query, evalPath, queryLower);
                     if (pathScore > 0) {
                         candidateScore = pathScore;
                         match = true;
