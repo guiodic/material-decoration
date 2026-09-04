@@ -355,6 +355,19 @@ bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, con
     return false;
 }
 
+/**
+ * Computes a fuzzy match score between a pattern and text.
+ *
+ * Uses sequential character matching with bonuses for:
+ * - Exact substring matches (highest score)
+ * - Word boundaries and camelCase matches
+ * - Consecutive character matches
+ *
+ * @param pattern The search pattern to match.
+ * @param text The text to search within.
+ * @param patternLower Pre-lowercased pattern (optional optimization to avoid redundant toLower() calls).
+ * @return Score value (higher is better), or 0 if no match.
+ */
 static int calculateFuzzyScore(const QString &pattern, const QString &text, const QString &patternLower = QString())
 {
     if (pattern.isEmpty() || text.isEmpty()) {

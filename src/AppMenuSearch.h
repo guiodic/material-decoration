@@ -70,6 +70,10 @@ public:
         qint64 iconCacheKey = 0;
         int score = 0;
 
+        /**
+         * Compares two search results for equality.
+         * Used to detect when search results have changed to avoid redundant menu updates.
+         */
         bool operator==(const SearchResult &other) const {
             return action == other.action
             && iconCacheKey == other.iconCacheKey
@@ -87,10 +91,21 @@ public:
         bool showDisabledActions = false;
         bool fuzzyMatching = false;
 
+        /**
+         * Compares two filter options for equality.
+         * Used to detect when filter settings have changed to avoid redundant menu updates.
+         */
         bool operator==(const FilterOptions &other) const = default;
     };
 
     void setSearchMenu(QMenu *searchMenu);
+
+    /**
+     * Filters and displays menu items matching the search query.
+     *
+     * @param text The search query text to match against menu items.
+     * @param options Filter configuration controlling search behavior (top-level/submenu visibility, fuzzy matching, etc).
+     */
     void filter(const QString &text, const FilterOptions &options);
     void clear();
 
@@ -119,8 +134,26 @@ private:
     };
 
     bool matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, MatchContext &context) const;
-    
+
+    /**
+     * Matches search candidates against the query and returns scored results.
+     *
+     * @param matcher String matcher for exact substring matching.
+     * @param options Filter configuration (fuzzy matching, disabled actions, etc).
+     * @param query The search query string (used for fuzzy scoring).
+     * @return List of search results sorted by score (in fuzzy mode) or unsorted (in exact mode).
+     */
     QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, const FilterOptions &options, const QString &query) const;
+
+    /**
+     * Returns the cached, cleaned display text for a QAction.
+     *
+     * Removes accelerator markers and trims whitespace. The result is cached
+     * in m_actionTextCache for the lifetime of the current filter() call.
+     *
+     * @param action The action whose text to retrieve.
+     * @return Reference to the cleaned action text (or empty string if action is null).
+     */
     const QString &getActionText(QAction *action) const;
     void resetSearchState();
 
