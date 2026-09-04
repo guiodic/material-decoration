@@ -355,7 +355,7 @@ bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, con
     return false;
 }
 
-static int calculateFuzzyScore(const QString &pattern, const QString &text)
+static int calculateFuzzyScore(const QString &pattern, const QString &text, const QString &patternLower = QString())
 {
     if (pattern.isEmpty() || text.isEmpty()) {
         return 0;
@@ -380,12 +380,19 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text)
     int consecutive = 0;
     int prevMatchIdx = -1;
 
+    const QString pLower = patternLower.isEmpty() ? pattern.toLower() : patternLower;
+    const QString textLower = text.toLower();
+
+    QChar pChar = pLower.at(0);
+
     for (int textIdx = 0; textIdx < textLen && patternIdx < patternLen; ++textIdx) {
-        const QChar pChar = pattern.at(patternIdx).toLower();
-        const QChar tChar = text.at(textIdx).toLower();
+        const QChar tChar = textLower.at(textIdx);
 
         if (pChar == tChar) {
             patternIdx++;
+            if (patternIdx < patternLen) {
+                pChar = pLower.at(patternIdx);
+            }
             int charScore = 10;
 
             const bool isStart = (textIdx == 0);
@@ -431,6 +438,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
     const bool ignoreSubMenus = options.ignoreSubMenus;
     const bool showDisabledActions = options.showDisabledActions;
     const bool fuzzyMatching = options.fuzzyMatching;
+    const QString queryLower = fuzzyMatching ? query.toLower() : QString();
 
     for (const SearchCandidate &candidate : std::as_const(m_searchCandidates)) {
         if (!fuzzyMatching && results.size() >= MAX_SEARCH_RESULTS) {
@@ -501,15 +509,15 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
             if (ignoreTopLevel && !candidate.hasNamedAncestor) {
                 match = false;
             } else if (ignoreSubMenus) {
-                candidateScore = calculateFuzzyScore(query, itemText);
+                candidateScore = calculateFuzzyScore(query, itemText, queryLower);
                 match = (candidateScore > 0);
             } else {
-                const int itemScore = calculateFuzzyScore(query, itemText);
+                const int itemScore = calculateFuzzyScore(query, itemText, queryLower);
                 if (itemScore > 0) {
                     candidateScore = itemScore + 500;
                     match = true;
                 } else {
-                    const int pathScore = calculateFuzzyScore(query, evalPath);
+                    const int pathScore = calculateFuzzyScore(query, evalPath, queryLower);
                     if (pathScore > 0) {
                         candidateScore = pathScore;
                         match = true;
