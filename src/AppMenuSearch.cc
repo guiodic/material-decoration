@@ -232,10 +232,14 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
 
 void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &ancestors, bool hasNamedAncestor)
 {
-    if (!menu || visited.contains(menu) || m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES || ancestors.size() >= MAX_MENU_DEPTH) {
+    if (!menu || m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES || ancestors.size() >= MAX_MENU_DEPTH) {
         return;
     }
+    const int oldSize = visited.size();
     visited.insert(menu);
+    if (visited.size() == oldSize) {
+        return;
+    }
 
     QAction *menuAction = menu->menuAction();
     bool addedAncestor = false;
@@ -380,12 +384,16 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text)
     int consecutive = 0;
     int prevMatchIdx = -1;
 
+    QChar pChar = pattern.at(patternIdx).toLower();
+
     for (int textIdx = 0; textIdx < textLen && patternIdx < patternLen; ++textIdx) {
-        const QChar pChar = pattern.at(patternIdx).toLower();
         const QChar tChar = text.at(textIdx).toLower();
 
         if (pChar == tChar) {
             patternIdx++;
+            if (patternIdx < patternLen) {
+                pChar = pattern.at(patternIdx).toLower();
+            }
             int charScore = 10;
 
             const bool isStart = (textIdx == 0);
@@ -418,6 +426,59 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text)
     }
 
     return std::max(1, score);
+}
+
+QString AppMenuSearch::buildFullPath(const SearchCandidate &candidate, const QString &itemText) const
+{
+    QString path;
+    path.reserve(128);
+    bool first = true;
+    for (QAction *ancestor : std::as_const(candidate.ancestors)) {
+        if (ancestor) {
+            const QString text = getActionText(ancestor);
+            if (!text.isEmpty()) {
+                if (!first) {
+                    path.append(QStringLiteral(" » "));
+                }
+                path.append(text);
+                first = false;
+            }
+        }
+    }
+    if (!first) {
+        path.append(QStringLiteral(" » "));
+    }
+    path.append(itemText);
+    return path;
+}
+
+QString AppMenuSearch::buildEvalPath(const SearchCandidate &candidate, const QString &itemText, bool ignoreTopLevel) const
+{
+    QString path;
+    path.reserve(128);
+    bool first = true;
+    bool skippedTopLevel = false;
+    for (QAction *ancestor : std::as_const(candidate.ancestors)) {
+        if (ancestor) {
+            const QString text = getActionText(ancestor);
+            if (!text.isEmpty()) {
+                if (ignoreTopLevel && !skippedTopLevel) {
+                    skippedTopLevel = true;
+                } else {
+                    if (!first) {
+                        path.append(QStringLiteral(" » "));
+                    }
+                    path.append(text);
+                    first = false;
+                }
+            }
+        }
+    }
+    if (!first) {
+        path.append(QStringLiteral(" » "));
+    }
+    path.append(itemText);
+    return path;
 }
 
 QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, const FilterOptions &options, const QString &query) const
@@ -472,31 +533,6 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         bool match = false;
         int candidateScore = 0;
 
-        QStringList currentPath;
-        QStringList evalPathList;
-        currentPath.reserve(candidate.ancestors.size() + 1);
-        evalPathList.reserve(candidate.ancestors.size() + 1);
-
-        bool skippedTopLevel = false;
-        for (QAction *ancestor : std::as_const(candidate.ancestors)) {
-            if (ancestor) {
-                const QString text = getActionText(ancestor);
-                if (!text.isEmpty()) {
-                    currentPath.append(text);
-                    if (ignoreTopLevel && !skippedTopLevel) {
-                        skippedTopLevel = true;
-                    } else {
-                        evalPathList.append(text);
-                    }
-                }
-            }
-        }
-        currentPath.append(itemText);
-        evalPathList.append(itemText);
-
-        const QString fullPath = currentPath.join(QStringLiteral(" » "));
-        const QString evalPath = evalPathList.join(QStringLiteral(" » "));
-
         if (fuzzyMatching) {
             if (ignoreTopLevel && !candidate.hasNamedAncestor) {
                 match = false;
@@ -509,6 +545,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
                     candidateScore = itemScore + 500;
                     match = true;
                 } else {
+                    const QString evalPath = buildEvalPath(candidate, itemText, ignoreTopLevel);
                     const int pathScore = calculateFuzzyScore(query, evalPath);
                     if (pathScore > 0) {
                         candidateScore = pathScore;
@@ -537,7 +574,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         info.isEffectivelyEnabled = isEffectivelyEnabled;
         info.isChecked = action->isChecked();
         info.isCheckable = action->isCheckable();
-        info.path = fullPath;
+        info.path = buildFullPath(candidate, itemText);
 
         results.append({action, info, action->icon().cacheKey(), candidateScore});
     }

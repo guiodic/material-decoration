@@ -120,6 +120,9 @@ private:
 
     bool matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, MatchContext &context) const;
     
+    QString buildFullPath(const SearchCandidate &candidate, const QString &itemText) const;
+    QString buildEvalPath(const SearchCandidate &candidate, const QString &itemText, bool ignoreTopLevel) const;
+
     QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, const FilterOptions &options, const QString &query) const;
     QString getActionText(QAction *action) const;
     void resetSearchState();
