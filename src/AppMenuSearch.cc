@@ -581,7 +581,8 @@ const QString &AppMenuSearch::getActionText(QAction *action) const
     }
     const QString rawText = action->text();
     const QString cleanedText = KLocalizedString::removeAcceleratorMarker(rawText.trimmed());
-    return *m_actionTextCache.insert(action, cleanedText);
+    auto insertedIt = m_actionTextCache.insert(action, cleanedText);
+    return insertedIt.value();
 }
 
 } // namespace Material
