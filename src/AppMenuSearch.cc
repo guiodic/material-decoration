@@ -496,7 +496,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
             continue;
         }
 
-        const QString &itemText = getActionText(action);
+        const QString itemText = getActionText(action);
         bool match = false;
         int candidateScore = 0;
 
