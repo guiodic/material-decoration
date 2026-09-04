@@ -483,7 +483,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
             continue;
         }
 
-        const QString itemText = getActionText(action);
+        const QString &itemText = getActionText(action);
         bool match = false;
         int candidateScore = 0;
 
@@ -495,7 +495,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         bool skippedTopLevel = false;
         for (QAction *ancestor : std::as_const(candidate.ancestors)) {
             if (ancestor) {
-                const QString text = getActionText(ancestor);
+                const QString &text = getActionText(ancestor);
                 if (!text.isEmpty()) {
                     currentPath.append(text);
                     if (ignoreTopLevel && !skippedTopLevel) {
