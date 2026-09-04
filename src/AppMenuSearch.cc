@@ -383,21 +383,28 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text, cons
     const QString pLower = patternLower.isEmpty() ? pattern.toLower() : patternLower;
     const QString textLower = text.toLower();
 
+    const int pLowerLen = pLower.length();
+    const int textLowerLen = textLower.length();
+
+    if (pLowerLen == 0 || textLowerLen == 0) {
+        return 0;
+    }
+
     QChar pChar = pLower.at(0);
 
-    for (int textIdx = 0; textIdx < textLen && patternIdx < patternLen; ++textIdx) {
+    for (int textIdx = 0; textIdx < textLowerLen && patternIdx < pLowerLen; ++textIdx) {
         const QChar tChar = textLower.at(textIdx);
 
         if (pChar == tChar) {
             patternIdx++;
-            if (patternIdx < patternLen) {
+            if (patternIdx < pLowerLen) {
                 pChar = pLower.at(patternIdx);
             }
             int charScore = 10;
 
             const bool isStart = (textIdx == 0);
-            const bool isBoundary = (!isStart && !text.at(textIdx - 1).isLetterOrNumber());
-            const bool isCamel = (text.at(textIdx).isUpper() && textIdx > 0 && text.at(textIdx - 1).isLower());
+            const bool isBoundary = (!isStart && textIdx - 1 < textLen && !text.at(textIdx - 1).isLetterOrNumber());
+            const bool isCamel = (textIdx < textLen && text.at(textIdx).isUpper() && textIdx > 0 && text.at(textIdx - 1).isLower());
 
             if (isStart || isBoundary) {
                 charScore += 50;
@@ -420,7 +427,7 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text, cons
         }
     }
 
-    if (patternIdx < patternLen) {
+    if (patternIdx < pLowerLen) {
         return 0; // Not all pattern characters matched in sequence
     }
 
@@ -562,10 +569,11 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
     return results;
 }
 
-QString AppMenuSearch::getActionText(QAction *action) const
+const QString &AppMenuSearch::getActionText(QAction *action) const
 {
+    static const QString emptyString;
     if (!action) {
-        return QString();
+        return emptyString;
     }
     auto it = m_actionTextCache.find(action);
     if (it != m_actionTextCache.end()) {
@@ -573,8 +581,7 @@ QString AppMenuSearch::getActionText(QAction *action) const
     }
     const QString rawText = action->text();
     const QString cleanedText = KLocalizedString::removeAcceleratorMarker(rawText.trimmed());
-    m_actionTextCache.insert(action, cleanedText);
-    return cleanedText;
+    return *m_actionTextCache.insert(action, cleanedText);
 }
 
 } // namespace Material
