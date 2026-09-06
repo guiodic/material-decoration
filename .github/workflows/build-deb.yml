@@ -3,6 +3,7 @@ name: Build DEB Package
 on:
   release:
     types: [published, created]
+  workflow_dispatch:
 
 jobs:
   build-deb:
