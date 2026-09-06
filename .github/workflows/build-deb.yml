@@ -1,0 +1,74 @@
+name: Build DEB Package
+
+on:
+  release:
+    types: [published, created]
+
+jobs:
+  build-deb:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:noble  # Ubuntu 26.04 (Noble)
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            build-essential \
+            cmake \
+            extra-cmake-modules \
+            libkdecorations2-dev \
+            plasma-framework-dev \
+            libkwindowsystem-dev \
+            libkxmlgui-dev \
+            libkcoreaddons-dev \
+            libkdeclarative-dev \
+            libkwayland-dev \
+            qt6-base-dev \
+            qt6-declarative-dev \
+            dh-make \
+            debhelper \
+            devscripts \
+            fakeroot
+
+      - name: Create build directory
+        run: |
+          mkdir -p build
+
+      - name: Configure with CMake
+        run: |
+          cd build
+          cmake .. -DCMAKE_INSTALL_PREFIX=/usr
+          make -j$(nproc)
+
+      - name: Create DEB package
+        run: |
+          mkdir -p package/DEBIAN
+          mkdir -p package/usr
+          cd build
+          make DESTDIR=../package install
+          cd ..
+          
+          cat > package/DEBIAN/control << 'EOF'
+          Package: material-decoration
+          Version: ${{ github.event.release.tag_name }}
+          Architecture: amd64
+          Maintainer: guiodic <guido.iodice@gmail.com>
+          Description: Material-ish window decoration theme for KWin
+           Material-ish window decoration theme for KWin, with Locally Integrated Menu
+           and Menu Search, based on zzag's original design.
+          Depends: libkdecorations2-9, libkwindowsystem5
+          EOF
+          
+          dpkg-deb --build package material-decoration_${{ github.event.release.tag_name }}_amd64.deb
+
+      - name: Upload DEB to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: material-decoration_*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
