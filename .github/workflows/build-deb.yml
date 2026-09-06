@@ -8,7 +8,7 @@ jobs:
   build-deb:
     runs-on: ubuntu-latest
     container:
-      image: ubuntu:noble  # Ubuntu 26.04 (Noble)
+      image: ubuntu:resolute  # Ubuntu 26.04
     
     steps:
       - name: Checkout code
@@ -16,24 +16,15 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          apt-get update
-          apt-get install -y \
-            build-essential \
+          apt update
+          apt install -y build-essential \
             cmake \
-            extra-cmake-modules \
-            libkdecorations2-dev \
-            plasma-framework-dev \
-            libkwindowsystem-dev \
-            libkxmlgui-dev \
-            libkcoreaddons-dev \
-            libkdeclarative-dev \
-            libkwayland-dev \
-            qt6-base-dev \
-            qt6-declarative-dev \
             dh-make \
             debhelper \
             devscripts \
             fakeroot
+          apt build-dep -y kwin kwin-x11 libkdecorations3-6
+          
 
       - name: Create build directory
         run: |
