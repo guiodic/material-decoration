@@ -18,14 +18,13 @@ jobs:
       - name: Install build dependencies
         run: |
           apt update
-          apt install -y build-essential \
-            cmake \
-            dh-make \
-            debhelper \
-            devscripts \
-            fakeroot
-          apt build-dep -y kwin kwin-x11 libkdecorations3-6
-          
+          apt install -y build-essential cmake pkg-config \
+                         qt6-base-dev libdbusmenu-tools qt6-tools-dev \
+                         libkf6config-dev libkf6configwidgets-dev libkf6coreaddons-dev \
+                         libkf6guiaddons-dev libkf6iconthemes-dev libkf6windowsystem-dev libkf6i18n-dev \
+                         libkf6kdecorations-dev libkdecorations-dev \
+                         libx11-dev libxcb1-dev libxcb-xkb-dev libdbus-1-dev libdbusmenu-qt-dev \
+                         dh-make debhelper devscripts fakeroot
 
       - name: Create build directory
         run: |
