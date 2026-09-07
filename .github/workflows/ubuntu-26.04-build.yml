@@ -1,7 +1,7 @@
 name: ubuntu-26.04-build
 
 permissions:
-  contents: read
+  contents: write
 
 on:
   release:
@@ -35,6 +35,7 @@ jobs:
             dpkg-dev \
             file \
             git \
+            libdrm-dev \
             qt6-base-dev \
             qt6-base-private-dev \
             libkf6config-dev \
@@ -88,3 +89,9 @@ jobs:
         with:
           name: material-decoration-ubuntu-26.04-deb
           path: build/*.deb
+
+      - name: Upload DEB package to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/*.deb
