@@ -64,7 +64,7 @@ jobs:
             if [ -z "$LAST_TAG" ]; then
               LAST_TAG="0.1.0"
             fi
-            SHORT_SHA="${GITHUB_SHA:0:7}"
+            SHORT_SHA=$(echo "$GITHUB_SHA" | cut -c1-7)
             if [ -n "$SHORT_SHA" ]; then
               VERSION="${LAST_TAG}+git.${SHORT_SHA}"
             else
