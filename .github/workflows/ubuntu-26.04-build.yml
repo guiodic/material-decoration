@@ -44,7 +44,7 @@ jobs:
             libkf6i18n-dev \
             libkf6iconthemes-dev \
             libkf6windowsystem-dev \
-            kdecoration-dev \
+            libkdecorations3-dev \
             kwin-dev \
             kwin-x11-dev \
             libx11-dev \
