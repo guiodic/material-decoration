@@ -38,12 +38,15 @@ jobs:
             libdrm-dev \
             qt6-base-dev \
             qt6-base-private-dev \
+            qt6-tools-dev \
             libkf6config-dev \
             libkf6configwidgets-dev \
             libkf6coreaddons-dev \
             libkf6guiaddons-dev \
             libkf6i18n-dev \
             libkf6iconthemes-dev \
+            libkf6kcmutils-dev \
+            libkf6service-dev \
             libkf6windowsystem-dev \
             libkdecorations3-dev \
             kwin-dev \
