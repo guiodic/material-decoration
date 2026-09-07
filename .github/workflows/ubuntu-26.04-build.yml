@@ -51,17 +51,25 @@ jobs:
             libxcb1-dev
 
       - name: Configure with CMake
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory '*' || true
           if [ "${GITHUB_EVENT_NAME}" = "release" ]; then
             VERSION="${GITHUB_REF_NAME#v}"
           else
-            LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
+            LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || true)
             if [ -z "$LAST_TAG" ]; then
               LAST_TAG="0.1.0"
             fi
-            SHORT_SHA=$(git rev-parse --short HEAD)
-            VERSION="${LAST_TAG}+git.${SHORT_SHA}"
+            SHORT_SHA="${GITHUB_SHA:0:7}"
+            if [ -n "$SHORT_SHA" ]; then
+              VERSION="${LAST_TAG}+git.${SHORT_SHA}"
+            else
+              VERSION="${LAST_TAG}"
+            fi
           fi
           echo "Package version: $VERSION"
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
