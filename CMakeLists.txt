@@ -39,3 +39,13 @@ add_subdirectory (src)
 add_subdirectory(po)
 
 feature_summary(WHAT ALL)
+
+# CPack Debian packaging
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGE_NAME "material-decoration")
+set(CPACK_PACKAGE_VENDOR "Guido Iodice")
+set(CPACK_PACKAGE_CONTACT "guido.iodice@gmail.com")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Material-ish window decoration theme for KWin")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Guido Iodice <guido.iodice@gmail.com>")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+include(CPack)

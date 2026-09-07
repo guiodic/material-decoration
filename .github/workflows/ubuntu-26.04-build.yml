@@ -1,0 +1,82 @@
+name: ubuntu-26.04-build
+
+permissions:
+  contents: read
+
+on:
+  release:
+    types: [published, created]
+  workflow_dispatch:
+
+jobs:
+  ubuntu-26-04-build:
+    runs-on: ubuntu-24.04
+    container:
+      image: ubuntu:26.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update package databases
+        run: |
+          apt-get update
+
+      - name: Install build dependencies
+        run: |
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            ninja-build \
+            extra-cmake-modules \
+            gettext \
+            dpkg-dev \
+            file \
+            git \
+            qt6-base-dev \
+            qt6-base-private-dev \
+            libkf6config-dev \
+            libkf6configwidgets-dev \
+            libkf6coreaddons-dev \
+            libkf6guiaddons-dev \
+            libkf6i18n-dev \
+            libkf6iconthemes-dev \
+            libkf6windowsystem-dev \
+            kdecoration-dev \
+            kwin-dev \
+            kwin-x11-dev \
+            libx11-dev \
+            libxcb1-dev
+
+      - name: Configure with CMake
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          if [ "${GITHUB_EVENT_NAME}" = "release" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
+            if [ -z "$LAST_TAG" ]; then
+              LAST_TAG="0.1.0"
+            fi
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            VERSION="${LAST_TAG}+git.${SHORT_SHA}"
+          fi
+          echo "Package version: $VERSION"
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCPACK_PACKAGE_VERSION="$VERSION"
+
+      - name: Build targets
+        run: |
+          cmake --build build -j"$(nproc)"
+
+      - name: Create Debian package
+        run: |
+          cpack --config build/CPackConfig.cmake -B build
+
+      - name: Upload DEB package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: material-decoration-ubuntu-26.04-deb
+          path: build/*.deb
