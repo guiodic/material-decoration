@@ -5,7 +5,7 @@ permissions:
 
 on:
   release:
-    types: [published, created]
+    types: [published]
   workflow_dispatch:
 
 jobs:
@@ -77,7 +77,8 @@ jobs:
           fi
           echo "Package version: $VERSION"
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
-            -DCPACK_PACKAGE_VERSION="$VERSION"
+            -DCPACK_PACKAGE_VERSION="$VERSION" \
+            -DCPACK_PACKAGE_FILE_NAME="material-decoration-${VERSION}-ubuntu26.04"
 
       - name: Build targets
         run: |
