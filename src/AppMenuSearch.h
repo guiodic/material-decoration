@@ -77,6 +77,9 @@ public:
         // True if at least one ancestor in the whole parent chain (not just the immediate parent)
         // has a non-empty title/label. Used to correctly identify top-level leaf actions.
         bool hasNamedAncestor = false;
+        // Cached parent path strings constructed during candidate building
+        QString parentFullPath;
+        QString parentEvalPath;
     };
 
     struct SearchResult {

@@ -269,7 +269,39 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         if (action->menu()) {
             collectSearchCandidates(action->menu(), visited, ancestors, childHasNamedAncestor);
         } else {
-            m_searchCandidates.append({action, ancestors, childHasNamedAncestor});
+            QString parentFullPath;
+            QString parentEvalPath;
+            parentFullPath.reserve(64);
+            parentEvalPath.reserve(64);
+
+            bool firstFull = true;
+            bool firstEval = true;
+            bool skippedTopLevel = false;
+
+            for (QAction *ancestor : ancestors) {
+                if (ancestor) {
+                    const QString text = getActionText(ancestor);
+                    if (!text.isEmpty()) {
+                        if (!firstFull) {
+                            parentFullPath.append(QStringLiteral(" » "));
+                        }
+                        parentFullPath.append(text);
+                        firstFull = false;
+
+                        if (!skippedTopLevel) {
+                            skippedTopLevel = true;
+                        } else {
+                            if (!firstEval) {
+                                parentEvalPath.append(QStringLiteral(" » "));
+                            }
+                            parentEvalPath.append(text);
+                            firstEval = false;
+                        }
+                    }
+                }
+            }
+
+            m_searchCandidates.append({action, ancestors, childHasNamedAncestor, std::move(parentFullPath), std::move(parentEvalPath)});
         }
     }
 
@@ -443,55 +475,19 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text)
 
 QString AppMenuSearch::buildFullPath(const SearchCandidate &candidate, const QString &itemText) const
 {
-    QString path;
-    path.reserve(128);
-    bool first = true;
-    for (QAction *ancestor : std::as_const(candidate.ancestors)) {
-        if (ancestor) {
-            const QString text = getActionText(ancestor);
-            if (!text.isEmpty()) {
-                if (!first) {
-                    path.append(QStringLiteral(" » "));
-                }
-                path.append(text);
-                first = false;
-            }
-        }
+    if (candidate.parentFullPath.isEmpty()) {
+        return itemText;
     }
-    if (!first) {
-        path.append(QStringLiteral(" » "));
-    }
-    path.append(itemText);
-    return path;
+    return candidate.parentFullPath + QStringLiteral(" » ") + itemText;
 }
 
 QString AppMenuSearch::buildEvalPath(const SearchCandidate &candidate, const QString &itemText, bool ignoreTopLevel) const
 {
-    QString path;
-    path.reserve(128);
-    bool first = true;
-    bool skippedTopLevel = false;
-    for (QAction *ancestor : std::as_const(candidate.ancestors)) {
-        if (ancestor) {
-            const QString text = getActionText(ancestor);
-            if (!text.isEmpty()) {
-                if (ignoreTopLevel && !skippedTopLevel) {
-                    skippedTopLevel = true;
-                } else {
-                    if (!first) {
-                        path.append(QStringLiteral(" » "));
-                    }
-                    path.append(text);
-                    first = false;
-                }
-            }
-        }
+    const QString &prefix = ignoreTopLevel ? candidate.parentEvalPath : candidate.parentFullPath;
+    if (prefix.isEmpty()) {
+        return itemText;
     }
-    if (!first) {
-        path.append(QStringLiteral(" » "));
-    }
-    path.append(itemText);
-    return path;
+    return prefix + QStringLiteral(" » ") + itemText;
 }
 
 QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, const FilterOptions &options, const QString &query) const
