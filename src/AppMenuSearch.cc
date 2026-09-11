@@ -250,6 +250,7 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         if (!getActionText(menuAction).isEmpty()) {
             childHasNamedAncestor = true;
         }
+        connect(menuAction, &QAction::changed, this, &AppMenuSearch::invalidateCandidates, Qt::UniqueConnection);
     }
 
     for (QAction *action : menu->actions()) {
