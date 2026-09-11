@@ -77,7 +77,10 @@ public:
         // True if at least one ancestor in the whole parent chain (not just the immediate parent)
         // has a non-empty title/label. Used to correctly identify top-level leaf actions.
         bool hasNamedAncestor = false;
-        // Cached parent path strings constructed during candidate building
+        // Cached parent path strings constructed during candidate building.
+        // Invariant: these paths reflect the ancestor hierarchy and titles at collection time.
+        // Any change to ancestor action titles or menu structure must trigger invalidateCandidates()
+        // to force a recalculation of m_searchCandidates and its cached paths.
         QString parentFullPath;
         QString parentEvalPath;
     };
