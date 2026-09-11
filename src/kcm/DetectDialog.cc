@@ -40,6 +40,7 @@ DetectDialog::DetectDialog(QWidget *parent)
 
     m_statusLabel = new QLabel(i18n("Click 'Detect' and then click on the target window to capture its properties."), this);
     m_statusLabel->setWordWrap(true);
+    m_statusLabel->setMinimumHeight(m_statusLabel->fontMetrics().lineSpacing() * 6);
     layout->addWidget(m_statusLabel);
 
     m_detectButton = new QPushButton(i18n("Detect"), this);
@@ -74,10 +75,16 @@ void DetectDialog::detectWindow()
             if (m_windowClass.isEmpty()) {
                 m_windowClass = info.value(QStringLiteral("resourceName")).toString();
             }
+            if (m_windowClass.isEmpty()) {
+                m_windowClass = info.value(QStringLiteral("desktopFile")).toString();
+            }
             m_caption = info.value(QStringLiteral("caption")).toString();
 
+            const QString displayClass = m_windowClass.isEmpty() ? i18n("(unavailable)") : m_windowClass;
+            const QString displayCaption = m_caption.isEmpty() ? i18n("(unavailable)") : m_caption;
+
             m_statusLabel->setText(i18n("Captured Window Class: %1\nCaptured Window Title: %2",
-                                        m_windowClass, m_caption));
+                                        displayClass, displayCaption));
         } else {
             m_statusLabel->setText(i18n("Failed to detect window info: %1", reply.error().message()));
         }
