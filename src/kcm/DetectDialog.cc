@@ -75,9 +75,6 @@ void DetectDialog::detectWindow()
             if (m_windowClass.isEmpty()) {
                 m_windowClass = info.value(QStringLiteral("resourceName")).toString();
             }
-            if (m_windowClass.isEmpty()) {
-                m_windowClass = info.value(QStringLiteral("desktopFile")).toString();
-            }
             m_caption = info.value(QStringLiteral("caption")).toString();
 
             const QString displayClass = m_windowClass.isEmpty() ? i18n("(unavailable)") : m_windowClass;
