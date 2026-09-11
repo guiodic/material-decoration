@@ -140,6 +140,10 @@ InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration)
     const QString caption = decoration->window()->caption();
     const QString windowClass = decoration->window()->windowClass();
 
+    static const QRegularExpression splitRegex(QStringLiteral("[\\s\\r\\n\\t\\x00]+"));
+    QStringList windowClassComponents;
+    bool windowClassSplit = false;
+
     for (const auto &compiled : m_compiledExceptions) {
         if (!compiled.enabled || compiled.pattern.isEmpty()) {
             continue;
@@ -152,9 +156,11 @@ InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration)
             if (valueToMatch.compare(compiled.pattern, Qt::CaseInsensitive) == 0) {
                 matches = true;
             } else if (compiled.type == ExceptionType::WindowClass) { // Window Class component match
-                static const QRegularExpression splitRegex(QStringLiteral("[\\s\\r\\n\\t\\x00]+"));
-                const QStringList components = valueToMatch.split(splitRegex, Qt::SkipEmptyParts);
-                for (const QString &comp : components) {
+                if (!windowClassSplit) {
+                    windowClassComponents = windowClass.split(splitRegex, Qt::SkipEmptyParts);
+                    windowClassSplit = true;
+                }
+                for (const QString &comp : windowClassComponents) {
                     if (comp.compare(compiled.pattern, Qt::CaseInsensitive) == 0) {
                         matches = true;
                         break;
