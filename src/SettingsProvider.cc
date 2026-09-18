@@ -72,11 +72,17 @@ void SettingsProvider::reconfigure()
         }
 
         if (compiled.matchingMode == MatchingMode::RegularExpression) {
+            constexpr int MaxPatternLength = 256;
+            if (compiled.pattern.length() > MaxPatternLength) {
+                qWarning() << "Regular expression pattern exceeds maximum length of" << MaxPatternLength << "characters:" << compiled.pattern;
+                continue;
+            }
             QRegularExpression regex(compiled.pattern, QRegularExpression::CaseInsensitiveOption);
             if (!regex.isValid()) {
                 qWarning() << "Invalid exception regular expression pattern:" << compiled.pattern << regex.errorString();
                 continue;
             }
+            regex.optimize();
             compiled.regex = regex;
         }
 
@@ -168,7 +174,10 @@ InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration)
                 }
             }
         } else if (compiled.matchingMode == MatchingMode::RegularExpression) {
-            matches = compiled.regex.match(valueToMatch).hasMatch();
+            constexpr int MaxValueLength = 1024;
+            if (valueToMatch.length() <= MaxValueLength) {
+                matches = compiled.regex.match(valueToMatch).hasMatch();
+            }
         }
 
         if (matches) {
