@@ -129,50 +129,29 @@ static inline void boxBlurRowAlpha(const uint8_t *src,
     const int boxSize = lobes.left + 1 + lobes.right;
     const int reciprocal = (1 << 24) / boxSize;
 
-    uint32_t alphaSum = (boxSize + 1) / 2;
-
-    const uint8_t *left = src;
-    const uint8_t *right = src;
-    uint8_t *out = dst;
-
     const uint8_t firstValue = src[0];
     const uint8_t lastValue = src[static_cast<ptrdiff_t>(width - 1) * inputStep];
 
-    alphaSum += firstValue * lobes.left;
+    auto getSrcValue = [&](int idx) -> uint8_t {
+        if (idx < 0) {
+            return firstValue;
+        }
+        if (idx >= width) {
+            return lastValue;
+        }
+        return src[static_cast<ptrdiff_t>(idx) * inputStep];
+    };
 
-    const uint8_t *srcMax = src + static_cast<ptrdiff_t>(width - 1) * inputStep;
+    uint32_t alphaSum = static_cast<uint32_t>(boxSize + 1) / 2;
+    alphaSum += static_cast<uint32_t>(firstValue) * lobes.left;
 
-    const uint8_t *initEnd = src + static_cast<ptrdiff_t>(boxSize - lobes.left) * inputStep;
-    while (right < initEnd) {
-        alphaSum += (right <= srcMax) ? *right : lastValue;
-        right += inputStep;
+    for (int idx = 0; idx <= lobes.right; ++idx) {
+        alphaSum += getSrcValue(idx);
     }
 
-    const uint8_t *leftEnd = src + static_cast<ptrdiff_t>(boxSize) * inputStep;
-    while (right < leftEnd) {
-        *out = (alphaSum * reciprocal) >> 24;
-        const uint8_t rightVal = (right <= srcMax) ? *right : lastValue;
-        alphaSum += rightVal - firstValue;
-        right += inputStep;
-        out += outputStep;
-    }
-
-    const uint8_t *centerEnd = src + static_cast<ptrdiff_t>(width) * inputStep;
-    while (right < centerEnd) {
-        *out = (alphaSum * reciprocal) >> 24;
-        alphaSum += *right - *left;
-        left += inputStep;
-        right += inputStep;
-        out += outputStep;
-    }
-
-    const uint8_t *rightEnd = dst + static_cast<ptrdiff_t>(width) * outputStep;
-    while (out < rightEnd) {
-        *out = (alphaSum * reciprocal) >> 24;
-        const uint8_t leftVal = (left <= srcMax) ? *left : lastValue;
-        alphaSum += lastValue - leftVal;
-        left += inputStep;
-        out += outputStep;
+    for (int x = 0; x < width; ++x) {
+        dst[static_cast<ptrdiff_t>(x) * outputStep] = (alphaSum * reciprocal) >> 24;
+        alphaSum += getSrcValue(x + 1 + lobes.right) - getSrcValue(x - lobes.left);
     }
 }
 
