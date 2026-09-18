@@ -129,46 +129,29 @@ static inline void boxBlurRowAlpha(const uint8_t *src,
     const int boxSize = lobes.left + 1 + lobes.right;
     const int reciprocal = (1 << 24) / boxSize;
 
-    uint32_t alphaSum = (boxSize + 1) / 2;
-
-    const uint8_t *left = src;
-    const uint8_t *right = src;
-    uint8_t *out = dst;
-
     const uint8_t firstValue = src[0];
-    const uint8_t lastValue = src[(width - 1) * inputStep];
+    const uint8_t lastValue = src[static_cast<ptrdiff_t>(width - 1) * inputStep];
 
-    alphaSum += firstValue * lobes.left;
+    auto getSrcValue = [&](int idx) -> uint8_t {
+        if (idx < 0) {
+            return firstValue;
+        }
+        if (idx >= width) {
+            return lastValue;
+        }
+        return src[static_cast<ptrdiff_t>(idx) * inputStep];
+    };
 
-    const uint8_t *initEnd = src + (boxSize - lobes.left) * inputStep;
-    while (right < initEnd) {
-        alphaSum += *right;
-        right += inputStep;
+    uint32_t alphaSum = static_cast<uint32_t>(boxSize + 1) / 2;
+    alphaSum += static_cast<uint32_t>(firstValue) * lobes.left;
+
+    for (int idx = 0; idx <= lobes.right; ++idx) {
+        alphaSum += getSrcValue(idx);
     }
 
-    const uint8_t *leftEnd = src + boxSize * inputStep;
-    while (right < leftEnd) {
-        *out = (alphaSum * reciprocal) >> 24;
-        alphaSum += *right - firstValue;
-        right += inputStep;
-        out += outputStep;
-    }
-
-    const uint8_t *centerEnd = src + width * inputStep;
-    while (right < centerEnd) {
-        *out = (alphaSum * reciprocal) >> 24;
-        alphaSum += *right - *left;
-        left += inputStep;
-        right += inputStep;
-        out += outputStep;
-    }
-
-    const uint8_t *rightEnd = dst + width * outputStep;
-    while (out < rightEnd) {
-        *out = (alphaSum * reciprocal) >> 24;
-        alphaSum += lastValue - *left;
-        left += inputStep;
-        out += outputStep;
+    for (int x = 0; x < width; ++x) {
+        dst[static_cast<ptrdiff_t>(x) * outputStep] = (alphaSum * reciprocal) >> 24;
+        alphaSum += getSrcValue(x + 1 + lobes.right) - getSrcValue(x - lobes.left);
     }
 }
 
@@ -207,15 +190,21 @@ static inline void boxBlurAlpha(QImage &image, int radius, const QRect &rect = {
         return;
     }
 
-    size_t bufferStride;
-    if (qMulOverflow(static_cast<size_t>(qMax(width, height)),
-                     static_cast<size_t>(pixelStride),
-                     &bufferStride)) {
+    int maxBoxSize = 0;
+    for (const BoxLobes &lobe : lobes) {
+        maxBoxSize = qMax(maxBoxSize, lobe.left + 1 + lobe.right);
+    }
+
+    const size_t maxDim = static_cast<size_t>(qMax(qMax(width, height), maxBoxSize));
+    const size_t stride = static_cast<size_t>(pixelStride);
+
+    size_t bufferStride = 0;
+    if (qMulOverflow(maxDim, stride, &bufferStride) || bufferStride == 0) {
         return;
     }
 
-    size_t totalSize;
-    if (qMulOverflow(static_cast<size_t>(2), bufferStride, &totalSize)) {
+    size_t totalSize = 0;
+    if (qMulOverflow(static_cast<size_t>(2), bufferStride, &totalSize) || totalSize == 0) {
         return;
     }
 
@@ -229,7 +218,8 @@ static inline void boxBlurAlpha(QImage &image, int radius, const QRect &rect = {
 
     // Blur the image in horizontal direction.
     for (int i = 0; i < height; ++i) {
-        uint8_t *row = image.scanLine(blurRect.y() + i) + blurRect.x() * pixelStride + alphaOffset;
+        const ptrdiff_t rowOffset = static_cast<ptrdiff_t>(blurRect.x()) * pixelStride + alphaOffset;
+        uint8_t *row = image.scanLine(blurRect.y() + i) + rowOffset;
         boxBlurRowAlpha(row, buf1, width, pixelStride, rowStride, lobes[0], false, false);
         boxBlurRowAlpha(buf1, buf2, width, pixelStride, rowStride, lobes[1], false, false);
         boxBlurRowAlpha(buf2, row, width, pixelStride, rowStride, lobes[2], false, false);
@@ -237,7 +227,8 @@ static inline void boxBlurAlpha(QImage &image, int radius, const QRect &rect = {
 
     // Blur the image in vertical direction.
     for (int i = 0; i < width; ++i) {
-        uint8_t *column = image.scanLine(blurRect.y()) + (blurRect.x() + i) * pixelStride + alphaOffset;
+        const ptrdiff_t colOffset = static_cast<ptrdiff_t>(blurRect.x() + i) * pixelStride + alphaOffset;
+        uint8_t *column = image.scanLine(blurRect.y()) + colOffset;
         boxBlurRowAlpha(column, buf1, height, pixelStride, rowStride, lobes[0], true, false);
         boxBlurRowAlpha(buf1, buf2, height, pixelStride, rowStride, lobes[1], false, false);
         boxBlurRowAlpha(buf2, column, height, pixelStride, rowStride, lobes[2], false, true);
@@ -246,7 +237,7 @@ static inline void boxBlurAlpha(QImage &image, int radius, const QRect &rect = {
 
 static inline void mirrorTopLeftQuadrant(QImage &image)
 {
-    if (image.isNull()) {
+    if (image.isNull() || image.width() <= 0 || image.height() <= 0) {
         return;
     }
 
