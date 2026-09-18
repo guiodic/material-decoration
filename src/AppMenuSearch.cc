@@ -253,6 +253,46 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         connect(menuAction, &QAction::changed, this, &AppMenuSearch::invalidateCandidates, Qt::UniqueConnection);
     }
 
+    QString parentFullPath;
+    QString parentEvalPath;
+    bool pathsComputed = false;
+
+    auto ensurePathsComputed = [&]() {
+        if (pathsComputed) {
+            return;
+        }
+        pathsComputed = true;
+        parentFullPath.reserve(64);
+        parentEvalPath.reserve(64);
+
+        bool firstFull = true;
+        bool firstEval = true;
+        bool skippedTopLevel = false;
+
+        for (QAction *ancestor : ancestors) {
+            if (ancestor) {
+                const QString text = getActionText(ancestor);
+                if (!text.isEmpty()) {
+                    if (!firstFull) {
+                        parentFullPath.append(QStringLiteral(" » "));
+                    }
+                    parentFullPath.append(text);
+                    firstFull = false;
+
+                    if (!skippedTopLevel) {
+                        skippedTopLevel = true;
+                    } else {
+                        if (!firstEval) {
+                            parentEvalPath.append(QStringLiteral(" » "));
+                        }
+                        parentEvalPath.append(text);
+                        firstEval = false;
+                    }
+                }
+            }
+        }
+    };
+
     for (QAction *action : menu->actions()) {
         if (!action || !action->isVisible()) {
             continue;
@@ -270,39 +310,8 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         if (action->menu()) {
             collectSearchCandidates(action->menu(), visited, ancestors, childHasNamedAncestor);
         } else {
-            QString parentFullPath;
-            QString parentEvalPath;
-            parentFullPath.reserve(64);
-            parentEvalPath.reserve(64);
-
-            bool firstFull = true;
-            bool firstEval = true;
-            bool skippedTopLevel = false;
-
-            for (QAction *ancestor : ancestors) {
-                if (ancestor) {
-                    const QString text = getActionText(ancestor);
-                    if (!text.isEmpty()) {
-                        if (!firstFull) {
-                            parentFullPath.append(QStringLiteral(" » "));
-                        }
-                        parentFullPath.append(text);
-                        firstFull = false;
-
-                        if (!skippedTopLevel) {
-                            skippedTopLevel = true;
-                        } else {
-                            if (!firstEval) {
-                                parentEvalPath.append(QStringLiteral(" » "));
-                            }
-                            parentEvalPath.append(text);
-                            firstEval = false;
-                        }
-                    }
-                }
-            }
-
-            m_searchCandidates.append({action, ancestors, childHasNamedAncestor, std::move(parentFullPath), std::move(parentEvalPath)});
+            ensurePathsComputed();
+            m_searchCandidates.append({action, ancestors, childHasNamedAncestor, parentFullPath, parentEvalPath});
         }
     }
 
@@ -392,6 +401,18 @@ bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, con
     return false;
 }
 
+static inline QChar fastToLower(QChar ch)
+{
+    const ushort u = ch.unicode();
+    if (u >= 'A' && u <= 'Z') {
+        return QChar(u + 32);
+    }
+    if (u < 128) {
+        return ch;
+    }
+    return ch.toLower();
+}
+
 /**
  * @brief Calculates a fuzzy matching score between a search pattern and text.
  *
@@ -430,21 +451,24 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text)
     int consecutive = 0;
     int prevMatchIdx = -1;
 
-    QChar pChar = pattern.at(patternIdx).toLower();
+    const QChar *pText = text.constData();
+    const QChar *pPattern = pattern.constData();
+
+    QChar pChar = fastToLower(pPattern[patternIdx]);
 
     for (int textIdx = 0; textIdx < textLen && patternIdx < patternLen; ++textIdx) {
-        const QChar tChar = text.at(textIdx).toLower();
+        const QChar tChar = fastToLower(pText[textIdx]);
 
         if (pChar == tChar) {
             patternIdx++;
             if (patternIdx < patternLen) {
-                pChar = pattern.at(patternIdx).toLower();
+                pChar = fastToLower(pPattern[patternIdx]);
             }
             int charScore = 10;
 
             const bool isStart = (textIdx == 0);
-            const bool isBoundary = (!isStart && !text.at(textIdx - 1).isLetterOrNumber());
-            const bool isCamel = (text.at(textIdx).isUpper() && textIdx > 0 && text.at(textIdx - 1).isLower());
+            const bool isBoundary = (!isStart && !pText[textIdx - 1].isLetterOrNumber());
+            const bool isCamel = (pText[textIdx].isUpper() && textIdx > 0 && pText[textIdx - 1].isLower());
 
             if (isStart || isBoundary) {
                 charScore += 50;

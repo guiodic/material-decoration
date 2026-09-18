@@ -72,11 +72,13 @@ void SettingsProvider::reconfigure()
         }
 
         if (compiled.matchingMode == MatchingMode::RegularExpression) {
-            QRegularExpression regex(compiled.pattern, QRegularExpression::CaseInsensitiveOption);
-            if (!regex.isValid()) {
-                qWarning() << "Invalid exception regular expression pattern:" << compiled.pattern << regex.errorString();
+            QString errorReason;
+            if (!isSafeRegularExpression(compiled.pattern, &errorReason)) {
+                qWarning() << "Invalid or unsafe exception regular expression pattern:" << compiled.pattern << errorReason;
                 continue;
             }
+            QRegularExpression regex(compiled.pattern, QRegularExpression::CaseInsensitiveOption);
+            regex.optimize();
             compiled.regex = regex;
         }
 
@@ -168,7 +170,9 @@ InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration)
                 }
             }
         } else if (compiled.matchingMode == MatchingMode::RegularExpression) {
-            matches = compiled.regex.match(valueToMatch).hasMatch();
+            if (valueToMatch.size() <= MaxExceptionValueLength) {
+                matches = compiled.regex.match(valueToMatch).hasMatch();
+            }
         }
 
         if (matches) {

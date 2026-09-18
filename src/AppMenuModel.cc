@@ -299,26 +299,19 @@ void AppMenuModel::processNext()
     if (!m_deepCacheRequested) {
         return;
     }
-    
+
+    if (m_nextMenuToProcess >= m_menusToDeepCache.size()) {
+        if (!m_pendingDeepCacheUpdates.isEmpty()) {
+            return; // Wait for pending updates to finish and potentially add more items
+        }
+        stopCaching();
+        Q_EMIT menuReadyForSearch();
+        return;
+    }
+
     QDeadlineTimer deadline(std::chrono::milliseconds(8));
 
-    while (!m_menusToDeepCache.isEmpty()) {
-        if (m_nextMenuToProcess >= m_menusToDeepCache.size()) {
-            if (!m_pendingDeepCacheUpdates.isEmpty()) {
-                return; // Wait for pending updates to finish and potentially add more items
-            }
-            for (QMenu *subMenu : std::as_const(m_seenMenus)) {
-                disconnect(subMenu, nullptr, this, nullptr);
-            }
-            m_menusToDeepCache.clear();
-            m_nextMenuToProcess = 0;
-            m_deepCacheRequested = false;
-            m_deepCacheStarted = false;
-            m_seenMenus.clear();
-            Q_EMIT menuReadyForSearch();
-            return;
-        }
-
+    while (m_nextMenuToProcess < m_menusToDeepCache.size()) {
         QPointer<QMenu> menuToProcessPtr = m_menusToDeepCache.at(m_nextMenuToProcess++);
         QMenu *menuToProcess = menuToProcessPtr.data();
 
@@ -331,7 +324,7 @@ void AppMenuModel::processNext()
                 }
                 continue; // Process next item immediately
             }
-            
+
             m_pendingDeepCacheUpdates.insert(menuToProcess);
             if (m_importer) {
                 m_importer->updateMenu(menuToProcess);
@@ -341,16 +334,12 @@ void AppMenuModel::processNext()
         }
     }
 
-    m_deepCacheRequested = false;
-    m_deepCacheStarted = false;
-    m_nextMenuToProcess = 0;
-    for (QMenu *subMenu : std::as_const(m_seenMenus)) {
-        disconnect(subMenu, nullptr, this, nullptr);
+    if (!m_pendingDeepCacheUpdates.isEmpty()) {
+        return;
     }
-    m_seenMenus.clear();
-    if (m_pendingDeepCacheUpdates.isEmpty()) {
-        Q_EMIT menuReadyForSearch();
-    }
+
+    stopCaching();
+    Q_EMIT menuReadyForSearch();
 }
 
 
