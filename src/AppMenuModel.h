@@ -31,7 +31,7 @@
 #include <QSet>
 #include <QStringList>
 #include <QTimer>
-#include <QtTypes>
+#include <QtGlobal>
 
 namespace Material
 {
@@ -66,7 +66,7 @@ public:
     void stopCaching();
     void startDeepCaching();
 
-private:
+private Q_SLOTS:
     void onMenuUpdated(QMenu *menu);
     void onActionChanged();
     void processNext();
