@@ -103,9 +103,10 @@ void ExceptionDialog::accept()
     }
 
     if (static_cast<MatchingMode>(m_matchingModeCombo->currentIndex()) == MatchingMode::RegularExpression) {
-        QRegularExpression regex(m_patternLineEdit->text().trimmed());
-        if (!regex.isValid()) {
-            QMessageBox::warning(this, i18n("Warning"), i18n("Regular Expression syntax error: %1", regex.errorString()));
+        const QString pattern = m_patternLineEdit->text().trimmed();
+        QString errorReason;
+        if (!isSafeRegularExpression(pattern, &errorReason)) {
+            QMessageBox::warning(this, i18n("Warning"), i18n("Regular Expression error: %1", errorReason));
             return;
         }
     }

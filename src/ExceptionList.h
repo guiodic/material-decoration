@@ -39,6 +39,9 @@ enum class MatchingMode {
     RegularExpression = 1,
 };
 
+constexpr int MaxExceptionPatternLength = 256;
+constexpr int MaxExceptionValueLength = 1024;
+
 enum ExceptionMask {
     None = 0,
     HideTitleBar = 1 << 0,
@@ -51,6 +54,7 @@ enum ExceptionMask {
 
 void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettingsPtr &dst);
 InternalSettingsPtr cloneInternalSettings(const InternalSettingsPtr &src);
+bool isSafeRegularExpression(const QString &pattern, QString *errorReason = nullptr);
 
 class ExceptionList
 {

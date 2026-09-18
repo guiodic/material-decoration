@@ -18,6 +18,7 @@
 #include "ExceptionList.h"
 
 #include <KConfigGroup>
+#include <QRegularExpression>
 #include <algorithm>
 
 namespace Material
@@ -80,6 +81,41 @@ InternalSettingsPtr cloneInternalSettings(const InternalSettingsPtr &src)
     InternalSettingsPtr copy(new InternalSettings());
     copyInternalSettings(src, copy);
     return copy;
+}
+
+bool isSafeRegularExpression(const QString &pattern, QString *errorReason)
+{
+    if (pattern.length() > MaxExceptionPatternLength) {
+        if (errorReason) {
+            *errorReason = QStringLiteral("Pattern exceeds maximum length of %1 characters.").arg(MaxExceptionPatternLength);
+        }
+        return false;
+    }
+
+    QRegularExpression regex(pattern, QRegularExpression::CaseInsensitiveOption);
+    if (!regex.isValid()) {
+        if (errorReason) {
+            *errorReason = regex.errorString();
+        }
+        return false;
+    }
+
+    static const QRegularExpression nestedQuantifiersRegex(
+        QStringLiteral("(?:\\(|\\|\\[)[^()]*?(?:[*+]|\\{\\d+,\\})[^()]*?\\)\\s*(?:[*+]|\\{\\d+,\\})"),
+        QRegularExpression::CaseInsensitiveOption);
+
+    static const QRegularExpression consecutiveQuantifiersRegex(
+        QStringLiteral("(?:[*+]|\\{\\d+,\\})\\s*(?:[*+]|\\{\\d+,\\})"),
+        QRegularExpression::CaseInsensitiveOption);
+
+    if (nestedQuantifiersRegex.match(pattern).hasMatch() || consecutiveQuantifiersRegex.match(pattern).hasMatch()) {
+        if (errorReason) {
+            *errorReason = QStringLiteral("Pattern contains nested or consecutive unbounded quantifiers susceptible to ReDoS.");
+        }
+        return false;
+    }
+
+    return true;
 }
 
 void ExceptionList::readConfig(const KSharedConfig::Ptr &config)
