@@ -175,9 +175,7 @@ InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration)
             }
         } else if (compiled.matchingMode == MatchingMode::RegularExpression) {
             constexpr int MaxValueLength = 1024;
-            if (valueToMatch.length() <= MaxValueLength) {
-                matches = compiled.regex.match(valueToMatch).hasMatch();
-            }
+            matches = compiled.regex.match(valueToMatch.left(MaxValueLength)).hasMatch();
         }
 
         if (matches) {
