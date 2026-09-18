@@ -253,6 +253,46 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         connect(menuAction, &QAction::changed, this, &AppMenuSearch::invalidateCandidates, Qt::UniqueConnection);
     }
 
+    QString parentFullPath;
+    QString parentEvalPath;
+    bool pathsComputed = false;
+
+    auto ensurePathsComputed = [&]() {
+        if (pathsComputed) {
+            return;
+        }
+        pathsComputed = true;
+        parentFullPath.reserve(64);
+        parentEvalPath.reserve(64);
+
+        bool firstFull = true;
+        bool firstEval = true;
+        bool skippedTopLevel = false;
+
+        for (QAction *ancestor : ancestors) {
+            if (ancestor) {
+                const QString text = getActionText(ancestor);
+                if (!text.isEmpty()) {
+                    if (!firstFull) {
+                        parentFullPath.append(QStringLiteral(" » "));
+                    }
+                    parentFullPath.append(text);
+                    firstFull = false;
+
+                    if (!skippedTopLevel) {
+                        skippedTopLevel = true;
+                    } else {
+                        if (!firstEval) {
+                            parentEvalPath.append(QStringLiteral(" » "));
+                        }
+                        parentEvalPath.append(text);
+                        firstEval = false;
+                    }
+                }
+            }
+        }
+    };
+
     for (QAction *action : menu->actions()) {
         if (!action || !action->isVisible()) {
             continue;
@@ -270,39 +310,8 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         if (action->menu()) {
             collectSearchCandidates(action->menu(), visited, ancestors, childHasNamedAncestor);
         } else {
-            QString parentFullPath;
-            QString parentEvalPath;
-            parentFullPath.reserve(64);
-            parentEvalPath.reserve(64);
-
-            bool firstFull = true;
-            bool firstEval = true;
-            bool skippedTopLevel = false;
-
-            for (QAction *ancestor : ancestors) {
-                if (ancestor) {
-                    const QString text = getActionText(ancestor);
-                    if (!text.isEmpty()) {
-                        if (!firstFull) {
-                            parentFullPath.append(QStringLiteral(" » "));
-                        }
-                        parentFullPath.append(text);
-                        firstFull = false;
-
-                        if (!skippedTopLevel) {
-                            skippedTopLevel = true;
-                        } else {
-                            if (!firstEval) {
-                                parentEvalPath.append(QStringLiteral(" » "));
-                            }
-                            parentEvalPath.append(text);
-                            firstEval = false;
-                        }
-                    }
-                }
-            }
-
-            m_searchCandidates.append({action, ancestors, childHasNamedAncestor, std::move(parentFullPath), std::move(parentEvalPath)});
+            ensurePathsComputed();
+            m_searchCandidates.append({action, ancestors, childHasNamedAncestor, parentFullPath, parentEvalPath});
         }
     }
 
