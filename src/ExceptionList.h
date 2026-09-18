@@ -39,6 +39,9 @@ enum class MatchingMode {
     RegularExpression = 1,
 };
 
+constexpr int MaxExceptionPatternLength = 256;
+constexpr int MaxExceptionValueLength = 1024;
+
 enum ExceptionMask {
     None = 0,
     HideTitleBar = 1 << 0,

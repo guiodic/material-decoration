@@ -72,9 +72,8 @@ void SettingsProvider::reconfigure()
         }
 
         if (compiled.matchingMode == MatchingMode::RegularExpression) {
-            constexpr int MaxPatternLength = 256;
-            if (compiled.pattern.length() > MaxPatternLength) {
-                qWarning() << "Regular expression pattern exceeds maximum length of" << MaxPatternLength << "characters:" << compiled.pattern;
+            if (compiled.pattern.length() > MaxExceptionPatternLength) {
+                qWarning() << "Regular expression pattern exceeds maximum length of" << MaxExceptionPatternLength << "characters:" << compiled.pattern;
                 continue;
             }
             QRegularExpression regex(compiled.pattern, QRegularExpression::CaseInsensitiveOption);
@@ -174,8 +173,7 @@ InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration)
                 }
             }
         } else if (compiled.matchingMode == MatchingMode::RegularExpression) {
-            constexpr int MaxValueLength = 1024;
-            if (valueToMatch.size() <= MaxValueLength) {
+            if (valueToMatch.size() <= MaxExceptionValueLength) {
                 matches = compiled.regex.match(valueToMatch).hasMatch();
             }
         }
