@@ -54,6 +54,7 @@ enum ExceptionMask {
 
 void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettingsPtr &dst);
 InternalSettingsPtr cloneInternalSettings(const InternalSettingsPtr &src);
+bool isSafeRegularExpression(const QString &pattern, QString *errorReason = nullptr);
 
 class ExceptionList
 {

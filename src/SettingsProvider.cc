@@ -72,15 +72,12 @@ void SettingsProvider::reconfigure()
         }
 
         if (compiled.matchingMode == MatchingMode::RegularExpression) {
-            if (compiled.pattern.length() > MaxExceptionPatternLength) {
-                qWarning() << "Regular expression pattern exceeds maximum length of" << MaxExceptionPatternLength << "characters:" << compiled.pattern;
+            QString errorReason;
+            if (!isSafeRegularExpression(compiled.pattern, &errorReason)) {
+                qWarning() << "Invalid or unsafe exception regular expression pattern:" << compiled.pattern << errorReason;
                 continue;
             }
             QRegularExpression regex(compiled.pattern, QRegularExpression::CaseInsensitiveOption);
-            if (!regex.isValid()) {
-                qWarning() << "Invalid exception regular expression pattern:" << compiled.pattern << regex.errorString();
-                continue;
-            }
             regex.optimize();
             compiled.regex = regex;
         }

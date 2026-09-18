@@ -104,13 +104,9 @@ void ExceptionDialog::accept()
 
     if (static_cast<MatchingMode>(m_matchingModeCombo->currentIndex()) == MatchingMode::RegularExpression) {
         const QString pattern = m_patternLineEdit->text().trimmed();
-        if (pattern.length() > MaxExceptionPatternLength) {
-            QMessageBox::warning(this, i18n("Warning"), i18n("Regular Expression pattern is too long (maximum %1 characters).", MaxExceptionPatternLength));
-            return;
-        }
-        QRegularExpression regex(pattern);
-        if (!regex.isValid()) {
-            QMessageBox::warning(this, i18n("Warning"), i18n("Regular Expression syntax error: %1", regex.errorString()));
+        QString errorReason;
+        if (!isSafeRegularExpression(pattern, &errorReason)) {
+            QMessageBox::warning(this, i18n("Warning"), i18n("Regular Expression error: %1", errorReason));
             return;
         }
     }
