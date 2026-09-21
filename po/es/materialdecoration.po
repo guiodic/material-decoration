@@ -101,51 +101,55 @@ msgstr "Activar animaciones"
 msgid "Animation duration"
 msgstr "Duración de la animación"
 
-#: kcm.cpp:32
+#: kcm.cpp:30
 msgid "Left"
 msgstr "Izquierda"
 
-#: kcm.cpp:33
+#: kcm.cpp:31
 msgid "Center"
 msgstr "Centro"
 
-#: kcm.cpp:34
+#: kcm.cpp:32
 msgid "Center (Full Width)"
 msgstr "Centro (ancho completo)"
 
-#: kcm.cpp:35
+#: kcm.cpp:33
 msgid "Right"
 msgstr "Derecha"
 
-#: kcm.cpp:36
+#: kcm.cpp:34
 msgid "Hidden"
 msgstr "Oculto"
 
-#: kcm.cpp:38
+#: kcm.cpp:36
+msgid "Very Tiny"
+msgstr "Muy Diminuto"
+
+#: kcm.cpp:37
 msgid "Tiny"
 msgstr "Diminuto"
 
-#: kcm.cpp:39 kcm.cpp:51
+#: kcm.cpp:38 kcm.cpp:44
 msgid "Small"
 msgstr "Pequeño"
 
-#: kcm.cpp:40
+#: kcm.cpp:39
 msgid "Default"
 msgstr "Predeterminado"
 
-#: kcm.cpp:41 kcm.cpp:53
+#: kcm.cpp:40 kcm.cpp:46
 msgid "Large"
 msgstr "Grande"
 
-#: kcm.cpp:42 kcm.cpp:54
+#: kcm.cpp:41 kcm.cpp:47
 msgid "Very Large"
 msgstr "Muy grande"
 
-#: kcm.cpp:50
+#: kcm.cpp:43
 msgid "None"
 msgstr "Ninguna"
 
-#: kcm.cpp:52
+#: kcm.cpp:45
 msgid "Medium"
 msgstr "Mediano"
 
