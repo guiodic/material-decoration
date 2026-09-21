@@ -7,6 +7,7 @@
         <!-- button size -->
         <entry name="ButtonSize" type="Enum">
             <choices>
+                <choice name="ButtonVeryTiny" />
                 <choice name="ButtonTiny" />
                 <choice name="ButtonSmall" />
                 <choice name="ButtonDefault" />
