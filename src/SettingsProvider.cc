@@ -73,10 +73,6 @@ void SettingsProvider::reconfigure()
             continue;
         }
 
-        if (compiled.type == ExceptionType::WindowTitle) {
-            m_hasWindowTitleExceptions = true;
-        }
-
         if (compiled.matchingMode == MatchingMode::RegularExpression) {
             QString errorReason;
             if (!isSafeRegularExpression(compiled.pattern, &errorReason)) {
@@ -86,6 +82,10 @@ void SettingsProvider::reconfigure()
             QRegularExpression regex(compiled.pattern, QRegularExpression::CaseInsensitiveOption);
             regex.optimize();
             compiled.regex = regex;
+        }
+
+        if (compiled.type == ExceptionType::WindowTitle) {
+            m_hasWindowTitleExceptions = true;
         }
 
         compiled.mergedSettings = createMergedSettings(m_defaultSettings, exceptionSettings);
@@ -160,7 +160,7 @@ InternalSettingsPtr SettingsProvider::internalSettings(const QString &windowClas
     }
 
     const QString cacheKey = m_hasWindowTitleExceptions
-        ? windowClass + u'\0' + caption
+        ? (QString::number(windowClass.size()) + u':' + windowClass + caption)
         : windowClass;
 
     auto it = m_cache.constFind(cacheKey);
