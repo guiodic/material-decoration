@@ -635,14 +635,14 @@ QString AppMenuSearch::getActionText(QAction *action) const
     if (!action) {
         return QString();
     }
-    auto it = m_actionTextCache.find(action);
-    if (it != m_actionTextCache.end()) {
-        return it.value();
+    QString &cachedText = m_actionTextCache[action];
+    if (!cachedText.isNull()) {
+        return cachedText;
     }
     const QString rawText = action->text();
     const QString cleanedText = KLocalizedString::removeAcceleratorMarker(rawText.trimmed());
-    m_actionTextCache.insert(action, cleanedText);
-    return cleanedText;
+    cachedText = cleanedText.isNull() ? QStringLiteral("") : cleanedText;
+    return cachedText;
 }
 
 } // namespace Material
