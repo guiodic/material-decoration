@@ -20,6 +20,7 @@
 #include "ExceptionList.h"
 #include "InternalSettings.h"
 
+#include <QHash>
 #include <QObject>
 #include <QRegularExpression>
 #include <QSharedPointer>
@@ -40,9 +41,12 @@ public:
     ~SettingsProvider() override = default;
 
     InternalSettingsPtr internalSettings(Decoration *decoration);
+    InternalSettingsPtr internalSettings(const QString &windowClass, const QString &caption = QString());
 
     InternalSettingsPtr createMergedSettings(const InternalSettingsPtr &defaultSettings,
                                               const InternalSettingsPtr &exceptionSettings);
+
+    void clearCache();
 
 public slots:
     void reconfigure();
@@ -63,6 +67,8 @@ private:
     InternalSettingsPtr m_defaultSettings;
     ExceptionList m_exceptions;
     QList<CompiledException> m_compiledExceptions;
+    QHash<QString, InternalSettingsPtr> m_cache;
+    bool m_hasWindowTitleExceptions = false;
 };
 
 } // namespace Material

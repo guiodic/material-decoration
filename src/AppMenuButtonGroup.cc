@@ -339,6 +339,9 @@ void AppMenuButtonGroup::setOpacity(qreal value)
 
 KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(QPoint pos) const
 {
+    if (!geometry().contains(pos)) {
+        return nullptr;
+    }
     for (auto &tb : std::as_const(m_textButtons)) {
         if (tb && tb->isVisible() && tb->geometry().contains(pos)) {
             return tb;

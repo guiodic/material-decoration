@@ -55,6 +55,8 @@ void SettingsProvider::reconfigure()
     m_exceptions.readConfig(config);
 
     m_compiledExceptions.clear();
+    m_cache.clear();
+    m_hasWindowTitleExceptions = false;
 
     for (const auto &exceptionSettings : m_exceptions.exceptions()) {
         if (!exceptionSettings->enabled()) {
@@ -82,11 +84,20 @@ void SettingsProvider::reconfigure()
             compiled.regex = regex;
         }
 
+        if (compiled.type == ExceptionType::WindowTitle) {
+            m_hasWindowTitleExceptions = true;
+        }
+
         compiled.mergedSettings = createMergedSettings(m_defaultSettings, exceptionSettings);
         m_compiledExceptions.append(compiled);
     }
 
     emit configChanged();
+}
+
+void SettingsProvider::clearCache()
+{
+    m_cache.clear();
 }
 
 InternalSettingsPtr SettingsProvider::createMergedSettings(const InternalSettingsPtr &defaultSettings,
@@ -139,8 +150,25 @@ InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration)
         return m_defaultSettings;
     }
 
-    const QString caption = decoration->window()->caption();
-    const QString windowClass = decoration->window()->windowClass();
+    return internalSettings(decoration->window()->windowClass(), decoration->window()->caption());
+}
+
+InternalSettingsPtr SettingsProvider::internalSettings(const QString &windowClass, const QString &caption)
+{
+    if (m_compiledExceptions.isEmpty()) {
+        return m_defaultSettings;
+    }
+
+    const QString cacheKey = m_hasWindowTitleExceptions
+        ? (QString::number(windowClass.size()) + u':' + windowClass + caption)
+        : windowClass;
+
+    auto it = m_cache.constFind(cacheKey);
+    if (it != m_cache.constEnd()) {
+        return it.value();
+    }
+
+    InternalSettingsPtr matchedSettings = m_defaultSettings;
 
     static const QRegularExpression splitRegex(QStringLiteral("[\\s\\r\\n\\t\\x00]+"));
     QStringList windowClassComponents;
@@ -151,7 +179,7 @@ InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration)
             continue;
         }
 
-        const QString valueToMatch = (compiled.type == ExceptionType::WindowTitle) ? caption : windowClass;
+        const QString &valueToMatch = (compiled.type == ExceptionType::WindowTitle) ? caption : windowClass;
         bool matches = false;
 
         if (compiled.matchingMode == MatchingMode::ExactMatch) {
@@ -176,11 +204,17 @@ InternalSettingsPtr SettingsProvider::internalSettings(Decoration *decoration)
         }
 
         if (matches) {
-            return compiled.mergedSettings;
+            matchedSettings = compiled.mergedSettings;
+            break;
         }
     }
 
-    return m_defaultSettings;
+    if (m_cache.size() >= 1024) {
+        m_cache.clear();
+    }
+    m_cache.insert(cacheKey, matchedSettings);
+
+    return matchedSettings;
 }
 
 } // namespace Material

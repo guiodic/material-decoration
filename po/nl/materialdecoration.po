@@ -101,51 +101,55 @@ msgstr "Animaties tonen"
 msgid "Animation duration"
 msgstr "Animatieduur"
 
-#: kcm.cpp:32
+#: kcm.cpp:30
 msgid "Left"
 msgstr "Links"
 
-#: kcm.cpp:33
+#: kcm.cpp:31
 msgid "Center"
 msgstr "Midden"
 
-#: kcm.cpp:34
+#: kcm.cpp:32
 msgid "Center (Full Width)"
 msgstr "Midden (volle breedte)"
 
-#: kcm.cpp:35
+#: kcm.cpp:33
 msgid "Right"
 msgstr "Rechts"
 
-#: kcm.cpp:36
+#: kcm.cpp:34
 msgid "Hidden"
 msgstr "Verborgen"
 
-#: kcm.cpp:38
+#: kcm.cpp:36
+msgid "Very Tiny"
+msgstr "Zeer klein"
+
+#: kcm.cpp:37
 msgid "Tiny"
 msgstr "Erg klein"
 
-#: kcm.cpp:39 kcm.cpp:51
+#: kcm.cpp:38 kcm.cpp:44
 msgid "Small"
 msgstr "Klein"
 
-#: kcm.cpp:40
+#: kcm.cpp:39
 msgid "Default"
 msgstr "Standaard"
 
-#: kcm.cpp:41 kcm.cpp:53
+#: kcm.cpp:40 kcm.cpp:46
 msgid "Large"
 msgstr "Groot"
 
-#: kcm.cpp:42 kcm.cpp:54
+#: kcm.cpp:41 kcm.cpp:47
 msgid "Very Large"
 msgstr "Erg groot"
 
-#: kcm.cpp:50
+#: kcm.cpp:43
 msgid "None"
 msgstr "Geen"
 
-#: kcm.cpp:52
+#: kcm.cpp:45
 msgid "Medium"
 msgstr "Gemiddeld"
 
