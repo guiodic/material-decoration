@@ -33,7 +33,8 @@ MaterialDecorationKCM::MaterialDecorationKCM(QObject *parent, const KPluginMetaD
                                          i18n("Right"),
                                          i18n("Hidden")});
 
-    m_ui->kcfg_ButtonSize->addItems({i18n("Tiny"),
+    m_ui->kcfg_ButtonSize->addItems({i18n("Very Tiny"),
+                                     i18n("Tiny"),
                                      i18n("Small"),
                                      i18n("Default"),
                                      i18n("Large"),
