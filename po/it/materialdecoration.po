@@ -123,11 +123,11 @@ msgstr "Nascosto"
 
 #: kcm.cpp:36
 msgid "Very Tiny"
-msgstr "Molto minuscola"
+msgstr "Piccolissima"
 
 #: kcm.cpp:37
 msgid "Tiny"
-msgstr "Minuscola"
+msgstr "Molto Piccola"
 
 #: kcm.cpp:38 kcm.cpp:44
 msgid "Small"
