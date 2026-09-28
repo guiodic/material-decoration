@@ -435,7 +435,12 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text)
     const int patternLen = pattern.length();
     const int textLen = text.length();
 
-    // 1. Contiguous exact substring match check
+    // Early exit if pattern is longer than text
+    if (patternLen > textLen) {
+        return 0;
+    }
+
+    // 1. Contiguous exact substring match check (Unicode-aware)
     const int exactIdx = text.indexOf(pattern, 0, Qt::CaseInsensitive);
     if (exactIdx != -1) {
         int score = 1000 + (100 * patternLen) - (exactIdx * 2);
