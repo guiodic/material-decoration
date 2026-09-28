@@ -435,14 +435,50 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text)
     const int patternLen = pattern.length();
     const int textLen = text.length();
 
-    // 1. Contiguous exact substring match check
-    const int exactIdx = text.indexOf(pattern, 0, Qt::CaseInsensitive);
+    // Early exit if pattern is longer than text
+    if (patternLen > textLen) {
+        return 0;
+    }
+
+    const QChar *pText = text.constData();
+    const QChar *pPattern = pattern.constData();
+
+    const QChar firstPatChar = fastToLower(pPattern[0]);
+    const int maxSearchIdx = textLen - patternLen;
+
+    // 1. Fast contiguous exact substring match check (case-insensitive)
+    int exactIdx = -1;
+    bool foundFirstCharInRange = false;
+
+    for (int i = 0; i <= maxSearchIdx; ++i) {
+        if (fastToLower(pText[i]) == firstPatChar) {
+            foundFirstCharInRange = true;
+            bool match = true;
+            for (int j = 1; j < patternLen; ++j) {
+                if (fastToLower(pText[i + j]) != fastToLower(pPattern[j])) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) {
+                exactIdx = i;
+                break;
+            }
+        }
+    }
+
     if (exactIdx != -1) {
         int score = 1000 + (100 * patternLen) - (exactIdx * 2);
-        if (exactIdx == 0 || !text.at(exactIdx - 1).isLetterOrNumber()) {
+        if (exactIdx == 0 || !pText[exactIdx - 1].isLetterOrNumber()) {
             score += 500; // Word boundary bonus
         }
         return std::max(1, score);
+    }
+
+    // If the first pattern character does not occur in pText[0 ... maxSearchIdx],
+    // pattern can neither match contiguously nor sequentially.
+    if (!foundFirstCharInRange) {
+        return 0;
     }
 
     // 2. Sequential character matching & scoring
@@ -451,10 +487,7 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text)
     int consecutive = 0;
     int prevMatchIdx = -1;
 
-    const QChar *pText = text.constData();
-    const QChar *pPattern = pattern.constData();
-
-    QChar pChar = fastToLower(pPattern[patternIdx]);
+    QChar pChar = firstPatChar;
 
     for (int textIdx = 0; textIdx < textLen && patternIdx < patternLen; ++textIdx) {
         const QChar tChar = fastToLower(pText[textIdx]);
