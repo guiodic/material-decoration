@@ -560,16 +560,16 @@ static int damerauLevenshteinDistance(const QString &s1, const QString &s2, int 
  */
 static int calculateFuzzyScore(const QString &pattern, const QStringList &queryTokens, const QString &text)
 {
-    if (pattern.isEmpty() || text.isEmpty() || queryTokens.isEmpty() || queryTokens.size() > MAX_QUERY_TOKENS) {
+    if (pattern.isEmpty() || text.isEmpty() || queryTokens.isEmpty()) {
         return 0;
     }
 
     const int patternLen = pattern.length();
 
-    // 1. Contiguous exact substring match check (5000+ tier ensures contiguous phrase hits rank above token-by-token matches)
+    // 1. Contiguous exact substring match check (10000+ tier ensures contiguous phrase hits rank above token-by-token matches)
     const int exactIdx = text.indexOf(pattern, 0, Qt::CaseInsensitive);
     if (exactIdx != -1) {
-        int score = 5000 + (100 * patternLen) - (exactIdx * 2);
+        int score = 10000 + (100 * patternLen) - (exactIdx * 2);
         if (exactIdx == 0 || !text.at(exactIdx - 1).isLetterOrNumber()) {
             score += 500; // Word boundary bonus
         }
@@ -577,6 +577,10 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     }
 
     // 2. Token-based word and prefix matching
+    if (queryTokens.size() > MAX_QUERY_TOKENS) {
+        return 0; // Reject non-contiguous token queries exceeding query token limit
+    }
+
     const QStringList targetTokens = tokenizeText(text);
     if (targetTokens.isEmpty()) {
         return 0;
