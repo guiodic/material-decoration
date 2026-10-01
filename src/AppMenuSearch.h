@@ -83,6 +83,10 @@ public:
         // to force a recalculation of m_searchCandidates and its cached paths.
         QString parentFullPath;
         QString parentEvalPath;
+        // Pre-tokenized target tokens computed during candidate collection
+        QStringList itemTokens;
+        QStringList parentFullTokens;
+        QStringList parentEvalTokens;
     };
 
     struct SearchResult {
