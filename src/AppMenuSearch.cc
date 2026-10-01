@@ -554,7 +554,7 @@ static int damerauLevenshteinDistance(const QString &s1, const QString &s2, int 
  */
 static int calculateFuzzyScore(const QString &pattern, const QStringList &queryTokens, const QString &text)
 {
-    if (pattern.isEmpty() || text.isEmpty()) {
+    if (pattern.isEmpty() || text.isEmpty() || queryTokens.isEmpty()) {
         return 0;
     }
 
@@ -571,33 +571,23 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     }
 
     // 2. Token-based word and prefix matching
-    if (queryTokens.isEmpty()) {
-        return 0;
-    }
-
     const QStringList targetTokens = tokenizeText(text);
     if (targetTokens.isEmpty()) {
         return 0;
     }
 
-    int totalScore = 0;
-    int lastMatchedTargetIdx = -1;
-    bool allTokensMatched = true;
+    const int numQ = queryTokens.size();
+    const int numT = targetTokens.size();
 
-    std::vector<bool> usedTargetTokens(targetTokens.size(), false);
+    // Pre-calculate pairwise match scores between each query token and target token
+    std::vector<std::vector<int>> pairwiseScores(numQ, std::vector<int>(numT, 0));
 
-    for (const QString &qToken : queryTokens) {
-        int bestTokenScore = 0;
-        int bestTargetIdx = -1;
-
+    for (int qIdx = 0; qIdx < numQ; ++qIdx) {
+        const QString &qToken = queryTokens.at(qIdx);
         const int qLen = qToken.length();
         const int maxDist = maxAllowedDistance(qLen);
 
-        for (int tIdx = 0; tIdx < targetTokens.size(); ++tIdx) {
-            if (usedTargetTokens[tIdx]) {
-                continue; // Skip target tokens already assigned to a previous query token
-            }
-
+        for (int tIdx = 0; tIdx < numT; ++tIdx) {
             const QString &tToken = targetTokens.at(tIdx);
             int tokenScore = 0;
 
@@ -608,7 +598,7 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
             } else if (qLen >= 3 && tToken.contains(qToken)) {
                 tokenScore = 500 + (qLen * 20);
             } else {
-                // Compare against target word prefixes around qLen (qLen - maxDist to qLen + maxDist) to support typos and internal deletions in prefix queries
+                // Compare against target word prefixes around qLen (qLen - maxDist to qLen + maxDist)
                 const int tLen = tToken.length();
                 const int minCompLen = std::max(0, qLen - maxDist);
                 const int maxCompLen = std::min(tLen, qLen + maxDist);
@@ -626,29 +616,67 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
                 }
             }
 
-            if (tokenScore > bestTokenScore) {
-                bestTokenScore = tokenScore;
-                bestTargetIdx = tIdx;
+            pairwiseScores[qIdx][tIdx] = tokenScore;
+        }
+    }
+
+    // Find complete 1-to-1 distinct assignment using backtracking to maximize match score
+    std::vector<int> currentAssignment(numQ, -1);
+    std::vector<int> bestAssignment(numQ, -1);
+    std::vector<bool> usedTarget(numT, false);
+    int maxTotalScore = -1;
+
+    auto backtrackAssignment = [&](auto &self, int qIdx, int currentSum) -> void {
+        if (qIdx == numQ) {
+            if (currentSum > maxTotalScore) {
+                maxTotalScore = currentSum;
+                bestAssignment = currentAssignment;
+            }
+            return;
+        }
+
+        struct TargetCandidate {
+            int targetIdx;
+            int score;
+        };
+        std::vector<TargetCandidate> candidates;
+        for (int tIdx = 0; tIdx < numT; ++tIdx) {
+            int score = pairwiseScores[qIdx][tIdx];
+            if (score > 0) {
+                candidates.push_back({tIdx, score});
             }
         }
 
-        if (bestTokenScore == 0 || bestTargetIdx == -1) {
-            allTokensMatched = false;
-            break;
-        }
+        std::sort(candidates.begin(), candidates.end(), [](const TargetCandidate &a, const TargetCandidate &b) {
+            return a.score > b.score;
+        });
 
-        usedTargetTokens[bestTargetIdx] = true;
-        totalScore += bestTokenScore;
+        for (const auto &cand : candidates) {
+            if (!usedTarget[cand.targetIdx]) {
+                usedTarget[cand.targetIdx] = true;
+                currentAssignment[qIdx] = cand.targetIdx;
 
-        // Ordering bonus if query tokens match target words in sequential order
-        if (bestTargetIdx > lastMatchedTargetIdx) {
-            totalScore += 100;
+                self(self, qIdx + 1, currentSum + cand.score);
+
+                usedTarget[cand.targetIdx] = false;
+                currentAssignment[qIdx] = -1;
+            }
         }
-        lastMatchedTargetIdx = bestTargetIdx;
+    };
+
+    backtrackAssignment(backtrackAssignment, 0, 0);
+
+    if (maxTotalScore <= 0) {
+        return 0; // No complete distinct 1-to-1 assignment found
     }
 
-    if (!allTokensMatched) {
-        return 0;
+    int totalScore = maxTotalScore;
+
+    // Add sequential ordering bonus in original query token order
+    for (int i = 1; i < numQ; ++i) {
+        if (bestAssignment[i] > bestAssignment[i - 1]) {
+            totalScore += 100;
+        }
     }
 
     return std::max(1, totalScore);
