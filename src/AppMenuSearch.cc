@@ -442,8 +442,13 @@ static QStringList tokenizeText(const QString &text)
             continue;
         }
 
-        // Handle camelCase transition (e.g. "saveAs" -> "save", "As")
-        if (ch.isUpper() && !current.isEmpty() && current.at(current.length() - 1).isLower()) {
+        // Handle camelCase and acronym-to-word transitions (e.g. "saveAs" -> "save", "As"; "XMLParser" -> "XML", "Parser")
+        if (ch.isLower() && current.length() > 1 &&
+            current.at(current.length() - 1).isUpper() &&
+            current.at(current.length() - 2).isUpper()) {
+            tokens.append(current.left(current.length() - 1).toLower());
+            current = current.right(1);
+        } else if (ch.isUpper() && !current.isEmpty() && current.at(current.length() - 1).isLower()) {
             tokens.append(current.toLower());
             current.clear();
         }
@@ -555,7 +560,7 @@ static int damerauLevenshteinDistance(const QString &s1, const QString &s2, int 
  */
 static int calculateFuzzyScore(const QString &pattern, const QStringList &queryTokens, const QString &text)
 {
-    if (pattern.isEmpty() || text.isEmpty() || queryTokens.isEmpty()) {
+    if (pattern.isEmpty() || text.isEmpty() || queryTokens.isEmpty() || queryTokens.size() > MAX_QUERY_TOKENS) {
         return 0;
     }
 
@@ -577,14 +582,14 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
         return 0;
     }
 
-    const int effectiveNumQ = std::min<int>(queryTokens.size(), MAX_QUERY_TOKENS);
+    const int numQ = queryTokens.size();
     const int numT = targetTokens.size();
 
     // Pre-calculate pairwise match scores between each query token and target token
-    std::vector<std::vector<int>> pairwiseScores(effectiveNumQ, std::vector<int>(numT, 0));
-    std::vector<int> maxPairwiseScore(effectiveNumQ, 0);
+    std::vector<std::vector<int>> pairwiseScores(numQ, std::vector<int>(numT, 0));
+    std::vector<int> maxPairwiseScore(numQ, 0);
 
-    for (int qIdx = 0; qIdx < effectiveNumQ; ++qIdx) {
+    for (int qIdx = 0; qIdx < numQ; ++qIdx) {
         const QString &qToken = queryTokens.at(qIdx);
         const int qLen = qToken.length();
         const int maxDist = maxAllowedDistance(qLen);
@@ -630,8 +635,8 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     }
 
     // Pre-calculate upper bound suffix sums for branch-and-bound pruning
-    std::vector<int> maxSuffixSum(effectiveNumQ + 1, 0);
-    for (int i = effectiveNumQ - 1; i >= 0; --i) {
+    std::vector<int> maxSuffixSum(numQ + 1, 0);
+    for (int i = numQ - 1; i >= 0; --i) {
         maxSuffixSum[i] = maxSuffixSum[i + 1] + maxPairwiseScore[i];
     }
 
@@ -640,8 +645,8 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
         int targetIdx;
         int score;
     };
-    std::vector<std::vector<TargetCandidate>> sortedCandidates(effectiveNumQ);
-    for (int qIdx = 0; qIdx < effectiveNumQ; ++qIdx) {
+    std::vector<std::vector<TargetCandidate>> sortedCandidates(numQ);
+    for (int qIdx = 0; qIdx < numQ; ++qIdx) {
         for (int tIdx = 0; tIdx < numT; ++tIdx) {
             int score = pairwiseScores[qIdx][tIdx];
             if (score > 0) {
@@ -654,13 +659,13 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     }
 
     // Find complete 1-to-1 distinct assignment using branch-and-bound backtracking
-    std::vector<int> currentAssignment(effectiveNumQ, -1);
-    std::vector<int> bestAssignment(effectiveNumQ, -1);
+    std::vector<int> currentAssignment(numQ, -1);
+    std::vector<int> bestAssignment(numQ, -1);
     std::vector<bool> usedTarget(numT, false);
     int maxTotalScore = -1;
 
     auto backtrackAssignment = [&](auto &self, int qIdx, int currentSum) -> void {
-        if (qIdx == effectiveNumQ) {
+        if (qIdx == numQ) {
             if (currentSum > maxTotalScore) {
                 maxTotalScore = currentSum;
                 bestAssignment = currentAssignment;
@@ -695,7 +700,7 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     int totalScore = maxTotalScore;
 
     // Add sequential ordering bonus in original query token order
-    for (int i = 1; i < effectiveNumQ; ++i) {
+    for (int i = 1; i < numQ; ++i) {
         if (bestAssignment[i] > bestAssignment[i - 1]) {
             totalScore += 100;
         }
