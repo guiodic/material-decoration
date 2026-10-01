@@ -31,6 +31,7 @@
 static constexpr int MAX_SEARCH_RESULTS = 100;
 static constexpr int MAX_SEARCH_CANDIDATES = 5000;
 static constexpr int MAX_MENU_DEPTH = 20;
+static constexpr int MAX_QUERY_TOKENS = 6;
 
 namespace Material
 {
@@ -576,17 +577,19 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
         return 0;
     }
 
-    const int numQ = queryTokens.size();
+    const int effectiveNumQ = std::min<int>(queryTokens.size(), MAX_QUERY_TOKENS);
     const int numT = targetTokens.size();
 
     // Pre-calculate pairwise match scores between each query token and target token
-    std::vector<std::vector<int>> pairwiseScores(numQ, std::vector<int>(numT, 0));
+    std::vector<std::vector<int>> pairwiseScores(effectiveNumQ, std::vector<int>(numT, 0));
+    std::vector<int> maxPairwiseScore(effectiveNumQ, 0);
 
-    for (int qIdx = 0; qIdx < numQ; ++qIdx) {
+    for (int qIdx = 0; qIdx < effectiveNumQ; ++qIdx) {
         const QString &qToken = queryTokens.at(qIdx);
         const int qLen = qToken.length();
         const int maxDist = maxAllowedDistance(qLen);
 
+        int bestScoreForQ = 0;
         for (int tIdx = 0; tIdx < numT; ++tIdx) {
             const QString &tToken = targetTokens.at(tIdx);
             int tokenScore = 0;
@@ -617,17 +620,47 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
             }
 
             pairwiseScores[qIdx][tIdx] = tokenScore;
+            bestScoreForQ = std::max(bestScoreForQ, tokenScore);
         }
+
+        if (bestScoreForQ == 0) {
+            return 0; // Short-circuit early if any query token cannot match any target token
+        }
+        maxPairwiseScore[qIdx] = bestScoreForQ;
     }
 
-    // Find complete 1-to-1 distinct assignment using backtracking to maximize match score
-    std::vector<int> currentAssignment(numQ, -1);
-    std::vector<int> bestAssignment(numQ, -1);
+    // Pre-calculate upper bound suffix sums for branch-and-bound pruning
+    std::vector<int> maxSuffixSum(effectiveNumQ + 1, 0);
+    for (int i = effectiveNumQ - 1; i >= 0; --i) {
+        maxSuffixSum[i] = maxSuffixSum[i + 1] + maxPairwiseScore[i];
+    }
+
+    // Pre-sort target candidates per query token for greedy-first traversal
+    struct TargetCandidate {
+        int targetIdx;
+        int score;
+    };
+    std::vector<std::vector<TargetCandidate>> sortedCandidates(effectiveNumQ);
+    for (int qIdx = 0; qIdx < effectiveNumQ; ++qIdx) {
+        for (int tIdx = 0; tIdx < numT; ++tIdx) {
+            int score = pairwiseScores[qIdx][tIdx];
+            if (score > 0) {
+                sortedCandidates[qIdx].push_back({tIdx, score});
+            }
+        }
+        std::sort(sortedCandidates[qIdx].begin(), sortedCandidates[qIdx].end(), [](const TargetCandidate &a, const TargetCandidate &b) {
+            return a.score > b.score;
+        });
+    }
+
+    // Find complete 1-to-1 distinct assignment using branch-and-bound backtracking
+    std::vector<int> currentAssignment(effectiveNumQ, -1);
+    std::vector<int> bestAssignment(effectiveNumQ, -1);
     std::vector<bool> usedTarget(numT, false);
     int maxTotalScore = -1;
 
     auto backtrackAssignment = [&](auto &self, int qIdx, int currentSum) -> void {
-        if (qIdx == numQ) {
+        if (qIdx == effectiveNumQ) {
             if (currentSum > maxTotalScore) {
                 maxTotalScore = currentSum;
                 bestAssignment = currentAssignment;
@@ -635,23 +668,12 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
             return;
         }
 
-        struct TargetCandidate {
-            int targetIdx;
-            int score;
-        };
-        std::vector<TargetCandidate> candidates;
-        for (int tIdx = 0; tIdx < numT; ++tIdx) {
-            int score = pairwiseScores[qIdx][tIdx];
-            if (score > 0) {
-                candidates.push_back({tIdx, score});
-            }
+        // Branch-and-bound pruning: stop search if currentSum + best possible remaining score cannot exceed maxTotalScore
+        if (currentSum + maxSuffixSum[qIdx] <= maxTotalScore) {
+            return;
         }
 
-        std::sort(candidates.begin(), candidates.end(), [](const TargetCandidate &a, const TargetCandidate &b) {
-            return a.score > b.score;
-        });
-
-        for (const auto &cand : candidates) {
+        for (const auto &cand : sortedCandidates[qIdx]) {
             if (!usedTarget[cand.targetIdx]) {
                 usedTarget[cand.targetIdx] = true;
                 currentAssignment[qIdx] = cand.targetIdx;
@@ -673,7 +695,7 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     int totalScore = maxTotalScore;
 
     // Add sequential ordering bonus in original query token order
-    for (int i = 1; i < numQ; ++i) {
+    for (int i = 1; i < effectiveNumQ; ++i) {
         if (bestAssignment[i] > bestAssignment[i - 1]) {
             totalScore += 100;
         }
