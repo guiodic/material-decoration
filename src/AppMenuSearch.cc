@@ -584,6 +584,8 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     int lastMatchedTargetIdx = -1;
     bool allTokensMatched = true;
 
+    std::vector<bool> usedTargetTokens(targetTokens.size(), false);
+
     for (const QString &qToken : queryTokens) {
         int bestTokenScore = 0;
         int bestTargetIdx = -1;
@@ -592,6 +594,10 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
         const int maxDist = maxAllowedDistance(qLen);
 
         for (int tIdx = 0; tIdx < targetTokens.size(); ++tIdx) {
+            if (usedTargetTokens[tIdx]) {
+                continue; // Skip target tokens already assigned to a previous query token
+            }
+
             const QString &tToken = targetTokens.at(tIdx);
             int tokenScore = 0;
 
@@ -626,11 +632,12 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
             }
         }
 
-        if (bestTokenScore == 0) {
+        if (bestTokenScore == 0 || bestTargetIdx == -1) {
             allTokensMatched = false;
             break;
         }
 
+        usedTargetTokens[bestTargetIdx] = true;
         totalScore += bestTokenScore;
 
         // Ordering bonus if query tokens match target words in sequential order
