@@ -591,7 +591,9 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text)
             } else if (tToken.contains(qToken)) {
                 tokenScore = 500 + (qLen * 20);
             } else {
-                const int dist = damerauLevenshteinDistance(qToken, tToken, maxDist);
+                // If target word is longer, compare against prefix of matching length to support typos in incomplete prefix queries (e.g. "colar" -> "colori")
+                const QString tComp = (tToken.length() >= qLen) ? tToken.left(qLen) : tToken;
+                const int dist = damerauLevenshteinDistance(qToken, tComp, maxDist);
                 if (dist <= maxDist) {
                     tokenScore = 400 - (dist * 150) + (qLen * 30);
                 }
