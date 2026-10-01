@@ -24,7 +24,9 @@
 // Qt
 #include <QDebug>
 #include <QScopeGuard>
+#include <algorithm>
 #include <utility>
+#include <vector>
 
 static constexpr int MAX_SEARCH_RESULTS = 100;
 static constexpr int MAX_SEARCH_CANDIDATES = 5000;
@@ -414,17 +416,132 @@ static inline QChar fastToLower(QChar ch)
 }
 
 /**
- * @brief Calculates a fuzzy matching score between a search pattern and text.
+ * @brief Splits a string into lowercased word tokens based on whitespace, punctuation, and camelCase boundaries.
+ */
+static QStringList tokenizeText(const QString &text)
+{
+    QStringList tokens;
+    if (text.isEmpty()) {
+        return tokens;
+    }
+
+    QString current;
+    current.reserve(32);
+
+    const int len = text.length();
+    for (int i = 0; i < len; ++i) {
+        const QChar ch = text.at(i);
+        const bool isLetterOrDigit = ch.isLetterOrNumber();
+
+        if (!isLetterOrDigit) {
+            if (!current.isEmpty()) {
+                tokens.append(current.toLower());
+                current.clear();
+            }
+            continue;
+        }
+
+        // Handle camelCase transition (e.g. "saveAs" -> "save", "As")
+        if (ch.isUpper() && !current.isEmpty() && current.at(current.length() - 1).isLower()) {
+            tokens.append(current.toLower());
+            current.clear();
+        }
+
+        current.append(ch);
+    }
+
+    if (!current.isEmpty()) {
+        tokens.append(current.toLower());
+    }
+
+    return tokens;
+}
+
+/**
+ * @brief Computes max allowed edit distance (typos) for a token of given length.
+ */
+static inline int maxAllowedDistance(int tokenLength)
+{
+    if (tokenLength < 4) {
+        return 0; // Short tokens require exact prefix or match
+    }
+    if (tokenLength <= 7) {
+        return 1; // E.g., "polori" (6) -> "colori" (1 edit)
+    }
+    return 2; // Long tokens allow up to 2 edits
+}
+
+/**
+ * @brief Bounded Damerau-Levenshtein distance calculation (insertions, deletions, substitutions, transpositions).
+ * Returns distance if <= maxDistance, otherwise returns maxDistance + 1.
+ */
+static int damerauLevenshteinDistance(const QString &s1, const QString &s2, int maxDistance)
+{
+    const int len1 = s1.length();
+    const int len2 = s2.length();
+
+    if (std::abs(len1 - len2) > maxDistance) {
+        return maxDistance + 1;
+    }
+    if (len1 == 0) {
+        return len2 <= maxDistance ? len2 : maxDistance + 1;
+    }
+    if (len2 == 0) {
+        return len1 <= maxDistance ? len1 : maxDistance + 1;
+    }
+
+    // Two rows + previous row for transpositions
+    std::vector<int> row0(len2 + 1, 0);
+    std::vector<int> row1(len2 + 1, 0);
+    std::vector<int> row2(len2 + 1, 0);
+
+    for (int j = 0; j <= len2; ++j) {
+        row1[j] = j;
+    }
+
+    for (int i = 1; i <= len1; ++i) {
+        row0[0] = i;
+        int minRowVal = row0[0];
+
+        const QChar char1 = fastToLower(s1.at(i - 1));
+
+        for (int j = 1; j <= len2; ++j) {
+            const QChar char2 = fastToLower(s2.at(j - 1));
+            const int cost = (char1 == char2) ? 0 : 1;
+
+            int val = std::min({row1[j] + 1, row0[j - 1] + 1, row1[j - 1] + cost});
+
+            // Check adjacent transposition
+            if (i > 1 && j > 1 && char1 == fastToLower(s2.at(j - 2)) && fastToLower(s1.at(i - 2)) == char2) {
+                val = std::min(val, row2[j - 2] + cost);
+            }
+
+            row0[j] = val;
+            minRowVal = std::min(minRowVal, val);
+        }
+
+        if (minRowVal > maxDistance) {
+            return maxDistance + 1;
+        }
+
+        row2 = row1;
+        row1 = row0;
+    }
+
+    return row1[len2];
+}
+
+/**
+ * @brief Calculates a fuzzy matching score between a search pattern and text using Google/Spotlight style word/token matching.
  *
- * Uses a two-phase scoring algorithm:
- * 1. First checks for exact contiguous substring match (case-insensitive), awarding high scores
- *    with bonuses for earlier positions and word boundary matches.
- * 2. Falls back to sequential character matching with bonuses for consecutive matches,
- *    word boundaries, camelCase transitions, and penalties for character gaps.
+ * Scoring rules:
+ * 1. Contiguous exact substring match fast-path with word boundary bonuses.
+ * 2. Tokenized word matching: query tokens must match target words via exact match, prefix match, or bounded edit distance.
+ * 3. Ghost result elimination: eliminates sparse character subsequence matches across unrelated words.
  *
  * @param pattern The search pattern to match
  * @param text The text to search within
- * @return Score value (higher is better), or 0 if pattern doesn't match sequentially
+ * @return Score value (higher is better), or 0 if pattern does not match
  */
 static int calculateFuzzyScore(const QString &pattern, const QString &text)
 {
@@ -433,14 +550,8 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text)
     }
 
     const int patternLen = pattern.length();
-    const int textLen = text.length();
 
-    // Early exit if pattern is longer than text
-    if (patternLen > textLen) {
-        return 0;
-    }
-
-    // 1. Contiguous exact substring match check (Unicode-aware)
+    // 1. Contiguous exact substring match check
     const int exactIdx = text.indexOf(pattern, 0, Qt::CaseInsensitive);
     if (exactIdx != -1) {
         int score = 1000 + (100 * patternLen) - (exactIdx * 2);
@@ -450,57 +561,67 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text)
         return std::max(1, score);
     }
 
-    // 2. Sequential character matching & scoring
-    int patternIdx = 0;
-    int score = 0;
-    int consecutive = 0;
-    int prevMatchIdx = -1;
+    // 2. Token-based word and prefix matching
+    const QStringList queryTokens = tokenizeText(pattern);
+    const QStringList targetTokens = tokenizeText(text);
 
-    const QChar *pText = text.constData();
-    const QChar *pPattern = pattern.constData();
+    if (queryTokens.isEmpty() || targetTokens.isEmpty()) {
+        return 0;
+    }
 
-    QChar pChar = fastToLower(pPattern[patternIdx]);
+    int totalScore = 0;
+    int lastMatchedTargetIdx = -1;
+    bool allTokensMatched = true;
 
-    for (int textIdx = 0; textIdx < textLen && patternIdx < patternLen; ++textIdx) {
-        const QChar tChar = fastToLower(pText[textIdx]);
+    for (const QString &qToken : queryTokens) {
+        int bestTokenScore = 0;
+        int bestTargetIdx = -1;
 
-        if (pChar == tChar) {
-            patternIdx++;
-            if (patternIdx < patternLen) {
-                pChar = fastToLower(pPattern[patternIdx]);
-            }
-            int charScore = 10;
+        const int qLen = qToken.length();
+        const int maxDist = maxAllowedDistance(qLen);
 
-            const bool isStart = (textIdx == 0);
-            const bool isBoundary = (!isStart && !pText[textIdx - 1].isLetterOrNumber());
-            const bool isCamel = (pText[textIdx].isUpper() && textIdx > 0 && pText[textIdx - 1].isLower());
+        for (int tIdx = 0; tIdx < targetTokens.size(); ++tIdx) {
+            const QString &tToken = targetTokens.at(tIdx);
+            int tokenScore = 0;
 
-            if (isStart || isBoundary) {
-                charScore += 50;
-            } else if (isCamel) {
-                charScore += 40;
-            }
-
-            if (prevMatchIdx != -1 && textIdx == prevMatchIdx + 1) {
-                consecutive++;
-                charScore += (20 * consecutive);
+            if (qToken == tToken) {
+                tokenScore = 1000 + (qLen * 50);
+            } else if (tToken.startsWith(qToken)) {
+                tokenScore = 700 + (qLen * 40);
+            } else if (tToken.contains(qToken)) {
+                tokenScore = 500 + (qLen * 20);
             } else {
-                consecutive = 0;
-                if (prevMatchIdx != -1) {
-                    charScore -= (textIdx - prevMatchIdx - 1);
+                const int dist = damerauLevenshteinDistance(qToken, tToken, maxDist);
+                if (dist <= maxDist) {
+                    tokenScore = 400 - (dist * 150) + (qLen * 30);
                 }
             }
 
-            prevMatchIdx = textIdx;
-            score += charScore;
+            if (tokenScore > bestTokenScore) {
+                bestTokenScore = tokenScore;
+                bestTargetIdx = tIdx;
+            }
         }
+
+        if (bestTokenScore == 0) {
+            allTokensMatched = false;
+            break;
+        }
+
+        totalScore += bestTokenScore;
+
+        // Ordering bonus if query tokens match target words in sequential order
+        if (bestTargetIdx > lastMatchedTargetIdx) {
+            totalScore += 100;
+        }
+        lastMatchedTargetIdx = bestTargetIdx;
     }
 
-    if (patternIdx < patternLen) {
-        return 0; // Not all pattern characters matched in sequence
+    if (!allTokensMatched) {
+        return 0;
     }
 
-    return std::max(1, score);
+    return std::max(1, totalScore);
 }
 
 QString AppMenuSearch::buildFullPath(const SearchCandidate &candidate, const QString &itemText) const
