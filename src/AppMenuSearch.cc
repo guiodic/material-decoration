@@ -463,12 +463,12 @@ static QStringList tokenizeText(const QString &text)
 static inline int maxAllowedDistance(int tokenLength)
 {
     if (tokenLength < 4) {
-        return 0; // Short tokens require exact prefix or match
+        return 0; // Very short tokens (1-3 chars) require exact prefix or match
     }
-    if (tokenLength <= 7) {
-        return 1; // E.g., "polori" (6) -> "colori" (1 edit)
+    if (tokenLength == 4) {
+        return 1; // E.g., "colr" (4) -> "color" (1 edit)
     }
-    return 2; // Long tokens allow up to 2 edits
+    return 2; // 5+ char tokens allow up to 2 edits (e.g., "colowr" -> "colori")
 }
 
 /**
@@ -591,11 +591,21 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text)
             } else if (tToken.contains(qToken)) {
                 tokenScore = 500 + (qLen * 20);
             } else {
-                // If target word is longer, compare against prefix of matching length to support typos in incomplete prefix queries (e.g. "colar" -> "colori")
-                const QString tComp = (tToken.length() >= qLen) ? tToken.left(qLen) : tToken;
-                const int dist = damerauLevenshteinDistance(qToken, tComp, maxDist);
-                if (dist <= maxDist) {
-                    tokenScore = 400 - (dist * 150) + (qLen * 30);
+                // Compare against target word prefixes around qLen (qLen - 1, qLen, qLen + 1) to support typos in prefix queries (e.g. "colowr" -> "colori")
+                const int tLen = tToken.length();
+                const int minCompLen = std::max(1, qLen - 1);
+                const int maxCompLen = std::min(tLen, qLen + 1);
+
+                int minDist = maxDist + 1;
+                for (int compLen = minCompLen; compLen <= maxCompLen; ++compLen) {
+                    const int dist = damerauLevenshteinDistance(qToken, tToken.left(compLen), maxDist);
+                    if (dist < minDist) {
+                        minDist = dist;
+                    }
+                }
+
+                if (minDist <= maxDist) {
+                    tokenScore = 400 - (minDist * 150) + (qLen * 30);
                 }
             }
 
