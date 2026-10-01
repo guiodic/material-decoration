@@ -490,10 +490,14 @@ static int damerauLevenshteinDistance(const QString &s1, const QString &s2, int 
         return len1 <= maxDistance ? len1 : maxDistance + 1;
     }
 
-    // Two rows + previous row for transpositions
-    std::vector<int> row0(len2 + 1, 0);
-    std::vector<int> row1(len2 + 1, 0);
-    std::vector<int> row2(len2 + 1, 0);
+    // Three row buffers rotated via pointers to avoid vector allocations/copies
+    std::vector<int> r0(len2 + 1, 0);
+    std::vector<int> r1(len2 + 1, 0);
+    std::vector<int> r2(len2 + 1, 0);
+
+    int *row0 = r0.data();
+    int *row1 = r1.data();
+    int *row2 = r2.data();
 
     for (int j = 0; j <= len2; ++j) {
         row1[j] = j;
@@ -524,8 +528,11 @@ static int damerauLevenshteinDistance(const QString &s1, const QString &s2, int 
             return maxDistance + 1;
         }
 
+        // Pointer rotation: row2 becomes previous row1, row1 becomes current row0, row0 becomes old row2
+        int *tmp = row2;
         row2 = row1;
         row1 = row0;
+        row0 = tmp;
     }
 
     return row1[len2];
@@ -535,15 +542,17 @@ static int damerauLevenshteinDistance(const QString &s1, const QString &s2, int 
  * @brief Calculates a fuzzy matching score between a search pattern and text using Google/Spotlight style word/token matching.
  *
  * Scoring rules:
- * 1. Contiguous exact substring match fast-path with word boundary bonuses.
+ * 1. Contiguous exact substring match fast-path with word boundary bonuses (5000+ base score to guarantee top rank over token matches).
  * 2. Tokenized word matching: query tokens must match target words via exact match, prefix match, or bounded edit distance.
- * 3. Ghost result elimination: eliminates sparse character subsequence matches across unrelated words.
+ * 3. Substring matching (`contains`) requires query token length >= 3 to prevent noise from 1-2 char tokens.
+ * 4. Ghost result elimination: eliminates sparse character subsequence matches across unrelated words.
  *
  * @param pattern The search pattern to match
+ * @param queryTokens Pre-tokenized query tokens
  * @param text The text to search within
  * @return Score value (higher is better), or 0 if pattern does not match
  */
-static int calculateFuzzyScore(const QString &pattern, const QString &text)
+static int calculateFuzzyScore(const QString &pattern, const QStringList &queryTokens, const QString &text)
 {
     if (pattern.isEmpty() || text.isEmpty()) {
         return 0;
@@ -551,10 +560,10 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text)
 
     const int patternLen = pattern.length();
 
-    // 1. Contiguous exact substring match check
+    // 1. Contiguous exact substring match check (5000+ tier ensures contiguous phrase hits rank above token-by-token matches)
     const int exactIdx = text.indexOf(pattern, 0, Qt::CaseInsensitive);
     if (exactIdx != -1) {
-        int score = 1000 + (100 * patternLen) - (exactIdx * 2);
+        int score = 5000 + (100 * patternLen) - (exactIdx * 2);
         if (exactIdx == 0 || !text.at(exactIdx - 1).isLetterOrNumber()) {
             score += 500; // Word boundary bonus
         }
@@ -562,10 +571,12 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text)
     }
 
     // 2. Token-based word and prefix matching
-    const QStringList queryTokens = tokenizeText(pattern);
-    const QStringList targetTokens = tokenizeText(text);
+    if (queryTokens.isEmpty()) {
+        return 0;
+    }
 
-    if (queryTokens.isEmpty() || targetTokens.isEmpty()) {
+    const QStringList targetTokens = tokenizeText(text);
+    if (targetTokens.isEmpty()) {
         return 0;
     }
 
@@ -588,10 +599,10 @@ static int calculateFuzzyScore(const QString &pattern, const QString &text)
                 tokenScore = 1000 + (qLen * 50);
             } else if (tToken.startsWith(qToken)) {
                 tokenScore = 700 + (qLen * 40);
-            } else if (tToken.contains(qToken)) {
+            } else if (qLen >= 3 && tToken.contains(qToken)) {
                 tokenScore = 500 + (qLen * 20);
             } else {
-                // Compare against target word prefixes around qLen (qLen - 1, qLen, qLen + 1) to support typos in prefix queries (e.g. "colowr" -> "colori")
+                // Compare against target word prefixes around qLen (qLen - 1, qLen, qLen + 1) to support typos in prefix queries
                 const int tLen = tToken.length();
                 const int minCompLen = std::max(1, qLen - 1);
                 const int maxCompLen = std::min(tLen, qLen + 1);
@@ -664,6 +675,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
     const bool ignoreSubMenus = options.ignoreSubMenus;
     const bool showDisabledActions = options.showDisabledActions;
     const bool fuzzyMatching = options.fuzzyMatching;
+    const QStringList queryTokens = fuzzyMatching ? tokenizeText(query) : QStringList();
 
     for (const SearchCandidate &candidate : std::as_const(m_searchCandidates)) {
         if (!fuzzyMatching && results.size() >= MAX_SEARCH_RESULTS) {
@@ -709,16 +721,16 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
             if (ignoreTopLevel && !candidate.hasNamedAncestor) {
                 match = false;
             } else if (ignoreSubMenus) {
-                candidateScore = calculateFuzzyScore(query, itemText);
+                candidateScore = calculateFuzzyScore(query, queryTokens, itemText);
                 match = (candidateScore > 0);
             } else {
-                const int itemScore = calculateFuzzyScore(query, itemText);
+                const int itemScore = calculateFuzzyScore(query, queryTokens, itemText);
                 if (itemScore > 0) {
                     candidateScore = itemScore + 500;
                     match = true;
                 } else {
                     const QString evalPath = buildEvalPath(candidate, itemText, ignoreTopLevel);
-                    const int pathScore = calculateFuzzyScore(query, evalPath);
+                    const int pathScore = calculateFuzzyScore(query, queryTokens, evalPath);
                     if (pathScore > 0) {
                         candidateScore = pathScore;
                         match = true;
