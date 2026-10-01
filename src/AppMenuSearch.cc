@@ -602,10 +602,10 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
             } else if (qLen >= 3 && tToken.contains(qToken)) {
                 tokenScore = 500 + (qLen * 20);
             } else {
-                // Compare against target word prefixes around qLen (qLen - 1, qLen, qLen + 1) to support typos in prefix queries
+                // Compare against target word prefixes around qLen (qLen - maxDist to qLen + maxDist) to support typos and internal deletions in prefix queries
                 const int tLen = tToken.length();
-                const int minCompLen = std::max(1, qLen - 1);
-                const int maxCompLen = std::min(tLen, qLen + 1);
+                const int minCompLen = std::max(0, qLen - maxDist);
+                const int maxCompLen = std::min(tLen, qLen + maxDist);
 
                 int minDist = maxDist + 1;
                 for (int compLen = minCompLen; compLen <= maxCompLen; ++compLen) {
