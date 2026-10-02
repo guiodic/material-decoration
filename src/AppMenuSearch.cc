@@ -24,6 +24,7 @@
 // Qt
 #include <QDebug>
 #include <QScopeGuard>
+#include <QStringBuilder>
 #include <algorithm>
 #include <array>
 #include <utility>
@@ -777,7 +778,7 @@ QString AppMenuSearch::buildFullPath(const SearchCandidate &candidate, const QSt
     if (candidate.parentFullPath.isEmpty()) {
         return itemText;
     }
-    return candidate.parentFullPath + QStringLiteral(" » ") + itemText;
+    return candidate.parentFullPath % QStringLiteral(" » ") % itemText;
 }
 
 QString AppMenuSearch::buildEvalPath(const SearchCandidate &candidate, const QString &itemText, bool ignoreTopLevel) const
@@ -786,7 +787,7 @@ QString AppMenuSearch::buildEvalPath(const SearchCandidate &candidate, const QSt
     if (prefix.isEmpty()) {
         return itemText;
     }
-    return prefix + QStringLiteral(" » ") + itemText;
+    return prefix % QStringLiteral(" » ") % itemText;
 }
 
 QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, const FilterOptions &options, const QString &query) const
@@ -873,6 +874,10 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
 
         if (!match) {
             continue;
+        }
+
+        if (results.isEmpty()) {
+            results.reserve(MAX_SEARCH_RESULTS);
         }
 
         ActionInfo info;
