@@ -25,6 +25,7 @@
 #include <QDebug>
 #include <QScopeGuard>
 #include <algorithm>
+#include <array>
 #include <utility>
 #include <vector>
 
@@ -602,14 +603,18 @@ static int damerauLevenshteinDistance(const QString &s1, const QString &s2, int 
  * @brief Calculates a fuzzy matching score between a search pattern and text using Google/Spotlight style word/token matching.
  *
  * Scoring rules:
- * 1. Contiguous exact substring match fast-path with word boundary bonuses (10000+ base score to guarantee top rank over token matches).
+ * 1. Contiguous exact substring match fast-path (O(L)) with word boundary bonuses (10000+ base score).
+ *    Note: The contiguous exact substring match check intentionally runs BEFORE checking MAX_QUERY_TOKENS.
+ *    This allows long exact phrases (e.g. pasted multi-word menu titles) to match instantly without token cap limits,
+ *    since linear substring matching incurs no combinatorial assignment overhead.
  * 2. Tokenized word matching: query tokens must match target words via exact match, prefix match, or bounded edit distance.
+ *    Non-contiguous token matching requires queryTokens.size() <= MAX_QUERY_TOKENS (6) to bound worst-case backtracking.
  * 3. Substring matching (`contains`) requires query token length >= 3 to prevent noise from 1-2 char tokens.
  * 4. Ghost result elimination: eliminates sparse character subsequence matches across unrelated words.
  *
- * @param pattern The search pattern to match
+ * @param pattern The raw search pattern string to match
  * @param queryTokens Pre-tokenized query tokens
- * @param text The text to search within
+ * @param text The text or hierarchical path string to search within
  * @param targetTokens Pre-tokenized target words extracted from text/path
  * @return Score value (higher is better), or 0 if pattern does not match
  */
@@ -689,7 +694,7 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     }
 
     // Pre-calculate upper bound suffix sums for branch-and-bound pruning
-    int maxSuffixSum[MAX_QUERY_TOKENS + 1] = {};
+    std::array<int, MAX_QUERY_TOKENS + 1> maxSuffixSum{};
     for (int i = numQ - 1; i >= 0; --i) {
         maxSuffixSum[i] = maxSuffixSum[i + 1] + maxPairwiseScore[i];
     }
@@ -699,7 +704,7 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
         int targetIdx;
         int score;
     };
-    std::vector<TargetCandidate> sortedCandidates[MAX_QUERY_TOKENS];
+    std::array<std::vector<TargetCandidate>, MAX_QUERY_TOKENS> sortedCandidates;
     for (int qIdx = 0; qIdx < numQ; ++qIdx) {
         for (int tIdx = 0; tIdx < numT; ++tIdx) {
             int score = pairwiseScores[qIdx][tIdx];
@@ -713,10 +718,10 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     }
 
     // Find complete 1-to-1 distinct assignment using branch-and-bound backtracking
-    int currentAssignment[MAX_QUERY_TOKENS];
-    int bestAssignment[MAX_QUERY_TOKENS];
-    std::fill(currentAssignment, currentAssignment + MAX_QUERY_TOKENS, -1);
-    std::fill(bestAssignment, bestAssignment + MAX_QUERY_TOKENS, -1);
+    std::array<int, MAX_QUERY_TOKENS> currentAssignment;
+    std::array<int, MAX_QUERY_TOKENS> bestAssignment;
+    currentAssignment.fill(-1);
+    bestAssignment.fill(-1);
     std::vector<bool> usedTarget(numT, false);
     int maxTotalScore = -1;
 
