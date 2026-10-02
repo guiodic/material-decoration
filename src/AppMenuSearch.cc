@@ -676,8 +676,14 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
 
     auto backtrackAssignment = [&](auto &self, int qIdx, int currentSum) -> void {
         if (qIdx == numQ) {
-            if (currentSum > maxTotalScore) {
-                maxTotalScore = currentSum;
+            int totalScore = currentSum;
+            for (int i = 1; i < numQ; ++i) {
+                if (currentAssignment[i] > currentAssignment[i - 1]) {
+                    totalScore += 100;
+                }
+            }
+            if (totalScore > maxTotalScore) {
+                maxTotalScore = totalScore;
                 for (int k = 0; k < numQ; ++k) {
                     bestAssignment[k] = currentAssignment[k];
                 }
@@ -685,8 +691,11 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
             return;
         }
 
-        // Branch-and-bound pruning: stop search if currentSum + best possible remaining score cannot exceed maxTotalScore
-        if (currentSum + maxSuffixSum[qIdx] <= maxTotalScore) {
+        // Upper bound on possible sequential order bonuses remaining (at most (numQ - qIdx) transitions of 100 pts)
+        const int maxRemainingOrderBonus = (numQ - qIdx) * 100;
+
+        // Branch-and-bound pruning: stop search if currentSum + maxSuffixSum[qIdx] + maxRemainingOrderBonus <= maxTotalScore
+        if (currentSum + maxSuffixSum[qIdx] + maxRemainingOrderBonus <= maxTotalScore) {
             return;
         }
 
@@ -709,16 +718,7 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
         return 0; // No complete distinct 1-to-1 assignment found
     }
 
-    int totalScore = maxTotalScore;
-
-    // Add sequential ordering bonus in original query token order
-    for (int i = 1; i < numQ; ++i) {
-        if (bestAssignment[i] > bestAssignment[i - 1]) {
-            totalScore += 100;
-        }
-    }
-
-    return std::max(1, totalScore);
+    return std::max(1, maxTotalScore);
 }
 
 QString AppMenuSearch::buildFullPath(const SearchCandidate &candidate, const QString &itemText) const
