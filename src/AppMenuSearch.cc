@@ -380,7 +380,7 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
                 if (!text.isEmpty()) {
                     const QStringList ancestorTokens = tokenizeText(text);
                     if (!firstFull) {
-                        parentFullPath.append(u" » ");
+                        parentFullPath.append(QStringLiteral(" » "));
                     }
                     parentFullPath.append(text);
                     parentFullTokens.append(ancestorTokens);
@@ -390,7 +390,7 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
                         skippedTopLevel = true;
                     } else {
                         if (!firstEval) {
-                            parentEvalPath.append(u" » ");
+                            parentEvalPath.append(QStringLiteral(" » "));
                         }
                         parentEvalPath.append(text);
                         parentEvalTokens.append(ancestorTokens);
@@ -777,7 +777,7 @@ QString AppMenuSearch::buildFullPath(const SearchCandidate &candidate, const QSt
     if (candidate.parentFullPath.isEmpty()) {
         return itemText;
     }
-    return candidate.parentFullPath + u" » " + itemText;
+    return candidate.parentFullPath % QStringLiteral(" » ") % itemText;
 }
 
 QString AppMenuSearch::buildEvalPath(const SearchCandidate &candidate, const QString &itemText, bool ignoreTopLevel) const
@@ -786,7 +786,7 @@ QString AppMenuSearch::buildEvalPath(const SearchCandidate &candidate, const QSt
     if (prefix.isEmpty()) {
         return itemText;
     }
-    return prefix + u" » " + itemText;
+    return prefix % QStringLiteral(" » ") % itemText;
 }
 
 QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, const FilterOptions &options, const QString &query) const
