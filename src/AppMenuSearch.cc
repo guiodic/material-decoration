@@ -557,7 +557,7 @@ static int damerauLevenshteinDistance(const QString &s1, const QString &s2, int 
  * @brief Calculates a fuzzy matching score between a search pattern and text using Google/Spotlight style word/token matching.
  *
  * Scoring rules:
- * 1. Contiguous exact substring match fast-path with word boundary bonuses (5000+ base score to guarantee top rank over token matches).
+ * 1. Contiguous exact substring match fast-path with word boundary bonuses (10000+ base score to guarantee top rank over token matches).
  * 2. Tokenized word matching: query tokens must match target words via exact match, prefix match, or bounded edit distance.
  * 3. Substring matching (`contains`) requires query token length >= 3 to prevent noise from 1-2 char tokens.
  * 4. Ghost result elimination: eliminates sparse character subsequence matches across unrelated words.
