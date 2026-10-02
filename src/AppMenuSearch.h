@@ -284,6 +284,13 @@ private Q_SLOTS:
      */
     void onActionChanged();
 
+    /**
+     * @brief Slot invoked when a tracked QAction emits visibleChanged().
+     *
+     * Invalidates candidates when an action becomes visible or hidden.
+     */
+    void onActionVisibilityChanged();
+
 private:
     QPointer<AppMenuModel> m_appMenuModel;
     QPointer<QMenu> m_searchMenu;

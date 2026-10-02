@@ -279,6 +279,7 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
     for (const QPointer<QAction> &action : std::as_const(m_trackedActions)) {
         if (action) {
             disconnect(action.data(), &QAction::changed, this, &AppMenuSearch::onActionChanged);
+            disconnect(action.data(), &QAction::visibleChanged, this, &AppMenuSearch::onActionVisibilityChanged);
         }
     }
     m_trackedActions.clear();
@@ -321,6 +322,11 @@ void AppMenuSearch::onActionChanged()
     }
 }
 
+void AppMenuSearch::onActionVisibilityChanged()
+{
+    invalidateCandidates();
+}
+
 void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &ancestors, bool hasNamedAncestor)
 {
     if (!menu || m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES || ancestors.size() >= MAX_MENU_DEPTH) {
@@ -345,6 +351,7 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
             m_trackedActions.append(menuAction);
             m_knownActionTexts.insert(menuAction, getActionText(menuAction));
             connect(menuAction, &QAction::changed, this, &AppMenuSearch::onActionChanged);
+            connect(menuAction, &QAction::visibleChanged, this, &AppMenuSearch::onActionVisibilityChanged);
         }
     }
 
@@ -394,7 +401,16 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
     };
 
     for (QAction *action : menu->actions()) {
-        if (!action || !action->isVisible()) {
+        if (!action || action->isSeparator()) {
+            continue;
+        }
+        if (!m_knownActionTexts.contains(action)) {
+            m_trackedActions.append(action);
+            m_knownActionTexts.insert(action, getActionText(action));
+            connect(action, &QAction::changed, this, &AppMenuSearch::onActionChanged);
+            connect(action, &QAction::visibleChanged, this, &AppMenuSearch::onActionVisibilityChanged);
+        }
+        if (!action->isVisible()) {
             continue;
         }
         if (m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES) {
@@ -404,17 +420,9 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
             }
             break;
         }
-        if (action->isSeparator()) {
-            continue;
-        }
         if (action->menu()) {
             collectSearchCandidates(action->menu(), visited, ancestors, childHasNamedAncestor);
         } else {
-            if (!m_knownActionTexts.contains(action)) {
-                m_trackedActions.append(action);
-                m_knownActionTexts.insert(action, getActionText(action));
-                connect(action, &QAction::changed, this, &AppMenuSearch::onActionChanged);
-            }
             ensurePathsComputed();
             const QString itemText = getActionText(action);
             const QStringList itemTokens = tokenizeText(itemText);
