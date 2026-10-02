@@ -166,6 +166,7 @@ public:
     bool hasValidQuery() const;
 
 signals:
+    void candidatesInvalidated();
     void repositionRequested();
 
 private:

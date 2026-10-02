@@ -201,6 +201,7 @@ void AppMenuButtonGroup::setupSearchMenu()
 
     m_search->setSearchMenu(m_searchMenu);
 
+    connect(m_search, &AppMenuSearch::candidatesInvalidated, this, &AppMenuButtonGroup::onMenuReadyForSearch);
     connect(m_search, &AppMenuSearch::repositionRequested, this, &AppMenuButtonGroup::repositionSearchMenu, Qt::UniqueConnection);
 }
 

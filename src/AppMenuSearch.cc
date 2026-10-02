@@ -247,6 +247,7 @@ void AppMenuSearch::invalidateCandidates()
     m_lastResults.clear();
     m_lastProcessedMenu = nullptr;
     m_lastOptions = FilterOptions();
+    Q_EMIT candidatesInvalidated();
 }
 
 bool AppMenuSearch::hasValidQuery() const
