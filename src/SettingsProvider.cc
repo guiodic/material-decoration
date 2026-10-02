@@ -55,6 +55,7 @@ void SettingsProvider::reconfigure()
     m_exceptions.readConfig(config);
 
     m_compiledExceptions.clear();
+    m_compiledExceptions.reserve(m_exceptions.exceptions().size());
     m_cache.clear();
     m_hasWindowTitleExceptions = false;
 
