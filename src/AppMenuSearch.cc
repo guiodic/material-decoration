@@ -24,14 +24,77 @@
 // Qt
 #include <QDebug>
 #include <QScopeGuard>
+#include <algorithm>
+#include <array>
 #include <utility>
+#include <vector>
 
 static constexpr int MAX_SEARCH_RESULTS = 100;
 static constexpr int MAX_SEARCH_CANDIDATES = 5000;
 static constexpr int MAX_MENU_DEPTH = 20;
+static constexpr int MAX_QUERY_TOKENS = 6;
 
 namespace Material
 {
+
+static inline QChar fastToLower(QChar ch)
+{
+    const ushort u = ch.unicode();
+    if (u >= 'A' && u <= 'Z') {
+        return QChar(u + 32);
+    }
+    if (u < 128) {
+        return ch;
+    }
+    return ch.toLower();
+}
+
+/**
+ * @brief Splits a string into lowercased word tokens based on whitespace, punctuation, and camelCase boundaries.
+ */
+static QStringList tokenizeText(const QString &text)
+{
+    QStringList tokens;
+    if (text.isEmpty()) {
+        return tokens;
+    }
+
+    QString current;
+    current.reserve(32);
+
+    const int len = text.length();
+    for (int i = 0; i < len; ++i) {
+        const QChar ch = text.at(i);
+        const bool isLetterOrDigit = ch.isLetterOrNumber();
+
+        if (!isLetterOrDigit) {
+            if (!current.isEmpty()) {
+                tokens.append(current.toLower());
+                current.clear();
+            }
+            continue;
+        }
+
+        // Handle camelCase and acronym-to-word transitions (e.g. "saveAs" -> "save", "As"; "XMLParser" -> "XML", "Parser")
+        if (ch.isLower() && current.length() > 1 &&
+            current.at(current.length() - 1).isUpper() &&
+            current.at(current.length() - 2).isUpper()) {
+            tokens.append(current.left(current.length() - 1).toLower());
+            current = current.right(1);
+        } else if (ch.isUpper() && !current.isEmpty() && current.at(current.length() - 1).isLower()) {
+            tokens.append(current.toLower());
+            current.clear();
+        }
+
+        current.append(ch);
+    }
+
+    if (!current.isEmpty()) {
+        tokens.append(current.toLower());
+    }
+
+    return tokens;
+}
 
 AppMenuSearch::AppMenuSearch(AppMenuModel *model, QObject *parent)
     : QObject(parent)
@@ -185,6 +248,7 @@ void AppMenuSearch::invalidateCandidates()
     m_lastResults.clear();
     m_lastProcessedMenu = nullptr;
     m_lastOptions = FilterOptions();
+    Q_EMIT candidatesInvalidated();
 }
 
 bool AppMenuSearch::hasValidQuery() const
@@ -212,6 +276,16 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
     if (!m_searchCandidatesDirty) {
         return;
     }
+
+    for (const QPointer<QAction> &action : std::as_const(m_trackedActions)) {
+        if (action) {
+            disconnect(action.data(), &QAction::changed, this, &AppMenuSearch::onActionChanged);
+            disconnect(action.data(), &QAction::visibleChanged, this, &AppMenuSearch::onActionVisibilityChanged);
+        }
+    }
+    m_trackedActions.clear();
+    m_knownActionTexts.clear();
+
     m_searchCandidates.clear();
     m_searchCandidates.reserve(MAX_SEARCH_CANDIDATES);
     m_candidateTruncationLogged = false;
@@ -228,6 +302,30 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
     QSet<QMenu *> visited;
     QList<QPointer<QAction>> ancestors;
     collectSearchCandidates(rootMenu, visited, ancestors);
+}
+
+void AppMenuSearch::onActionChanged()
+{
+    QAction *action = qobject_cast<QAction *>(sender());
+    if (!action) {
+        return;
+    }
+    m_actionTextCache.remove(action);
+    const QString currentText = getActionText(action);
+    auto it = m_knownActionTexts.find(action);
+    if (it != m_knownActionTexts.end()) {
+        if (it.value() != currentText) {
+            it.value() = currentText;
+            invalidateCandidates();
+        }
+    } else {
+        invalidateCandidates();
+    }
+}
+
+void AppMenuSearch::onActionVisibilityChanged()
+{
+    invalidateCandidates();
 }
 
 void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &ancestors, bool hasNamedAncestor)
@@ -250,11 +348,18 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         if (!getActionText(menuAction).isEmpty()) {
             childHasNamedAncestor = true;
         }
-        connect(menuAction, &QAction::changed, this, &AppMenuSearch::invalidateCandidates, Qt::UniqueConnection);
+        if (!m_knownActionTexts.contains(menuAction)) {
+            m_trackedActions.append(menuAction);
+            m_knownActionTexts.insert(menuAction, getActionText(menuAction));
+            connect(menuAction, &QAction::changed, this, &AppMenuSearch::onActionChanged);
+            connect(menuAction, &QAction::visibleChanged, this, &AppMenuSearch::onActionVisibilityChanged);
+        }
     }
 
     QString parentFullPath;
     QString parentEvalPath;
+    QStringList parentFullTokens;
+    QStringList parentEvalTokens;
     bool pathsComputed = false;
 
     auto ensurePathsComputed = [&]() {
@@ -273,10 +378,12 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
             if (ancestor) {
                 const QString text = getActionText(ancestor);
                 if (!text.isEmpty()) {
+                    const QStringList ancestorTokens = tokenizeText(text);
                     if (!firstFull) {
                         parentFullPath.append(QStringLiteral(" » "));
                     }
                     parentFullPath.append(text);
+                    parentFullTokens.append(ancestorTokens);
                     firstFull = false;
 
                     if (!skippedTopLevel) {
@@ -286,6 +393,7 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
                             parentEvalPath.append(QStringLiteral(" » "));
                         }
                         parentEvalPath.append(text);
+                        parentEvalTokens.append(ancestorTokens);
                         firstEval = false;
                     }
                 }
@@ -294,7 +402,16 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
     };
 
     for (QAction *action : menu->actions()) {
-        if (!action || !action->isVisible()) {
+        if (!action || action->isSeparator()) {
+            continue;
+        }
+        if (!m_knownActionTexts.contains(action)) {
+            m_trackedActions.append(action);
+            m_knownActionTexts.insert(action, getActionText(action));
+            connect(action, &QAction::changed, this, &AppMenuSearch::onActionChanged);
+            connect(action, &QAction::visibleChanged, this, &AppMenuSearch::onActionVisibilityChanged);
+        }
+        if (!action->isVisible()) {
             continue;
         }
         if (m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES) {
@@ -304,14 +421,13 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
             }
             break;
         }
-        if (action->isSeparator()) {
-            continue;
-        }
         if (action->menu()) {
             collectSearchCandidates(action->menu(), visited, ancestors, childHasNamedAncestor);
         } else {
             ensurePathsComputed();
-            m_searchCandidates.append({action, ancestors, childHasNamedAncestor, parentFullPath, parentEvalPath});
+            const QString itemText = getActionText(action);
+            const QStringList itemTokens = tokenizeText(itemText);
+            m_searchCandidates.append({action, ancestors, childHasNamedAncestor, parentFullPath, parentEvalPath, itemTokens, parentFullTokens, parentEvalTokens});
         }
     }
 
@@ -401,106 +517,259 @@ bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, con
     return false;
 }
 
-static inline QChar fastToLower(QChar ch)
+
+/**
+ * @brief Computes max allowed edit distance (typos) for a token of given length.
+ */
+static inline int maxAllowedDistance(int tokenLength)
 {
-    const ushort u = ch.unicode();
-    if (u >= 'A' && u <= 'Z') {
-        return QChar(u + 32);
+    if (tokenLength < 4) {
+        return 0; // Very short tokens (1-3 chars) require exact prefix or match
     }
-    if (u < 128) {
-        return ch;
+    if (tokenLength == 4) {
+        return 1; // E.g., "colr" (4) -> "color" (1 edit)
     }
-    return ch.toLower();
+    return 2; // 5+ char tokens allow up to 2 edits (e.g., "colowr" -> "colori")
 }
 
 /**
- * @brief Calculates a fuzzy matching score between a search pattern and text.
- *
- * Uses a two-phase scoring algorithm:
- * 1. First checks for exact contiguous substring match (case-insensitive), awarding high scores
- *    with bonuses for earlier positions and word boundary matches.
- * 2. Falls back to sequential character matching with bonuses for consecutive matches,
- *    word boundaries, camelCase transitions, and penalties for character gaps.
- *
- * @param pattern The search pattern to match
- * @param text The text to search within
- * @return Score value (higher is better), or 0 if pattern doesn't match sequentially
+ * @brief Bounded Damerau-Levenshtein distance calculation (insertions, deletions, substitutions, transpositions).
+ * Returns distance if <= maxDistance, otherwise returns maxDistance + 1.
  */
-static int calculateFuzzyScore(const QString &pattern, const QString &text)
+static int damerauLevenshteinDistance(const QString &s1, const QString &s2, int maxDistance)
 {
-    if (pattern.isEmpty() || text.isEmpty()) {
+    const int len1 = s1.length();
+    const int len2 = s2.length();
+
+    if (std::abs(len1 - len2) > maxDistance) {
+        return maxDistance + 1;
+    }
+    if (len1 == 0) {
+        return len2 <= maxDistance ? len2 : maxDistance + 1;
+    }
+    if (len2 == 0) {
+        return len1 <= maxDistance ? len1 : maxDistance + 1;
+    }
+
+    // Three row buffers rotated via pointers to avoid vector allocations/copies
+    std::vector<int> r0(len2 + 1, 0);
+    std::vector<int> r1(len2 + 1, 0);
+    std::vector<int> r2(len2 + 1, 0);
+
+    int *row0 = r0.data();
+    int *row1 = r1.data();
+    int *row2 = r2.data();
+
+    for (int j = 0; j <= len2; ++j) {
+        row1[j] = j;
+    }
+
+    for (int i = 1; i <= len1; ++i) {
+        row0[0] = i;
+        int minRowVal = row0[0];
+
+        const QChar char1 = fastToLower(s1.at(i - 1));
+
+        for (int j = 1; j <= len2; ++j) {
+            const QChar char2 = fastToLower(s2.at(j - 1));
+            const int cost = (char1 == char2) ? 0 : 1;
+
+            int val = std::min({row1[j] + 1, row0[j - 1] + 1, row1[j - 1] + cost});
+
+            // Check adjacent transposition
+            if (i > 1 && j > 1 && char1 == fastToLower(s2.at(j - 2)) && fastToLower(s1.at(i - 2)) == char2) {
+                val = std::min(val, row2[j - 2] + cost);
+            }
+
+            row0[j] = val;
+            minRowVal = std::min(minRowVal, val);
+        }
+
+        if (minRowVal > maxDistance) {
+            return maxDistance + 1;
+        }
+
+        // Pointer rotation: row2 becomes previous row1, row1 becomes current row0, row0 becomes old row2
+        int *tmp = row2;
+        row2 = row1;
+        row1 = row0;
+        row0 = tmp;
+    }
+
+    return row1[len2];
+}
+
+/**
+ * @brief Calculates a fuzzy matching score between a search pattern and text using Google/Spotlight style word/token matching.
+ *
+ * Scoring rules:
+ * 1. Contiguous exact substring match fast-path (O(L)) with word boundary bonuses (10000+ base score).
+ *    Note: The contiguous exact substring match check intentionally runs BEFORE checking MAX_QUERY_TOKENS.
+ *    This allows long exact phrases (e.g. pasted multi-word menu titles) to match instantly without token cap limits,
+ *    since linear substring matching incurs no combinatorial assignment overhead.
+ * 2. Tokenized word matching: query tokens must match target words via exact match, prefix match, or bounded edit distance.
+ *    Non-contiguous token matching requires queryTokens.size() <= MAX_QUERY_TOKENS (6) to bound worst-case backtracking.
+ * 3. Substring matching (`contains`) requires query token length >= 3 to prevent noise from 1-2 char tokens.
+ * 4. Ghost result elimination: eliminates sparse character subsequence matches across unrelated words.
+ *
+ * @param pattern The raw search pattern string to match
+ * @param queryTokens Pre-tokenized query tokens
+ * @param text The text or hierarchical path string to search within
+ * @param targetTokens Pre-tokenized target words extracted from text/path
+ * @return Score value (higher is better), or 0 if pattern does not match
+ */
+static int calculateFuzzyScore(const QString &pattern, const QStringList &queryTokens, const QString &text, const QStringList &targetTokens)
+{
+    if (pattern.isEmpty() || text.isEmpty() || queryTokens.isEmpty()) {
         return 0;
     }
 
     const int patternLen = pattern.length();
-    const int textLen = text.length();
 
-    // Early exit if pattern is longer than text
-    if (patternLen > textLen) {
-        return 0;
-    }
-
-    // 1. Contiguous exact substring match check (Unicode-aware)
+    // 1. Contiguous exact substring match check (10000+ tier ensures contiguous phrase hits rank above token-by-token matches)
     const int exactIdx = text.indexOf(pattern, 0, Qt::CaseInsensitive);
     if (exactIdx != -1) {
-        int score = 1000 + (100 * patternLen) - (exactIdx * 2);
+        int score = 10000 + (100 * patternLen) - (exactIdx * 2);
         if (exactIdx == 0 || !text.at(exactIdx - 1).isLetterOrNumber()) {
             score += 500; // Word boundary bonus
         }
         return std::max(1, score);
     }
 
-    // 2. Sequential character matching & scoring
-    int patternIdx = 0;
-    int score = 0;
-    int consecutive = 0;
-    int prevMatchIdx = -1;
+    // 2. Token-based word and prefix matching
+    if (queryTokens.size() > MAX_QUERY_TOKENS || targetTokens.isEmpty()) {
+        return 0; // Reject non-contiguous token queries exceeding query token limit
+    }
 
-    const QChar *pText = text.constData();
-    const QChar *pPattern = pattern.constData();
+    const int numQ = queryTokens.size();
+    const int numT = targetTokens.size();
 
-    QChar pChar = fastToLower(pPattern[patternIdx]);
+    // Pre-calculate pairwise match scores between each query token and target token
+    std::vector<std::vector<int>> pairwiseScores(numQ, std::vector<int>(numT, 0));
+    std::vector<int> maxPairwiseScore(numQ, 0);
 
-    for (int textIdx = 0; textIdx < textLen && patternIdx < patternLen; ++textIdx) {
-        const QChar tChar = fastToLower(pText[textIdx]);
+    for (int qIdx = 0; qIdx < numQ; ++qIdx) {
+        const QString &qToken = queryTokens.at(qIdx);
+        const int qLen = qToken.length();
+        const int maxDist = maxAllowedDistance(qLen);
 
-        if (pChar == tChar) {
-            patternIdx++;
-            if (patternIdx < patternLen) {
-                pChar = fastToLower(pPattern[patternIdx]);
-            }
-            int charScore = 10;
+        int bestScoreForQ = 0;
+        for (int tIdx = 0; tIdx < numT; ++tIdx) {
+            const QString &tToken = targetTokens.at(tIdx);
+            int tokenScore = 0;
 
-            const bool isStart = (textIdx == 0);
-            const bool isBoundary = (!isStart && !pText[textIdx - 1].isLetterOrNumber());
-            const bool isCamel = (pText[textIdx].isUpper() && textIdx > 0 && pText[textIdx - 1].isLower());
-
-            if (isStart || isBoundary) {
-                charScore += 50;
-            } else if (isCamel) {
-                charScore += 40;
-            }
-
-            if (prevMatchIdx != -1 && textIdx == prevMatchIdx + 1) {
-                consecutive++;
-                charScore += (20 * consecutive);
+            if (qToken == tToken) {
+                tokenScore = 1000 + (qLen * 50);
+            } else if (tToken.startsWith(qToken)) {
+                tokenScore = 700 + (qLen * 40);
+            } else if (qLen >= 3 && tToken.contains(qToken)) {
+                tokenScore = 500 + (qLen * 20);
             } else {
-                consecutive = 0;
-                if (prevMatchIdx != -1) {
-                    charScore -= (textIdx - prevMatchIdx - 1);
+                // Compare against target word prefixes around qLen (qLen - maxDist to qLen + maxDist)
+                const int tLen = tToken.length();
+                const int minCompLen = std::max(0, qLen - maxDist);
+                const int maxCompLen = std::min(tLen, qLen + maxDist);
+
+                int minDist = maxDist + 1;
+                for (int compLen = minCompLen; compLen <= maxCompLen; ++compLen) {
+                    const int dist = damerauLevenshteinDistance(qToken, tToken.left(compLen), maxDist);
+                    if (dist < minDist) {
+                        minDist = dist;
+                    }
+                }
+
+                if (minDist <= maxDist) {
+                    tokenScore = 400 - (minDist * 150) + (qLen * 30);
                 }
             }
 
-            prevMatchIdx = textIdx;
-            score += charScore;
+            pairwiseScores[qIdx][tIdx] = tokenScore;
+            bestScoreForQ = std::max(bestScoreForQ, tokenScore);
         }
+
+        if (bestScoreForQ == 0) {
+            return 0; // Short-circuit early if any query token cannot match any target token
+        }
+        maxPairwiseScore[qIdx] = bestScoreForQ;
     }
 
-    if (patternIdx < patternLen) {
-        return 0; // Not all pattern characters matched in sequence
+    // Pre-calculate upper bound suffix sums for branch-and-bound pruning
+    std::array<int, MAX_QUERY_TOKENS + 1> maxSuffixSum{};
+    for (int i = numQ - 1; i >= 0; --i) {
+        maxSuffixSum[i] = maxSuffixSum[i + 1] + maxPairwiseScore[i];
     }
 
-    return std::max(1, score);
+    // Pre-sort target candidates per query token for greedy-first traversal
+    struct TargetCandidate {
+        int targetIdx;
+        int score;
+    };
+    std::array<std::vector<TargetCandidate>, MAX_QUERY_TOKENS> sortedCandidates;
+    for (int qIdx = 0; qIdx < numQ; ++qIdx) {
+        for (int tIdx = 0; tIdx < numT; ++tIdx) {
+            int score = pairwiseScores[qIdx][tIdx];
+            if (score > 0) {
+                sortedCandidates[qIdx].push_back({tIdx, score});
+            }
+        }
+        std::sort(sortedCandidates[qIdx].begin(), sortedCandidates[qIdx].end(), [](const TargetCandidate &a, const TargetCandidate &b) {
+            return a.score > b.score;
+        });
+    }
+
+    // Find complete 1-to-1 distinct assignment using branch-and-bound backtracking
+    std::array<int, MAX_QUERY_TOKENS> currentAssignment;
+    std::array<int, MAX_QUERY_TOKENS> bestAssignment;
+    currentAssignment.fill(-1);
+    bestAssignment.fill(-1);
+    std::vector<bool> usedTarget(numT, false);
+    int maxTotalScore = -1;
+
+    auto backtrackAssignment = [&](auto &self, int qIdx, int currentSum) -> void {
+        if (qIdx == numQ) {
+            int totalScore = currentSum;
+            for (int i = 1; i < numQ; ++i) {
+                if (currentAssignment[i] > currentAssignment[i - 1]) {
+                    totalScore += 100;
+                }
+            }
+            if (totalScore > maxTotalScore) {
+                maxTotalScore = totalScore;
+                for (int k = 0; k < numQ; ++k) {
+                    bestAssignment[k] = currentAssignment[k];
+                }
+            }
+            return;
+        }
+
+        // Upper bound on possible sequential order bonuses remaining (at most (numQ - qIdx) transitions of 100 pts)
+        const int maxRemainingOrderBonus = (numQ - qIdx) * 100;
+
+        // Branch-and-bound pruning: stop search if currentSum + maxSuffixSum[qIdx] + maxRemainingOrderBonus <= maxTotalScore
+        if (currentSum + maxSuffixSum[qIdx] + maxRemainingOrderBonus <= maxTotalScore) {
+            return;
+        }
+
+        for (const auto &cand : sortedCandidates[qIdx]) {
+            if (!usedTarget[cand.targetIdx]) {
+                usedTarget[cand.targetIdx] = true;
+                currentAssignment[qIdx] = cand.targetIdx;
+
+                self(self, qIdx + 1, currentSum + cand.score);
+
+                usedTarget[cand.targetIdx] = false;
+                currentAssignment[qIdx] = -1;
+            }
+        }
+    };
+
+    backtrackAssignment(backtrackAssignment, 0, 0);
+
+    if (maxTotalScore <= 0) {
+        return 0; // No complete distinct 1-to-1 assignment found
+    }
+
+    return std::max(1, maxTotalScore);
 }
 
 QString AppMenuSearch::buildFullPath(const SearchCandidate &candidate, const QString &itemText) const
@@ -531,6 +800,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
     const bool ignoreSubMenus = options.ignoreSubMenus;
     const bool showDisabledActions = options.showDisabledActions;
     const bool fuzzyMatching = options.fuzzyMatching;
+    const QStringList queryTokens = fuzzyMatching ? tokenizeText(query) : QStringList();
 
     for (const SearchCandidate &candidate : std::as_const(m_searchCandidates)) {
         if (!fuzzyMatching && results.size() >= MAX_SEARCH_RESULTS) {
@@ -576,21 +846,18 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
             if (ignoreTopLevel && !candidate.hasNamedAncestor) {
                 match = false;
             } else if (ignoreSubMenus) {
-                candidateScore = calculateFuzzyScore(query, itemText);
+                candidateScore = calculateFuzzyScore(query, queryTokens, itemText, candidate.itemTokens);
                 match = (candidateScore > 0);
             } else {
-                const int itemScore = calculateFuzzyScore(query, itemText);
-                if (itemScore > 0) {
-                    candidateScore = itemScore + 500;
-                    match = true;
-                } else {
-                    const QString evalPath = buildEvalPath(candidate, itemText, ignoreTopLevel);
-                    const int pathScore = calculateFuzzyScore(query, evalPath);
-                    if (pathScore > 0) {
-                        candidateScore = pathScore;
-                        match = true;
-                    }
-                }
+                const int itemScore = calculateFuzzyScore(query, queryTokens, itemText, candidate.itemTokens);
+                const int itemScoreWithBonus = (itemScore > 0) ? (itemScore + 500) : 0;
+
+                const QString evalPath = buildEvalPath(candidate, itemText, ignoreTopLevel);
+                const QStringList evalTokens = (ignoreTopLevel ? candidate.parentEvalTokens : candidate.parentFullTokens) + candidate.itemTokens;
+                const int pathScore = calculateFuzzyScore(query, queryTokens, evalPath, evalTokens);
+
+                candidateScore = std::max(itemScoreWithBonus, pathScore);
+                match = (candidateScore > 0);
             }
         } else {
             if (ignoreSubMenus) {
