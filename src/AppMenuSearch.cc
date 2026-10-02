@@ -274,6 +274,15 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
     if (!m_searchCandidatesDirty) {
         return;
     }
+
+    for (const QPointer<QAction> &action : std::as_const(m_trackedActions)) {
+        if (action) {
+            disconnect(action.data(), &QAction::changed, this, &AppMenuSearch::onActionChanged);
+        }
+    }
+    m_trackedActions.clear();
+    m_knownActionTexts.clear();
+
     m_searchCandidates.clear();
     m_searchCandidates.reserve(MAX_SEARCH_CANDIDATES);
     m_candidateTruncationLogged = false;
@@ -290,6 +299,25 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
     QSet<QMenu *> visited;
     QList<QPointer<QAction>> ancestors;
     collectSearchCandidates(rootMenu, visited, ancestors);
+}
+
+void AppMenuSearch::onActionChanged()
+{
+    QAction *action = qobject_cast<QAction *>(sender());
+    if (!action) {
+        return;
+    }
+    m_actionTextCache.remove(action);
+    const QString currentText = getActionText(action);
+    auto it = m_knownActionTexts.find(action);
+    if (it != m_knownActionTexts.end()) {
+        if (it.value() != currentText) {
+            it.value() = currentText;
+            invalidateCandidates();
+        }
+    } else {
+        invalidateCandidates();
+    }
 }
 
 void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &ancestors, bool hasNamedAncestor)
@@ -312,7 +340,11 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         if (!getActionText(menuAction).isEmpty()) {
             childHasNamedAncestor = true;
         }
-        connect(menuAction, &QAction::changed, this, &AppMenuSearch::invalidateCandidates, Qt::UniqueConnection);
+        if (!m_knownActionTexts.contains(menuAction)) {
+            m_trackedActions.append(menuAction);
+            m_knownActionTexts.insert(menuAction, getActionText(menuAction));
+            connect(menuAction, &QAction::changed, this, &AppMenuSearch::onActionChanged);
+        }
     }
 
     QString parentFullPath;
@@ -377,7 +409,11 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         if (action->menu()) {
             collectSearchCandidates(action->menu(), visited, ancestors, childHasNamedAncestor);
         } else {
-            connect(action, &QAction::changed, this, &AppMenuSearch::invalidateCandidates, Qt::UniqueConnection);
+            if (!m_knownActionTexts.contains(action)) {
+                m_trackedActions.append(action);
+                m_knownActionTexts.insert(action, getActionText(action));
+                connect(action, &QAction::changed, this, &AppMenuSearch::onActionChanged);
+            }
             ensurePathsComputed();
             const QString itemText = getActionText(action);
             const QStringList itemTokens = tokenizeText(itemText);
@@ -565,6 +601,7 @@ static int damerauLevenshteinDistance(const QString &s1, const QString &s2, int 
  * @param pattern The search pattern to match
  * @param queryTokens Pre-tokenized query tokens
  * @param text The text to search within
+ * @param targetTokens Pre-tokenized target words extracted from text/path
  * @return Score value (higher is better), or 0 if pattern does not match
  */
 static int calculateFuzzyScore(const QString &pattern, const QStringList &queryTokens, const QString &text, const QStringList &targetTokens)

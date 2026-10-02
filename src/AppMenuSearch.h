@@ -274,6 +274,16 @@ private:
      */
     void resetSearchState();
 
+private Q_SLOTS:
+    /**
+     * @brief Slot invoked when a tracked QAction emits changed().
+     *
+     * Invalidates candidates only if the action's cleaned text label actually changed.
+     * State changes (enabled, checked, icon) do not invalidate search candidates.
+     */
+    void onActionChanged();
+
+private:
     QPointer<AppMenuModel> m_appMenuModel;
     QPointer<QMenu> m_searchMenu;
     QString m_lastSearchQuery;
@@ -289,6 +299,10 @@ private:
     // This cache maps QAction* pointers directly to their cleansed text labels (accelerator markers removed).
     // It is automatically cleared on exit of each filter() pass using a qScopeGuard.
     mutable QHash<QAction *, QString> m_actionTextCache;
+
+    // Actions connected to onActionChanged() and their known cleaned text labels at candidate build time
+    QList<QPointer<QAction>> m_trackedActions;
+    QHash<QAction *, QString> m_knownActionTexts;
 };
 
 } // namespace Material
