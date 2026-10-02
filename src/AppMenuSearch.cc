@@ -24,6 +24,7 @@
 // Qt
 #include <QDebug>
 #include <QScopeGuard>
+#include <QStringBuilder>
 #include <algorithm>
 #include <array>
 #include <utility>
