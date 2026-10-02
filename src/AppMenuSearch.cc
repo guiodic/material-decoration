@@ -845,18 +845,14 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
                 match = (candidateScore > 0);
             } else {
                 const int itemScore = calculateFuzzyScore(query, queryTokens, itemText, candidate.itemTokens);
-                if (itemScore > 0) {
-                    candidateScore = itemScore + 500;
-                    match = true;
-                } else {
-                    const QString evalPath = buildEvalPath(candidate, itemText, ignoreTopLevel);
-                    const QStringList evalTokens = (ignoreTopLevel ? candidate.parentEvalTokens : candidate.parentFullTokens) + candidate.itemTokens;
-                    const int pathScore = calculateFuzzyScore(query, queryTokens, evalPath, evalTokens);
-                    if (pathScore > 0) {
-                        candidateScore = pathScore;
-                        match = true;
-                    }
-                }
+                const int itemScoreWithBonus = (itemScore > 0) ? (itemScore + 500) : 0;
+
+                const QString evalPath = buildEvalPath(candidate, itemText, ignoreTopLevel);
+                const QStringList evalTokens = (ignoreTopLevel ? candidate.parentEvalTokens : candidate.parentFullTokens) + candidate.itemTokens;
+                const int pathScore = calculateFuzzyScore(query, queryTokens, evalPath, evalTokens);
+
+                candidateScore = std::max(itemScoreWithBonus, pathScore);
+                match = (candidateScore > 0);
             }
         } else {
             if (ignoreSubMenus) {
