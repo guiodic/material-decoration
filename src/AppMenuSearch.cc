@@ -377,6 +377,7 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         if (action->menu()) {
             collectSearchCandidates(action->menu(), visited, ancestors, childHasNamedAncestor);
         } else {
+            connect(action, &QAction::changed, this, &AppMenuSearch::invalidateCandidates, Qt::UniqueConnection);
             ensurePathsComputed();
             const QString itemText = getActionText(action);
             const QStringList itemTokens = tokenizeText(itemText);
@@ -590,12 +591,11 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     }
 
     const int numQ = queryTokens.size();
-    constexpr int MAX_T_TOKENS = 32;
-    const int numT = std::min<int>(targetTokens.size(), MAX_T_TOKENS);
+    const int numT = targetTokens.size();
 
-    // Pre-calculate pairwise match scores between each query token and target token using stack arrays
-    int pairwiseScores[MAX_QUERY_TOKENS][MAX_T_TOKENS] = {};
-    int maxPairwiseScore[MAX_QUERY_TOKENS] = {};
+    // Pre-calculate pairwise match scores between each query token and target token
+    std::vector<std::vector<int>> pairwiseScores(numQ, std::vector<int>(numT, 0));
+    std::vector<int> maxPairwiseScore(numQ, 0);
 
     for (int qIdx = 0; qIdx < numQ; ++qIdx) {
         const QString &qToken = queryTokens.at(qIdx);
@@ -671,7 +671,7 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     int bestAssignment[MAX_QUERY_TOKENS];
     std::fill(currentAssignment, currentAssignment + MAX_QUERY_TOKENS, -1);
     std::fill(bestAssignment, bestAssignment + MAX_QUERY_TOKENS, -1);
-    bool usedTarget[MAX_T_TOKENS] = {};
+    std::vector<bool> usedTarget(numT, false);
     int maxTotalScore = -1;
 
     auto backtrackAssignment = [&](auto &self, int qIdx, int currentSum) -> void {
