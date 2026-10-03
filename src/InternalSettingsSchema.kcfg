@@ -27,6 +27,10 @@
         <entry name="BottomCornerRadiusFlag" type="bool">
             <default>true</default>
         </entry>
+
+        <entry name="SquareCornersTiled" type="Bool">
+            <default>false</default>
+        </entry>
         
         <entry name="OutlineActive" type="bool">
             <default>false</default>

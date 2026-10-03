@@ -1408,15 +1408,19 @@ void Decoration::updateCornerRadiusAndOutline()
     if (!m_internalSettings) {
         return;
     }
-    if (m_internalSettings->squareCorners() || isTiled() || !settings()->isAlphaChannelSupported()) {
+    const bool squareCornersTiled = m_internalSettings->squareCornersTiled();
+    if (m_internalSettings->squareCorners() || (squareCornersTiled && isTiled()) || !settings()->isAlphaChannelSupported()) {
         m_cornerRadius = 0.0;
     } else {
         // m_cornerRadius = m_internalSettings->cornerRadius();
         m_cornerRadius = KDecoration3::snapToPixelGrid(m_internalSettings->cornerRadius(), window()->nextScale());
     }
     
-    const qreal topLeftCornerRadius = (leftBorderVisible() && topBorderVisible()) ? m_cornerRadius : 0.0;
-    const qreal topRightCornerRadius = (rightBorderVisible() && topBorderVisible()) ? m_cornerRadius : 0.0;
+    const bool roundTopLeft = squareCornersTiled ? (leftBorderVisible() && topBorderVisible()) : leftBorderVisible();
+    const bool roundTopRight = squareCornersTiled ? (rightBorderVisible() && topBorderVisible()) : rightBorderVisible();
+
+    const qreal topLeftCornerRadius = roundTopLeft ? m_cornerRadius : 0.0;
+    const qreal topRightCornerRadius = roundTopRight ? m_cornerRadius : 0.0;
     const qreal bottomRightCornerRadius = (rightBorderVisible() && bottomBorderVisible()) ? m_cornerRadius : 0.0;
     const qreal bottomLeftCornerRadius = (leftBorderVisible() && bottomBorderVisible()) ? m_cornerRadius : 0.0;
     
@@ -1440,10 +1444,14 @@ void Decoration::updateCornerRadiusAndOutline()
 
 void Decoration::updatePaths()
 {
+    const bool squareCornersTiled = m_internalSettings ? m_internalSettings->squareCornersTiled() : false;
+    const bool roundTopLeft = squareCornersTiled ? (leftBorderVisible() && topBorderVisible()) : leftBorderVisible();
+    const bool roundTopRight = squareCornersTiled ? (rightBorderVisible() && topBorderVisible()) : rightBorderVisible();
+
     m_framePath = getRoundedPath(rect(),
                                  m_cornerRadius,
-                                 leftBorderVisible() && topBorderVisible(),
-                                 rightBorderVisible() && topBorderVisible(),
+                                 roundTopLeft,
+                                 roundTopRight,
                                  m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
                                  m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible());
 
@@ -1459,8 +1467,8 @@ void Decoration::updatePaths()
     
     m_titleBarPath = getRoundedPath(titleBarBackgroundRect,
                                     m_cornerRadius,
-                                    leftBorderVisible() && topBorderVisible(),
-                                    rightBorderVisible() && topBorderVisible(),
+                                    roundTopLeft,
+                                    roundTopRight,
                                     false,
                                     false);
 }
