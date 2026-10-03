@@ -116,6 +116,7 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_AnimationsEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_AnimationsDuration, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_BottomCorners, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_SquareCornersTiled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_HideCaptionWhenLimitedSpace, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_HideCaptionWhenLimitedSpace, &QCheckBox::toggled, m_ui->kcfg_MinWidthForCaption, &QWidget::setEnabled);
     connect(m_ui->kcfg_HideCaptionWhenLimitedSpace, &QCheckBox::toggled, m_ui->label_minWidthForCaption, &QWidget::setEnabled);
@@ -174,6 +175,7 @@ void MaterialDecorationKCM::updateUI()
     m_ui->kcfg_AnimationsEnabled->setChecked(m_settings->animationsEnabled());
     m_ui->kcfg_AnimationsDuration->setValue(m_settings->animationsDuration());
     m_ui->kcfg_BottomCorners->setChecked(m_settings->bottomCornerRadiusFlag());
+    m_ui->kcfg_SquareCornersTiled->setChecked(m_settings->squareCornersTiled());
     m_ui->kcfg_OutlineActive->setChecked(m_settings->outlineActive());
     m_ui->kcfg_HideCaptionWhenLimitedSpace->setChecked(m_settings->hideCaptionWhenLimitedSpace());
     m_ui->kcfg_MinWidthForCaption->setValue(m_settings->minWidthForCaption());
@@ -216,6 +218,7 @@ void MaterialDecorationKCM::save()
     m_settings->setAnimationsEnabled(m_ui->kcfg_AnimationsEnabled->isChecked());
     m_settings->setAnimationsDuration(m_ui->kcfg_AnimationsDuration->value());
     m_settings->setBottomCornerRadiusFlag(m_ui->kcfg_BottomCorners->isChecked());
+    m_settings->setSquareCornersTiled(m_ui->kcfg_SquareCornersTiled->isChecked());
     m_settings->setOutlineActive(m_ui->kcfg_OutlineActive->isChecked());
     m_settings->setHideCaptionWhenLimitedSpace(m_ui->kcfg_HideCaptionWhenLimitedSpace->isChecked());
     m_settings->setMinWidthForCaption(m_ui->kcfg_MinWidthForCaption->value());
@@ -273,6 +276,7 @@ void MaterialDecorationKCM::defaults()
     m_ui->kcfg_AnimationsEnabled->setChecked(s.animationsEnabled());
     m_ui->kcfg_AnimationsDuration->setValue(s.animationsDuration());
     m_ui->kcfg_BottomCorners->setChecked(s.bottomCornerRadiusFlag());
+    m_ui->kcfg_SquareCornersTiled->setChecked(s.squareCornersTiled());
     m_ui->kcfg_OutlineActive->setChecked(s.outlineActive());
     m_ui->kcfg_HideCaptionWhenLimitedSpace->setChecked(s.hideCaptionWhenLimitedSpace());
     m_ui->kcfg_MinWidthForCaption->setValue(s.minWidthForCaption());
@@ -314,6 +318,7 @@ bool MaterialDecorationKCM::isChanged() const
     if (m_ui->kcfg_AnimationsEnabled->isChecked() != m_settings->animationsEnabled()) return true;
     if (m_ui->kcfg_AnimationsDuration->value() != m_settings->animationsDuration()) return true;
     if (m_ui->kcfg_BottomCorners->isChecked() != m_settings->bottomCornerRadiusFlag()) return true;
+    if (m_ui->kcfg_SquareCornersTiled->isChecked() != m_settings->squareCornersTiled()) return true;
     if (m_ui->kcfg_OutlineActive->isChecked() != m_settings->outlineActive()) return true;
     if (m_ui->kcfg_HideCaptionWhenLimitedSpace->isChecked() != m_settings->hideCaptionWhenLimitedSpace()) return true;
     if (m_ui->kcfg_MinWidthForCaption->value() != m_settings->minWidthForCaption()) return true;

@@ -31,6 +31,16 @@
          </property>
         </widget>
        </item>
+       <item row="6" column="1">
+        <widget class="QCheckBox" name="kcfg_SquareCornersTiled">
+         <property name="text">
+          <string>Don't round corners for tiled windows</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="1">
         <widget class="QComboBox" name="kcfg_TitleAlignment"/>
        </item>

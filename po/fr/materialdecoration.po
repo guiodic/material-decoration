@@ -375,3 +375,7 @@ msgstr "Titre de la fenêtre"
 #: src/kcm/config.ui:440
 msgid "Window-Specific Overrides"
 msgstr "Exceptions spécifiques aux fenêtres"
+
+#: src/kcm/config.ui:35
+msgid "Don't round corners for tiled windows"
+msgstr "Ne pas arrondir les coins des fenêtres en mosaïque"

@@ -96,6 +96,12 @@ private:
     
     bool hasNoBorders() const;
 
+    bool isLeftEdge() const;
+    bool isRightEdge() const;
+    bool isTopEdge() const;
+    bool isBottomEdge() const;
+    bool isTiled() const;
+
     bool leftBorderVisible() const;
     bool rightBorderVisible() const;
     bool topBorderVisible() const;
