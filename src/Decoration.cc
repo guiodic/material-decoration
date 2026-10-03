@@ -979,26 +979,49 @@ qreal Decoration::topBorderSize() const
     return bottomBorderSize();
 }
 
-bool Decoration::leftBorderVisible() const {
+bool Decoration::isLeftEdge() const {
     const auto *decoratedClient = window();
-    return !decoratedClient->isMaximizedHorizontally()
-        && !decoratedClient->adjacentScreenEdges().testFlag(Qt::LeftEdge);
+    return decoratedClient->isMaximizedHorizontally()
+        || decoratedClient->adjacentScreenEdges().testFlag(Qt::LeftEdge);
 }
-bool Decoration::rightBorderVisible() const {
+
+bool Decoration::isRightEdge() const {
     const auto *decoratedClient = window();
-    return !decoratedClient->isMaximizedHorizontally()
-        && !decoratedClient->adjacentScreenEdges().testFlag(Qt::RightEdge);
+    return decoratedClient->isMaximizedHorizontally()
+        || decoratedClient->adjacentScreenEdges().testFlag(Qt::RightEdge);
 }
-bool Decoration::topBorderVisible() const {
+
+bool Decoration::isTopEdge() const {
     const auto *decoratedClient = window();
-    return !decoratedClient->isMaximizedVertically()
-        && !decoratedClient->adjacentScreenEdges().testFlag(Qt::TopEdge);
+    return decoratedClient->isMaximizedVertically()
+        || decoratedClient->adjacentScreenEdges().testFlag(Qt::TopEdge);
 }
-bool Decoration::bottomBorderVisible() const {
+
+bool Decoration::isBottomEdge() const {
     const auto *decoratedClient = window();
-    return !decoratedClient->isMaximizedVertically()
-        && !decoratedClient->adjacentScreenEdges().testFlag(Qt::BottomEdge)
+    return (decoratedClient->isMaximizedVertically()
+        || decoratedClient->adjacentScreenEdges().testFlag(Qt::BottomEdge))
         && !decoratedClient->isShaded();
+}
+
+bool Decoration::isTiled() const {
+    return isTopEdge() || isLeftEdge() || isBottomEdge() || isRightEdge();
+}
+
+bool Decoration::leftBorderVisible() const {
+    return !isLeftEdge();
+}
+
+bool Decoration::rightBorderVisible() const {
+    return !isRightEdge();
+}
+
+bool Decoration::topBorderVisible() const {
+    return !isTopEdge();
+}
+
+bool Decoration::bottomBorderVisible() const {
+    return !isBottomEdge();
 }
 
 bool Decoration::titleBarIsHovered() const
@@ -1385,15 +1408,15 @@ void Decoration::updateCornerRadiusAndOutline()
     if (!m_internalSettings) {
         return;
     }
-    if (m_internalSettings->squareCorners() || window()->isMaximized() || !settings()->isAlphaChannelSupported()) {
+    if (m_internalSettings->squareCorners() || isTiled() || !settings()->isAlphaChannelSupported()) {
         m_cornerRadius = 0.0;
     } else {
         // m_cornerRadius = m_internalSettings->cornerRadius();
         m_cornerRadius = KDecoration3::snapToPixelGrid(m_internalSettings->cornerRadius(), window()->nextScale());
     }
     
-    const qreal topLeftCornerRadius = leftBorderVisible() ? m_cornerRadius : 0.0;
-    const qreal topRightCornerRadius = rightBorderVisible() ? m_cornerRadius : 0.0;
+    const qreal topLeftCornerRadius = (leftBorderVisible() && topBorderVisible()) ? m_cornerRadius : 0.0;
+    const qreal topRightCornerRadius = (rightBorderVisible() && topBorderVisible()) ? m_cornerRadius : 0.0;
     const qreal bottomRightCornerRadius = (rightBorderVisible() && bottomBorderVisible()) ? m_cornerRadius : 0.0;
     const qreal bottomLeftCornerRadius = (leftBorderVisible() && bottomBorderVisible()) ? m_cornerRadius : 0.0;
     
@@ -1419,8 +1442,8 @@ void Decoration::updatePaths()
 {
     m_framePath = getRoundedPath(rect(),
                                  m_cornerRadius,
-                                 leftBorderVisible(),
-                                 rightBorderVisible(),
+                                 leftBorderVisible() && topBorderVisible(),
+                                 rightBorderVisible() && topBorderVisible(),
                                  m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
                                  m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible());
 
@@ -1436,8 +1459,8 @@ void Decoration::updatePaths()
     
     m_titleBarPath = getRoundedPath(titleBarBackgroundRect,
                                     m_cornerRadius,
-                                    leftBorderVisible(),
-                                    rightBorderVisible(),
+                                    leftBorderVisible() && topBorderVisible(),
+                                    rightBorderVisible() && topBorderVisible(),
                                     false,
                                     false);
 }
