@@ -30,13 +30,29 @@
 namespace Material
 {
 
+/**
+ * @brief Helper class for initializing and rendering hamburger application menu buttons.
+ */
 class ApplicationMenuButton
 {
 
 public:
+    /**
+     * @brief Sets button visibility based on whether the client exports an application menu.
+     * @param button Target decoration button.
+     * @param decoratedClient Client window interface.
+     */
     static void init(Button *button, KDecoration3::DecoratedWindow *decoratedClient) {
         button->setVisible(decoratedClient->hasApplicationMenu());
     }
+
+    /**
+     * @brief Paints three horizontal parallel lines representing a hamburger menu icon.
+     * @param button Target decoration button.
+     * @param painter QPainter instance.
+     * @param iconRect Bounding box for icon rendering.
+     * @param snapper PixelSnapper helper.
+     */
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
         

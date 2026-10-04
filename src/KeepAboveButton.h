@@ -30,15 +30,31 @@
 namespace Material
 {
 
+/**
+ * @brief Helper class for initializing and rendering 'Keep Above' (always-on-top) buttons.
+ */
 class KeepAboveButton
 {
 
 public:
+    /**
+     * @brief Initializes button visibility for keep-above toggle.
+     * @param button Target decoration button.
+     * @param decoratedClient Client window interface.
+     */
     static void init(Button *button, KDecoration3::DecoratedWindow *decoratedClient) {
         Q_UNUSED(decoratedClient)
 
         button->setVisible(true);
     }
+
+    /**
+     * @brief Paints upward pointing chevrons representing the keep-above state.
+     * @param button Target decoration button.
+     * @param painter QPainter instance.
+     * @param iconRect Bounding box for icon rendering.
+     * @param snapper PixelSnapper helper.
+     */
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
         Q_UNUSED(button)

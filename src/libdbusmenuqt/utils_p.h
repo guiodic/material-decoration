@@ -9,6 +9,10 @@
 class QString;
 
 /**
- * Swap mnemonic char: Qt uses '&', while dbusmenu uses '_'
+ * @brief Swaps accelerator mnemonic characters between Qt ('&') and DBusMenu ('_') formats.
+ * @param in Input label string.
+ * @param src Source mnemonic character to replace.
+ * @param dst Replacement mnemonic character.
+ * @return String with swapped mnemonic characters.
  */
 QString swapMnemonicChar(const QString &in, char src, char dst);

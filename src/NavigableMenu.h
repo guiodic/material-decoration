@@ -27,19 +27,44 @@
 namespace Material
 {
 
+/**
+ * @brief Subclass of QMenu supporting keyboard left/right arrow navigation between top-level menu categories.
+ *
+ * NavigableMenu emits hitLeft() or hitRight() when the user presses Left or Right arrow keys on a top-level menu
+ * item without opening a submenu, allowing the AppMenuButtonGroup to cycle to adjacent application menus.
+ */
 class NavigableMenu : public QMenu
 {
     Q_OBJECT
 
 public:
+    /**
+     * @brief Constructs a NavigableMenu instance.
+     * @param parent Optional parent widget.
+     */
     explicit NavigableMenu(QWidget *parent = nullptr);
+
+    /**
+     * @brief Destructor.
+     */
     ~NavigableMenu() override = default;
 
 Q_SIGNALS:
+    /**
+     * @brief Emitted when Left arrow key is pressed at top-level boundary.
+     */
     void hitLeft();
+
+    /**
+     * @brief Emitted when Right arrow key is pressed at top-level boundary.
+     */
     void hitRight();
 
 protected:
+    /**
+     * @brief Overridden key press event handler capturing Left/Right navigation.
+     * @param event Key event.
+     */
     void keyPressEvent(QKeyEvent *event) override;
 };
 

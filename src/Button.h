@@ -39,52 +39,135 @@ namespace Material
 
 class Decoration;
 
+/**
+ * @brief Base class for window decoration buttons in the Material theme.
+ *
+ * Implements KDecoration3::DecorationButton with support for smooth hover animations,
+ * long-press hold timers, pen stroke width scaling, and pixel-snapped icon painting.
+ */
 class Button : public KDecoration3::DecorationButton
 {
     Q_OBJECT
 
 public:
+    /**
+     * @brief Constructs a decoration button of the given type.
+     * @param type Decoration button type (Close, Maximize, Minimize, etc.).
+     * @param decoration Pointer to parent Decoration.
+     * @param parent Optional parent object.
+     */
     Button(KDecoration3::DecorationButtonType type, Decoration *decoration, QObject *parent = nullptr);
+
+    /**
+     * @brief Destructor.
+     */
     ~Button() override;
 
     Q_PROPERTY(bool animationEnabled READ animationEnabled WRITE setAnimationEnabled NOTIFY animationEnabledChanged)
     Q_PROPERTY(int animationDuration READ animationDuration WRITE setAnimationDuration NOTIFY animationDurationChanged)
     Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity NOTIFY opacityChanged)
     Q_PROPERTY(qreal transitionValue READ transitionValue WRITE setTransitionValue NOTIFY transitionValueChanged)
-    //Q_PROPERTY(QMarginsF* padding READ padding NOTIFY paddingChanged)
 
-    // Passed to DecorationButtonGroup in Decoration
+    /**
+     * @brief Factory method for creating decoration buttons used by KDecoration3::DecorationButtonGroup.
+     * @param type Button type.
+     * @param decoration Parent decoration.
+     * @param parent Optional parent object.
+     * @return Created KDecorationButton instance.
+     */
     static KDecoration3::DecorationButton *create(KDecoration3::DecorationButtonType type, KDecoration3::Decoration *decoration, QObject *parent = nullptr);
 
-    // This is called by:
-    // registerPlugin<Material::Button>(QStringLiteral("button"))
-    // It is needed to create buttons for applet-window-buttons.
+    /**
+     * @brief Plugin constructor used when loading buttons dynamically (e.g., applet-window-buttons).
+     * @param parent Parent object.
+     * @param args Plugin initialization arguments.
+     */
     explicit Button(QObject *parent, const QVariantList &args);
 
-
+    /**
+     * @brief Paints the button background, hover effects, and icon.
+     * @param painter QPainter instance.
+     * @param repaintRegion Repaint bounding box.
+     */
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
+
+    /**
+     * @brief Handles mouse release events, triggering action or hold timer cancellation.
+     * @param event Mouse event.
+     */
     void mouseReleaseEvent(QMouseEvent *event) override;
 
+    /**
+     * @brief Forces the button to unpressed state and cancels any active hover/hold state.
+     */
     void forceUnpress();
 
-    //virtual qreal iconLineWidth(const qreal size) const;
+    /**
+     * @brief Configures painter pen width adjusted for scale and optional pixel snapping.
+     * @param painter Target QPainter.
+     * @param scale Pen scale factor.
+     * @param snapped True if pen width should be snapped to integer physical pixels.
+     */
     void setPenWidth(QPainter *painter, const qreal scale, bool snapped = false);
 
+    /**
+     * @brief Checks if hover animations are enabled.
+     * @return True if animations are enabled.
+     */
     bool animationEnabled() const;
+
+    /**
+     * @brief Enables or disables hover animations.
+     * @param value True to enable animations.
+     */
     void setAnimationEnabled(bool value);
 
+    /**
+     * @brief Returns hover animation duration in milliseconds.
+     * @return Animation duration in ms.
+     */
     int animationDuration() const;
+
+    /**
+     * @brief Sets hover animation duration in milliseconds.
+     * @param duration Duration in ms.
+     */
     void setAnimationDuration(int duration);
 
+    /**
+     * @brief Returns button opacity.
+     * @return Opacity value between 0.0 and 1.0.
+     */
     qreal opacity() const;
+
+    /**
+     * @brief Sets button opacity.
+     * @param value Opacity value between 0.0 and 1.0.
+     */
     void setOpacity(qreal value);
 
+    /**
+     * @brief Sets horizontal padding for the button content.
+     * @param value Horizontal padding in local units.
+     */
     void setHorzPadding(qreal value);
-   // void setVertPadding(int value);
 
+    /**
+     * @brief Sets whether this button is the leftmost button in its group.
+     * @param isLeftmost True if leftmost button.
+     */
     void setIsLeftmost(bool isLeftmost);
+
+    /**
+     * @brief Sets whether this button is the rightmost button in its group.
+     * @param isRightmost True if rightmost button.
+     */
     void setIsRightmost(bool isRightmost);
-    
+
+    /**
+     * @brief Returns active pen scale factor considering button dimensions and DPR.
+     * @return Pen scale factor.
+     */
     qreal penScale() const;
 
 private:

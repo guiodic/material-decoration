@@ -29,42 +29,96 @@ namespace Material
 using InternalSettingsPtr = QSharedPointer<InternalSettings>;
 using InternalSettingsList = QList<InternalSettingsPtr>;
 
+/**
+ * @brief Specifies the window attribute targeted by an exception rule.
+ */
 enum class ExceptionType {
-    WindowTitle = 0,
-    WindowClass = 1,
+    WindowTitle = 0, ///< Target window title/caption string
+    WindowClass = 1, ///< Target window class/resource string
 };
 
+/**
+ * @brief Specifies pattern matching mode for an exception rule.
+ */
 enum class MatchingMode {
-    ExactMatch = 0,
-    RegularExpression = 1,
+    ExactMatch = 0,        ///< Case-insensitive exact component/string match
+    RegularExpression = 1, ///< Regular expression pattern match with ReDoS validation
 };
 
+/// @brief Maximum allowed character length for exception match pattern strings (256).
 constexpr int MaxExceptionPatternLength = 256;
+
+/// @brief Maximum allowed character length for evaluated window titles/classes (1024).
 constexpr int MaxExceptionValueLength = 1024;
 
+/**
+ * @brief Bitmask flags indicating which specific settings are overridden by an exception rule.
+ */
 enum ExceptionMask {
-    None = 0,
-    HideTitleBar = 1 << 0,
-    HideApplicationMenu = 1 << 1,
-    HamburgerMenu = 1 << 2,
-    HideShadow = 1 << 3,
-    SquareCorners = 1 << 4,
-    OutlineActive = 1 << 5,
+    None = 0,                      ///< No settings overridden
+    HideTitleBar = 1 << 0,         ///< Override hide title bar setting
+    HideApplicationMenu = 1 << 1,  ///< Override hide application menu setting
+    HamburgerMenu = 1 << 2,        ///< Override hamburger menu setting
+    HideShadow = 1 << 3,           ///< Override hide shadow setting
+    SquareCorners = 1 << 4,        ///< Override square corners setting
+    OutlineActive = 1 << 5,        ///< Override thin outline active setting
 };
 
+/**
+ * @brief Copies field values from source settings to destination settings.
+ * @param src Source settings instance.
+ * @param dst Destination settings instance.
+ */
 void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettingsPtr &dst);
+
+/**
+ * @brief Creates a deep copy clone of an InternalSettings instance.
+ * @param src Source settings instance.
+ * @return Deep copy InternalSettings instance.
+ */
 InternalSettingsPtr cloneInternalSettings(const InternalSettingsPtr &src);
+
+/**
+ * @brief Validates a regular expression pattern for length, syntax, and catastrophic backtracking (ReDoS).
+ * @param pattern Regular expression string to check.
+ * @param errorReason Optional output parameter receiving failure explanation if pattern is unsafe.
+ * @return True if the pattern is syntactically valid and safe from ReDoS vulnerabilities.
+ */
 bool isSafeRegularExpression(const QString &pattern, QString *errorReason = nullptr);
 
+/**
+ * @brief Class managing persistence (reading and writing) of window exception rules in KConfig.
+ */
 class ExceptionList
 {
 public:
+    /**
+     * @brief Default constructor.
+     */
     ExceptionList() = default;
 
+    /**
+     * @brief Reads all configured exception groups ("Windeco Exception N") from config.
+     * @param config KSharedConfig pointer.
+     */
     void readConfig(const KSharedConfig::Ptr &config);
+
+    /**
+     * @brief Writes all managed exception rules to config groups and cleans up deleted groups.
+     * @param config KSharedConfig pointer.
+     */
     void writeConfig(KSharedConfig::Ptr config);
 
+    /**
+     * @brief Returns list of active exception rule settings.
+     * @return Reference to internal exception list.
+     */
     const InternalSettingsList &exceptions() const { return m_exceptions; }
+
+    /**
+     * @brief Sets list of exception rule settings.
+     * @param exceptions List of exception settings to store.
+     */
     void setExceptions(const InternalSettingsList &exceptions) { m_exceptions = exceptions; }
 
 private:

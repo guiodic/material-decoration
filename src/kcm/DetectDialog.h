@@ -26,18 +26,43 @@ class QPushButton;
 namespace Material
 {
 
+/**
+ * @brief Interactive dialog for detecting target window properties (window class and title) via mouse selection.
+ *
+ * Prompts the user to click a target window on screen, querying KWin via DBus to extract its resource class and title.
+ */
 class DetectDialog : public QDialog
 {
     Q_OBJECT
 
 public:
+    /**
+     * @brief Constructs a DetectDialog instance.
+     * @param parent Optional parent widget.
+     */
     explicit DetectDialog(QWidget *parent = nullptr);
+
+    /**
+     * @brief Destructor.
+     */
     ~DetectDialog() override = default;
 
+    /**
+     * @brief Returns detected window class string.
+     * @return Window class string.
+     */
     QString windowClass() const { return m_windowClass; }
+
+    /**
+     * @brief Returns detected window title/caption string.
+     * @return Window caption string.
+     */
     QString caption() const { return m_caption; }
 
 private slots:
+    /**
+     * @brief Triggers window picker mode and handles DBus query response from KWin.
+     */
     void detectWindow();
 
 private:

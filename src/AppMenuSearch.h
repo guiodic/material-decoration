@@ -60,40 +60,45 @@ public:
      */
     static bool isQueryTooShort(const QString &text);
 
+    /**
+     * @brief Detailed state metadata for a matched action result.
+     */
     struct ActionInfo {
-        QString path;
-        QString label;
-        bool isEffectivelyEnabled = false;
-        bool isChecked = false;
-        bool isCheckable = false;
+        QString path;                 ///< Full displayable menu path (e.g., "File » Open » Recent")
+        QString label;                ///< Cleaned label text of the action
+        bool isEffectivelyEnabled = false; ///< True if action and all its ancestors are enabled
+        bool isChecked = false;       ///< Checked state of the action
+        bool isCheckable = false;     ///< Checkable state of the action
     };
 
+    /**
+     * @brief Represents an indexed searchable candidate collected from the menu hierarchy.
+     */
     struct SearchCandidate {
-        QPointer<QAction> action;
-        // Contains all parent menu actions, including those without a title/label.
-        // This is a strict invariant: even an untitled submenu gates whether its children
-        // are reachable, so its enabled state must propagate down to all descendants.
+        QPointer<QAction> action;     ///< Target menu action
+        /**
+         * @brief Ancestor menu actions from root to direct parent.
+         *
+         * Includes all parent menu actions, including untitled submenus.
+         * Invariant: Even untitled submenus gate descendant reachability, so enabled state propagates down.
+         */
         QList<QPointer<QAction>> ancestors;
-        // True if at least one ancestor in the whole parent chain (not just the immediate parent)
-        // has a non-empty title/label. Used to correctly identify top-level leaf actions.
-        bool hasNamedAncestor = false;
-        // Cached parent path strings constructed during candidate building.
-        // Invariant: these paths reflect the ancestor hierarchy and titles at collection time.
-        // Any change to ancestor action titles or menu structure must trigger invalidateCandidates()
-        // to force a recalculation of m_searchCandidates and its cached paths.
-        QString parentFullPath;
-        QString parentEvalPath;
-        // Pre-tokenized target tokens computed during candidate collection
-        QStringList itemTokens;
-        QStringList parentFullTokens;
-        QStringList parentEvalTokens;
+        bool hasNamedAncestor = false; ///< True if at least one ancestor has a non-empty label
+        QString parentFullPath;       ///< Cached full parent path string constructed during indexing
+        QString parentEvalPath;       ///< Cached evaluation path string (excluding top-level if needed)
+        QStringList itemTokens;       ///< Pre-tokenized word tokens for candidate label
+        QStringList parentFullTokens; ///< Pre-tokenized word tokens for full parent path
+        QStringList parentEvalTokens; ///< Pre-tokenized word tokens for evaluation path
     };
 
+    /**
+     * @brief Represents a matched search result entry with scoring details.
+     */
     struct SearchResult {
-        QPointer<QAction> action;
-        ActionInfo info;
-        qint64 iconCacheKey = 0;
-        int score = 0;
+        QPointer<QAction> action;     ///< Pointer to original target QAction
+        ActionInfo info;              ///< Action metadata snapshot
+        qint64 iconCacheKey = 0;      ///< Cache key for action icon
+        int score = 0;                 ///< Match relevance score (higher is better)
 
         bool operator==(const SearchResult &other) const {
             return action == other.action
@@ -106,11 +111,14 @@ public:
         }
     };
 
+    /**
+     * @brief Options controlling candidate filtering and search matching logic.
+     */
     struct FilterOptions {
-        bool ignoreTopLevel = false;
-        bool ignoreSubMenus = false;
-        bool showDisabledActions = false;
-        bool fuzzyMatching = false;
+        bool ignoreTopLevel = false;      ///< Skip matching top-level menu categories
+        bool ignoreSubMenus = false;      ///< Restrict search strictly to leaf action labels
+        bool showDisabledActions = false; ///< Include disabled actions in search results
+        bool fuzzyMatching = false;       ///< Enable fuzzy word/token matching algorithm
 
         bool operator==(const FilterOptions &other) const = default;
     };

@@ -38,32 +38,88 @@ namespace Material
 
 class KDBusMenuImporter;
 
+/**
+ * @brief Data model wrapping DBus menu importing (`KDBusMenuImporter`) for window application menus.
+ *
+ * AppMenuModel connects to the DBus menu exporter service published by target application windows,
+ * deserializes top-level menus and submenus, manages background deep caching queues to pre-fetch menu
+ * hierarchies for fast search indexing, and emits notifications when menus are updated or ready.
+ */
 class AppMenuModel : public QObject
 {
     Q_OBJECT
 
 public:
+    /**
+     * @brief Constructs an AppMenuModel instance.
+     * @param parent Optional parent object.
+     */
     explicit AppMenuModel(QObject *parent = nullptr);
+
+    /**
+     * @brief Destructor.
+     */
     ~AppMenuModel() override;
 
 public:
+    /**
+     * @brief Sets target DBus service name and menu object path to import application menus from.
+     * @param serviceName DBus service name exporting the menu (e.g., ":1.123").
+     * @param menuObjectPath DBus object path (e.g., "/MenuBar").
+     */
     void updateApplicationMenu(const QString &serviceName, const QString &menuObjectPath);
 
+    /**
+     * @brief Returns the root QMenu populated from DBus.
+     * @return Pointer to root QMenu, or nullptr if unavailable.
+     */
     QMenu *menu() const;
 
 private:
     void update();
 
 signals:
+    /**
+     * @brief Emitted when menu availability status changes.
+     */
     void menuAvailableChanged();
+
+    /**
+     * @brief Emitted when the menu structure needs to be refreshed.
+     */
     void modelNeedsUpdate();
+
+    /**
+     * @brief Emitted when the model is reset due to service disconnect or menu reload.
+     */
     void modelReset();
+
+    /**
+     * @brief Emitted when menu structure loading/caching completes and search can process candidates.
+     */
     void menuReadyForSearch();
+
+    /**
+     * @brief Emitted when a specific submenu finished loading over DBus.
+     * @param menu Pointer to loaded QMenu.
+     */
     void subMenuReady(QMenu *menu);
 
 public:
+    /**
+     * @brief Requests loading of a specific submenu over DBus if not yet populated.
+     * @param menu Target submenu to load.
+     */
     void loadSubMenu(QMenu *menu);
+
+    /**
+     * @brief Halts active deep caching queue processing and resets background timers.
+     */
     void stopCaching();
+
+    /**
+     * @brief Initiates background deep caching of all unpopulated submenus across the menu tree.
+     */
     void startDeepCaching();
 
 private Q_SLOTS:

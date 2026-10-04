@@ -23,21 +23,27 @@
 
 namespace Material
 {
-      
+
+    /// @brief Logging category for the Material decoration plugin ("kdecoration.material").
     static const QLoggingCategory category("kdecoration.material");
+
+    /// @brief Configuration filename for Material theme settings ("kdecoration_materialrc").
     static const QString s_configFilename = QStringLiteral("kdecoration_materialrc");
+
+    /// @brief Scale adjustment factor for top corner rounding.
     static constexpr qreal cornerRadiusAdjustment = 0.7;
-    
-    
-    //--- Standard pen widths
+
+
+    /**
+     * @brief Standard pen stroke width constants for rendering decoration icons.
+     */
     namespace PenWidth
     {
-        /* https://github.com/KDE/breeze/blob/master/kstyle/breeze.h#L164
-         * Using 1 instead of slightly more than 1 causes symbols drawn with
-         * pen strokes to look skewed. The exact amount added does not matter
-         * as long as it isn't too visible.
+        /**
+         * @brief Standard pen stroke width for vector symbols (1.01).
+         *
+         * Using 1.01 instead of 1.0 prevents stroke skewing on certain display scaling factors.
          */
-        // The standard pen stroke width for symbols.
         static constexpr qreal Symbol = 1.01;
     }
 

@@ -44,12 +44,27 @@ class MenuOverflowButton;
 class SearchButton;
 class AppMenuSearch;
 
+/**
+ * @brief Button group managing top-level application menu buttons, overflow, search, and hamburger menu modes.
+ *
+ * AppMenuButtonGroup populates top-level menu category buttons (File, Edit, View, etc.), dynamically calculates
+ * available space to overflow hidden buttons into an overflow menu, provides integrated menu search UI, and handles
+ * hover animations and keyboard menu navigation.
+ */
 class AppMenuButtonGroup : public KDecoration3::DecorationButtonGroup
 {
     Q_OBJECT
 
 public:
+    /**
+     * @brief Constructs an AppMenuButtonGroup instance for the parent decoration.
+     * @param decoration Pointer to parent Decoration.
+     */
     AppMenuButtonGroup(Decoration *decoration);
+
+    /**
+     * @brief Destructor.
+     */
     ~AppMenuButtonGroup() override;
 
     Q_PROPERTY(int currentIndex READ currentIndex WRITE setCurrentIndex NOTIFY currentIndexChanged)
@@ -61,33 +76,111 @@ public:
     Q_PROPERTY(int animationDuration READ animationDuration WRITE setAnimationDuration NOTIFY animationDurationChanged)
     Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity NOTIFY opacityChanged)
 
-
+    /**
+     * @brief Checks if the button group area is currently hovered by the mouse.
+     * @return True if hovered.
+     */
     bool hovered() const;
+
+    /**
+     * @brief Sets the hovered state of the button group.
+     * @param value True if hovered.
+     */
     void setHovered(bool value);
 
+    /**
+     * @brief Checks if application menu buttons are set to always remain visible.
+     * @return True if always visible.
+     */
     bool alwaysShow() const;
+
+    /**
+     * @brief Sets whether application menu buttons should always remain visible.
+     * @param value True to always show menu buttons.
+     */
     void setAlwaysShow(bool value);
 
+    /**
+     * @brief Checks if hover/showing animations are enabled.
+     * @return True if animations are enabled.
+     */
     bool animationEnabled() const;
+
+    /**
+     * @brief Enables or disables hover/showing animations.
+     * @param value True to enable animations.
+     */
     void setAnimationEnabled(bool value);
 
+    /**
+     * @brief Returns hover animation duration in milliseconds.
+     * @return Duration in ms.
+     */
     int animationDuration() const;
+
+    /**
+     * @brief Sets hover animation duration in milliseconds.
+     * @param duration Duration in ms.
+     */
     void setAnimationDuration(int duration);
 
+    /**
+     * @brief Returns current opacity of the button group.
+     * @return Opacity value between 0.0 and 1.0.
+     */
     qreal opacity() const;
+
+    /**
+     * @brief Sets opacity of the button group.
+     * @param value Opacity value between 0.0 and 1.0.
+     */
     void setOpacity(qreal value);
 
+    /**
+     * @brief Calculates total visible width occupied by active text, overflow, and search buttons.
+     * @return Total visible width in local units.
+     */
     qreal visibleWidth() const;
 
+    /**
+     * @brief Checks if the DBus application menu model has completed its initial load.
+     * @return True if menu model was loaded at least once.
+     */
     bool menuLoadedOnce() const;
+
+    /**
+     * @brief Checks if a menu popup activation is pending DBus menu model completion.
+     * @return True if waiting for menu load.
+     */
     bool isWaitingForMenu() const;
 
+    /**
+     * @brief Processes mouse hover move events across menu buttons.
+     * @param pos Hover position in local coordinates.
+     */
     void handleHoverMove(const QPointF &pos);
 
 public:
+    /**
+     * @brief Toggles hamburger menu mode versus full horizontal menu bar mode.
+     * @param value True for hamburger menu mode.
+     */
     void setHamburgerMenu(bool value);
+
+    /**
+     * @brief Re-queries the DBus application menu model and updates top-level menu buttons.
+     */
     void updateAppMenuModel();
+
+    /**
+     * @brief Calculates which text buttons fit within availableRect and hides overflowing items.
+     * @param availableRect Bounding rectangle available for menu buttons.
+     */
     void updateOverflow(QRectF availableRect);
+
+    /**
+     * @brief Recalculates showing/hidden visibility state based on hover, configuration, and active menu status.
+     */
     void updateShowing();
 
 private:

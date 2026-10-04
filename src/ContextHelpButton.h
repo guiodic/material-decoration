@@ -34,16 +34,32 @@
 namespace Material
 {
 
+/**
+ * @brief Helper class for initializing and rendering context help ('?') buttons.
+ */
 class ContextHelpButton
 {
 
 public:
+    /**
+     * @brief Connects context help availability signals and updates button visibility.
+     * @param button Target decoration button.
+     * @param decoratedClient Client window interface.
+     */
     static void init(Button *button, KDecoration3::DecoratedWindow *decoratedClient) {
         QObject::connect(decoratedClient, &KDecoration3::DecoratedWindow::providesContextHelpChanged,
                 button, &Button::setVisible);
 
         button->setVisible(decoratedClient->providesContextHelp());
     }
+
+    /**
+     * @brief Paints the question mark ('?') context help symbol.
+     * @param button Target decoration button.
+     * @param painter QPainter instance.
+     * @param iconRect Bounding box for icon rendering.
+     * @param snapper PixelSnapper helper.
+     */
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
         Q_UNUSED(button)

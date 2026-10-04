@@ -30,16 +30,32 @@
 namespace Material
 {
 
+/**
+ * @brief Helper class for initializing and rendering window shade / unshade buttons.
+ */
 class ShadeButton
 {
 
 public:
+    /**
+     * @brief Connects client shadeable state signals and updates button visibility.
+     * @param button Target decoration button.
+     * @param decoratedClient Client window interface.
+     */
     static void init(Button *button, KDecoration3::DecoratedWindow *decoratedClient) {
         QObject::connect(decoratedClient, &KDecoration3::DecoratedWindow::shadeableChanged,
                 button, &Button::setVisible);
 
         button->setVisible(decoratedClient->isShadeable());
     }
+
+    /**
+     * @brief Paints shade / unshade window roll-up chevron icon.
+     * @param button Target decoration button.
+     * @param painter QPainter instance.
+     * @param iconRect Bounding box for icon rendering.
+     * @param snapper PixelSnapper helper.
+     */
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
 

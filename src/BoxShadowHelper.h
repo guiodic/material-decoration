@@ -57,25 +57,27 @@ public:
     QImage render() const;
 
     /**
-     * Calculate the minimum size of the box.
+     * @brief Calculates the minimum size of the box required for full shadow strength.
      *
-     * This helper computes the minimum size of the box so the shadow behind it has
-     * full its strength.
+     * This helper computes the minimum box dimensions so that the shadow behind it achieves
+     * its full strength without clipping or gradient distortion.
      *
      * @param radius The blur radius of the shadow.
-     **/
+     * @return Minimum box size required.
+     */
     static QSize calculateMinimumBoxSize(int radius);
 
     /**
-     * Calculate the minimum size of the shadow texture.
+     * @brief Calculates the minimum size of the shadow texture.
      *
-     * This helper computes the minimum size of the resulting texture so the shadow
-     * is not clipped.
+     * This helper computes the minimum size of the resulting texture canvas so that
+     * the shadow with the specified offset and blur radius is fully rendered without clipping.
      *
      * @param boxSize The size of the box.
      * @param radius The blur radius.
      * @param offset The offset of the shadow.
-     **/
+     * @return Minimum texture canvas size.
+     */
     static QSizeF calculateMinimumShadowTextureSize(const QSizeF &boxSize, double radius, const QPointF &offset);
 
 private:

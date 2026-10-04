@@ -35,18 +35,32 @@ namespace Material
 {
 
 #if HAVE_EXCLUDE_FROM_CAPTURE
+/**
+ * @brief Helper class for initializing and rendering the "Exclude From Capture" privacy toggle button.
+ */
 class ExcludeFromCaptureButton
 {
 
 public:
+    /**
+     * @brief Initializes button state connections for screen capture exclusion.
+     * @param button Target decoration button.
+     * @param decoratedClient Client window interface.
+     */
     static void init(Button *button, KDecoration3::DecoratedWindow *decoratedClient) {
         Q_UNUSED(button)
         Q_UNUSED(decoratedClient)
         // KDecoration3::DecorationButton already handles the state and visibility 
         // connections for ExcludeFromCapture.
     }
-    
-    //--- copied from Breeze for now. Copyright goes to KDE Developers
+
+    /**
+     * @brief Paints the spy hat and glasses privacy icon for exclude-from-capture mode.
+     * @param button Target decoration button.
+     * @param painter QPainter instance.
+     * @param iconRect Bounding box for icon rendering.
+     * @param snapper PixelSnapper helper.
+     */
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
         const auto *deco = qobject_cast<Decoration *>(button->decoration());
