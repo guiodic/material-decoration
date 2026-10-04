@@ -41,8 +41,8 @@ enum class ExceptionType {
  * @brief Specifies pattern matching mode for an exception rule.
  */
 enum class MatchingMode {
-    ExactMatch = 0,        ///< Case-insensitive exact component/string match
-    RegularExpression = 1, ///< Regular expression pattern match with ReDoS validation
+    ExactMatch = 0,        ///< Case-insensitive exact component/string matching mode
+    RegularExpression = 1, ///< Regular-expression matching mode
 };
 
 /// @brief Maximum allowed character length for exception match pattern strings (256).
