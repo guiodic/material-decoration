@@ -13,13 +13,13 @@
 class QKeySequence;
 
 /**
- * @brief Represents a keyboard shortcut sequence transferred over DBus as a list of key modifier strings.
+ * @brief Represents a keyboard shortcut sequence transferred over DBus as a list of key and modifier strings.
  */
 class DBusMenuShortcut : public QList<QStringList>
 {
 public:
     /**
-     * @brief Converts DBus key modifier string representation to Qt QKeySequence.
+     * @brief Converts DBus key and modifier string representation to Qt QKeySequence.
      * @return Converted QKeySequence.
      */
     QKeySequence toKeySequence() const;
