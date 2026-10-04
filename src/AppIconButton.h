@@ -35,10 +35,18 @@
 namespace Material
 {
 
+/**
+ * @brief Helper class for initializing and rendering window application icons.
+ */
 class AppIconButton
 {
 
 public:
+    /**
+     * @brief Connects client icon change signals to trigger button repaints.
+     * @param button Target decoration button.
+     * @param decoratedClient Client window interface.
+     */
     static void init(Button *button, KDecoration3::DecoratedWindow *decoratedClient) {
         QObject::connect(decoratedClient, &KDecoration3::DecoratedWindow::iconChanged,
             button, [button] {
@@ -46,7 +54,14 @@ public:
             }
         );
     }
-    
+
+    /**
+     * @brief Paints the window application icon centered within the icon rectangle.
+     * @param button Target decoration button.
+     * @param painter QPainter instance.
+     * @param iconRect Bounding box for icon rendering.
+     * @param snapper PixelSnapper helper.
+     */
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(snapper)
         //const QRectF contentRect = button->contentArea();

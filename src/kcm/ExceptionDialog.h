@@ -29,21 +29,56 @@ class QPushButton;
 namespace Material
 {
 
+/**
+ * @brief Editor dialog for creating or editing individual window exception rules.
+ *
+ * Allows configuring rule matching criteria (window class or title, exact match or regex),
+ * window detection via mouse click, and setting individual override flags (hide title bar,
+ * hide app menu, hamburger menu, hide shadow, square corners, active outline).
+ */
 class ExceptionDialog : public QDialog
 {
     Q_OBJECT
 
 public:
+    /**
+     * @brief Constructs an ExceptionDialog instance.
+     * @param parent Optional parent widget.
+     */
     explicit ExceptionDialog(QWidget *parent = nullptr);
+
+    /**
+     * @brief Destructor.
+     */
     ~ExceptionDialog() override = default;
 
+    /**
+     * @brief Populates dialog controls from an existing exception settings object.
+     * @param exception Source exception settings.
+     */
     void setException(const InternalSettingsPtr &exception);
+
+    /**
+     * @brief Writes dialog control state into an exception settings object.
+     * @param exception Target exception settings receiving changes.
+     */
     void applyToException(InternalSettingsPtr &exception);
 
+    /**
+     * @brief Validates input pattern and regular expression syntax before accepting dialog.
+     */
     void accept() override;
 
 private slots:
+    /**
+     * @brief Opens DetectDialog to detect window class or title.
+     */
     void onDetectClicked();
+
+    /**
+     * @brief Handles toggling 'Hide title bar' checkbox to enable/disable title bar specific controls.
+     * @param checked True if 'Hide title bar' is checked.
+     */
     void onHideTitleBarToggled(bool checked);
 
 private:

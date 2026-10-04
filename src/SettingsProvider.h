@@ -30,28 +30,73 @@ namespace Material
 
 class Decoration;
 
+/**
+ * @brief Singleton provider managing default decoration settings, window exception rules, and caching.
+ *
+ * SettingsProvider loads default configuration settings from `kdecoration_materialrc`, parses and validates
+ * window exception rules (`ExceptionList`), pre-compiles regular-expression patterns after heuristic checks for ReDoS-prone quantifiers and stores exact-match patterns,
+ * merges exception overrides onto default settings, and caches evaluation results per window class/caption.
+ */
 class SettingsProvider : public QObject
 {
     Q_OBJECT
 
 public:
+    /**
+     * @brief Returns the singleton instance of SettingsProvider.
+     * @return Pointer to global SettingsProvider instance.
+     */
     static SettingsProvider *self();
 
+    /**
+     * @brief Constructor.
+     */
     SettingsProvider();
+
+    /**
+     * @brief Destructor.
+     */
     ~SettingsProvider() override = default;
 
+    /**
+     * @brief Resolves and returns merged settings for a given Decoration instance.
+     * @param decoration Target Decoration instance.
+     * @return Shared pointer to resolved InternalSettings.
+     */
     InternalSettingsPtr internalSettings(Decoration *decoration);
+
+    /**
+     * @brief Resolves and returns merged settings for specified window class and caption.
+     * @param windowClass Window class string (e.g. "org.kde.kate").
+     * @param caption Optional window title/caption string.
+     * @return Shared pointer to resolved InternalSettings.
+     */
     InternalSettingsPtr internalSettings(const QString &windowClass, const QString &caption = QString());
 
+    /**
+     * @brief Creates a merged InternalSettings object applying exception mask overrides over default settings.
+     * @param defaultSettings Baseline default settings.
+     * @param exceptionSettings Exception rule settings containing override flags.
+     * @return Merged InternalSettings instance.
+     */
     InternalSettingsPtr createMergedSettings(const InternalSettingsPtr &defaultSettings,
                                               const InternalSettingsPtr &exceptionSettings);
 
+    /**
+     * @brief Clears the internal evaluation result cache.
+     */
     void clearCache();
 
 public slots:
+    /**
+     * @brief Reloads configuration files from disk, re-compiles exception rules, and emits configChanged().
+     */
     void reconfigure();
 
 signals:
+    /**
+     * @brief Emitted when configuration settings or exception rules are modified.
+     */
     void configChanged();
 
 private:

@@ -29,17 +29,32 @@
 namespace Material
 {
 
+/**
+ * @brief Helper class for initializing and rendering window maximize and restore buttons.
+ */
 class MaximizeButton
 {
 
 public:
+    /**
+     * @brief Connects client maximizeable signals and sets initial button visibility.
+     * @param button Target decoration button.
+     * @param decoratedClient Client window interface.
+     */
     static void init(Button *button, KDecoration3::DecoratedWindow *decoratedClient) {
         QObject::connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizeableChanged,
                 button, &Button::setVisible);
 
         button->setVisible(decoratedClient->isMaximizeable());
     }
-    
+
+    /**
+     * @brief Paints single rectangle (maximize) or overlapping rectangles (restore) icon.
+     * @param button Target decoration button.
+     * @param painter QPainter instance.
+     * @param iconRect Bounding box for icon rendering.
+     * @param snapper PixelSnapper helper.
+     */
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
         

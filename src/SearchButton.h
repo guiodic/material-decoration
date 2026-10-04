@@ -24,14 +24,33 @@ namespace Material
 
 class Decoration;
 
+/**
+ * @brief Search button displayed alongside application menu buttons to trigger menu action search UI.
+ */
 class SearchButton : public AppMenuButton
 {
     Q_OBJECT
 public:
+    /**
+     * @brief Constructs a SearchButton instance.
+     * @param decoration Pointer to parent Decoration.
+     * @param buttonIndex Index in AppMenuButtonGroup.
+     * @param parent Optional parent object.
+     */
     explicit SearchButton(Decoration *decoration, const int buttonIndex, QObject *parent = nullptr);
+
+    /**
+     * @brief Destructor.
+     */
     ~SearchButton() override;
 
 protected:
+    /**
+     * @brief Paints the magnifying glass search icon.
+     * @param painter QPainter instance.
+     * @param iconRect Drawing bounding box.
+     * @param snapper PixelSnapper helper.
+     */
     void paintIcon(QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) override;
 };
 

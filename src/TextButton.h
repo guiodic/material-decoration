@@ -29,29 +29,77 @@ namespace Material
 
 class Decoration;
 
+/**
+ * @brief Text button representing a top-level application menu category (File, Edit, View, Help, etc.).
+ */
 class TextButton : public AppMenuButton
 {
     Q_OBJECT
 
 public:
+    /**
+     * @brief Constructs a TextButton instance.
+     * @param decoration Pointer to parent Decoration.
+     * @param buttonIndex Index of the button in AppMenuButtonGroup.
+     * @param parent Optional parent object.
+     */
     TextButton(Decoration *decoration, const int buttonIndex, QObject *parent = nullptr);
+
+    /**
+     * @brief Destructor.
+     */
     ~TextButton() override;
 
     Q_PROPERTY(QAction* action READ action WRITE setAction NOTIFY actionChanged)
     Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
 
+    /**
+     * @brief Overridden paintIcon to render category text label using current font and colors.
+     * @param painter QPainter instance.
+     * @param iconRect Drawing area for label.
+     * @param snapper PixelSnapper helper.
+     */
     void paintIcon(QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) override;
 
+    /**
+     * @brief Returns the top-level menu QAction associated with this category button.
+     * @return Pointer to QAction.
+     */
     QAction* action() const;
+
+    /**
+     * @brief Sets the top-level menu QAction associated with this category button.
+     * @param set Pointer to QAction.
+     */
     void setAction(QAction *set);
 
+    /**
+     * @brief Returns button display text.
+     * @return Cleaned display label string.
+     */
     QString text() const;
+
+    /**
+     * @brief Sets button display text and updates button size.
+     * @param set Label text.
+     */
     void setText(const QString &set);
 
+    /**
+     * @brief Adjusts button height and recalculates layout geometry.
+     * @param buttonHeight New button height in local units.
+     */
     void setHeight(qreal buttonHeight) override;
 
 signals:
+    /**
+     * @brief Emitted when action property changes.
+     */
     void actionChanged();
+
+    /**
+     * @brief Emitted when text property changes.
+     */
     void textChanged();
 
 private:

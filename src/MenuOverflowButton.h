@@ -26,14 +26,33 @@ namespace Material
 
 class Decoration;
 
+/**
+ * @brief Overflow chevron button displayed when top-level menu categories exceed available title bar width.
+ */
 class MenuOverflowButton : public AppMenuButton
 {
     Q_OBJECT
 
 public:
+    /**
+     * @brief Constructs a MenuOverflowButton instance.
+     * @param decoration Pointer to parent Decoration.
+     * @param buttonIndex Index in AppMenuButtonGroup.
+     * @param parent Optional parent object.
+     */
     MenuOverflowButton(Decoration *decoration, const int buttonIndex, QObject *parent = nullptr);
+
+    /**
+     * @brief Destructor.
+     */
     ~MenuOverflowButton() override;
 
+    /**
+     * @brief Paints the right chevron icon representing menu overflow.
+     * @param painter QPainter instance.
+     * @param iconRect Drawing bounding box.
+     * @param snapper PixelSnapper helper.
+     */
     void paintIcon(QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) override;
 };
 

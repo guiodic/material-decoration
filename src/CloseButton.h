@@ -29,16 +29,32 @@
 namespace Material
 {
 
+/**
+ * @brief Helper class for initializing and rendering window close ('X') buttons.
+ */
 class CloseButton
 {
 
 public:
+    /**
+     * @brief Connects client closeable state signals and sets initial button visibility.
+     * @param button Target decoration button.
+     * @param decoratedClient Client window interface.
+     */
     static void init(Button *button, KDecoration3::DecoratedWindow *decoratedClient) {
         QObject::connect(decoratedClient, &KDecoration3::DecoratedWindow::closeableChanged,
                 button, &Button::setVisible);
 
         button->setVisible(decoratedClient->isCloseable());
     }
+
+    /**
+     * @brief Paints the close button 'X' icon using crossed line strokes.
+     * @param button Target decoration button.
+     * @param painter QPainter instance.
+     * @param iconRect Bounding box for icon rendering.
+     * @param snapper PixelSnapper helper.
+     */
     static void paintIcon(Button *button, QPainter *painter, const QRectF &iconRect, const PixelSnapper &snapper) {
         Q_UNUSED(iconRect)
         Q_UNUSED(button)

@@ -48,21 +48,53 @@ class Button;
 class TextButton;
 class MenuOverflowButton;
 
+/**
+ * @brief Main KWin window decoration plugin implementation for Material theme.
+ *
+ * Decoration implements the KDecoration3::Decoration interface, rendering window title bars,
+ * borders, shadows, rounded corners, and integrated application menus (Global Menu).
+ */
 class Decoration : public KDecoration3::Decoration
 {
     Q_OBJECT
 
 public:
+    /**
+     * @brief Constructs a Decoration instance.
+     * @param parent Optional parent object.
+     * @param args Optional initialization arguments passed by KDecoration plugin loader.
+     */
     Decoration(QObject *parent = nullptr, const QVariantList &args = QVariantList());
+
+    /**
+     * @brief Destructor.
+     */
     ~Decoration() override;
 
+    /**
+     * @brief Paints the window decoration frame, title bar, caption, and controls.
+     * @param painter The QPainter instance to render onto.
+     * @param repaintRegion Region in local decoration coordinates needing repainting.
+     */
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
 
 public slots:
+    /**
+     * @brief Initializes decoration settings, button groups, and event connections.
+     * @return True if initialization succeeded.
+     */
     bool init() override;
+
+    /**
+     * @brief Reloads decoration configuration settings and updates paths, shadows, and layout.
+     */
     void reconfigure();
 
 private slots:
+    /**
+     * @brief Slot invoked when tablet mode changes to adjust button sizing and spacing.
+     * @param mode True if tablet mode is active.
+     */
     void onTabletModeChanged(bool mode);
 
 protected:
