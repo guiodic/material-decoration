@@ -51,12 +51,12 @@ public:
 
 Q_SIGNALS:
     /**
-     * @brief Emitted when Left arrow key is pressed at top-level boundary.
+     * @brief Emitted when logical navigation Left (RTL: Right) arrow key is pressed at top-level boundary.
      */
     void hitLeft();
 
     /**
-     * @brief Emitted when Right arrow key is pressed at top-level boundary.
+     * @brief Emitted when logical navigation Right (RTL: Left) arrow key is pressed at top-level boundary.
      */
     void hitRight();
 

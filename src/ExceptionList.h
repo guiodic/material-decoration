@@ -79,10 +79,10 @@ void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettings
 InternalSettingsPtr cloneInternalSettings(const InternalSettingsPtr &src);
 
 /**
- * @brief Validates a regular expression pattern for length, syntax, and catastrophic backtracking (ReDoS).
+ * @brief Validates a regular expression pattern for length, syntax, and heuristic ReDoS checks.
  * @param pattern Regular expression string to check.
  * @param errorReason Optional output parameter receiving failure explanation if pattern is unsafe.
- * @return True if the pattern is syntactically valid and safe from ReDoS vulnerabilities.
+ * @return True if the pattern is syntactically valid and passes the heuristic (length and quantifier) ReDoS checks.
  */
 bool isSafeRegularExpression(const QString &pattern, QString *errorReason = nullptr);
 
@@ -110,7 +110,7 @@ public:
     void writeConfig(KSharedConfig::Ptr config);
 
     /**
-     * @brief Returns list of active exception rule settings.
+     * @brief Returns all exception rule settings, including disabled rules.
      * @return Reference to internal exception list.
      */
     const InternalSettingsList &exceptions() const { return m_exceptions; }

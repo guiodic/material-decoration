@@ -34,7 +34,7 @@ class Decoration;
  * @brief Singleton provider managing default decoration settings, window exception rules, and caching.
  *
  * SettingsProvider loads default configuration settings from `kdecoration_materialrc`, parses and validates
- * window exception rules (`ExceptionList`), pre-compiles rule match patterns (exact or regex with ReDoS protection),
+ * window exception rules (`ExceptionList`), pre-compiles rule match patterns (exact or regex with heuristic checks for ReDoS-prone quantifiers),
  * merges exception overrides onto default settings, and caches evaluation results per window class/caption.
  */
 class SettingsProvider : public QObject
