@@ -428,7 +428,13 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
             ensurePathsComputed();
             const QString itemText = getActionText(action);
             const QStringList itemTokens = tokenizeText(itemText);
-            m_searchCandidates.append({action, ancestors, childHasNamedAncestor, parentFullPath, parentEvalPath, itemTokens, parentFullTokens, parentEvalTokens});
+
+            QString fullPath = parentFullPath.isEmpty() ? itemText : parentFullPath % QStringLiteral(" » ") % itemText;
+            QString evalPath = parentEvalPath.isEmpty() ? itemText : parentEvalPath % QStringLiteral(" » ") % itemText;
+            QStringList fullTokens = parentFullTokens + itemTokens;
+            QStringList evalTokens = parentEvalTokens + itemTokens;
+
+            m_searchCandidates.append({action, ancestors, childHasNamedAncestor, std::move(fullPath), std::move(evalPath), itemTokens, std::move(fullTokens), std::move(evalTokens)});
         }
     }
 
@@ -776,23 +782,6 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     return std::max(1, maxTotalScore);
 }
 
-QString AppMenuSearch::buildFullPath(const SearchCandidate &candidate, const QString &itemText) const
-{
-    if (candidate.parentFullPath.isEmpty()) {
-        return itemText;
-    }
-    return candidate.parentFullPath % QStringLiteral(" » ") % itemText;
-}
-
-QString AppMenuSearch::buildEvalPath(const SearchCandidate &candidate, const QString &itemText, bool ignoreTopLevel) const
-{
-    const QString &prefix = ignoreTopLevel ? candidate.parentEvalPath : candidate.parentFullPath;
-    if (prefix.isEmpty()) {
-        return itemText;
-    }
-    return prefix % QStringLiteral(" » ") % itemText;
-}
-
 QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, const FilterOptions &options, const QString &query) const
 {
     QList<SearchResult> results;
@@ -856,8 +845,8 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
                 const int itemScore = calculateFuzzyScore(query, queryTokens, itemText, candidate.itemTokens);
                 const int itemScoreWithBonus = (itemScore > 0) ? (itemScore + 500) : 0;
 
-                const QString evalPath = buildEvalPath(candidate, itemText, ignoreTopLevel);
-                const QStringList evalTokens = (ignoreTopLevel ? candidate.parentEvalTokens : candidate.parentFullTokens) + candidate.itemTokens;
+                const QString &evalPath = ignoreTopLevel ? candidate.evalPath : candidate.fullPath;
+                const QStringList &evalTokens = ignoreTopLevel ? candidate.evalTokens : candidate.fullTokens;
                 const int pathScore = calculateFuzzyScore(query, queryTokens, evalPath, evalTokens);
 
                 candidateScore = std::max(itemScoreWithBonus, pathScore);
@@ -888,7 +877,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         info.isEffectivelyEnabled = isEffectivelyEnabled;
         info.isChecked = action->isChecked();
         info.isCheckable = action->isCheckable();
-        info.path = buildFullPath(candidate, itemText);
+        info.path = candidate.fullPath;
 
         results.append({action, info, action->icon().cacheKey(), candidateScore});
     }
