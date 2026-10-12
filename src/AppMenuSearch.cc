@@ -646,8 +646,8 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     const int numT = targetTokens.size();
 
     // Pre-calculate pairwise match scores between each query token and target token
-    std::vector<std::vector<int>> pairwiseScores(numQ, std::vector<int>(numT, 0));
-    std::vector<int> maxPairwiseScore(numQ, 0);
+    std::vector<int> pairwiseScores(numQ * numT, 0);
+    std::array<int, MAX_QUERY_TOKENS> maxPairwiseScore{};
 
     for (int qIdx = 0; qIdx < numQ; ++qIdx) {
         const QString &qToken = queryTokens.at(qIdx);
@@ -684,7 +684,7 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
                 }
             }
 
-            pairwiseScores[qIdx][tIdx] = tokenScore;
+            pairwiseScores[qIdx * numT + tIdx] = tokenScore;
             bestScoreForQ = std::max(bestScoreForQ, tokenScore);
         }
 
@@ -708,7 +708,7 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     std::array<std::vector<TargetCandidate>, MAX_QUERY_TOKENS> sortedCandidates;
     for (int qIdx = 0; qIdx < numQ; ++qIdx) {
         for (int tIdx = 0; tIdx < numT; ++tIdx) {
-            int score = pairwiseScores[qIdx][tIdx];
+            int score = pairwiseScores[qIdx * numT + tIdx];
             if (score > 0) {
                 sortedCandidates[qIdx].push_back({tIdx, score});
             }
