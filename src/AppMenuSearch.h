@@ -77,16 +77,16 @@ public:
         // True if at least one ancestor in the whole parent chain (not just the immediate parent)
         // has a non-empty title/label. Used to correctly identify top-level leaf actions.
         bool hasNamedAncestor = false;
-        // Cached parent path strings constructed during candidate building.
+        // Cached path strings constructed during candidate building.
         // Invariant: these paths reflect the ancestor hierarchy and titles at collection time.
         // Any change to ancestor action titles or menu structure must trigger invalidateCandidates()
         // to force a recalculation of m_searchCandidates and its cached paths.
-        QString parentFullPath;
-        QString parentEvalPath;
+        QString fullPath;
+        QString evalPath;
         // Pre-tokenized target tokens computed during candidate collection
         QStringList itemTokens;
-        QStringList parentFullTokens;
-        QStringList parentEvalTokens;
+        QStringList fullTokens;
+        QStringList evalTokens;
     };
 
     struct SearchResult {
@@ -218,28 +218,6 @@ private:
      */
     bool matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, MatchContext &context) const;
 
-    /**
-     * @brief Builds the full hierarchical path for a candidate action.
-     *
-     * Constructs a displayable path string with all named ancestors separated by » symbols.
-     *
-     * @param candidate The search candidate
-     * @param itemText The text of the candidate action
-     * @return Full path string like "File » Open » Recent"
-     */
-    QString buildFullPath(const SearchCandidate &candidate, const QString &itemText) const;
-
-    /**
-     * @brief Builds the evaluation path for a candidate, optionally skipping the top-level ancestor.
-     *
-     * Similar to buildFullPath but can exclude the first named ancestor when ignoreTopLevel is true.
-     *
-     * @param candidate The search candidate
-     * @param itemText The text of the candidate action
-     * @param ignoreTopLevel If true, skip the first named ancestor in the path
-     * @return Evaluation path string for matching purposes
-     */
-    QString buildEvalPath(const SearchCandidate &candidate, const QString &itemText, bool ignoreTopLevel) const;
 
     /**
      * @brief Searches all candidates and returns matching results.
