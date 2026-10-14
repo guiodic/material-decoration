@@ -27,6 +27,7 @@ include (KDECompilerSettings NO_POLICY_SCOPE)
 find_package(Qt6 CONFIG REQUIRED COMPONENTS
     Widgets
     DBus
+    QmlIntegration
 )
 find_package(KF6 REQUIRED COMPONENTS I18n)
 

@@ -315,6 +315,9 @@ bool Decoration::init()
     
     connect(this, &KDecoration3::Decoration::bordersChanged, 
             this, &Decoration::updateTitleBar);
+    
+    connect(this, &KDecoration3::Decoration::bordersChanged, 
+            this, &Decoration::updateButtonsGeometryDelayed);
      
     updateColors();
     updateBordersCornersBlurShadow();
