@@ -6,6 +6,12 @@ else()
     set(HAVE_EXCLUDE_FROM_CAPTURE OFF)
 endif()
 
+if (KDecoration3_VERSION VERSION_GREATER_EQUAL "6.8.0")
+    set(HAVE_KDEC_STYLES ON)
+else()
+    set(HAVE_KDEC_STYLES OFF)
+endif()
+
 find_package (Qt6 REQUIRED COMPONENTS
     Core
     Gui

@@ -386,6 +386,12 @@ bool Decoration::hideTitleBar() const
         return false;
     } 
     
+#if HAVE_KDEC_STYLES
+    if (style() == KDecoration3::Style::Shadow) {
+        return true;
+    }   
+#endif    
+    
     return m_internalSettings ? m_internalSettings->hideTitleBar() : false;
 }
 
@@ -941,6 +947,13 @@ qreal Decoration::captionMinWidth() const
 }
 
 qreal Decoration::bottomBorderSize() const {
+    
+#if HAVE_KDEC_STYLES   
+    if (style() == KDecoration3::Style::Shadow) {
+        return 0;
+    }   
+#endif    
+    
     const qreal scale = window()->nextScale();
     const qreal pixel = KDecoration3::pixelSize(scale);
     const qreal baseSize = std::max(pixel, KDecoration3::snapToPixelGrid(settings()->smallSpacing(), scale));
