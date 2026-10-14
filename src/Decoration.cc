@@ -256,6 +256,13 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
     paintCaption(painter, repaintRegion);
 }
 
+/**
+ * Initializes settings, title-bar buttons, the application menu, and decoration appearance.
+ * Connects window and settings changes to decoration updates. Button geometry updates
+ * are deferred to the event loop during initialization and when borders change.
+ *
+ * @return true after setup; deferred button geometry updates may still be pending.
+ */
 bool Decoration::init()
 {    
     setInternalSettings(SettingsProvider::self()->internalSettings(this));
