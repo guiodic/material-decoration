@@ -6,13 +6,6 @@ else()
     set(HAVE_EXCLUDE_FROM_CAPTURE OFF)
 endif()
 
-find_package (Qt6 REQUIRED COMPONENTS
-    Core
-    Gui
-    QmlIntegration
-    # GuiTools
-)
-
 find_package (KF6 REQUIRED COMPONENTS
     Config
     ConfigWidgets

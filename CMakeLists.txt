@@ -25,6 +25,8 @@ include (KDECMakeSettings)
 include (KDECompilerSettings NO_POLICY_SCOPE)
 
 find_package(Qt6 CONFIG REQUIRED COMPONENTS
+    Core
+    Gui
     Widgets
     DBus
     QmlIntegration
