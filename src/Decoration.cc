@@ -382,15 +382,16 @@ bool Decoration::init()
 
 bool Decoration::hideTitleBar() const
 {
-    if (window()->isShaded()) {
-        return false;
-    } 
     
 #if HAVE_KDEC_STYLES
     if (style() == KDecoration3::Style::Shadow) {
         return true;
     }   
-#endif    
+#endif   
+    
+    if (window()->isShaded()) {
+        return false;
+    } 
     
     return m_internalSettings ? m_internalSettings->hideTitleBar() : false;
 }
@@ -1207,7 +1208,13 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
 
 bool Decoration::hasNoBorders() const
 {
-        return settings()->borderSize() == KDecoration3::BorderSize::None;
+#if HAVE_KDEC_STYLES
+    if (style() == KDecoration3::Style::Shadow) {
+        return true;
+    }   
+#endif      
+    
+    return settings()->borderSize() == KDecoration3::BorderSize::None;
 }
 
 QColor Decoration::borderColor() const
@@ -1448,13 +1455,18 @@ void Decoration::updateCornerRadiusAndOutline()
     setBorderRadius(radius);
     
     //Outline
+    setBorderOutline(KDecoration3::BorderOutline());
+#if HAVE_KDEC_STYLES
+    if (style() == KDecoration3::Style::Shadow) {
+        return;
+    }   
+#endif  
+
     if (m_internalSettings->outlineActive()) {
         QColor outlineColor = borderColor();
         outlineColor.setAlphaF(1.0);
         const qreal outlineThickness = std::max(KDecoration3::pixelSize(window()->nextScale()), KDecoration3::snapToPixelGrid(1, window()->nextScale()));
         setBorderOutline(KDecoration3::BorderOutline(outlineThickness, outlineColor, radius));
-    } else {
-        setBorderOutline(KDecoration3::BorderOutline());
     }
 }
 
