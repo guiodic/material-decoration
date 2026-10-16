@@ -47,7 +47,7 @@ SettingsProvider::SettingsProvider()
 
 void SettingsProvider::reconfigure()
 {
-    m_defaultSettings = InternalSettingsPtr(new InternalSettings());
+    m_defaultSettings = InternalSettingsPtr::create();
     m_defaultSettings->load();
 
     auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
@@ -104,7 +104,7 @@ void SettingsProvider::clearCache()
 InternalSettingsPtr SettingsProvider::createMergedSettings(const InternalSettingsPtr &defaultSettings,
                                                              const InternalSettingsPtr &exceptionSettings)
 {
-    InternalSettingsPtr merged(new InternalSettings());
+    InternalSettingsPtr merged = InternalSettingsPtr::create();
     copyInternalSettings(defaultSettings, merged);
 
     const int mask = exceptionSettings->mask();

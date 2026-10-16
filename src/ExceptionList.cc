@@ -78,7 +78,7 @@ InternalSettingsPtr cloneInternalSettings(const InternalSettingsPtr &src)
     if (!src) {
         return nullptr;
     }
-    InternalSettingsPtr copy(new InternalSettings());
+    InternalSettingsPtr copy = InternalSettingsPtr::create();
     copyInternalSettings(src, copy);
     return copy;
 }
@@ -146,7 +146,7 @@ void ExceptionList::readConfig(const KSharedConfig::Ptr &config)
     });
 
     for (const auto &grp : exceptionGroups) {
-        InternalSettingsPtr exception(new InternalSettings());
+        InternalSettingsPtr exception = InternalSettingsPtr::create();
         exception->setCurrentGroup(grp.name);
         exception->load();
 
