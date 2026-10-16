@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <memory>
 #include <new>
 #include <utility>
@@ -248,29 +249,76 @@ static inline void mirrorTopLeftQuadrant(QImage &image)
 
     const int stride = image.depth() >> 3;
 
-    if (stride == 4) {
-        const int halfWidth = width / 2;
-        const int destOffset = width - halfWidth;
-        // Proof of non-overlapping ranges for std::reverse_copy:
-        // - Source range is [row, row + halfWidth).
-        // - Destination range is [row + destOffset, row + destOffset + halfWidth).
-        // Since halfWidth = width / 2 and destOffset = width - halfWidth, we have:
-        //   destOffset >= halfWidth for all integers width >= 0.
-        // Therefore, the destination range starts exactly where the source range ends (if even)
-        // or strictly after it (if odd), ensuring they never overlap.
-        Q_ASSERT(destOffset >= halfWidth);
+    const int halfWidth = width / 2;
+    const int destOffset = width - halfWidth;
+    // Proof of non-overlapping ranges for std::reverse_copy:
+    // - Source range is [row, row + halfWidth).
+    // - Destination range is [row + destOffset, row + destOffset + halfWidth).
+    // Since halfWidth = width / 2 and destOffset = width - halfWidth, we have:
+    //   destOffset >= halfWidth for all integers width >= 0.
+    // Therefore, the destination range starts exactly where the source range ends (if even)
+    // or strictly after it (if odd), ensuring they never overlap.
+    Q_ASSERT(destOffset >= halfWidth);
+
+    auto isAligned = [](const void *ptr, size_t alignment) -> bool {
+        return (reinterpret_cast<uintptr_t>(ptr) % alignment) == 0;
+    };
+
+    if (stride == 1) {
         for (int y = 0; y < centerY; ++y) {
-            uint32_t *row = reinterpret_cast<uint32_t *>(image.scanLine(y));
+            uint8_t *row = image.scanLine(y);
             std::reverse_copy(row, row + halfWidth, row + destOffset);
+        }
+    } else if (stride == 2) {
+        for (int y = 0; y < centerY; ++y) {
+            uint8_t *row = image.scanLine(y);
+            if (isAligned(row, alignof(uint16_t))) {
+                auto *typedRow = reinterpret_cast<uint16_t *>(row);
+                std::reverse_copy(typedRow, typedRow + halfWidth, typedRow + destOffset);
+            } else {
+                const uint8_t *in = row;
+                uint8_t *out = row + static_cast<ptrdiff_t>(width - 1) * stride;
+                for (int x = 0; x < halfWidth; ++x, in += stride, out -= stride) {
+                    std::memcpy(out, in, stride);
+                }
+            }
+        }
+    } else if (stride == 4) {
+        for (int y = 0; y < centerY; ++y) {
+            uint8_t *row = image.scanLine(y);
+            if (isAligned(row, alignof(uint32_t))) {
+                auto *typedRow = reinterpret_cast<uint32_t *>(row);
+                std::reverse_copy(typedRow, typedRow + halfWidth, typedRow + destOffset);
+            } else {
+                const uint8_t *in = row;
+                uint8_t *out = row + static_cast<ptrdiff_t>(width - 1) * stride;
+                for (int x = 0; x < halfWidth; ++x, in += stride, out -= stride) {
+                    std::memcpy(out, in, stride);
+                }
+            }
+        }
+    } else if (stride == 8) {
+        for (int y = 0; y < centerY; ++y) {
+            uint8_t *row = image.scanLine(y);
+            if (isAligned(row, alignof(uint64_t))) {
+                auto *typedRow = reinterpret_cast<uint64_t *>(row);
+                std::reverse_copy(typedRow, typedRow + halfWidth, typedRow + destOffset);
+            } else {
+                const uint8_t *in = row;
+                uint8_t *out = row + static_cast<ptrdiff_t>(width - 1) * stride;
+                for (int x = 0; x < halfWidth; ++x, in += stride, out -= stride) {
+                    std::memcpy(out, in, stride);
+                }
+            }
         }
     } else {
         for (int y = 0; y < centerY; ++y) {
             uint8_t *row = image.scanLine(y);
             const uint8_t *in = row;
-            uint8_t *out = row + (width - 1) * stride;
+            uint8_t *out = row + static_cast<ptrdiff_t>(width - 1) * stride;
 
-            for (int x = 0; x < width / 2; ++x, in += stride, out -= stride) {
-                std::copy_n(in, stride, out);
+            for (int x = 0; x < halfWidth; ++x, in += stride, out -= stride) {
+                std::memcpy(out, in, stride);
             }
         }
     }
@@ -280,7 +328,7 @@ static inline void mirrorTopLeftQuadrant(QImage &image)
     for (int y = 0; y < halfHeight; ++y) {
         const uint8_t *in = image.constScanLine(y);
         uint8_t *out = image.scanLine(height - y - 1);
-        std::copy_n(in, bpl, out);
+        std::memcpy(out, in, bpl);
     }
 }
 
