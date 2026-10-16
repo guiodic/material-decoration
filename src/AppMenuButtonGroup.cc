@@ -372,7 +372,6 @@ void AppMenuButtonGroup::resetButtons()
     m_searchButton = nullptr;
     m_overflowIndex = -1;
     m_searchIndex = -1;
-    m_cachedWidths.clear();
 
     if (m_overflowMenu) {
         m_overflowMenu->deleteLater();
@@ -483,7 +482,6 @@ void AppMenuButtonGroup::performDebouncedMenuUpdate()
 void AppMenuButtonGroup::updateAppMenuModel()
 {
     m_search->invalidateCandidates();
-    m_cachedWidths.clear();
 
     auto *deco = qobject_cast<Decoration *>(decoration());
     if (!deco) {
@@ -634,86 +632,69 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 
     if (m_hamburgerMenu) {
         for (auto &tb : std::as_const(m_textButtons)) {
-            if (tb) tb->setVisible(false);
+            if (tb && tb->isVisible()) {
+                tb->setVisible(false);
+            }
         }
         showOverflow = true;
     } else {
-        // First pass: check if all enabled text buttons fit without overflow button.
-        // We perform this pass without side effects to avoid layout thrashing in Qt.
+        const qreal overflowBtnWidth = m_overflowButton ? m_overflowButton->geometry().width() : 0;
+        const qreal spaceWithoutOverflow = availableWidth - fixedWidth;
+        const qreal spaceWithOverflow = spaceWithoutOverflow - overflowBtnWidth;
+
         qreal totalTextWidth = 0;
+        qreal visibleTextWidthInOverflow = 0;
         int enabledCount = 0;
-        bool allFit = true;
+        int lastFitIndex = -1;
+        bool fitsInOverflowSpace = true;
+
         const int buttonCount = m_textButtons.size();
-        // Cache geometry widths in first pass so second pass can reuse them without calling geometry() again.
-        // Re-use class member vector to completely avoid repeat dynamic allocations during layout updates.
-        if (m_cachedWidths.size() != buttonCount) {
-            m_cachedWidths.resize(buttonCount);
-        }
-        // Ensure all entries are initialized to avoid stale reads if we bail early from the first pass.
-        m_cachedWidths.fill(0);
 
         for (int i = 0; i < buttonCount; ++i) {
             auto &tb = m_textButtons[i];
             if (tb && tb->isEnabled()) {
-                const qreal w = tb->geometry().width();
-                m_cachedWidths[i] = w;
-                totalTextWidth += w;
                 enabledCount++;
-                if (fixedWidth + totalTextWidth > availableWidth) {
-                    allFit = false;
-                    break;
+                const qreal w = tb->geometry().width();
+                totalTextWidth += w;
+
+                if (fitsInOverflowSpace) {
+                    if (visibleTextWidthInOverflow + w <= spaceWithOverflow) {
+                        visibleTextWidthInOverflow += w;
+                        lastFitIndex = i;
+                    } else {
+                        fitsInOverflowSpace = false;
+                    }
                 }
             }
         }
 
-        if (allFit && enabledCount > 0) {
+        if (enabledCount > 0 && totalTextWidth > spaceWithoutOverflow) {
+            showOverflow = true;
+            currentVisibleWidth += visibleTextWidthInOverflow;
+        } else if (enabledCount > 0) {
             showOverflow = false;
             currentVisibleWidth += totalTextWidth;
-            // Second pass: apply visibility only if changed
-            for (auto &tb : std::as_const(m_textButtons)) {
-                if (tb && tb->isVisible() != tb->isEnabled()) {
-                    tb->setVisible(tb->isEnabled());
-                }
-            }
-        } else if (enabledCount > 0) {
-            showOverflow = true;
-            const qreal overflowBtnWidth = m_overflowButton ? m_overflowButton->geometry().width() : 0;
-            qreal remainingWidth = availableWidth - fixedWidth - overflowBtnWidth;
-
-            // Second pass: apply visibility and calculate final width
-            bool fits = true;
-            for (int i = 0; i < buttonCount; ++i) {
-                auto &tb = m_textButtons[i];
-                if (!tb) {
-                    continue;
-                }
-                bool targetVisible = false;
-                if (fits && tb->isEnabled()) {
-                    const qreal w = m_cachedWidths[i];
-                    if (w <= remainingWidth) {
-                        targetVisible = true;
-                        currentVisibleWidth += w;
-                        remainingWidth -= w;
-                    } else {
-                        fits = false;
-                    }
-                }
-                if (tb->isVisible() != targetVisible) {
-                    tb->setVisible(targetVisible);
-                }
-            }
         } else {
             showOverflow = false;
-            for (auto &tb : std::as_const(m_textButtons)) {
-                if (tb && tb->isVisible()) {
-                    tb->setVisible(false);
-                }
+        }
+
+        // Single unified pass to update text button visibilities
+        for (int i = 0; i < buttonCount; ++i) {
+            auto &tb = m_textButtons[i];
+            if (!tb) {
+                continue;
+            }
+            const bool targetVisible = tb->isEnabled() && (!showOverflow || i <= lastFitIndex);
+            if (tb->isVisible() != targetVisible) {
+                tb->setVisible(targetVisible);
             }
         }
     }
 
     if (m_overflowButton) {
-        m_overflowButton->setVisible(showOverflow);
+        if (m_overflowButton->isVisible() != showOverflow) {
+            m_overflowButton->setVisible(showOverflow);
+        }
         if (showOverflow) {
             currentVisibleWidth += m_overflowButton->geometry().width();
         }
