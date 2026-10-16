@@ -635,6 +635,10 @@ void Decoration::updateButtonsGeometry()
     const qreal right = rightOffset();
     const qreal top = topOffset();
 
+    if (m_menuButtons) {
+        setButtonGroupHorzPadding(m_menuButtons, m_internalSettings->menuButtonHorzPadding());
+    }
+
     updateButtonHeight();
 
     // Left
@@ -659,8 +663,6 @@ void Decoration::updateButtonsGeometry()
             availableRect.setRight(availableRect.right() - captionOffset);
         }
         availableRect.translate(0, top);
-
-        setButtonGroupHorzPadding(m_menuButtons, m_internalSettings->menuButtonHorzPadding());
         
         m_menuButtons->updateOverflow(availableRect);
 
