@@ -70,8 +70,9 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, DBusMenuLayoutIte
     while (!argument.atEnd()) {
         QDBusVariant dbusVariant;
         argument >> dbusVariant;
-        const QDBusArgument childArgument = dbusVariant.variant().value<QDBusArgument>();
+        const auto childArgument = dbusVariant.variant().value<QDBusArgument>();
 
+        // Deserialize directly into the newly created element to avoid stack temporaries
         childArgument >> obj.children.emplace_back();
     }
     argument.endArray();
@@ -95,6 +96,7 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, DBusMenuShortcut 
     argument.beginArray();
     obj.clear();
     while (!argument.atEnd()) {
+        // Deserialize directly into the newly created element to avoid stack temporaries
         argument >> obj.emplace_back();
     }
     argument.endArray();
