@@ -1,3 +1,4 @@
 #cmakedefine01 HAVE_WAYLAND
 #cmakedefine01 HAVE_X11
 #cmakedefine01 HAVE_EXCLUDE_FROM_CAPTURE
+#cmakedefine01 HAVE_KDEC_STYLES

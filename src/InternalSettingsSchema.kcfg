@@ -130,7 +130,7 @@
                 <choice name="ShadowLarge"/>
                 <choice name="ShadowVeryLarge"/>
             </choices>
-            <default>ShadowVeryLarge</default>
+            <default>ShadowLarge</default>
         </entry>
         <entry name="ShadowColor" type="Color">
             <default>33, 33, 33</default>
