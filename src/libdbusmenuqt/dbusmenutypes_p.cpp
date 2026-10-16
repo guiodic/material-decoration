@@ -54,7 +54,7 @@ QDBusArgument &operator<<(QDBusArgument &argument, const DBusMenuLayoutItem &obj
     argument << obj.id << obj.properties;
     argument.beginArray(qMetaTypeId<QDBusVariant>());
     for (const DBusMenuLayoutItem &child : obj.children) {
-        argument << QDBusVariant(QVariant::fromValue<DBusMenuLayoutItem>(child));
+        argument << QDBusVariant(QVariant::fromValue(child));
     }
     argument.endArray();
     argument.endStructure();
@@ -70,11 +70,9 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, DBusMenuLayoutIte
     while (!argument.atEnd()) {
         QDBusVariant dbusVariant;
         argument >> dbusVariant;
-        QDBusArgument childArgument = dbusVariant.variant().value<QDBusArgument>();
+        const QDBusArgument childArgument = dbusVariant.variant().value<QDBusArgument>();
 
-        DBusMenuLayoutItem child{};
-        childArgument >> child;
-        obj.children.append(std::move(child));
+        childArgument >> obj.children.emplace_back();
     }
     argument.endArray();
     argument.endStructure();
@@ -97,9 +95,7 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, DBusMenuShortcut 
     argument.beginArray();
     obj.clear();
     while (!argument.atEnd()) {
-        QStringList item;
-        argument >> item;
-        obj.push_back(std::move(item));
+        argument >> obj.emplace_back();
     }
     argument.endArray();
     return argument;
