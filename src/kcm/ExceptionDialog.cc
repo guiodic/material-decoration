@@ -162,7 +162,7 @@ void ExceptionDialog::setException(const InternalSettingsPtr &exception)
 void ExceptionDialog::applyToException(InternalSettingsPtr &exception)
 {
     if (!exception) {
-        exception = InternalSettingsPtr(new InternalSettings());
+        exception = InternalSettingsPtr::create();
     }
 
     exception->setExceptionPattern(m_patternLineEdit->text().trimmed());

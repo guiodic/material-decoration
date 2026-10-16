@@ -126,7 +126,7 @@ void ExceptionListWidget::updateButtons()
 
 void ExceptionListWidget::add()
 {
-    InternalSettingsPtr exception(new InternalSettings());
+    InternalSettingsPtr exception = InternalSettingsPtr::create();
     ExceptionDialog dialog(this);
     dialog.setException(exception);
 
