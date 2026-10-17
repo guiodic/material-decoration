@@ -1457,19 +1457,14 @@ void Decoration::updateCornerRadiusAndOutline()
     setBorderRadius(radius);
     
     //Outline
-    setBorderOutline(KDecoration3::BorderOutline());
-#if HAVE_KDEC_STYLES
-    if (style() == KDecoration3::Style::Shadow) {
-        return;
-    }   
-#endif  
-
     if (m_internalSettings->outlineActive()) {
         QColor outlineColor = borderColor();
         outlineColor.setAlphaF(1.0);
         const qreal outlineThickness = std::max(KDecoration3::pixelSize(window()->nextScale()), KDecoration3::snapToPixelGrid(1, window()->nextScale()));
         setBorderOutline(KDecoration3::BorderOutline(outlineThickness, outlineColor, radius));
-    }
+    } else {
+        setBorderOutline(KDecoration3::BorderOutline());
+    }    
 }
 
 void Decoration::updatePaths()
