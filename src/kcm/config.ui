@@ -14,10 +14,25 @@
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
       <number>0</number>
+     </property>
+     <property name="documentMode">
+      <bool>true</bool>
      </property>
      <widget class="QWidget" name="appearanceTab">
       <attribute name="title">
@@ -28,16 +43,6 @@
         <widget class="QLabel" name="label">
          <property name="text">
           <string>Title alignment</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="QCheckBox" name="kcfg_SquareCornersTiled">
-         <property name="text">
-          <string>Don't round corners for tiled windows</string>
-         </property>
-         <property name="checked">
-          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -101,16 +106,6 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
-        <widget class="QCheckBox" name="kcfg_BottomCorners">
-         <property name="text">
-          <string>Round bottom corners</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
        <item row="4" column="1">
         <widget class="QSpinBox" name="kcfg_CornerRadius">
          <property name="suffix">
@@ -121,6 +116,26 @@
          </property>
          <property name="maximum">
           <number>16</number>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QCheckBox" name="kcfg_BottomCorners">
+         <property name="text">
+          <string>Round bottom corners</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QCheckBox" name="kcfg_SquareCornersTiled">
+         <property name="text">
+          <string>Don't round corners for tiled windows</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -187,7 +202,7 @@
          </property>
         </widget>
        </item>
-       <item row="14" column="1">
+       <item row="13" column="1">
         <widget class="QSpinBox" name="kcfg_MinWidthForCaption">
          <property name="suffix">
           <string> px</string>
@@ -197,6 +212,33 @@
          </property>
          <property name="maximum">
           <number>500</number>
+         </property>
+        </widget>
+       </item>
+       <item row="14" column="0" colspan="2">
+        <widget class="QCheckBox" name="kcfg_AnimationsEnabled">
+         <property name="text">
+          <string>Enable animations</string>
+         </property>
+        </widget>
+       </item>
+       <item row="15" column="0">
+        <widget class="QLabel" name="label_9">
+         <property name="text">
+          <string>Animation duration</string>
+         </property>
+        </widget>
+       </item>
+       <item row="15" column="1">
+        <widget class="QSpinBox" name="kcfg_AnimationsDuration">
+         <property name="suffix">
+          <string>ms</string>
+         </property>
+         <property name="minimum">
+          <number>0</number>
+         </property>
+         <property name="maximum">
+          <number>1000</number>
          </property>
         </widget>
        </item>
@@ -334,40 +376,6 @@
           </widget>
          </item>
         </layout>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="animationsTab">
-      <attribute name="title">
-       <string>Animations</string>
-      </attribute>
-      <layout class="QFormLayout" name="formLayout_4">
-       <item row="0" column="0" colspan="2">
-        <widget class="QCheckBox" name="kcfg_AnimationsEnabled">
-         <property name="text">
-          <string>Enable animations</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_9">
-         <property name="text">
-          <string>Animation duration</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QSpinBox" name="kcfg_AnimationsDuration">
-         <property name="suffix">
-          <string>ms</string>
-         </property>
-         <property name="minimum">
-          <number>0</number>
-         </property>
-         <property name="maximum">
-          <number>1000</number>
-         </property>
-        </widget>
        </item>
       </layout>
      </widget>
