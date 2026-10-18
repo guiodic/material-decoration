@@ -27,7 +27,6 @@
 
 // own
 #include "AppMenuModel.h"
-#include "Material.h"
 #include "NavigableMenu.h"
 
 // Qt
@@ -68,7 +67,6 @@ protected:
 
 AppMenuModel::AppMenuModel(QObject *parent)
     : QObject(parent),
-      m_menuAvailable(false),
       m_serviceWatcher(new QDBusServiceWatcher(this))
 {
     m_serviceWatcher->setConnection(QDBusConnection::sessionBus());
@@ -171,12 +169,13 @@ void AppMenuModel::onActionChanged()
 
 void AppMenuModel::onMenuUpdated(QMenu *menu)
 {
+    if (!menu) {
+        return;
+    }
+
     // This slot is called by the DBusMenuImporter whenever a menu's contents are ready.
     if (m_menu.isNull() || menu == m_menu.data()) { // First time update, or a top-level menu update.
         m_menu = menu;
-        if (m_menu.isNull()) {
-            return;
-        }
 
         // Connect signals for top-level actions to update the model when they change.
         for (QAction *a : m_menu->actions()) {
@@ -199,11 +198,7 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
 
         // Track the specific submenus being deep cached. When all pending
         // updates are finished, the entire menu tree has been fetched.
-        if (m_pendingDeepCacheUpdates.remove(menu)) {
-            if (m_pendingDeepCacheUpdates.isEmpty() && m_nextMenuToProcess >= m_menusToDeepCache.size()) {
-                processNext();
-            }
-        }
+        checkPendingUpdatesComplete(menu);
     }
 }
 
@@ -266,16 +261,27 @@ void AppMenuModel::registerSubMenus(QMenu *menu)
             if (m_seenMenus.size() > oldSize) {
                 connect(subMenu, &QObject::destroyed, this, [this, subMenu]() {
                     m_seenMenus.remove(subMenu);
-                    if (m_pendingDeepCacheUpdates.remove(subMenu)) {
-                        if (m_pendingDeepCacheUpdates.isEmpty() && m_nextMenuToProcess >= m_menusToDeepCache.size()) {
-                            QMetaObject::invokeMethod(this, &AppMenuModel::processNext, Qt::QueuedConnection);
-                        }
-                    }
+                    checkPendingUpdatesComplete(subMenu);
                 });
                 m_menusToDeepCache.append(QPointer(subMenu));
             }
         }
     }
+}
+
+void AppMenuModel::checkPendingUpdatesComplete(QMenu *menu)
+{
+    if (m_pendingDeepCacheUpdates.remove(menu)) {
+        if (m_pendingDeepCacheUpdates.isEmpty() && m_nextMenuToProcess >= m_menusToDeepCache.size()) {
+            QMetaObject::invokeMethod(this, &AppMenuModel::processNext, Qt::QueuedConnection);
+        }
+    }
+}
+
+void AppMenuModel::finishCaching()
+{
+    stopCaching();
+    Q_EMIT menuReadyForSearch();
 }
 
 void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
@@ -304,8 +310,7 @@ void AppMenuModel::processNext()
         if (!m_pendingDeepCacheUpdates.isEmpty()) {
             return; // Wait for pending updates to finish and potentially add more items
         }
-        stopCaching();
-        Q_EMIT menuReadyForSearch();
+        finishCaching();
         return;
     }
 
@@ -338,8 +343,7 @@ void AppMenuModel::processNext()
         return;
     }
 
-    stopCaching();
-    Q_EMIT menuReadyForSearch();
+    finishCaching();
 }
 
 

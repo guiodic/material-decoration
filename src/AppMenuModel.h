@@ -29,7 +29,6 @@
 #include <QList>
 #include <QPointer>
 #include <QSet>
-#include <QStringList>
 #include <QTimer>
 #include <QtGlobal>
 
@@ -76,12 +75,14 @@ private:
     void resumeDeepCacheIfIdle(QMenu *menu);
     bool menuAvailable() const;
     void setMenuAvailable(bool set);
+    void checkPendingUpdatesComplete(QMenu *menu);
+    void finishCaching();
 
     QTimer *m_staggerTimer;
     QList<QPointer<QMenu>> m_menusToDeepCache;
     qsizetype m_nextMenuToProcess = 0;
     QSet<QMenu *> m_seenMenus;
-    bool m_menuAvailable;
+    bool m_menuAvailable = false;
     bool m_deepCacheRequested = false;
     bool m_deepCacheStarted = false;
     QSet<QMenu *> m_pendingDeepCacheUpdates;
