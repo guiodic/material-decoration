@@ -613,9 +613,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
 void AppMenuButtonGroup::setHamburgerMenu(bool value)
 {
-    if (m_hamburgerMenu != value) {
-        m_hamburgerMenu = value;
-    }
+    m_hamburgerMenu = value;
 }
 
 void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
@@ -630,14 +628,8 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
     bool showOverflow = m_hamburgerMenu;
     qreal currentVisibleWidth = fixedWidth;
 
-    if (m_hamburgerMenu) {
-        for (auto &tb : std::as_const(m_textButtons)) {
-            if (tb && tb->isVisible()) {
-                tb->setVisible(false);
-            }
-        }
-        showOverflow = true;
-    } else {
+    int lastFitIndex = -1;
+    if (!m_hamburgerMenu) {
         const qreal overflowBtnWidth = m_overflowButton ? m_overflowButton->geometry().width() : 0;
         const qreal spaceWithoutOverflow = availableWidth - fixedWidth;
         const qreal spaceWithOverflow = spaceWithoutOverflow - overflowBtnWidth;
@@ -645,7 +637,6 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
         qreal totalTextWidth = 0;
         qreal visibleTextWidthInOverflow = 0;
         int enabledCount = 0;
-        int lastFitIndex = -1;
         bool fitsInOverflowSpace = true;
 
         const int buttonCount = m_textButtons.size();
@@ -677,17 +668,18 @@ void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
         } else {
             showOverflow = false;
         }
+    }
 
-        // Single unified pass to update text button visibilities
-        for (int i = 0; i < buttonCount; ++i) {
-            auto &tb = m_textButtons[i];
-            if (!tb) {
-                continue;
-            }
-            const bool targetVisible = tb->isEnabled() && (!showOverflow || i <= lastFitIndex);
-            if (tb->isVisible() != targetVisible) {
-                tb->setVisible(targetVisible);
-            }
+    // Single unified pass to update text button visibilities
+    const int buttonCount = m_textButtons.size();
+    for (int i = 0; i < buttonCount; ++i) {
+        auto &tb = m_textButtons[i];
+        if (!tb) {
+            continue;
+        }
+        const bool targetVisible = tb->isEnabled() && (!showOverflow || i <= lastFitIndex);
+        if (tb->isVisible() != targetVisible) {
+            tb->setVisible(targetVisible);
         }
     }
 
@@ -925,7 +917,7 @@ bool AppMenuButtonGroup::eventFilter(QObject *watched, QEvent *event)
     if (event->type() == QEvent::MouseMove) {
         if (KWindowSystem::isPlatformX11()) {
             auto *e = static_cast<QMouseEvent *>(event);
-            auto *deco = const_cast<Decoration*>(qobject_cast<const Decoration *>(decoration()));
+            auto *deco = qobject_cast<Decoration *>(decoration());
             if (deco) {
                 // Forward a constructed HoverEvent to the decoration to handle.
                 // This is a workaround for X11 where the decoration does not receive
@@ -1109,9 +1101,7 @@ AppMenuButton *AppMenuButtonGroup::getAppMenuButton(int index) const
 
 int AppMenuButtonGroup::findNextVisibleButtonIndex(int currentIndex, bool forward) const
 {
-    int maxIndex = m_textButtons.count() - 1;
-    if (m_overflowIndex > maxIndex) maxIndex = m_overflowIndex;
-    if (m_searchIndex > maxIndex) maxIndex = m_searchIndex;
+    int maxIndex = std::max({static_cast<int>(m_textButtons.count() - 1), m_overflowIndex, m_searchIndex});
 
     if (maxIndex < 0) {
         return -1;

@@ -51,7 +51,6 @@ public:
     Q_PROPERTY(int animationDuration READ animationDuration WRITE setAnimationDuration NOTIFY animationDurationChanged)
     Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity NOTIFY opacityChanged)
     Q_PROPERTY(qreal transitionValue READ transitionValue WRITE setTransitionValue NOTIFY transitionValueChanged)
-    //Q_PROPERTY(QMarginsF* padding READ padding NOTIFY paddingChanged)
 
     // Passed to DecorationButtonGroup in Decoration
     static KDecoration3::DecorationButton *create(KDecoration3::DecorationButtonType type, KDecoration3::Decoration *decoration, QObject *parent = nullptr);
@@ -67,7 +66,6 @@ public:
 
     void forceUnpress();
 
-    //virtual qreal iconLineWidth(const qreal size) const;
     void setPenWidth(QPainter *painter, const qreal scale, bool snapped = false);
 
     bool animationEnabled() const;
@@ -80,7 +78,6 @@ public:
     void setOpacity(qreal value);
 
     void setHorzPadding(qreal value);
-   // void setVertPadding(int value);
 
     void setIsLeftmost(bool isLeftmost);
     void setIsRightmost(bool isRightmost);

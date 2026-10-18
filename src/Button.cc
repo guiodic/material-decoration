@@ -158,9 +158,6 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     
     connect(this, &Button::enabledChanged, this, [this]() {
         UPDATE_GEOM();
-        //if (auto *deco = qobject_cast<Decoration *>(this->decoration())) {
-        //    QTimer::singleShot(0, this, [deco]() { deco->updateButtonsGeometry(); });
-        //}
     }); 
     
     connect(this, &Button::geometryChanged, this, [this]() {
@@ -312,11 +309,8 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->setBrush(bgColor);
     const qreal radius = deco->cornerRadius();
 
-    //const qreal offset = (static_cast<int>(m_isRightmost) - static_cast<int>(m_isLeftmost));   // -0.5 for left; +0.5 for right
-
     // Smart way to draw a rectangle with the right rounded/squared corner
     painter->drawPath(deco->getRoundedPath(geometry(), radius-Material::cornerRadiusAdjustment, m_isLeftmost && deco->leftBorderVisible(), m_isRightmost && deco->rightBorderVisible(), false, false));
-    //painter->fillRect(geometry().toAlignedRect(), bgColor); //.adjusted(-1, -1, 1, 1)
 
     // Foreground.
     painter->setRenderHint(QPainter::Antialiasing, true);
@@ -495,7 +489,7 @@ QColor Button::backgroundColor() const
             KDecoration3::ColorGroup::Warning,
             KDecoration3::ColorRole::Foreground
         );
-        QColor normalColor = QColor(hoveredColor);
+        QColor normalColor = hoveredColor;
         normalColor.setAlphaF(0);
 
         if (isPressed()) {
@@ -736,14 +730,6 @@ void Button::setIsRightmost(bool isRightmost)
     m_isRightmost = isRightmost;
 }
 
-/*
-void Button::setVertPadding(int value)
-{
-    padding().setTop(value);
-    padding().setBottom(value);
-}
-*/
-
 void Button::updateAnimationState(bool hovered)
 {
     if (m_animationEnabled) {
@@ -755,10 +741,10 @@ void Button::updateAnimationState(bool hovered)
         if (m_animation->state() != QAbstractAnimation::Running) {
             m_animation->start();
         }
+        UPDATE_GEOM();
     } else {
         setTransitionValue(1);
     }
-    UPDATE_GEOM();
 }
 
 void Button::forceUnpress()
