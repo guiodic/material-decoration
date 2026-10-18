@@ -192,13 +192,8 @@ private:
      */
     void collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &ancestors, bool hasNamedAncestor = false);
     
-    struct MatchState {
-        QString text;
-        bool matched = false;
-    };
-
     struct MatchContext {
-        QHash<QAction *, MatchState> &matchCache;
+        QHash<QAction *, bool> &matchCache;
         QHash<QAction *, bool> &pathMatchCache;
     };
 
@@ -213,7 +208,7 @@ private:
      * @param itemText The cleaned text of the candidate action
      * @param matcher String matcher for substring search
      * @param ignoreTopLevel If true, skip matching the first named ancestor
-     * @param context Match context containing caches for ancestor text and path matches
+     * @param context Match context containing boolean match result caches for ancestors and parent paths
      * @return True if the candidate or any evaluated ancestor matches the query
      */
     bool matchesAncestorsOrText(const SearchCandidate &candidate, const QString &itemText, const QStringMatcher &matcher, bool ignoreTopLevel, MatchContext &context) const;
@@ -252,6 +247,11 @@ private:
      * and m_lastOptions without touching the rendered menu or candidates cache.
      */
     void resetSearchState();
+
+    /**
+     * @brief Clears cached search results and filter options while preserving the query text.
+     */
+    void clearSearchResultsState();
 
 private Q_SLOTS:
     /**

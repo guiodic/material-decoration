@@ -38,18 +38,6 @@ static constexpr int MAX_QUERY_TOKENS = 6;
 namespace Material
 {
 
-static inline QChar fastToLower(QChar ch)
-{
-    const ushort u = ch.unicode();
-    if (u >= 'A' && u <= 'Z') {
-        return QChar(u + 32);
-    }
-    if (u < 128) {
-        return ch;
-    }
-    return ch.toLower();
-}
-
 /**
  * @brief Splits a string into lowercased word tokens based on whitespace, punctuation, and camelCase boundaries.
  */
@@ -216,7 +204,7 @@ void AppMenuSearch::clear()
 
     const auto actions = m_searchMenu->actions();
     for (QAction *action : actions) {
-        if (action && action->property(PROPERTY_SEARCH_PROXY).toBool() == true) {
+        if (action && action->property(PROPERTY_SEARCH_PROXY).toBool()) {
             m_searchMenu->removeAction(action);
             // Detach action from its group before scheduling deletion
             if (QActionGroup *group = action->actionGroup()) {
@@ -246,9 +234,7 @@ void AppMenuSearch::invalidateCandidates()
     // Note: m_lastSearchQuery is intentionally preserved here so that
     // hasValidQuery() still reports the in-progress query (e.g. while a
     // submenu is loading), letting the debounce timer re-run the search.
-    m_lastResults.clear();
-    m_lastProcessedMenu = nullptr;
-    m_lastOptions = FilterOptions();
+    clearSearchResultsState();
     Q_EMIT candidatesInvalidated();
 }
 
@@ -267,6 +253,11 @@ void AppMenuSearch::reset()
 void AppMenuSearch::resetSearchState()
 {
     m_lastSearchQuery.clear();
+    clearSearchResultsState();
+}
+
+void AppMenuSearch::clearSearchResultsState()
+{
     m_lastResults.clear();
     m_lastProcessedMenu = nullptr;
     m_lastOptions = FilterOptions();
@@ -311,8 +302,8 @@ void AppMenuSearch::onActionChanged()
     if (!action) {
         return;
     }
-    m_actionTextCache.remove(action);
-    const QString currentText = getActionText(action);
+    const QString rawText = action->text();
+    const QString currentText = KLocalizedString::removeAcceleratorMarker(rawText.trimmed());
     auto it = m_knownActionTexts.find(action);
     if (it != m_knownActionTexts.end()) {
         if (it.value() != currentText) {
@@ -473,21 +464,19 @@ bool AppMenuSearch::matchesAncestorsOrText(const SearchCandidate &candidate, con
             continue;
         }
 
+        const QString ancestorText = getActionText(ancestor);
+        if (ancestorText.isEmpty()) {
+            continue;
+        }
+
         auto it = context.matchCache.find(ancestor);
-        QString ancestorText;
         bool matched = false;
 
         if (it != context.matchCache.end()) {
-            ancestorText = it.value().text;
-            matched = it.value().matched;
+            matched = it.value();
         } else {
-            ancestorText = getActionText(ancestor);
             matched = (matcher.indexIn(ancestorText) != -1);
-            context.matchCache.insert(ancestor, {ancestorText, matched});
-        }
-
-        if (ancestorText.isEmpty()) {
-            continue;
+            context.matchCache.insert(ancestor, matched);
         }
 
         // If ignoreTopLevel is true, the first non-empty ancestor is skipped from evaluation.
@@ -575,16 +564,16 @@ static int damerauLevenshteinDistance(const QString &s1, const QString &s2, int 
         row0[0] = i;
         int minRowVal = row0[0];
 
-        const QChar char1 = fastToLower(s1.at(i - 1));
+        const QChar char1 = s1.at(i - 1);
 
         for (int j = 1; j <= len2; ++j) {
-            const QChar char2 = fastToLower(s2.at(j - 1));
+            const QChar char2 = s2.at(j - 1);
             const int cost = (char1 == char2) ? 0 : 1;
 
             int val = std::min({row1[j] + 1, row0[j - 1] + 1, row1[j - 1] + cost});
 
             // Check adjacent transposition
-            if (i > 1 && j > 1 && char1 == fastToLower(s2.at(j - 2)) && fastToLower(s1.at(i - 2)) == char2) {
+            if (i > 1 && j > 1 && char1 == s2.at(j - 2) && s1.at(i - 2) == char2) {
                 val = std::min(val, row2[j - 2] + cost);
             }
 
@@ -732,7 +721,32 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     std::array<int, MAX_QUERY_TOKENS> bestAssignment;
     currentAssignment.fill(-1);
     bestAssignment.fill(-1);
-    std::vector<bool> usedTarget(numT, false);
+
+    // Small Buffer Optimization (SBO) for tracking target tokens used during backtracking:
+    // For standard menu paths (numT <= 32), stackUsedTarget avoids dynamic heap allocation.
+    // For unusually long menu paths (numT > 32), heapUsedTarget uses std::vector<uint8_t>
+    // to avoid std::vector<bool> proxy reference overhead and bitwise operations.
+    constexpr int MAX_STACK_TARGET_TOKENS = 32;
+    std::array<bool, MAX_STACK_TARGET_TOKENS> stackUsedTarget{};
+    std::vector<uint8_t> heapUsedTarget;
+    if (numT > MAX_STACK_TARGET_TOKENS) {
+        heapUsedTarget.resize(numT, 0);
+    }
+
+    auto isTargetUsed = [&](int tIdx) -> bool {
+        Q_ASSERT(tIdx >= 0 && tIdx < numT);
+        return (numT <= MAX_STACK_TARGET_TOKENS) ? stackUsedTarget[tIdx] : static_cast<bool>(heapUsedTarget[tIdx]);
+    };
+
+    auto setTargetUsed = [&](int tIdx, bool used) {
+        Q_ASSERT(tIdx >= 0 && tIdx < numT);
+        if (numT <= MAX_STACK_TARGET_TOKENS) {
+            stackUsedTarget[tIdx] = used;
+        } else {
+            heapUsedTarget[tIdx] = used ? 1 : 0;
+        }
+    };
+
     int maxTotalScore = -1;
 
     auto backtrackAssignment = [&](auto &self, int qIdx, int currentSum) -> void {
@@ -761,13 +775,13 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
         }
 
         for (const auto &cand : sortedCandidates[qIdx]) {
-            if (!usedTarget[cand.targetIdx]) {
-                usedTarget[cand.targetIdx] = true;
+            if (!isTargetUsed(cand.targetIdx)) {
+                setTargetUsed(cand.targetIdx, true);
                 currentAssignment[qIdx] = cand.targetIdx;
 
                 self(self, qIdx + 1, currentSum + cand.score);
 
-                usedTarget[cand.targetIdx] = false;
+                setTargetUsed(cand.targetIdx, false);
                 currentAssignment[qIdx] = -1;
             }
         }
@@ -785,7 +799,7 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
 QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, const FilterOptions &options, const QString &query) const
 {
     QList<SearchResult> results;
-    QHash<QAction *, MatchState> matchCache;
+    QHash<QAction *, bool> matchCache;
     QHash<QAction *, bool> pathMatchCache;
     MatchContext context{matchCache, pathMatchCache};
 
