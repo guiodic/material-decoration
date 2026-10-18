@@ -721,8 +721,30 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     std::array<int, MAX_QUERY_TOKENS> bestAssignment;
     currentAssignment.fill(-1);
     bestAssignment.fill(-1);
+
+    // Small Buffer Optimization (SBO) for tracking target tokens used during backtracking:
+    // For standard menu paths (numT <= 32), stackUsedTarget avoids dynamic heap allocation.
+    // For unusually long menu paths (numT > 32), heapUsedTarget dynamically sizes to numT
+    // so no target tokens beyond index 31 are ever discarded.
     constexpr int MAX_STACK_TARGET_TOKENS = 32;
-    std::array<bool, MAX_STACK_TARGET_TOKENS> usedTarget{};
+    std::array<bool, MAX_STACK_TARGET_TOKENS> stackUsedTarget{};
+    std::vector<bool> heapUsedTarget;
+    if (numT > MAX_STACK_TARGET_TOKENS) {
+        heapUsedTarget.resize(numT, false);
+    }
+
+    auto isTargetUsed = [&](int tIdx) -> bool {
+        return (numT <= MAX_STACK_TARGET_TOKENS) ? stackUsedTarget[tIdx] : heapUsedTarget[tIdx];
+    };
+
+    auto setTargetUsed = [&](int tIdx, bool used) {
+        if (numT <= MAX_STACK_TARGET_TOKENS) {
+            stackUsedTarget[tIdx] = used;
+        } else {
+            heapUsedTarget[tIdx] = used;
+        }
+    };
+
     int maxTotalScore = -1;
 
     auto backtrackAssignment = [&](auto &self, int qIdx, int currentSum) -> void {
@@ -751,13 +773,13 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
         }
 
         for (const auto &cand : sortedCandidates[qIdx]) {
-            if (cand.targetIdx < MAX_STACK_TARGET_TOKENS && !usedTarget[cand.targetIdx]) {
-                usedTarget[cand.targetIdx] = true;
+            if (!isTargetUsed(cand.targetIdx)) {
+                setTargetUsed(cand.targetIdx, true);
                 currentAssignment[qIdx] = cand.targetIdx;
 
                 self(self, qIdx + 1, currentSum + cand.score);
 
-                usedTarget[cand.targetIdx] = false;
+                setTargetUsed(cand.targetIdx, false);
                 currentAssignment[qIdx] = -1;
             }
         }
