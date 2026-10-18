@@ -13,8 +13,8 @@
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QIcon>
-
 #include <QLabel>
+#include <QTabBar>
 
 
 K_PLUGIN_CLASS_WITH_JSON(MaterialDecorationKCM, "materialdecoration_kcm.json")
@@ -25,6 +25,8 @@ MaterialDecorationKCM::MaterialDecorationKCM(QObject *parent, const KPluginMetaD
     , m_settings(std::make_unique<Material::InternalSettings>())
 {
     m_ui->setupUi(widget());
+
+    m_ui->tabWidget->tabBar()->setExpanding(true);
 
     // Populate combo boxes
     m_ui->kcfg_TitleAlignment->addItems({i18n("Left"),
