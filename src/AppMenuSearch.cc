@@ -724,24 +724,26 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
 
     // Small Buffer Optimization (SBO) for tracking target tokens used during backtracking:
     // For standard menu paths (numT <= 32), stackUsedTarget avoids dynamic heap allocation.
-    // For unusually long menu paths (numT > 32), heapUsedTarget dynamically sizes to numT
-    // so no target tokens beyond index 31 are ever discarded.
+    // For unusually long menu paths (numT > 32), heapUsedTarget uses std::vector<uint8_t>
+    // to avoid std::vector<bool> proxy reference overhead and bitwise operations.
     constexpr int MAX_STACK_TARGET_TOKENS = 32;
     std::array<bool, MAX_STACK_TARGET_TOKENS> stackUsedTarget{};
-    std::vector<bool> heapUsedTarget;
+    std::vector<uint8_t> heapUsedTarget;
     if (numT > MAX_STACK_TARGET_TOKENS) {
-        heapUsedTarget.resize(numT, false);
+        heapUsedTarget.resize(numT, 0);
     }
 
     auto isTargetUsed = [&](int tIdx) -> bool {
-        return (numT <= MAX_STACK_TARGET_TOKENS) ? stackUsedTarget[tIdx] : heapUsedTarget[tIdx];
+        Q_ASSERT(tIdx >= 0 && tIdx < numT);
+        return (numT <= MAX_STACK_TARGET_TOKENS) ? stackUsedTarget[tIdx] : static_cast<bool>(heapUsedTarget[tIdx]);
     };
 
     auto setTargetUsed = [&](int tIdx, bool used) {
+        Q_ASSERT(tIdx >= 0 && tIdx < numT);
         if (numT <= MAX_STACK_TARGET_TOKENS) {
             stackUsedTarget[tIdx] = used;
         } else {
-            heapUsedTarget[tIdx] = used;
+            heapUsedTarget[tIdx] = used ? 1 : 0;
         }
     };
 
