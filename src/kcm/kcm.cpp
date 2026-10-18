@@ -26,7 +26,9 @@ MaterialDecorationKCM::MaterialDecorationKCM(QObject *parent, const KPluginMetaD
 {
     m_ui->setupUi(widget());
 
-    m_ui->tabWidget->tabBar()->setExpanding(true);
+    if (auto *bar = m_ui->tabWidget->findChild<QTabBar *>()) {
+        bar->setExpanding(true);
+    }
 
     // Populate combo boxes
     m_ui->kcfg_TitleAlignment->addItems({i18n("Left"),
