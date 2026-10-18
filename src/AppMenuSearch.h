@@ -192,13 +192,8 @@ private:
      */
     void collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &ancestors, bool hasNamedAncestor = false);
     
-    struct MatchState {
-        QString text;
-        bool matched = false;
-    };
-
     struct MatchContext {
-        QHash<QAction *, MatchState> &matchCache;
+        QHash<QAction *, bool> &matchCache;
         QHash<QAction *, bool> &pathMatchCache;
     };
 
@@ -252,6 +247,11 @@ private:
      * and m_lastOptions without touching the rendered menu or candidates cache.
      */
     void resetSearchState();
+
+    /**
+     * @brief Clears cached search results and filter options while preserving the query text.
+     */
+    void clearSearchResultsState();
 
 private Q_SLOTS:
     /**
