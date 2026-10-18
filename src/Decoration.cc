@@ -105,11 +105,6 @@ struct CompositeShadowParams
     ShadowParams shadow2;
 };
 
-// const CompositeShadowParams s_shadowParams = CompositeShadowParams(
-//     QPoint(0, 18),
-//     ShadowParams(QPoint(0, 0), 64, 0.8),
-//     ShadowParams(QPoint(0, -10), 24, 0.1)
-// );
 const CompositeShadowParams s_shadowParams[] = {
     // None
     CompositeShadowParams(),
@@ -285,8 +280,6 @@ bool Decoration::init()
     
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged, 
         this, &Decoration::onMaximizedChanged);
-    //connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedChanged, 
-    //    this, &Decoration::setOpaque);
     
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizedHorizontallyChanged,
             this, &Decoration::updateBordersCornersBlurShadow);
@@ -518,18 +511,13 @@ void Decoration::hoverLeaveEvent(QHoverEvent *event)
 
 void Decoration::wheelEvent(QWheelEvent *event)
 {
-    const QPointF pos = event->position();
-
-    if (m_menuButtons && m_menuButtons->geometry().contains(pos)) {
-        // Skip
-    } else {
+    if (!m_menuButtons || !m_menuButtons->geometry().contains(event->position())) {
         KDecoration3::Decoration::wheelEvent(event);
     }
 }
 
-void Decoration::onSectionUnderMouseChanged(const Qt::WindowFrameSection value)
+void Decoration::onSectionUnderMouseChanged(const Qt::WindowFrameSection)
 {
-    Q_UNUSED(value);
     updateTitleBarHoverState();
 }
 
@@ -676,7 +664,6 @@ void Decoration::updateButtonsGeometry()
         if (isMenuOnRight()) {
             const QPointF topRight = availableRect.topRight();
             m_menuButtons->setPos(QPointF(topRight.x() - m_menuButtons->visibleWidth(), topRight.y()));
-                           //setPos(QPointF(size().width() - right - m_rightButtons->geometry().width(), top));
         } else {
             m_menuButtons->setPos(availableRect.topLeft());
         }
@@ -689,23 +676,18 @@ void Decoration::updateButtonsGeometry()
     Button *rightmostButton = nullptr;
 
     auto updateGroupFlags = [&](KDecoration3::DecorationButtonGroup *group) {
-        if (!group) {
-            return;
-        }
-        for (auto *decoButton : group->buttons()) {
-            if (auto *button = qobject_cast<Button *>(decoButton)) {
-                button->setIsLeftmost(false);
-                button->setIsRightmost(false);
-                if (button->isVisible()) {
-                    if (!leftmostButton || button->geometry().x() < leftmostButton->geometry().x()) {
-                        leftmostButton = button;
-                    }
-                    if (!rightmostButton || button->geometry().right() > rightmostButton->geometry().right()) {
-                        rightmostButton = button;
-                    }
+        forEachButton<Button>(group, [&](Button *button) {
+            button->setIsLeftmost(false);
+            button->setIsRightmost(false);
+            if (button->isVisible()) {
+                if (!leftmostButton || button->geometry().x() < leftmostButton->geometry().x()) {
+                    leftmostButton = button;
+                }
+                if (!rightmostButton || button->geometry().right() > rightmostButton->geometry().right()) {
+                    rightmostButton = button;
                 }
             }
-        }
+        });
     };
 
     updateGroupFlags(m_leftButtons);
@@ -822,9 +804,6 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
                                         outerRect.right() - boxRect.right() + params.offset.x(),
                                         outerRect.bottom() - boxRect.bottom() + params.offset.y());
     QRectF innerRect = outerRect - padding;
-    // Push the shadow slightly under the window, which helps avoiding glitches with fractional scaling
-    //innerRect.adjust(2, 2, -2, -2);
-
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
@@ -1041,6 +1020,16 @@ bool Decoration::topBorderVisible() const {
 
 bool Decoration::bottomBorderVisible() const {
     return !isBottomEdge();
+}
+
+bool Decoration::roundTopLeftCorners() const {
+    const bool squareCornersTiled = m_internalSettings ? m_internalSettings->squareCornersTiled() : false;
+    return squareCornersTiled ? (leftBorderVisible() && topBorderVisible()) : leftBorderVisible();
+}
+
+bool Decoration::roundTopRightCorners() const {
+    const bool squareCornersTiled = m_internalSettings ? m_internalSettings->squareCornersTiled() : false;
+    return squareCornersTiled ? (rightBorderVisible() && topBorderVisible()) : rightBorderVisible();
 }
 
 bool Decoration::titleBarIsHovered() const
@@ -1295,16 +1284,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     const QString fullCaption = decoratedClient->caption();
     const qreal offset = topOffset();
 
-    // Defer QFontMetricsF construction until actually needed to avoid unnecessary work during painting.
-    // QFontMetricsF construction can be non-trivial; create it only when bounding/eliding is required.
-    std::optional<QFontMetricsF> lazyFontMetrics;
-    // Capture only the variables we need: lazyFontMetrics by reference and font by value.
-    auto getFontMetrics = [&lazyFontMetrics, font]() -> const QFontMetricsF & {
-        if (!lazyFontMetrics) {
-            lazyFontMetrics.emplace(font);
-        }
-        return *lazyFontMetrics;
-    };
+    const QFontMetricsF fontMetrics(font);
 
     // 2. Baseline constrained geometry (used to determine if space is limited)
     QRectF constrainedRect = centerRect();
@@ -1321,7 +1301,7 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     if (m_captionCache.textWidth < 0 || m_captionCache.fullCaption != fullCaption || m_captionCache.font != font) {
         m_captionCache.fullCaption = fullCaption;
         m_captionCache.font = font;
-        m_captionCache.textWidth = getFontMetrics().boundingRect(fullCaption).width();
+        m_captionCache.textWidth = fontMetrics.boundingRect(fullCaption).width();
         m_captionCache.availableWidth = -1.0;
     }
     const qreal textWidth = m_captionCache.textWidth;
@@ -1404,8 +1384,8 @@ void Decoration::paintCaption(QPainter *painter, const QRectF &repaintRegion) co
     if (m_captionCache.availableWidth != drawingRect.width() || m_captionCache.alignment != alignment) {
         m_captionCache.availableWidth = drawingRect.width();
         m_captionCache.alignment = alignment;
-        m_captionCache.elidedCaption = getFontMetrics().elidedText(fullCaption, Qt::ElideMiddle, drawingRect.width());
-    }    
+        m_captionCache.elidedCaption = fontMetrics.elidedText(fullCaption, Qt::ElideMiddle, drawingRect.width());
+    }
     
 
     painter->drawText(drawingRect, alignment | Qt::TextSingleLine | Qt::AlignVCenter, m_captionCache.elidedCaption);
@@ -1437,12 +1417,11 @@ void Decoration::updateCornerRadiusAndOutline()
     if (m_internalSettings->squareCorners() || (squareCornersTiled && isTiled()) || !settings()->isAlphaChannelSupported()) {
         m_cornerRadius = 0.0;
     } else {
-        // m_cornerRadius = m_internalSettings->cornerRadius();
         m_cornerRadius = KDecoration3::snapToPixelGrid(m_internalSettings->cornerRadius(), window()->nextScale());
     }
     
-    const bool roundTopLeft = squareCornersTiled ? (leftBorderVisible() && topBorderVisible()) : leftBorderVisible();
-    const bool roundTopRight = squareCornersTiled ? (rightBorderVisible() && topBorderVisible()) : rightBorderVisible();
+    const bool roundTopLeft = roundTopLeftCorners();
+    const bool roundTopRight = roundTopRightCorners();
 
     const qreal topLeftCornerRadius = roundTopLeft ? m_cornerRadius : 0.0;
     const qreal topRightCornerRadius = roundTopRight ? m_cornerRadius : 0.0;
@@ -1469,9 +1448,8 @@ void Decoration::updateCornerRadiusAndOutline()
 
 void Decoration::updatePaths()
 {
-    const bool squareCornersTiled = m_internalSettings ? m_internalSettings->squareCornersTiled() : false;
-    const bool roundTopLeft = squareCornersTiled ? (leftBorderVisible() && topBorderVisible()) : leftBorderVisible();
-    const bool roundTopRight = squareCornersTiled ? (rightBorderVisible() && topBorderVisible()) : rightBorderVisible();
+    const bool roundTopLeft = roundTopLeftCorners();
+    const bool roundTopRight = roundTopRightCorners();
 
     m_framePath = getRoundedPath(rect(),
                                  m_cornerRadius,

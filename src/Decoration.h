@@ -107,6 +107,9 @@ private:
     bool topBorderVisible() const;
     bool bottomBorderVisible() const;
 
+    bool roundTopLeftCorners() const;
+    bool roundTopRightCorners() const;
+
     qreal leftOffset() const { return leftBorderVisible() ? sideBorderSize() : 0; }
     qreal rightOffset() const { return rightBorderVisible() ? sideBorderSize() : 0; }
     qreal topOffset() const { return topBorderVisible() ? topBorderSize() : 0; }
