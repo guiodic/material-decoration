@@ -360,13 +360,24 @@ KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(QPoint pos) const
 void AppMenuButtonGroup::resetButtons()
 {
     m_buttonIndexWaitingForPopup = -1;
-    if (buttons().isEmpty()) {
-        return;
-    }
     setCurrentIndex(-1);
     m_currentMenu = nullptr;
-    m_search->reset();
-    m_search->invalidateCandidates();
+    m_searchUiVisible = false;
+    m_hoveredButton = nullptr;
+
+    if (m_searchDebounceTimer) {
+        m_searchDebounceTimer->stop();
+    }
+    if (m_searchLineEdit) {
+        m_searchLineEdit->blockSignals(true);
+        m_searchLineEdit->clear();
+        m_searchLineEdit->blockSignals(false);
+    }
+    if (m_search) {
+        m_search->reset();
+        m_search->invalidateCandidates();
+    }
+
     m_textButtons.clear();
     m_overflowButton = nullptr;
     m_searchButton = nullptr;
@@ -375,18 +386,22 @@ void AppMenuButtonGroup::resetButtons()
 
     if (m_overflowMenu) {
         m_overflowMenu->deleteLater();
+        m_overflowMenu = nullptr;
     }
-    
+
+    // An empty button list must not prevent the logical state above from being reset.
+    if (buttons().isEmpty()) {
+        Q_EMIT menuUpdated();
+        return;
+    }
+
     // Create a copy of the button pointers before removing them from the group.
     const auto allButtons = buttons();
 
-    // This removes all buttons with the "Custom" type from the group's list,
-    // but does not delete the button widgets themselves.
+    // Remove all custom buttons from the group's list, but do not delete the widgets.
     removeButton(KDecoration3::DecorationButtonType::Custom);
 
-    // Now, immediately delete the button widgets we took ownership of.
-    // This is necessary to prevent layout race conditions when recreating buttons
-    // in the same event loop cycle. 
+    // Delete the button widgets immediately to avoid layout races when recreating them.
     qDeleteAll(allButtons);
 
     Q_EMIT menuUpdated();
