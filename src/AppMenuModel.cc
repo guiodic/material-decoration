@@ -76,6 +76,7 @@ AppMenuModel::AppMenuModel(QObject *parent)
         if (serviceName == m_serviceName) {
             setMenuAvailable(false);
             stopCaching();
+            m_menu = nullptr;
             m_serviceName.clear();
             m_menuObjectPath.clear();
             if (m_importer) {
@@ -169,6 +170,12 @@ void AppMenuModel::onActionChanged()
 
 void AppMenuModel::onMenuUpdated(QMenu *menu)
 {
+    // An importer may emit a queued/late update after it has been replaced or
+    // its DBus service has disappeared. Ignore updates from obsolete importers.
+    if (sender() != m_importer.data()) {
+        return;
+    }
+
     if (!menu) {
         return;
     }
