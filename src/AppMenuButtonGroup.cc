@@ -624,6 +624,10 @@ void AppMenuButtonGroup::updateAppMenuModel()
                 m_searchLineEdit->setText(savedQuery);
                 m_searchDebounceTimer->start();
             }
+        } else if (wasSearchOpen && m_searchMenu && m_searchMenu->isVisible()) {
+            // The rebuilt menu no longer has a search button, so don't leave
+            // its popup visible without a corresponding control.
+            m_searchMenu->hide();
         }
 
         if (menuActionCount > 0) {
