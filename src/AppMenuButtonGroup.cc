@@ -357,8 +357,14 @@ KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(QPoint pos) const
     return nullptr;
 }
 
-void AppMenuButtonGroup::resetButtons()
+void AppMenuButtonGroup::resetButtons(bool closeSearchMenu)
 {
+    // Structural updates preserve the open search popup; a full reset (for
+    // example, when the application menu disappears) must close it.
+    if (closeSearchMenu && m_searchMenu && m_searchMenu->isVisible()) {
+        m_searchMenu->hide();
+    }
+
     m_buttonIndexWaitingForPopup = -1;
     setCurrentIndex(-1);
     m_currentMenu = nullptr;
@@ -529,6 +535,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
         // Preserve current menu state if possible
         const bool wasSearchOpen = (m_currentIndex == m_searchIndex && m_searchIndex != -1);
+        const bool wasSearchVisible = wasSearchOpen && m_searchMenu && m_searchMenu->isVisible();
         const bool wasOverflowOpen = (m_currentIndex == m_overflowIndex && m_overflowIndex != -1);
         QPointer<QMenu> previousMenu = m_currentMenu;
         const QString savedQuery = m_searchLineEdit ? m_searchLineEdit->text() : QString();
@@ -556,7 +563,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
                 }
             }
         } else {
-            resetButtons(); // Immediate reset is intended here for structural changes
+            resetButtons(false); // Preserve the search popup while rebuilding buttons
 
             // Populate
             for (int i = 0; i < menuActionCount; ++i) {
@@ -607,6 +614,10 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
             if (AppMenuButton *b = getAppMenuButton(m_currentIndex)) {
                 b->setChecked(true);
+            }
+
+            if (wasSearchOpen && wasSearchVisible) {
+                m_searchUiVisible = true;
             }
 
             if (wasSearchOpen && !savedQuery.isEmpty() && m_searchLineEdit) {
