@@ -263,6 +263,13 @@ private Q_SLOTS:
     void onActionChanged();
 
     /**
+     * @brief Slot invoked when a tracked QAction is destroyed.
+     *
+     * Invalidates cached candidates and schedules visible search results to refresh.
+     */
+    void onTrackedActionDestroyed();
+
+    /**
      * @brief Slot invoked when a tracked QAction emits visibleChanged().
      *
      * Invalidates candidates when an action becomes visible or hidden.
