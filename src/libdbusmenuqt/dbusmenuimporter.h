@@ -64,8 +64,6 @@ Q_SIGNALS:
      * @see updateMenu()
      */
     void menuUpdated(QMenu *);
-    // The request completed without a usable menu layout.
-    void menuUpdateFailed(QMenu *);
     // Completion of a particular requestMenuUpdate() operation. Unsolicited
     // LayoutUpdated refreshes never satisfy the caller's request token.
     void menuRequestFinished(QMenu *menu, quint64 requestId, bool success);
