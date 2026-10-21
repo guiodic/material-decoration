@@ -412,7 +412,9 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     if (!reply.isValid()) {
         qCWarning(DBUSMENUQT) << reply.error().message();
         d->finishMenuRequest(parentId, menu, requestId, false);
-        if (menu) {
+        if (menu && requestId) {
+            // An unsolicited LayoutUpdated failure must not fail a separate
+            // pending user request for the same menu.
             Q_EMIT menuUpdateFailed(menu);
         }
         return;
