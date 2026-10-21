@@ -52,6 +52,10 @@ public Q_SLOTS:
 
     void updateMenu(QMenu *menu);
 
+    // Abandon the current update for this menu. Any callback from the old
+    // request will be ignored if it arrives after cancellation.
+    void cancelUpdate(QMenu *menu);
+
 Q_SIGNALS:
     /**
      * Emitted after a call to updateMenu().
