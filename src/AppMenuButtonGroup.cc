@@ -357,16 +357,33 @@ KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(QPoint pos) const
     return nullptr;
 }
 
-void AppMenuButtonGroup::resetButtons()
+void AppMenuButtonGroup::resetButtons(bool closeSearchMenu)
 {
-    m_buttonIndexWaitingForPopup = -1;
-    if (buttons().isEmpty()) {
-        return;
+    // Structural updates preserve the open search popup; a full reset (for
+    // example, when the application menu disappears) must close it.
+    if (closeSearchMenu && m_searchMenu && m_searchMenu->isVisible()) {
+        m_searchMenu->hide();
     }
+
+    m_buttonIndexWaitingForPopup = -1;
     setCurrentIndex(-1);
     m_currentMenu = nullptr;
-    m_search->reset();
-    m_search->invalidateCandidates();
+    m_searchUiVisible = false;
+    m_hoveredButton = nullptr;
+
+    if (m_searchDebounceTimer) {
+        m_searchDebounceTimer->stop();
+    }
+    if (m_searchLineEdit) {
+        m_searchLineEdit->blockSignals(true);
+        m_searchLineEdit->clear();
+        m_searchLineEdit->blockSignals(false);
+    }
+    if (m_search) {
+        m_search->reset();
+        m_search->invalidateCandidates();
+    }
+
     m_textButtons.clear();
     m_overflowButton = nullptr;
     m_searchButton = nullptr;
@@ -374,19 +391,26 @@ void AppMenuButtonGroup::resetButtons()
     m_searchIndex = -1;
 
     if (m_overflowMenu) {
+        m_overflowMenu->hide();
         m_overflowMenu->deleteLater();
+        m_overflowMenu = nullptr;
     }
-    
+
+    // An empty button list must not prevent the logical state above from being reset.
+    if (buttons().isEmpty()) {
+        setOverflowing(false);
+        m_visibleWidth = 0;
+        Q_EMIT menuUpdated();
+        return;
+    }
+
     // Create a copy of the button pointers before removing them from the group.
     const auto allButtons = buttons();
 
-    // This removes all buttons with the "Custom" type from the group's list,
-    // but does not delete the button widgets themselves.
+    // Remove all custom buttons from the group's list, but do not delete the widgets.
     removeButton(KDecoration3::DecorationButtonType::Custom);
 
-    // Now, immediately delete the button widgets we took ownership of.
-    // This is necessary to prevent layout race conditions when recreating buttons
-    // in the same event loop cycle. 
+    // Delete the button widgets immediately to avoid layout races when recreating them.
     qDeleteAll(allButtons);
 
     Q_EMIT menuUpdated();
@@ -514,14 +538,36 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
         // Preserve current menu state if possible
         const bool wasSearchOpen = (m_currentIndex == m_searchIndex && m_searchIndex != -1);
-        const bool wasOverflowOpen = (m_currentIndex == m_overflowIndex && m_overflowIndex != -1);
+        const bool wasSearchVisible = wasSearchOpen && m_searchMenu && m_searchMenu->isVisible();
+        const bool wasOverflowOpen = (m_currentIndex == m_overflowIndex
+                                      && m_overflowIndex != -1
+                                      && m_overflowMenu
+                                      && m_overflowMenu->isVisible());
+        QPointer<QAction> savedOverflowAction = wasOverflowOpen ? m_overflowMenu->activeAction() : nullptr;
         QPointer<QMenu> previousMenu = m_currentMenu;
         const QString savedQuery = m_searchLineEdit ? m_searchLineEdit->text() : QString();
 
-        // Try in-place update if possible to reduce flicker and object churn
-        const bool searchStateMatches = (m_searchButton.isNull() == !deco->searchEnabled());
+        // Rebuild when the menu's action identity or order changes, even if
+        // the number of actions stays the same. Otherwise an open overflow
+        // popup could keep showing actions from the previous structure.
+        bool actionsChanged = false;
+        if (m_textButtons.count() == menuActionCount) {
+            for (int i = 0; i < menuActionCount; ++i) {
+                const auto &textButton = m_textButtons.at(i);
+                if (!textButton || textButton->action() != actions.at(i)) {
+                    actionsChanged = true;
+                    break;
+                }
+            }
+        }
 
-        if (m_textButtons.count() == menuActionCount && !m_textButtons.isEmpty() && searchStateMatches) {
+        // Try in-place update only while the action structure is unchanged.
+        const bool searchStateMatches = (m_searchButton.isNull() == !deco->searchEnabled());
+        const bool rebuildButtons = actionsChanged
+            || m_textButtons.count() != menuActionCount
+            || m_textButtons.isEmpty() || !searchStateMatches;
+
+        if (!rebuildButtons) {
             int actionIdx = 0;
             for (auto &textButton : std::as_const(m_textButtons)) {
                 if (!textButton) {
@@ -541,7 +587,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
                 }
             }
         } else {
-            resetButtons(); // Immediate reset is intended here for structural changes
+            resetButtons(false); // Preserve the search popup while rebuilding buttons
 
             // Populate
             for (int i = 0; i < menuActionCount; ++i) {
@@ -582,8 +628,6 @@ void AppMenuButtonGroup::updateAppMenuModel()
         int indexToRestore = -1;
         if (wasSearchOpen && m_searchIndex != -1) {
             indexToRestore = m_searchIndex;
-        } else if (wasOverflowOpen && m_overflowIndex != -1) {
-            indexToRestore = m_overflowIndex;
         }
 
         if (indexToRestore != -1) {
@@ -594,10 +638,18 @@ void AppMenuButtonGroup::updateAppMenuModel()
                 b->setChecked(true);
             }
 
+            if (wasSearchOpen && wasSearchVisible) {
+                m_searchUiVisible = true;
+            }
+
             if (wasSearchOpen && !savedQuery.isEmpty() && m_searchLineEdit) {
                 m_searchLineEdit->setText(savedQuery);
                 m_searchDebounceTimer->start();
             }
+        } else if (wasSearchOpen && m_searchMenu && m_searchMenu->isVisible()) {
+            // The rebuilt menu no longer has a search button, so don't leave
+            // its popup visible without a corresponding control.
+            m_searchMenu->hide();
         }
 
         if (menuActionCount > 0) {
@@ -607,6 +659,33 @@ void AppMenuButtonGroup::updateAppMenuModel()
         }
 
         Q_EMIT menuUpdated();
+
+        // The search button may have moved during the rebuild. Reposition the
+        // still-open popup after the layout has had a chance to update geometry.
+        if (wasSearchOpen && wasSearchVisible) {
+            QTimer::singleShot(0, this, [this]() {
+                if (m_searchMenu && m_searchMenu->isVisible() && m_searchButton) {
+                    repositionSearchMenu();
+                }
+            });
+        }
+
+        // Recreate the overflow popup only if the rebuilt layout still needs it.
+        // QAction pointers remain valid only while the model keeps the action.
+        if (wasOverflowOpen && rebuildButtons) {
+            QTimer::singleShot(0, this, [this, savedOverflowAction]() {
+                if (!overflowing() || !m_overflowButton || !m_overflowButton->isVisible()) {
+                    return;
+                }
+
+                triggerOverflow();
+
+                if (m_overflowMenu && savedOverflowAction
+                    && m_overflowMenu->actions().contains(savedOverflowAction)) {
+                    m_overflowMenu->setActiveAction(savedOverflowAction);
+                }
+            });
+        }
     }
 }
 
@@ -832,7 +911,9 @@ void AppMenuButtonGroup::handleOverflowTrigger()
     }
 
     if (m_overflowMenu) {
+        m_overflowMenu->hide();
         m_overflowMenu->deleteLater();
+        m_overflowMenu = nullptr;
     }
 
     auto *actionMenu = new NavigableMenu();
