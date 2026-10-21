@@ -213,6 +213,7 @@ void AppMenuButtonGroup::setupSearchMenu()
             currentButton->setChecked(false);
         }
         setCurrentIndex(-1);
+        m_hoveredButton = nullptr;
     });
 
     connect(m_search, &AppMenuSearch::candidatesInvalidated, this, &AppMenuButtonGroup::onMenuReadyForSearch);
