@@ -289,9 +289,6 @@ private:
     bool m_candidateTruncationLogged = false;
     QList<QPointer<QActionGroup>> m_searchResultGroups;
 
-    // Maps original action identity to its currently rendered search-result proxies.
-    // Keys are used only for identity and removed when the original action is destroyed.
-    QHash<QAction *, QList<QPointer<QAction>>> m_proxyActionsByOriginal;
     
     // This cache maps QAction* pointers directly to their cleansed text labels (accelerator markers removed).
     // It is automatically cleared on exit of each filter() pass using a qScopeGuard.
