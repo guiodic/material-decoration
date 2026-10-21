@@ -151,6 +151,20 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
         this, &AppMenuButtonGroup::onMenuReadyForSearch);
     connect(m_appMenuModel, &AppMenuModel::subMenuReady,
         this, &AppMenuButtonGroup::onSubMenuReady);
+    connect(m_appMenuModel, &AppMenuModel::subMenuLoadFailed, this, [this](QMenu *menu) {
+        if (m_buttonIndexWaitingForPopup < 0 || !m_appMenuModel || !m_appMenuModel->menu()) {
+            return;
+        }
+        const auto actions = m_appMenuModel->menu()->actions();
+        if (m_buttonIndexWaitingForPopup >= actions.size()) {
+            m_buttonIndexWaitingForPopup = -1;
+            return;
+        }
+        QAction *action = actions.at(m_buttonIndexWaitingForPopup);
+        if (action && action->menu() == menu) {
+            m_buttonIndexWaitingForPopup = -1;
+        }
+    });
 
     if (decoratedClient->hasApplicationMenu()) {
         onHasApplicationMenuChanged(true);
