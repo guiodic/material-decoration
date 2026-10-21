@@ -630,14 +630,16 @@ quint64 DBusMenuImporter::requestMenuUpdate(QMenu *menu)
     const quint64 requestId = ++d->m_nextMenuRequestId;
     d->m_activeMenuRequests.insert(id, requestId);
     d->m_requestMenus.insert(id, QPointer<QMenu>(menu));
-    connect(menu, &QObject::destroyed, this, [this, id, requestId]() {
+
+    const auto call = d->m_interface->AboutToShow(id);
+    QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, this);
+    // The connection lives only as long as this asynchronous operation.
+    // Repeated retries do not accumulate destroyed() connections on the menu.
+    connect(menu, &QObject::destroyed, watcher, [this, id, requestId]() {
         if (d->m_activeMenuRequests.value(id) == requestId) {
             d->finishMenuRequest(id, nullptr, requestId, false);
         }
     });
-
-    const auto call = d->m_interface->AboutToShow(id);
-    QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, this);
     watcher->setProperty(DBUSMENU_PROPERTY_ID, id);
     watcher->setProperty(DBUSMENU_PROPERTY_REQUEST_ID, QVariant::fromValue(requestId));
     connect(watcher, &QDBusPendingCallWatcher::finished, this, &DBusMenuImporter::slotAboutToShowDBusCallFinished);
