@@ -83,7 +83,6 @@ public:
     ActionForId m_actionForId;
     QTimer m_pendingLayoutUpdateTimer;
 
-    QSet<int> m_idsRefreshedByAboutToShow;
     QSet<int> m_pendingLayoutUpdates;
     QHash<int, quint64> m_activeMenuRequests;
     quint64 m_nextMenuRequestId = 0;
@@ -94,7 +93,6 @@ public:
             return;
         }
         m_activeMenuRequests.remove(id);
-        m_idsRefreshedByAboutToShow.remove(id);
         if (menu) {
             Q_EMIT q->menuRequestFinished(menu, requestId, success);
         }
@@ -565,7 +563,6 @@ void DBusMenuImporter::expireMenuRequest(QMenu *menu, quint64 requestId)
         // The D-Bus watcher can still finish; its token check will discard
         // the late reply. Unsolicited LayoutUpdated refreshes stay intact.
         d->m_activeMenuRequests.remove(id);
-        d->m_idsRefreshedByAboutToShow.remove(id);
     }
 }
 
@@ -587,7 +584,6 @@ quint64 DBusMenuImporter::requestMenuUpdate(QMenu *menu)
 
     const quint64 requestId = ++d->m_nextMenuRequestId;
     d->m_activeMenuRequests.insert(id, requestId);
-    d->m_idsRefreshedByAboutToShow << id;
 
     const auto call = d->m_interface->AboutToShow(id);
     QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, this);
