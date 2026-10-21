@@ -55,6 +55,8 @@ public Q_SLOTS:
     // Returns the identity of the in-flight AboutToShow/GetLayout operation.
     // Re-entrant callers share that identity; 0 means no request was issued.
     quint64 requestMenuUpdate(QMenu *menu);
+    // Retire a stuck request without discarding unrelated LayoutUpdated work.
+    void expireMenuRequest(QMenu *menu, quint64 requestId);
 
     // Abandon the current update for this menu. Any callback from the old
     // request will be ignored if it arrives after cancellation.
