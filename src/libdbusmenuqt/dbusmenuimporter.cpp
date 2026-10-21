@@ -16,6 +16,7 @@
 #include <QCoreApplication>
 #include <QDBusConnection>
 #include <QDBusInterface>
+#include <QDBusPendingCallWatcher>
 #include <QDBusReply>
 #include <QDBusVariant>
 #include <QDebug>
