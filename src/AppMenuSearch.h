@@ -261,8 +261,9 @@ private Q_SLOTS:
     /**
      * @brief Slot invoked when a tracked QAction emits changed().
      *
-     * Invalidates candidates only if the action's cleaned text label actually changed.
-     * State changes (enabled, checked, icon) do not invalidate search candidates.
+     * Invalidates cached candidates and removes rendered proxies when an action
+     * changes. This refreshes both searchable text/path data and snapshotted
+     * presentation properties such as icon, enabled, checkable, and checked state.
      */
     void onActionChanged();
 
@@ -276,7 +277,7 @@ private Q_SLOTS:
     /**
      * @brief Slot invoked when a tracked QAction emits visibleChanged().
      *
-     * Invalidates candidates when an action becomes visible or hidden.
+     * Invalidates cached candidates and removes rendered proxies when visibility changes.
      */
     void onActionVisibilityChanged();
 
