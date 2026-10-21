@@ -52,6 +52,10 @@ public Q_SLOTS:
 
     void updateMenu(QMenu *menu);
 
+    // Returns the identity of the in-flight AboutToShow/GetLayout operation.
+    // Re-entrant callers share that identity; 0 means no request was issued.
+    quint64 requestMenuUpdate(QMenu *menu);
+
     // Abandon the current update for this menu. Any callback from the old
     // request will be ignored if it arrives after cancellation.
     void cancelUpdate(QMenu *menu);
@@ -64,6 +68,9 @@ Q_SIGNALS:
     void menuUpdated(QMenu *);
     // The request completed without a usable menu layout.
     void menuUpdateFailed(QMenu *);
+    // Completion of a particular requestMenuUpdate() operation. Unsolicited
+    // LayoutUpdated refreshes never satisfy the caller's request token.
+    void menuRequestFinished(QMenu *menu, quint64 requestId, bool success);
 
     /**
      * Emitted when the exporter was asked to activate an action
