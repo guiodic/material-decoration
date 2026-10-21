@@ -549,8 +549,10 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
         // Try in-place update if possible to reduce flicker and object churn
         const bool searchStateMatches = (m_searchButton.isNull() == !deco->searchEnabled());
+        const bool rebuildButtons = m_textButtons.count() != menuActionCount
+            || m_textButtons.isEmpty() || !searchStateMatches;
 
-        if (m_textButtons.count() == menuActionCount && !m_textButtons.isEmpty() && searchStateMatches) {
+        if (!rebuildButtons) {
             int actionIdx = 0;
             for (auto &textButton : std::as_const(m_textButtons)) {
                 if (!textButton) {
@@ -655,7 +657,7 @@ void AppMenuButtonGroup::updateAppMenuModel()
 
         // Recreate the overflow popup only if the rebuilt layout still needs it.
         // QAction pointers remain valid only while the model keeps the action.
-        if (wasOverflowOpen) {
+        if (wasOverflowOpen && rebuildButtons) {
             QTimer::singleShot(0, this, [this, savedOverflowAction]() {
                 if (!overflowing() || !m_overflowButton || !m_overflowButton->isVisible()) {
                     return;
@@ -894,7 +896,9 @@ void AppMenuButtonGroup::handleOverflowTrigger()
     }
 
     if (m_overflowMenu) {
+        m_overflowMenu->hide();
         m_overflowMenu->deleteLater();
+        m_overflowMenu = nullptr;
     }
 
     auto *actionMenu = new NavigableMenu();
