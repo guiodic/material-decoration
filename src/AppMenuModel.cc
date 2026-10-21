@@ -33,6 +33,7 @@
 #include <QAction>
 #include <QMenu>
 #include <QDeadlineTimer>
+#include <QtAlgorithms>
 
 #include <QDBusConnection>
 #include <QDBusServiceWatcher>
