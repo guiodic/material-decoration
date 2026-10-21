@@ -398,6 +398,8 @@ void AppMenuButtonGroup::resetButtons(bool closeSearchMenu)
 
     // An empty button list must not prevent the logical state above from being reset.
     if (buttons().isEmpty()) {
+        setOverflowing(false);
+        m_visibleWidth = 0;
         Q_EMIT menuUpdated();
         return;
     }
@@ -635,6 +637,16 @@ void AppMenuButtonGroup::updateAppMenuModel()
         }
 
         Q_EMIT menuUpdated();
+
+        // The search button may have moved during the rebuild. Reposition the
+        // still-open popup after the layout has had a chance to update geometry.
+        if (wasSearchOpen && wasSearchVisible) {
+            QTimer::singleShot(0, this, [this]() {
+                if (m_searchMenu && m_searchMenu->isVisible() && m_searchButton) {
+                    repositionSearchMenu();
+                }
+            });
+        }
     }
 }
 
