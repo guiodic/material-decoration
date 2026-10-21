@@ -272,7 +272,37 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
 
 void AppMenuModel::onMenuRequestFinished(QMenu *menu, quint64 requestId, bool success)
 {
-    if (sender() != m_importer.data() || !menu || !requestId) {
+    if (sender() != m_importer.data() || !requestId) {
+        return;
+    }
+    if (!menu) {
+        // A request can finish while the original QMenu is being destroyed.
+        // Match its token without dereferencing the stale hash keys.
+        QList<QMenu *> pendingMenus;
+        for (auto it = m_pendingDeepCacheRequestIds.cbegin(); it != m_pendingDeepCacheRequestIds.cend(); ++it) {
+            if (it.value() == requestId) {
+                pendingMenus.append(it.key());
+            }
+        }
+        for (QMenu *pending : std::as_const(pendingMenus)) {
+            checkPendingUpdatesComplete(pending);
+        }
+        QList<QMenu *> popupMenus;
+        for (auto it = m_userMenuWaitRequestIds.cbegin(); it != m_userMenuWaitRequestIds.cend(); ++it) {
+            if (it.value() == requestId) {
+                popupMenus.append(it.key());
+            }
+        }
+        for (QMenu *pending : std::as_const(popupMenus)) {
+            m_userMenuWaitRequestIds.remove(pending);
+            if (QTimer *timer = m_userMenuWaitTimers.take(pending)) {
+                timer->stop();
+                timer->deleteLater();
+            }
+        }
+        if (!popupMenus.isEmpty()) {
+            Q_EMIT subMenuLoadFailed(nullptr);
+        }
         return;
     }
     // Finish internal bookkeeping before emitting any signal: popup slots
