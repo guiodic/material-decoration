@@ -100,6 +100,7 @@ private:
     bool m_updatePending = false;
 
     QHash<QMenu *, QTimer *> m_userMenuWaitTimers;
+    QHash<QMenu *, quint64> m_userMenuWaitRequestIds;
     QPointer<QMenu> m_menu;
 
     QDBusServiceWatcher *m_serviceWatcher;
