@@ -267,7 +267,7 @@ private Q_SLOTS:
      *
      * Invalidates cached candidates and schedules visible search results to refresh.
      */
-    void onTrackedActionDestroyed();
+    void onTrackedActionDestroyed(QObject *destroyedObject);
 
     /**
      * @brief Slot invoked when a tracked QAction emits visibleChanged().
@@ -288,6 +288,10 @@ private:
     bool m_menuIsRendered = false;
     bool m_candidateTruncationLogged = false;
     QList<QPointer<QActionGroup>> m_searchResultGroups;
+
+    // Maps original action identity to its currently rendered search-result proxies.
+    // Keys are used only for identity and removed when the original action is destroyed.
+    QHash<QAction *, QList<QPointer<QAction>>> m_proxyActionsByOriginal;
     
     // This cache maps QAction* pointers directly to their cleansed text labels (accelerator markers removed).
     // It is automatically cleared on exit of each filter() pass using a qScopeGuard.
