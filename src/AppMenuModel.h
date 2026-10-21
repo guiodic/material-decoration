@@ -29,6 +29,7 @@
 #include <QList>
 #include <QPointer>
 #include <QSet>
+#include <QHash>
 #include <QTimer>
 #include <QtGlobal>
 
@@ -86,6 +87,7 @@ private:
     bool m_deepCacheRequested = false;
     bool m_deepCacheStarted = false;
     QSet<QMenu *> m_pendingDeepCacheUpdates;
+    QHash<QMenu *, QTimer *> m_pendingDeepCacheTimers;
     bool m_updatePending = false;
 
     QPointer<QMenu> m_menu;
