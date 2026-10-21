@@ -287,6 +287,13 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
         }
     }
     m_trackedActions.clear();
+
+    for (const QPointer<QMenu> &menu : std::as_const(m_trackedMenus)) {
+        if (menu) {
+            menu->removeEventFilter(this);
+        }
+    }
+    m_trackedMenus.clear();
     m_knownActionTexts.clear();
 
     m_searchCandidates.clear();
@@ -305,6 +312,20 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
     QSet<QMenu *> visited;
     QList<QPointer<QAction>> ancestors;
     collectSearchCandidates(rootMenu, visited, ancestors);
+}
+
+bool AppMenuSearch::eventFilter(QObject *watched, QEvent *event)
+{
+    if (event && (event->type() == QEvent::ActionAdded || event->type() == QEvent::ActionRemoved)) {
+        if (qobject_cast<QMenu *>(watched)) {
+            // Membership changes invalidate cached paths even when the QAction
+            // itself survives and emits no changed()/destroyed() signal.
+            clear();
+            invalidateCandidates();
+        }
+    }
+
+    return QObject::eventFilter(watched, event);
 }
 
 void AppMenuSearch::onActionChanged()
@@ -357,6 +378,9 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
     if (visited.size() == oldSize) {
         return;
     }
+
+    menu->installEventFilter(this);
+    m_trackedMenus.append(menu);
 
     QAction *menuAction = menu->menuAction();
     bool addedAncestor = false;
