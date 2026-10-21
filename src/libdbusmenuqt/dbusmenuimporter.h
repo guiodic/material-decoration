@@ -64,6 +64,9 @@ Q_SIGNALS:
      * @see updateMenu()
      */
     void menuUpdated(QMenu *);
+    // Emitted also for the initial (unattributed, request ID 0) GetLayout failure.
+    // A failed fetch must not be reported as a successful menuUpdated.
+    void menuFetchFailed(QMenu *);
     // Completion of a particular requestMenuUpdate() operation. Unsolicited
     // LayoutUpdated refreshes never satisfy the caller's request token.
     void menuRequestFinished(QMenu *menu, quint64 requestId, bool success);
