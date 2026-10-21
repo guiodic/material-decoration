@@ -547,9 +547,24 @@ void AppMenuButtonGroup::updateAppMenuModel()
         QPointer<QMenu> previousMenu = m_currentMenu;
         const QString savedQuery = m_searchLineEdit ? m_searchLineEdit->text() : QString();
 
-        // Try in-place update if possible to reduce flicker and object churn
+        // Rebuild when the menu's action identity or order changes, even if
+        // the number of actions stays the same. Otherwise an open overflow
+        // popup could keep showing actions from the previous structure.
+        bool actionsChanged = false;
+        if (m_textButtons.count() == menuActionCount) {
+            for (int i = 0; i < menuActionCount; ++i) {
+                const auto &textButton = m_textButtons.at(i);
+                if (!textButton || textButton->action() != actions.at(i)) {
+                    actionsChanged = true;
+                    break;
+                }
+            }
+        }
+
+        // Try in-place update only while the action structure is unchanged.
         const bool searchStateMatches = (m_searchButton.isNull() == !deco->searchEnabled());
-        const bool rebuildButtons = m_textButtons.count() != menuActionCount
+        const bool rebuildButtons = actionsChanged
+            || m_textButtons.count() != menuActionCount
             || m_textButtons.isEmpty() || !searchStateMatches;
 
         if (!rebuildButtons) {
