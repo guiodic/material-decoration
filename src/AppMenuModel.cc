@@ -90,7 +90,6 @@ AppMenuModel::AppMenuModel(QObject *parent)
             }
             m_userMenuWaitTimers.clear();
             m_timedOutDeepCacheMenus.clear();
-            m_abandonedDeepCacheUpdates.clear();
             m_deepCacheCompleted = false;
             m_menu = nullptr;
             m_serviceName.clear();
