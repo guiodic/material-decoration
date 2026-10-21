@@ -58,10 +58,6 @@ public Q_SLOTS:
     // Retire a stuck request without discarding unrelated LayoutUpdated work.
     void expireMenuRequest(QMenu *menu, quint64 requestId);
 
-    // Abandon the current update for this menu. Any callback from the old
-    // request will be ignored if it arrives after cancellation.
-    void cancelUpdate(QMenu *menu);
-
 Q_SIGNALS:
     /**
      * Emitted after a call to updateMenu().
