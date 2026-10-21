@@ -209,6 +209,7 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
     // AboutToShow request. Only menuRequestFinished can complete a popup wait.
 
     const QPointer<QMenu> menuGuard(menu);
+    const QPointer<AppMenuModel> modelGuard(this);
     const QPointer<KDBusMenuImporter> importerGuard(m_importer);
 
     // This slot is called by the DBusMenuImporter whenever a menu's contents are ready.
@@ -222,17 +223,20 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         }
 
         setMenuAvailable(true);
+        if (!modelGuard) {
+            return;
+        }
         Q_EMIT modelNeedsUpdate();
 
         // Emitting signals can synchronously replace the current importer.
-        if (menuGuard && importerGuard == m_importer && m_deepCacheRequested) {
+        if (modelGuard && menuGuard && importerGuard == m_importer && m_deepCacheRequested) {
             resumeDeepCacheIfIdle(menuGuard.data());
         }
     } else { // This is an update for a submenu that was previously requested.
         if (!m_userMenuWaitTimers.contains(menu)) {
             Q_EMIT subMenuReady(menu);
         }
-        if (!menuGuard || importerGuard != m_importer) {
+        if (!modelGuard || !menuGuard || importerGuard != m_importer) {
             return;
         }
 
@@ -419,9 +423,13 @@ void AppMenuModel::addTimedOutMenu(QMenu *menu)
         return;
     }
 
-    for (const QPointer<QMenu> &candidate : std::as_const(m_timedOutDeepCacheMenus)) {
-        if (candidate.data() == menu) {
+    for (auto it = m_timedOutDeepCacheMenus.begin(); it != m_timedOutDeepCacheMenus.end();) {
+        if (it->isNull()) {
+            it = m_timedOutDeepCacheMenus.erase(it);
+        } else if (it->data() == menu) {
             return;
+        } else {
+            ++it;
         }
     }
     m_timedOutDeepCacheMenus.append(QPointer<QMenu>(menu));
@@ -429,10 +437,14 @@ void AppMenuModel::addTimedOutMenu(QMenu *menu)
 
 bool AppMenuModel::takeTimedOutMenu(QMenu *menu)
 {
-    for (auto it = m_timedOutDeepCacheMenus.begin(); it != m_timedOutDeepCacheMenus.end(); ++it) {
-        if (it->data() == menu) {
+    for (auto it = m_timedOutDeepCacheMenus.begin(); it != m_timedOutDeepCacheMenus.end();) {
+        if (it->isNull()) {
+            it = m_timedOutDeepCacheMenus.erase(it);
+        } else if (it->data() == menu) {
             m_timedOutDeepCacheMenus.erase(it);
             return true;
+        } else {
+            ++it;
         }
     }
     return false;
