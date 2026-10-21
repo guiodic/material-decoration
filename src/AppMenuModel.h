@@ -69,7 +69,6 @@ public:
 
 private Q_SLOTS:
     void onMenuUpdated(QMenu *menu);
-    void onMenuUpdateFailed(QMenu *menu);
     void onMenuRequestFinished(QMenu *menu, quint64 requestId, bool success);
     void onActionChanged();
     void processNext();
