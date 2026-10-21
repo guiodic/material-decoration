@@ -209,6 +209,9 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
     // A LayoutUpdated notification may complete independently of the user's
     // AboutToShow request. Only menuRequestFinished can complete a popup wait.
 
+    const QPointer<QMenu> menuGuard(menu);
+    const QPointer<KDBusMenuImporter> importerGuard(m_importer);
+
     // This slot is called by the DBusMenuImporter whenever a menu's contents are ready.
     if (m_menu.isNull() || menu == m_menu.data()) { // First time update, or a top-level menu update.
         m_menu = menu;
@@ -222,18 +225,21 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         setMenuAvailable(true);
         Q_EMIT modelNeedsUpdate();
 
-        // Pre-fetching and deep caching are now handled on-demand.
-        if (m_deepCacheRequested) {
-            resumeDeepCacheIfIdle(m_menu.data());
+        // Emitting signals can synchronously replace the current importer.
+        if (menuGuard && importerGuard == m_importer && m_deepCacheRequested) {
+            resumeDeepCacheIfIdle(menuGuard.data());
         }
     } else { // This is an update for a submenu that was previously requested.
         if (!m_userMenuWaitTimers.contains(menu)) {
             Q_EMIT subMenuReady(menu);
         }
+        if (!menuGuard || importerGuard != m_importer) {
+            return;
+        }
 
         const bool timedOutMenu = takeTimedOutMenu(menu);
         if (m_deepCacheRequested) {
-            resumeDeepCacheIfIdle(menu);
+            resumeDeepCacheIfIdle(menuGuard.data());
         } else if (m_deepCacheCompleted && timedOutMenu) {
             // A retry after a timeout succeeded after the original search cache
             // had completed. Scan this subtree so its nested entries are indexed.
@@ -257,8 +263,15 @@ void AppMenuModel::onMenuRequestFinished(QMenu *menu, quint64 requestId, bool su
     if (sender() != m_importer.data() || !menu || !requestId) {
         return;
     }
-    // An unrelated LayoutUpdated, an earlier scan or a later retry cannot
-    // complete this scan's request, even if they all reference the same QMenu.
+    // Finish internal bookkeeping before emitting any signal: popup slots
+    // may synchronously call stopCaching() or replace the importer.
+    if (m_pendingDeepCacheRequestIds.value(menu) == requestId) {
+        if (!success) {
+            addTimedOutMenu(menu);
+        }
+        checkPendingUpdatesComplete(menu);
+    }
+
     if (m_userMenuWaitRequestIds.value(menu) == requestId) {
         m_userMenuWaitRequestIds.remove(menu);
         if (QTimer *timer = m_userMenuWaitTimers.take(menu)) {
@@ -270,14 +283,6 @@ void AppMenuModel::onMenuRequestFinished(QMenu *menu, quint64 requestId, bool su
         } else {
             Q_EMIT subMenuLoadFailed(menu);
         }
-    }
-
-    if (m_pendingDeepCacheRequestIds.value(menu) == requestId) {
-        if (!success) {
-            // Failed menus remain eligible for a later successful deep-cache pass.
-            addTimedOutMenu(menu);
-        }
-        checkPendingUpdatesComplete(menu);
     }
 }
 
