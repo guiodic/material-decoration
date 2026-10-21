@@ -22,6 +22,7 @@
 #include <QAction>
 #include <QActionGroup>
 #include <QPointer>
+#include <QSet>
 #include <QList>
 #include <QSet>
 #include <QHash>
@@ -299,11 +300,10 @@ private:
     // It is automatically cleared on exit of each filter() pass using a qScopeGuard.
     mutable QHash<QAction *, QString> m_actionTextCache;
 
-    // Actions connected to onActionChanged() and their known cleaned text labels at candidate build time
+    // Actions connected to change/destruction signals during candidate collection.
     QList<QPointer<QAction>> m_trackedActions;
+    QSet<QAction *> m_trackedActionSet;
     QList<QPointer<QMenu>> m_trackedMenus;
-    QHash<QAction *, QString> m_knownActionTexts;
-    QHash<QAction *, QPointer<QMenu>> m_knownActionMenus;
 };
 
 } // namespace Material
