@@ -209,6 +209,10 @@ void AppMenuButtonGroup::setupSearchMenu()
         if (m_search) {
             m_search->reset();
         }
+        if (AppMenuButton *currentButton = getAppMenuButton(m_currentIndex)) {
+            currentButton->setChecked(false);
+        }
+        setCurrentIndex(-1);
     });
 
     connect(m_search, &AppMenuSearch::candidatesInvalidated, this, &AppMenuButtonGroup::onMenuReadyForSearch);
