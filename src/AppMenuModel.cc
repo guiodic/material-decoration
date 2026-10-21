@@ -48,6 +48,9 @@ namespace Material
 
 namespace
 {
+// Bound each deep-cache request so an unresponsive D-Bus menu cannot keep
+// search initialization waiting indefinitely. Five seconds allows for normal
+// asynchronous menu updates while keeping a failed request from stalling search.
 constexpr int DeepCacheUpdateTimeoutMs = 5000;
 }
 
@@ -423,18 +426,26 @@ void AppMenuModel::processNext()
             auto *timeout = new QTimer(this);
             timeout->setSingleShot(true);
             m_pendingDeepCacheTimers.insert(menuToProcess, timeout);
-            connect(timeout, &QTimer::timeout, this, [this, menuToProcess, timeout]() {
-                if (m_pendingDeepCacheTimers.value(menuToProcess) != timeout) {
+            const QPointer<QMenu> menuGuard(menuToProcess);
+            connect(timeout, &QTimer::timeout, this, [this, menuGuard, menuKey = menuToProcess, timeout]() {
+                if (m_pendingDeepCacheTimers.value(menuKey) != timeout) {
+                    return;
+                }
+
+                // The menu may have been destroyed while the timer was pending.
+                // Keep the raw pointer only as the hash key; never dereference it.
+                if (!menuGuard) {
+                    checkPendingUpdatesComplete(menuKey);
                     return;
                 }
 
                 // Let the importer retry this menu later. It invalidates callbacks
                 // from this request so a stale reply cannot interfere with a retry.
-                addTimedOutMenu(menuToProcess);
+                addTimedOutMenu(menuGuard.data());
                 if (m_importer) {
-                    m_importer->cancelUpdate(menuToProcess);
+                    m_importer->cancelUpdate(menuGuard.data());
                 }
-                checkPendingUpdatesComplete(menuToProcess);
+                checkPendingUpdatesComplete(menuKey);
             });
             timeout->start(DeepCacheUpdateTimeoutMs);
 
