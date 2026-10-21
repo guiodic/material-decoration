@@ -275,6 +275,11 @@ void AppMenuModel::loadSubMenu(QMenu *menu)
     if (!m_importer || !menu) {
         return;
     }
+    const quint64 requestId = m_importer->requestMenuUpdate(menu);
+    if (!requestId) {
+        Q_EMIT subMenuLoadFailed(menu);
+        return;
+    }
     if (!m_userMenuWaitTimers.contains(menu)) {
         auto *timer = new QTimer(this);
         timer->setSingleShot(true);
@@ -286,19 +291,21 @@ void AppMenuModel::loadSubMenu(QMenu *menu)
                 pending->deleteLater();
             }
         });
-        connect(timer, &QTimer::timeout, this, [this, menu, guard, timer]() {
+        connect(timer, &QTimer::timeout, this, [this, menu, guard, timer, requestId]() {
             if (m_userMenuWaitTimers.value(menu) != timer) {
                 return;
             }
             m_userMenuWaitTimers.remove(menu);
             timer->deleteLater();
             if (guard) {
+                if (m_importer) {
+                    m_importer->expireMenuRequest(guard.data(), requestId);
+                }
                 Q_EMIT subMenuLoadFailed(guard.data());
             }
         });
         timer->start(DeepCacheUpdateTimeoutMs);
     }
-    m_importer->updateMenu(menu);
 }
 
 void AppMenuModel::stopCaching()
@@ -512,6 +519,10 @@ void AppMenuModel::processNext()
                 // importer request: a user may also be waiting to open this menu,
                 // and LayoutUpdated refreshes must remain independent.
                 addTimedOutMenu(menuGuard.data());
+                if (m_importer && !m_userMenuWaitTimers.contains(menuKey)) {
+                    m_importer->expireMenuRequest(menuGuard.data(),
+                        m_pendingDeepCacheRequestIds.value(menuKey));
+                }
                 checkPendingUpdatesComplete(menuKey);
             });
             timeout->start(DeepCacheUpdateTimeoutMs);
