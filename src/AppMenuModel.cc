@@ -90,6 +90,7 @@ AppMenuModel::AppMenuModel(QObject *parent)
             }
             m_userMenuWaitTimers.clear();
             m_timedOutDeepCacheMenus.clear();
+            m_abandonedDeepCacheUpdates.clear();
             m_deepCacheCompleted = false;
             m_menu = nullptr;
             m_serviceName.clear();
@@ -161,6 +162,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     }
     m_userMenuWaitTimers.clear();
     m_timedOutDeepCacheMenus.clear();
+    m_abandonedDeepCacheUpdates.clear();
     m_deepCacheCompleted = false;
 
     m_serviceName = serviceName;
@@ -208,6 +210,18 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         timer->deleteLater();
     }
 
+    // A completion from a stopped scan cannot satisfy a new scan's pending
+    // request. Schedule a fresh importer update after the old one finishes.
+    // The importer has already cleared its in-flight marker before emitting
+    // menuUpdated(), so the new call cannot be swallowed as a duplicate.
+    const bool abandoned = m_abandonedDeepCacheUpdates.remove(menu);
+    if (abandoned && m_deepCacheRequested && m_pendingDeepCacheUpdates.contains(menu)) {
+        if (m_importer) {
+            m_importer->updateMenu(menu);
+        }
+        return;
+    }
+
     // This slot is called by the DBusMenuImporter whenever a menu's contents are ready.
     if (m_menu.isNull() || menu == m_menu.data()) { // First time update, or a top-level menu update.
         m_menu = menu;
@@ -253,6 +267,13 @@ void AppMenuModel::onMenuUpdateFailed(QMenu *menu)
         timer->deleteLater();
     }
     Q_EMIT subMenuLoadFailed(menu);
+    const bool abandoned = m_abandonedDeepCacheUpdates.remove(menu);
+    if (abandoned && m_deepCacheRequested && m_pendingDeepCacheUpdates.contains(menu)) {
+        if (m_importer) {
+            m_importer->updateMenu(menu);
+        }
+        return;
+    }
     checkPendingUpdatesComplete(menu);
 }
 
@@ -289,6 +310,11 @@ void AppMenuModel::loadSubMenu(QMenu *menu)
 
 void AppMenuModel::stopCaching()
 {
+    // Requests belong to the importer and may also serve an open popup.
+    // Preserve their identity across scans instead of cancelling them.
+    for (QMenu *menu : std::as_const(m_pendingDeepCacheUpdates)) {
+        m_abandonedDeepCacheUpdates.insert(menu);
+    }
     for (QMenu *subMenu : std::as_const(m_seenMenus)) {
         disconnect(subMenu, nullptr, this, nullptr);
     }
@@ -346,6 +372,7 @@ void AppMenuModel::registerSubMenus(QMenu *menu)
                 connect(subMenu, &QObject::destroyed, this, [this, subMenu]() {
                     m_seenMenus.remove(subMenu);
                     takeTimedOutMenu(subMenu);
+                    m_abandonedDeepCacheUpdates.remove(subMenu);
                     checkPendingUpdatesComplete(subMenu);
                 });
                 m_menusToDeepCache.append(QPointer(subMenu));
