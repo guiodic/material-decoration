@@ -337,29 +337,17 @@ void AppMenuSearch::onActionVisibilityChanged()
 
 void AppMenuSearch::onTrackedActionDestroyed(QObject *destroyedObject)
 {
-    // QObject::destroyed is emitted while the object is tearing down. Use its
-    // address only as an identity key; never dereference it as a QAction.
-    auto it = m_proxyActionsByOriginal.find(reinterpret_cast<QAction *>(destroyedObject));
-    if (it != m_proxyActionsByOriginal.end()) {
-        const auto proxies = it.value();
-        m_proxyActionsByOriginal.erase(it);
+    Q_UNUSED(destroyedObject);
 
-        // Remove stale results synchronously, before the event loop can process
-        // another user click. Deletion itself remains deferred to avoid deleting
-        // an action during signal delivery or menu event handling.
-        for (const QPointer<QAction> &proxy : proxies) {
-            if (!proxy || !m_searchMenu) {
-                continue;
-            }
-            m_searchMenu->removeAction(proxy);
-            if (QActionGroup *group = proxy->actionGroup()) {
-                group->removeAction(proxy);
-            }
-            proxy->deleteLater();
-        }
-    }
+    // A destroyed action may be a result itself or an ancestor of results
+    // collected from one of its submenus. Child actions can outlive their menu,
+    // so remove every rendered proxy synchronously rather than only proxies
+    // mapped to the destroyed action. clear() detaches proxies from the menu
+    // immediately and defers their destruction safely.
+    clear();
 
-    // The cached candidates/results also need to be rebuilt after destruction.
+    // Preserve the current query while invalidating candidates so the existing
+    // debounce path can rebuild results from the current menu structure.
     invalidateCandidates();
 }
 
