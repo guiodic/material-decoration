@@ -413,12 +413,17 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     const quint64 requestId = watcher->property(DBUSMENU_PROPERTY_REQUEST_ID).toULongLong();
     watcher->deleteLater();
 
-    // A timed-out/cancelled request may finish after a retry has started.
-    // Ignore it so it cannot mutate the menu or clear the newer request state.
-    if (requestId && (d->m_activeMenuRequests.value(parentId) != requestId
-        || !d->m_requestMenus.value(parentId)
-        || d->m_requestMenus.value(parentId) != d->menuForId(parentId))) {
-        return;
+    // Ignore stale/expired replies, but complete an active request whose
+    // original menu has disappeared or been replaced in the meantime.
+    if (requestId) {
+        if (d->m_activeMenuRequests.value(parentId) != requestId) {
+            return;
+        }
+        QMenu *requestedMenu = d->m_requestMenus.value(parentId);
+        if (!requestedMenu || requestedMenu != d->menuForId(parentId)) {
+            d->finishMenuRequest(parentId, nullptr, requestId, false);
+            return;
+        }
     }
 
     QMenu *menu = d->menuForId(parentId);
