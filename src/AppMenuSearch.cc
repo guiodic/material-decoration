@@ -199,7 +199,6 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
             }
         });
         m_searchMenu->addAction(newAction);
-        m_proxyActionsByOriginal[action].append(newAction);
     }
 
     m_menuIsRendered = true;
@@ -224,9 +223,6 @@ void AppMenuSearch::clear()
             }
         }
     }
-
-    // Clear the identity map even if the search menu has already been destroyed.
-    m_proxyActionsByOriginal.clear();
 
     // The old proxy actions no longer reference these groups (deleteLater()
     // above), so nothing else owns them: delete explicitly to avoid leaking
