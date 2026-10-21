@@ -98,6 +98,7 @@ private:
     QList<QPointer<QMenu>> m_suppressNextMenuUpdated;
     bool m_deepCacheCompleted = false;
     bool m_updatePending = false;
+    int m_initialMenuRetries = 0;
 
     QHash<QMenu *, QTimer *> m_userMenuWaitTimers;
     QHash<QMenu *, quint64> m_userMenuWaitRequestIds;
