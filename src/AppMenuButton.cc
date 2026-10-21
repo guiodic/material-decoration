@@ -123,10 +123,15 @@ QColor AppMenuButton::foregroundColor() const
     }
 }
 
-void AppMenuButton::trigger() {
+void AppMenuButton::trigger()
+{
     // qCDebug(category) << "AppMenuButton::trigger" << m_buttonIndex;
 
     auto *buttonGroup = qobject_cast<AppMenuButtonGroup *>(parent());
+    if (!buttonGroup) {
+        return;
+    }
+
     buttonGroup->trigger(m_buttonIndex);
 }
 
