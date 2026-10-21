@@ -107,7 +107,10 @@ public:
         QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, q);
         watcher->setProperty(DBUSMENU_PROPERTY_ID, id);
         watcher->setProperty(DBUSMENU_PROPERTY_REQUEST_ID, QVariant::fromValue(requestId));
-        QMenu *originalMenu = menuForId(id);
+        // The initial refresh(0) runs in DBusMenuImporter's constructor.
+        // Creating the root menu here would bypass derived createMenu()
+        // overrides (e.g. KDBusMenuImporter creates a NavigableMenu).
+        QMenu *originalMenu = (id == 0) ? m_menu : menuForId(id);
         watcher->setProperty(DBUSMENU_PROPERTY_REQUEST_MENU, QVariant::fromValue(static_cast<QObject *>(originalMenu)));
         if (originalMenu) {
             QObject::connect(originalMenu, &QObject::destroyed, watcher, [watcher]() {
@@ -419,8 +422,12 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     }
 
     QMenu *menu = d->menuForId(parentId);
+    QObject *requestedMenu = watcher->property(DBUSMENU_PROPERTY_REQUEST_MENU).value<QObject *>();
+    // The initial root fetch starts before the root menu exists. It is
+    // created later, after derived-class construction has completed.
+    const bool rootCreatedLater = parentId == 0 && !requestedMenu;
     if (watcher->property(DBUSMENU_PROPERTY_REQUEST_MENU_INVALID).toBool()
-        || watcher->property(DBUSMENU_PROPERTY_REQUEST_MENU).value<QObject *>() != menu) {
+        || (!rootCreatedLater && requestedMenu != menu)) {
         d->finishMenuRequest(parentId, nullptr, requestId, false);
         return;
     }
