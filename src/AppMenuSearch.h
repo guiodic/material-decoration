@@ -302,6 +302,7 @@ private:
     QList<QPointer<QAction>> m_trackedActions;
     QList<QPointer<QMenu>> m_trackedMenus;
     QHash<QAction *, QString> m_knownActionTexts;
+    QHash<QAction *, QPointer<QMenu>> m_knownActionMenus;
 };
 
 } // namespace Material
