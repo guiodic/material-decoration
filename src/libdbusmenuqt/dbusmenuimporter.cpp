@@ -85,6 +85,7 @@ public:
 
     QSet<int> m_pendingLayoutUpdates;
     QHash<int, quint64> m_activeMenuRequests;
+    QHash<int, QPointer<QMenu>> m_requestMenus;
     QHash<int, uint> m_lastAppliedLayoutRevisions;
     quint64 m_nextMenuRequestId = 0;
 
@@ -94,9 +95,8 @@ public:
             return;
         }
         m_activeMenuRequests.remove(id);
-        if (menu) {
-            Q_EMIT q->menuRequestFinished(menu, requestId, success);
-        }
+        m_requestMenus.remove(id);
+        Q_EMIT q->menuRequestFinished(menu, requestId, success);
     }
 
     QDBusPendingCallWatcher *refresh(int id, quint64 requestId = 0)
@@ -403,7 +403,9 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
 
     // A timed-out/cancelled request may finish after a retry has started.
     // Ignore it so it cannot mutate the menu or clear the newer request state.
-    if (requestId && d->m_activeMenuRequests.value(parentId) != requestId) {
+    if (requestId && (d->m_activeMenuRequests.value(parentId) != requestId
+        || !d->m_requestMenus.value(parentId)
+        || d->m_requestMenus.value(parentId) != d->menuForId(parentId))) {
         return;
     }
 
@@ -464,6 +466,9 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
             }
             action->deleteLater();
             d->m_actionForId.remove(id);
+            d->m_lastAppliedLayoutRevisions.remove(id);
+            // The old action's submenu is no longer the owner of this ID.
+            // The request-completion guard rejects its late D-Bus reply.
         } else {
             currentActions.append(action);
         }
@@ -579,6 +584,7 @@ void DBusMenuImporter::expireMenuRequest(QMenu *menu, quint64 requestId)
         // The D-Bus watcher can still finish; its token check will discard
         // the late reply. Unsolicited LayoutUpdated refreshes stay intact.
         d->m_activeMenuRequests.remove(id);
+        d->m_requestMenus.remove(id);
     }
 }
 
@@ -595,11 +601,21 @@ quint64 DBusMenuImporter::requestMenuUpdate(QMenu *menu)
 
     const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
     if (const quint64 activeId = d->m_activeMenuRequests.value(id)) {
-        return activeId; // Join the in-flight request rather than starting a duplicate.
+        if (d->m_requestMenus.value(id) == menu) {
+            return activeId; // Join only a request for this exact QMenu.
+        }
+        // An ID was reused while a request belonging to its old menu was active.
+        d->finishMenuRequest(id, nullptr, activeId, false);
     }
 
     const quint64 requestId = ++d->m_nextMenuRequestId;
     d->m_activeMenuRequests.insert(id, requestId);
+    d->m_requestMenus.insert(id, QPointer<QMenu>(menu));
+    connect(menu, &QObject::destroyed, this, [this, id, requestId]() {
+        if (d->m_activeMenuRequests.value(id) == requestId) {
+            d->finishMenuRequest(id, nullptr, requestId, false);
+        }
+    });
 
     const auto call = d->m_interface->AboutToShow(id);
     QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, this);
@@ -618,7 +634,9 @@ void DBusMenuImporter::slotAboutToShowDBusCallFinished(QDBusPendingCallWatcher *
     const quint64 requestId = watcher->property(DBUSMENU_PROPERTY_REQUEST_ID).toULongLong();
     watcher->deleteLater();
 
-    if (requestId && d->m_activeMenuRequests.value(id) != requestId) {
+    if (requestId && (d->m_activeMenuRequests.value(id) != requestId
+        || !d->m_requestMenus.value(id)
+        || d->m_requestMenus.value(id) != d->menuForId(id))) {
         return;
     }
 
