@@ -201,6 +201,16 @@ void AppMenuButtonGroup::setupSearchMenu()
 
     m_search->setSearchMenu(m_searchMenu);
 
+    connect(m_searchMenu, &QObject::destroyed, this, [this]() {
+        // QPointer clears m_searchLineEdit automatically, but stop pending
+        // callbacks and reset search state when the popup disappears first.
+        m_searchDebounceTimer->stop();
+        m_searchUiVisible = false;
+        if (m_search) {
+            m_search->reset();
+        }
+    });
+
     connect(m_search, &AppMenuSearch::candidatesInvalidated, this, &AppMenuButtonGroup::onMenuReadyForSearch);
     connect(m_search, &AppMenuSearch::repositionRequested, this, &AppMenuButtonGroup::repositionSearchMenu, Qt::UniqueConnection);
 }
