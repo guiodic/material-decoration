@@ -199,6 +199,7 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
             }
         });
         m_searchMenu->addAction(newAction);
+        m_proxyActionsByOriginal[action].append(newAction);
     }
 
     m_menuIsRendered = true;
@@ -225,6 +226,9 @@ void AppMenuSearch::clear()
             action->deleteLater();
         }
     }
+
+    // Clear the identity map together with the proxies it tracks.
+    m_proxyActionsByOriginal.clear();
 
     // The old proxy actions no longer reference these groups (deleteLater()
     // above), so nothing else owns them: delete explicitly to avoid leaking
@@ -333,11 +337,31 @@ void AppMenuSearch::onActionVisibilityChanged()
     invalidateCandidates();
 }
 
-void AppMenuSearch::onTrackedActionDestroyed()
+void AppMenuSearch::onTrackedActionDestroyed(QObject *destroyedObject)
 {
-    // Cached candidates and visible proxy results may still refer to the action
-    // that is being destroyed. QPointer prevents dereferencing it; invalidating
-    // also schedules a fresh search so the stale proxy is removed promptly.
+    // QObject::destroyed is emitted while the object is tearing down. Use its
+    // address only as an identity key; never dereference it as a QAction.
+    auto it = m_proxyActionsByOriginal.find(reinterpret_cast<QAction *>(destroyedObject));
+    if (it != m_proxyActionsByOriginal.end()) {
+        const auto proxies = it.value();
+        m_proxyActionsByOriginal.erase(it);
+
+        // Remove stale results synchronously, before the event loop can process
+        // another user click. Deletion itself remains deferred to avoid deleting
+        // an action during signal delivery or menu event handling.
+        for (const QPointer<QAction> &proxy : proxies) {
+            if (!proxy || !m_searchMenu) {
+                continue;
+            }
+            m_searchMenu->removeAction(proxy);
+            if (QActionGroup *group = proxy->actionGroup()) {
+                group->removeAction(proxy);
+            }
+            proxy->deleteLater();
+        }
+    }
+
+    // The cached candidates/results also need to be rebuilt after destruction.
     invalidateCandidates();
 }
 
