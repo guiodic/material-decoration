@@ -168,6 +168,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     QMetaObject::invokeMethod(m_importer.data(), qOverload<>(&DBusMenuImporter::updateMenu), Qt::QueuedConnection);
 
     connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, &AppMenuModel::onMenuUpdated);
+    connect(m_importer.data(), &DBusMenuImporter::menuUpdateFailed, this, &AppMenuModel::onMenuUpdateFailed);
 
     Q_EMIT modelNeedsUpdate();
 }
@@ -190,6 +191,11 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
 
     if (!menu) {
         return;
+    }
+
+    if (QTimer *timer = m_userMenuWaitTimers.take(menu)) {
+        timer->stop();
+        timer->deleteLater();
     }
 
     // This slot is called by the DBusMenuImporter whenever a menu's contents are ready.
@@ -227,11 +233,48 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
     }
 }
 
+void AppMenuModel::onMenuUpdateFailed(QMenu *menu)
+{
+    if (sender() != m_importer.data() || !menu) {
+        return;
+    }
+    if (QTimer *timer = m_userMenuWaitTimers.take(menu)) {
+        timer->stop();
+        timer->deleteLater();
+    }
+    Q_EMIT subMenuLoadFailed(menu);
+    checkPendingUpdatesComplete(menu);
+}
+
 void AppMenuModel::loadSubMenu(QMenu *menu)
 {
-    if (m_importer && menu) {
-        m_importer->updateMenu(menu);
+    if (!m_importer || !menu) {
+        return;
     }
+    if (!m_userMenuWaitTimers.contains(menu)) {
+        auto *timer = new QTimer(this);
+        timer->setSingleShot(true);
+        const QPointer<QMenu> guard(menu);
+        m_userMenuWaitTimers.insert(menu, timer);
+        connect(menu, &QObject::destroyed, this, [this, menu]() {
+            if (QTimer *pending = m_userMenuWaitTimers.take(menu)) {
+                pending->stop();
+                pending->deleteLater();
+            }
+        });
+        connect(timer, &QTimer::timeout, this, [this, menu, guard, timer]() {
+            if (m_userMenuWaitTimers.value(menu) != timer) {
+                return;
+            }
+            m_userMenuWaitTimers.remove(menu);
+            timer->deleteLater();
+            if (guard) {
+                Q_EMIT subMenuLoadFailed(guard.data());
+            }
+        });
+        timer->start(DeepCacheUpdateTimeoutMs);
+    }
+    m_importer->updateMenu(menu);
 }
 
 void AppMenuModel::stopCaching()
