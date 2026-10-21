@@ -180,7 +180,6 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     QMetaObject::invokeMethod(m_importer.data(), qOverload<>(&DBusMenuImporter::updateMenu), Qt::QueuedConnection);
 
     connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, &AppMenuModel::onMenuUpdated);
-    connect(m_importer.data(), &DBusMenuImporter::menuUpdateFailed, this, &AppMenuModel::onMenuUpdateFailed);
     connect(m_importer.data(), &DBusMenuImporter::menuRequestFinished, this, &AppMenuModel::onMenuRequestFinished);
 
     Q_EMIT modelNeedsUpdate();
@@ -247,15 +246,6 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         }
 
     }
-}
-
-void AppMenuModel::onMenuUpdateFailed(QMenu *menu)
-{
-    if (sender() != m_importer.data() || !menu) {
-        return;
-    }
-    // Request-specific failures are processed by onMenuRequestFinished().
-    // An unrelated refresh must not fail a popup waiting on a different token.
 }
 
 void AppMenuModel::onMenuRequestFinished(QMenu *menu, quint64 requestId, bool success)
