@@ -166,6 +166,7 @@ private:
     qreal m_visibleWidth;
     QPointer<QMenu> m_currentMenu;
     int m_buttonIndexWaitingForPopup = -1;
+    QPointer<QMenu> m_menuWaitingForPopup;
     int m_buttonIndexOfMenuToCache = -1;
 
     QPointer<QMenu> m_searchMenu;
