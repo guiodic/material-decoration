@@ -161,7 +161,6 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     }
     m_userMenuWaitTimers.clear();
     m_timedOutDeepCacheMenus.clear();
-    m_abandonedDeepCacheUpdates.clear();
     m_deepCacheCompleted = false;
 
     m_serviceName = serviceName;
@@ -180,6 +179,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
 
     connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, &AppMenuModel::onMenuUpdated);
     connect(m_importer.data(), &DBusMenuImporter::menuUpdateFailed, this, &AppMenuModel::onMenuUpdateFailed);
+    connect(m_importer.data(), &DBusMenuImporter::menuRequestFinished, this, &AppMenuModel::onMenuRequestFinished);
 
     Q_EMIT modelNeedsUpdate();
 }
@@ -207,18 +207,6 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
     if (QTimer *timer = m_userMenuWaitTimers.take(menu)) {
         timer->stop();
         timer->deleteLater();
-    }
-
-    // A completion from a stopped scan cannot satisfy a new scan's pending
-    // request. Schedule a fresh importer update after the old one finishes.
-    // The importer has already cleared its in-flight marker before emitting
-    // menuUpdated(), so the new call cannot be swallowed as a duplicate.
-    const bool abandoned = m_abandonedDeepCacheUpdates.remove(menu);
-    if (abandoned && m_deepCacheRequested && m_pendingDeepCacheUpdates.contains(menu)) {
-        if (m_importer) {
-            m_importer->updateMenu(menu);
-        }
-        return;
     }
 
     // This slot is called by the DBusMenuImporter whenever a menu's contents are ready.
@@ -250,9 +238,6 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
             startDeepCachingFrom(menu);
         }
 
-        // Track the specific submenus being deep cached. When all pending
-        // updates are finished, the entire menu tree has been fetched.
-        checkPendingUpdatesComplete(menu);
     }
 }
 
@@ -266,12 +251,21 @@ void AppMenuModel::onMenuUpdateFailed(QMenu *menu)
         timer->deleteLater();
     }
     Q_EMIT subMenuLoadFailed(menu);
-    const bool abandoned = m_abandonedDeepCacheUpdates.remove(menu);
-    if (abandoned && m_deepCacheRequested && m_pendingDeepCacheUpdates.contains(menu)) {
-        if (m_importer) {
-            m_importer->updateMenu(menu);
-        }
+}
+
+void AppMenuModel::onMenuRequestFinished(QMenu *menu, quint64 requestId, bool success)
+{
+    if (sender() != m_importer.data() || !menu || !requestId) {
         return;
+    }
+    // An unrelated LayoutUpdated, an earlier scan or a later retry cannot
+    // complete this scan's request, even if they all reference the same QMenu.
+    if (m_pendingDeepCacheRequestIds.value(menu) != requestId) {
+        return;
+    }
+    if (!success) {
+        // Failed menus remain eligible for a later successful deep-cache pass.
+        addTimedOutMenu(menu);
     }
     checkPendingUpdatesComplete(menu);
 }
@@ -309,11 +303,6 @@ void AppMenuModel::loadSubMenu(QMenu *menu)
 
 void AppMenuModel::stopCaching()
 {
-    // Requests belong to the importer and may also serve an open popup.
-    // Preserve their identity across scans instead of cancelling them.
-    for (QMenu *menu : std::as_const(m_pendingDeepCacheUpdates)) {
-        m_abandonedDeepCacheUpdates.insert(menu);
-    }
     for (QMenu *subMenu : std::as_const(m_seenMenus)) {
         disconnect(subMenu, nullptr, this, nullptr);
     }
@@ -327,6 +316,7 @@ void AppMenuModel::stopCaching()
         timer->deleteLater();
     }
     m_pendingDeepCacheTimers.clear();
+    m_pendingDeepCacheRequestIds.clear();
     m_deepCacheRequested = false;
     m_deepCacheStarted = false;
     m_pendingDeepCacheUpdates.clear();
@@ -371,7 +361,6 @@ void AppMenuModel::registerSubMenus(QMenu *menu)
                 connect(subMenu, &QObject::destroyed, this, [this, subMenu]() {
                     m_seenMenus.remove(subMenu);
                     takeTimedOutMenu(subMenu);
-                    m_abandonedDeepCacheUpdates.remove(subMenu);
                     checkPendingUpdatesComplete(subMenu);
                 });
                 m_menusToDeepCache.append(QPointer(subMenu));
@@ -385,6 +374,7 @@ void AppMenuModel::checkPendingUpdatesComplete(QMenu *menu)
     if (!m_pendingDeepCacheUpdates.remove(menu)) {
         return;
     }
+    m_pendingDeepCacheRequestIds.remove(menu);
 
     if (QTimer *timer = m_pendingDeepCacheTimers.take(menu)) {
         timer->stop();
@@ -526,7 +516,13 @@ void AppMenuModel::processNext()
             });
             timeout->start(DeepCacheUpdateTimeoutMs);
 
-            m_importer->updateMenu(menuToProcess);
+            const quint64 requestId = m_importer->requestMenuUpdate(menuToProcess);
+            if (requestId) {
+                m_pendingDeepCacheRequestIds.insert(menuToProcess, requestId);
+            } else {
+                // No request exists to complete this pending operation.
+                checkPendingUpdatesComplete(menuToProcess);
+            }
             m_staggerTimer->start();
             return; // Wait for async update or timeout
         }
