@@ -209,25 +209,23 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
 
 void AppMenuSearch::clear()
 {
-    if (!m_searchMenu) {
-        return;
-    }
-
     m_menuIsRendered = false;
 
-    const auto actions = m_searchMenu->actions();
-    for (QAction *action : actions) {
-        if (action && action->property(PROPERTY_SEARCH_PROXY).toBool()) {
-            m_searchMenu->removeAction(action);
-            // Detach action from its group before scheduling deletion
-            if (QActionGroup *group = action->actionGroup()) {
-                group->removeAction(action);
+    if (m_searchMenu) {
+        const auto actions = m_searchMenu->actions();
+        for (QAction *action : actions) {
+            if (action && action->property(PROPERTY_SEARCH_PROXY).toBool()) {
+                m_searchMenu->removeAction(action);
+                // Detach action from its group before scheduling deletion
+                if (QActionGroup *group = action->actionGroup()) {
+                    group->removeAction(action);
+                }
+                action->deleteLater();
             }
-            action->deleteLater();
         }
     }
 
-    // Clear the identity map together with the proxies it tracks.
+    // Clear the identity map even if the search menu has already been destroyed.
     m_proxyActionsByOriginal.clear();
 
     // The old proxy actions no longer reference these groups (deleteLater()
