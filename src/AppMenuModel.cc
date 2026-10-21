@@ -81,6 +81,8 @@ AppMenuModel::AppMenuModel(QObject *parent)
         if (serviceName == m_serviceName) {
             setMenuAvailable(false);
             stopCaching();
+            m_timedOutDeepCacheMenus.clear();
+            m_deepCacheCompleted = false;
             m_menu = nullptr;
             m_serviceName.clear();
             m_menuObjectPath.clear();
@@ -138,7 +140,9 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
 {
     // A menu change means any in-progress caching is now invalid.
     stopCaching();
-    
+    m_timedOutDeepCacheMenus.clear();
+    m_deepCacheCompleted = false;
+
     if (m_serviceName == serviceName && m_menuObjectPath == menuObjectPath) {
         if (m_importer) {
             QMetaObject::invokeMethod(m_importer.data(), qOverload<>(&DBusMenuImporter::updateMenu), Qt::QueuedConnection);
@@ -204,8 +208,14 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         }
     } else { // This is an update for a submenu that was previously requested.
         Q_EMIT subMenuReady(menu);
+
+        const bool timedOutMenu = takeTimedOutMenu(menu);
         if (m_deepCacheRequested) {
             resumeDeepCacheIfIdle(menu);
+        } else if (m_deepCacheCompleted && timedOutMenu) {
+            // A retry after a timeout succeeded after the original search cache
+            // had completed. Scan this subtree so its nested entries are indexed.
+            startDeepCachingFrom(menu);
         }
 
         // Track the specific submenus being deep cached. When all pending
@@ -248,6 +258,7 @@ void AppMenuModel::startDeepCaching()
     }
 
     m_deepCacheRequested = true;
+    m_deepCacheCompleted = false;
 
     if (!m_menu) {
         return;
@@ -278,6 +289,7 @@ void AppMenuModel::registerSubMenus(QMenu *menu)
             if (m_seenMenus.size() > oldSize) {
                 connect(subMenu, &QObject::destroyed, this, [this, subMenu]() {
                     m_seenMenus.remove(subMenu);
+                    takeTimedOutMenu(subMenu);
                     checkPendingUpdatesComplete(subMenu);
                 });
                 m_menusToDeepCache.append(QPointer(subMenu));
@@ -305,7 +317,50 @@ void AppMenuModel::checkPendingUpdatesComplete(QMenu *menu)
 void AppMenuModel::finishCaching()
 {
     stopCaching();
+    m_deepCacheCompleted = true;
     Q_EMIT menuReadyForSearch();
+}
+
+void AppMenuModel::addTimedOutMenu(QMenu *menu)
+{
+    if (!menu) {
+        return;
+    }
+
+    for (const QPointer<QMenu> &candidate : std::as_const(m_timedOutDeepCacheMenus)) {
+        if (candidate.data() == menu) {
+            return;
+        }
+    }
+    m_timedOutDeepCacheMenus.append(QPointer<QMenu>(menu));
+}
+
+bool AppMenuModel::takeTimedOutMenu(QMenu *menu)
+{
+    for (auto it = m_timedOutDeepCacheMenus.begin(); it != m_timedOutDeepCacheMenus.end(); ++it) {
+        if (it->data() == menu) {
+            m_timedOutDeepCacheMenus.erase(it);
+            return true;
+        }
+    }
+    return false;
+}
+
+void AppMenuModel::startDeepCachingFrom(QMenu *menu)
+{
+    if (!menu || !m_importer) {
+        return;
+    }
+
+    m_deepCacheRequested = true;
+    m_deepCacheStarted = true;
+    m_deepCacheCompleted = false;
+    m_menusToDeepCache.clear();
+    m_nextMenuToProcess = 0;
+    m_seenMenus.clear();
+
+    registerSubMenus(menu);
+    processNext();
 }
 
 void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
@@ -371,6 +426,13 @@ void AppMenuModel::processNext()
             connect(timeout, &QTimer::timeout, this, [this, menuToProcess, timeout]() {
                 if (m_pendingDeepCacheTimers.value(menuToProcess) != timeout) {
                     return;
+                }
+
+                // Let the importer retry this menu later. It invalidates callbacks
+                // from this request so a stale reply cannot interfere with a retry.
+                addTimedOutMenu(menuToProcess);
+                if (m_importer) {
+                    m_importer->cancelUpdate(menuToProcess);
                 }
                 checkPendingUpdatesComplete(menuToProcess);
             });
