@@ -623,8 +623,13 @@ quint64 DBusMenuImporter::requestMenuUpdate(QMenu *menu)
         if (d->m_requestMenus.value(id) == menu) {
             return activeId; // Join only a request for this exact QMenu.
         }
-        // An ID was reused while a request belonging to its old menu was active.
+        // A completion signal may synchronously delete the importer or menu.
+        const QPointer<DBusMenuImporter> importerGuard(this);
+        const QPointer<QMenu> menuGuard(menu);
         d->finishMenuRequest(id, nullptr, activeId, false);
+        if (!importerGuard || !menuGuard) {
+            return 0;
+        }
     }
 
     const quint64 requestId = ++d->m_nextMenuRequestId;
