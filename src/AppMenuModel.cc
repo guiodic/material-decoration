@@ -84,6 +84,11 @@ AppMenuModel::AppMenuModel(QObject *parent)
         if (serviceName == m_serviceName) {
             setMenuAvailable(false);
             stopCaching();
+            for (QTimer *timer : std::as_const(m_userMenuWaitTimers)) {
+                timer->stop();
+                timer->deleteLater();
+            }
+            m_userMenuWaitTimers.clear();
             m_timedOutDeepCacheMenus.clear();
             m_deepCacheCompleted = false;
             m_menu = nullptr;
@@ -150,6 +155,11 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     }
 
     stopCaching();
+    for (QTimer *timer : std::as_const(m_userMenuWaitTimers)) {
+        timer->stop();
+        timer->deleteLater();
+    }
+    m_userMenuWaitTimers.clear();
     m_timedOutDeepCacheMenus.clear();
     m_deepCacheCompleted = false;
 
