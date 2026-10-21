@@ -50,6 +50,8 @@ static QTime sChrono;
 
 static constexpr auto DBUSMENU_PROPERTY_ID = "_dbusmenu_id";
 static constexpr auto DBUSMENU_PROPERTY_REQUEST_ID = "_dbusmenu_request_id";
+static constexpr auto DBUSMENU_PROPERTY_REQUEST_MENU = "_dbusmenu_request_menu";
+static constexpr auto DBUSMENU_PROPERTY_REQUEST_MENU_INVALID = "_dbusmenu_request_menu_invalid";
 static constexpr auto DBUSMENU_PROPERTY_ICON_NAME = "_dbusmenu_icon_name";
 static constexpr auto DBUSMENU_PROPERTY_ICON_DATA_HASH = "_dbusmenu_icon_data_hash";
 
@@ -105,6 +107,13 @@ public:
         QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, q);
         watcher->setProperty(DBUSMENU_PROPERTY_ID, id);
         watcher->setProperty(DBUSMENU_PROPERTY_REQUEST_ID, QVariant::fromValue(requestId));
+        QMenu *originalMenu = menuForId(id);
+        watcher->setProperty(DBUSMENU_PROPERTY_REQUEST_MENU, QVariant::fromValue(static_cast<QObject *>(originalMenu)));
+        if (originalMenu) {
+            QObject::connect(originalMenu, &QObject::destroyed, watcher, [watcher]() {
+                watcher->setProperty(DBUSMENU_PROPERTY_REQUEST_MENU_INVALID, true);
+            });
+        }
         QObject::connect(watcher, &QDBusPendingCallWatcher::finished, q, &DBusMenuImporter::slotGetLayoutFinished);
 
         return watcher;
@@ -410,6 +419,11 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     }
 
     QMenu *menu = d->menuForId(parentId);
+    if (watcher->property(DBUSMENU_PROPERTY_REQUEST_MENU_INVALID).toBool()
+        || watcher->property(DBUSMENU_PROPERTY_REQUEST_MENU).value<QObject *>() != menu) {
+        d->finishMenuRequest(parentId, nullptr, requestId, false);
+        return;
+    }
 
     const QDBusPendingReply<uint, DBusMenuLayoutItem> reply = *watcher;
     if (!reply.isValid()) {
