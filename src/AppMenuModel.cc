@@ -89,6 +89,7 @@ AppMenuModel::AppMenuModel(QObject *parent)
                 timer->deleteLater();
             }
             m_userMenuWaitTimers.clear();
+            m_userMenuWaitRequestIds.clear();
             m_timedOutDeepCacheMenus.clear();
             m_deepCacheCompleted = false;
             m_menu = nullptr;
@@ -160,6 +161,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
         timer->deleteLater();
     }
     m_userMenuWaitTimers.clear();
+    m_userMenuWaitRequestIds.clear();
     m_timedOutDeepCacheMenus.clear();
     m_deepCacheCompleted = false;
 
@@ -204,10 +206,8 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
         return;
     }
 
-    if (QTimer *timer = m_userMenuWaitTimers.take(menu)) {
-        timer->stop();
-        timer->deleteLater();
-    }
+    // A LayoutUpdated notification may complete independently of the user's
+    // AboutToShow request. Only menuRequestFinished can complete a popup wait.
 
     // This slot is called by the DBusMenuImporter whenever a menu's contents are ready.
     if (m_menu.isNull() || menu == m_menu.data()) { // First time update, or a top-level menu update.
@@ -227,7 +227,9 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
             resumeDeepCacheIfIdle(m_menu.data());
         }
     } else { // This is an update for a submenu that was previously requested.
-        Q_EMIT subMenuReady(menu);
+        if (!m_userMenuWaitTimers.contains(menu)) {
+            Q_EMIT subMenuReady(menu);
+        }
 
         const bool timedOutMenu = takeTimedOutMenu(menu);
         if (m_deepCacheRequested) {
@@ -246,11 +248,8 @@ void AppMenuModel::onMenuUpdateFailed(QMenu *menu)
     if (sender() != m_importer.data() || !menu) {
         return;
     }
-    if (QTimer *timer = m_userMenuWaitTimers.take(menu)) {
-        timer->stop();
-        timer->deleteLater();
-    }
-    Q_EMIT subMenuLoadFailed(menu);
+    // Request-specific failures are processed by onMenuRequestFinished().
+    // An unrelated refresh must not fail a popup waiting on a different token.
 }
 
 void AppMenuModel::onMenuRequestFinished(QMenu *menu, quint64 requestId, bool success)
@@ -260,14 +259,26 @@ void AppMenuModel::onMenuRequestFinished(QMenu *menu, quint64 requestId, bool su
     }
     // An unrelated LayoutUpdated, an earlier scan or a later retry cannot
     // complete this scan's request, even if they all reference the same QMenu.
-    if (m_pendingDeepCacheRequestIds.value(menu) != requestId) {
-        return;
+    if (m_userMenuWaitRequestIds.value(menu) == requestId) {
+        m_userMenuWaitRequestIds.remove(menu);
+        if (QTimer *timer = m_userMenuWaitTimers.take(menu)) {
+            timer->stop();
+            timer->deleteLater();
+        }
+        if (success) {
+            Q_EMIT subMenuReady(menu);
+        } else {
+            Q_EMIT subMenuLoadFailed(menu);
+        }
     }
-    if (!success) {
-        // Failed menus remain eligible for a later successful deep-cache pass.
-        addTimedOutMenu(menu);
+
+    if (m_pendingDeepCacheRequestIds.value(menu) == requestId) {
+        if (!success) {
+            // Failed menus remain eligible for a later successful deep-cache pass.
+            addTimedOutMenu(menu);
+        }
+        checkPendingUpdatesComplete(menu);
     }
-    checkPendingUpdatesComplete(menu);
 }
 
 void AppMenuModel::loadSubMenu(QMenu *menu)
@@ -285,7 +296,11 @@ void AppMenuModel::loadSubMenu(QMenu *menu)
         timer->setSingleShot(true);
         const QPointer<QMenu> guard(menu);
         m_userMenuWaitTimers.insert(menu, timer);
-        connect(menu, &QObject::destroyed, this, [this, menu]() {
+        m_userMenuWaitRequestIds.insert(menu, requestId);
+        // Use the timer as receiver: stopCaching() disconnects menu -> model
+        // deep-cache callbacks, but must not remove this lifetime cleanup.
+        connect(menu, &QObject::destroyed, timer, [this, menu]() {
+            m_userMenuWaitRequestIds.remove(menu);
             if (QTimer *pending = m_userMenuWaitTimers.take(menu)) {
                 pending->stop();
                 pending->deleteLater();
@@ -296,9 +311,12 @@ void AppMenuModel::loadSubMenu(QMenu *menu)
                 return;
             }
             m_userMenuWaitTimers.remove(menu);
+            m_userMenuWaitRequestIds.remove(menu);
             timer->deleteLater();
             if (guard) {
-                if (m_importer) {
+                // Deep caching may share this request. Expire it only if no
+                // scanner is still awaiting the same operation.
+                if (m_importer && m_pendingDeepCacheRequestIds.value(menu) != requestId) {
                     m_importer->expireMenuRequest(guard.data(), requestId);
                 }
                 Q_EMIT subMenuLoadFailed(guard.data());
