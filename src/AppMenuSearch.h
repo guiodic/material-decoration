@@ -27,6 +27,7 @@
 #include <QHash>
 #include <QStringList>
 #include <QStringMatcher>
+#include <QEvent>
 
 namespace Material
 {
@@ -169,6 +170,9 @@ signals:
     void candidatesInvalidated();
     void repositionRequested();
 
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
 private:
     /**
      * @brief Rebuilds the search candidates cache if marked dirty.
@@ -296,6 +300,7 @@ private:
 
     // Actions connected to onActionChanged() and their known cleaned text labels at candidate build time
     QList<QPointer<QAction>> m_trackedActions;
+    QList<QPointer<QMenu>> m_trackedMenus;
     QHash<QAction *, QString> m_knownActionTexts;
 };
 
