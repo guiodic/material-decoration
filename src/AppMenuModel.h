@@ -74,6 +74,9 @@ private Q_SLOTS:
 private:
     void registerSubMenus(QMenu *menu);
     void resumeDeepCacheIfIdle(QMenu *menu);
+    void startDeepCachingFrom(QMenu *menu);
+    void addTimedOutMenu(QMenu *menu);
+    bool takeTimedOutMenu(QMenu *menu);
     bool menuAvailable() const;
     void setMenuAvailable(bool set);
     void checkPendingUpdatesComplete(QMenu *menu);
@@ -88,6 +91,8 @@ private:
     bool m_deepCacheStarted = false;
     QSet<QMenu *> m_pendingDeepCacheUpdates;
     QHash<QMenu *, QTimer *> m_pendingDeepCacheTimers;
+    QList<QPointer<QMenu>> m_timedOutDeepCacheMenus;
+    bool m_deepCacheCompleted = false;
     bool m_updatePending = false;
 
     QPointer<QMenu> m_menu;
