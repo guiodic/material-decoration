@@ -226,6 +226,11 @@ void AppMenuModel::stopCaching()
     m_menusToDeepCache.clear();
     m_nextMenuToProcess = 0;
     m_staggerTimer->stop();
+    for (QTimer *timer : std::as_const(m_pendingDeepCacheTimers)) {
+        timer->stop();
+        timer->deleteLater();
+    }
+    m_pendingDeepCacheTimers.clear();
     m_deepCacheRequested = false;
     m_deepCacheStarted = false;
     m_pendingDeepCacheUpdates.clear();
@@ -278,10 +283,17 @@ void AppMenuModel::registerSubMenus(QMenu *menu)
 
 void AppMenuModel::checkPendingUpdatesComplete(QMenu *menu)
 {
-    if (m_pendingDeepCacheUpdates.remove(menu)) {
-        if (m_pendingDeepCacheUpdates.isEmpty() && m_nextMenuToProcess >= m_menusToDeepCache.size()) {
-            QMetaObject::invokeMethod(this, &AppMenuModel::processNext, Qt::QueuedConnection);
-        }
+    if (!m_pendingDeepCacheUpdates.remove(menu)) {
+        return;
+    }
+
+    if (QTimer *timer = m_pendingDeepCacheTimers.take(menu)) {
+        timer->stop();
+        timer->deleteLater();
+    }
+
+    if (m_pendingDeepCacheUpdates.isEmpty() && m_nextMenuToProcess >= m_menusToDeepCache.size()) {
+        QMetaObject::invokeMethod(this, &AppMenuModel::processNext, Qt::QueuedConnection);
     }
 }
 
@@ -337,12 +349,31 @@ void AppMenuModel::processNext()
                 continue; // Process next item immediately
             }
 
-            m_pendingDeepCacheUpdates.insert(menuToProcess);
-            if (m_importer) {
-                m_importer->updateMenu(menuToProcess);
+            if (!m_importer) {
+                // The importer may have disappeared while caching was being scheduled.
+                // Do not create a pending operation that can never complete.
+                continue;
             }
+
+            m_pendingDeepCacheUpdates.insert(menuToProcess);
+
+            // The importer normally completes its requests asynchronously, but a
+            // failed D-Bus call may never produce menuUpdated(). Bound the wait so
+            // deep search can still finish with the menu data available so far.
+            auto *timeout = new QTimer(this);
+            timeout->setSingleShot(true);
+            m_pendingDeepCacheTimers.insert(menuToProcess, timeout);
+            connect(timeout, &QTimer::timeout, this, [this, menuToProcess, timeout]() {
+                if (m_pendingDeepCacheTimers.value(menuToProcess) != timeout) {
+                    return;
+                }
+                checkPendingUpdatesComplete(menuToProcess);
+            });
+            timeout->start(5000);
+
+            m_importer->updateMenu(menuToProcess);
             m_staggerTimer->start();
-            return; // Wait for async update
+            return; // Wait for async update or timeout
         }
     }
 
