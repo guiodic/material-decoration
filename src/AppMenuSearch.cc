@@ -100,7 +100,16 @@ bool AppMenuSearch::isQueryTooShort(const QString &text)
 
 void AppMenuSearch::setSearchMenu(QMenu *searchMenu)
 {
+    if (m_searchMenu == searchMenu) {
+        return;
+    }
+
+    // Remove proxy actions from the old menu before switching the guarded pointer.
+    clear();
     m_searchMenu = searchMenu;
+    m_actionTextCache.clear();
+    clearSearchResultsState();
+    m_menuIsRendered = false;
 }
 
 void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
@@ -178,12 +187,15 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
         }
       
         QPointer<QAction> safeAction = action;
-        connect(newAction, &QAction::triggered, this, [safeAction, searchMenu = m_searchMenu]() {
+        QPointer<QMenu> safeSearchMenu = m_searchMenu;
+        connect(newAction, &QAction::triggered, this, [safeAction, safeSearchMenu]() {
+            // Triggering the original action may synchronously close the window
+            // and destroy the search menu, so guard both objects across the call.
             if (safeAction) {
                 safeAction->trigger();
             }
-            if (searchMenu) {
-                searchMenu->hide();
+            if (safeSearchMenu) {
+                safeSearchMenu->hide();
             }
         });
         m_searchMenu->addAction(newAction);
@@ -273,6 +285,7 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
         if (action) {
             disconnect(action.data(), &QAction::changed, this, &AppMenuSearch::onActionChanged);
             disconnect(action.data(), &QAction::visibleChanged, this, &AppMenuSearch::onActionVisibilityChanged);
+            disconnect(action.data(), &QObject::destroyed, this, &AppMenuSearch::onTrackedActionDestroyed);
         }
     }
     m_trackedActions.clear();
@@ -320,6 +333,14 @@ void AppMenuSearch::onActionVisibilityChanged()
     invalidateCandidates();
 }
 
+void AppMenuSearch::onTrackedActionDestroyed()
+{
+    // Cached candidates and visible proxy results may still refer to the action
+    // that is being destroyed. QPointer prevents dereferencing it; invalidating
+    // also schedules a fresh search so the stale proxy is removed promptly.
+    invalidateCandidates();
+}
+
 void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited, QList<QPointer<QAction>> &ancestors, bool hasNamedAncestor)
 {
     if (!menu || m_searchCandidates.size() >= MAX_SEARCH_CANDIDATES || ancestors.size() >= MAX_MENU_DEPTH) {
@@ -345,6 +366,7 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
             m_knownActionTexts.insert(menuAction, getActionText(menuAction));
             connect(menuAction, &QAction::changed, this, &AppMenuSearch::onActionChanged);
             connect(menuAction, &QAction::visibleChanged, this, &AppMenuSearch::onActionVisibilityChanged);
+            connect(menuAction, &QObject::destroyed, this, &AppMenuSearch::onTrackedActionDestroyed);
         }
     }
 
@@ -402,6 +424,7 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
             m_knownActionTexts.insert(action, getActionText(action));
             connect(action, &QAction::changed, this, &AppMenuSearch::onActionChanged);
             connect(action, &QAction::visibleChanged, this, &AppMenuSearch::onActionVisibilityChanged);
+            connect(action, &QObject::destroyed, this, &AppMenuSearch::onTrackedActionDestroyed);
         }
         if (!action->isVisible()) {
             continue;
