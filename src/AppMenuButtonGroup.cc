@@ -391,6 +391,7 @@ void AppMenuButtonGroup::resetButtons(bool closeSearchMenu)
     m_searchIndex = -1;
 
     if (m_overflowMenu) {
+        m_overflowMenu->hide();
         m_overflowMenu->deleteLater();
         m_overflowMenu = nullptr;
     }
@@ -536,7 +537,6 @@ void AppMenuButtonGroup::updateAppMenuModel()
         // Preserve current menu state if possible
         const bool wasSearchOpen = (m_currentIndex == m_searchIndex && m_searchIndex != -1);
         const bool wasSearchVisible = wasSearchOpen && m_searchMenu && m_searchMenu->isVisible();
-        const bool wasOverflowOpen = (m_currentIndex == m_overflowIndex && m_overflowIndex != -1);
         QPointer<QMenu> previousMenu = m_currentMenu;
         const QString savedQuery = m_searchLineEdit ? m_searchLineEdit->text() : QString();
 
@@ -604,8 +604,6 @@ void AppMenuButtonGroup::updateAppMenuModel()
         int indexToRestore = -1;
         if (wasSearchOpen && m_searchIndex != -1) {
             indexToRestore = m_searchIndex;
-        } else if (wasOverflowOpen && m_overflowIndex != -1) {
-            indexToRestore = m_overflowIndex;
         }
 
         if (indexToRestore != -1) {
