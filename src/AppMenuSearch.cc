@@ -316,10 +316,18 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
 
 bool AppMenuSearch::eventFilter(QObject *watched, QEvent *event)
 {
-    if (event && (event->type() == QEvent::ActionAdded || event->type() == QEvent::ActionRemoved)) {
-        if (qobject_cast<QMenu *>(watched)) {
-            // Membership changes invalidate cached paths even when the QAction
-            // itself survives and emits no changed()/destroyed() signal.
+    // The search menu contains generated proxy actions, not source candidates.
+    // Never let adding/removing those proxies invalidate the source-menu cache.
+    if (watched == m_searchMenu) {
+        return QObject::eventFilter(watched, event);
+    }
+
+    if (event && (event->type() == QEvent::ActionAdded || event->type() == QEvent::ActionRemoved)
+        && qobject_cast<QMenu *>(watched)) {
+        // Multiple membership events can be emitted while a dynamic menu is
+        // rebuilt. Once invalidated and cleared, further events need no work
+        // until the next search rebuilds the candidate cache.
+        if (!m_searchCandidatesDirty || m_menuIsRendered) {
             clear();
             invalidateCandidates();
         }
@@ -361,6 +369,14 @@ void AppMenuSearch::onTrackedActionDestroyed(QObject *destroyedObject)
     // so remove every rendered proxy synchronously rather than only proxies
     // mapped to the destroyed action. clear() detaches proxies from the menu
     // immediately and defers their destruction safely.
+    //
+    // Teardown can destroy many tracked actions in succession. The first
+    // callback clears rendered proxies and invalidates the cache; subsequent
+    // callbacks can then return until a fresh candidate rebuild occurs.
+    if (m_searchCandidatesDirty && !m_menuIsRendered) {
+        return;
+    }
+
     clear();
 
     // Preserve the current query while invalidating candidates so the existing
