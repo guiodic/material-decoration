@@ -62,6 +62,8 @@ Q_SIGNALS:
      * @see updateMenu()
      */
     void menuUpdated(QMenu *);
+    // The request completed without a usable menu layout.
+    void menuUpdateFailed(QMenu *);
 
     /**
      * Emitted when the exporter was asked to activate an action
