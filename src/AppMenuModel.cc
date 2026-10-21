@@ -92,6 +92,7 @@ AppMenuModel::AppMenuModel(QObject *parent)
             m_userMenuWaitTimers.clear();
             m_userMenuWaitRequestIds.clear();
             m_timedOutDeepCacheMenus.clear();
+            m_suppressNextMenuUpdated.clear();
             m_deepCacheCompleted = false;
             m_menu = nullptr;
             m_serviceName.clear();
@@ -170,6 +171,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     m_userMenuWaitTimers.clear();
     m_userMenuWaitRequestIds.clear();
     m_timedOutDeepCacheMenus.clear();
+    m_suppressNextMenuUpdated.clear();
     m_deepCacheCompleted = false;
 
     m_serviceName = serviceName;
@@ -240,7 +242,16 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
             resumeDeepCacheIfIdle(menuGuard.data());
         }
     } else { // This is an update for a submenu that was previously requested.
-        if (!m_userMenuWaitTimers.contains(menu)) {
+        bool alreadyNotified = false;
+        for (auto it = m_suppressNextMenuUpdated.begin(); it != m_suppressNextMenuUpdated.end();) {
+            if (it->isNull() || it->data() == menu) {
+                alreadyNotified |= (it->data() == menu);
+                it = m_suppressNextMenuUpdated.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        if (!alreadyNotified && !m_userMenuWaitTimers.contains(menu)) {
             Q_EMIT subMenuReady(menu);
         }
         if (!modelGuard || !menuGuard || importerGuard != m_importer) {
@@ -280,6 +291,9 @@ void AppMenuModel::onMenuRequestFinished(QMenu *menu, quint64 requestId, bool su
             timer->deleteLater();
         }
         if (success) {
+            // The importer emits menuUpdated immediately after this signal;
+            // do not notify the popup twice for the same successful request.
+            m_suppressNextMenuUpdated.append(QPointer<QMenu>(menu));
             Q_EMIT subMenuReady(menu);
         } else {
             Q_EMIT subMenuLoadFailed(menu);
