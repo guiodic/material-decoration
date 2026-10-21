@@ -46,6 +46,11 @@
 namespace Material
 {
 
+namespace
+{
+constexpr int DeepCacheUpdateTimeoutMs = 5000;
+}
+
 class KDBusMenuImporter : public DBusMenuImporter
 {
 
@@ -369,7 +374,7 @@ void AppMenuModel::processNext()
                 }
                 checkPendingUpdatesComplete(menuToProcess);
             });
-            timeout->start(5000);
+            timeout->start(DeepCacheUpdateTimeoutMs);
 
             m_importer->updateMenu(menuToProcess);
             m_staggerTimer->start();
