@@ -343,12 +343,9 @@ void AppMenuSearch::onActionChanged()
         return;
     }
     // QAction::changed covers searchable text, submenu associations, and
-    // presentation properties copied into rendered proxies. Treat it as a
-    // single refresh signal instead of maintaining duplicate snapshots.
-    // QAction::changed also covers presentation state (icon, enabled,
-    // checkable and checked). The visible proxies snapshot these properties,
-    // so remove them synchronously before scheduling a refreshed result set.
-    // Coalesce repeated changes while a rebuild is already pending.
+    // presentation properties copied into rendered proxies. Remove stale
+    // proxies synchronously, then coalesce repeated changes while a rebuild
+    // is already pending.
     if (!m_searchCandidatesDirty || m_menuIsRendered) {
         clear();
         invalidateCandidates();
