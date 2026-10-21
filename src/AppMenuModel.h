@@ -92,6 +92,7 @@ private:
     bool m_deepCacheRequested = false;
     bool m_deepCacheStarted = false;
     QSet<QMenu *> m_pendingDeepCacheUpdates;
+    QSet<QMenu *> m_abandonedDeepCacheUpdates;
     QHash<QMenu *, QTimer *> m_pendingDeepCacheTimers;
     QList<QPointer<QMenu>> m_timedOutDeepCacheMenus;
     bool m_deepCacheCompleted = false;
