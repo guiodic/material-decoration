@@ -49,7 +49,6 @@ static QTime sChrono;
     }
 
 static constexpr auto DBUSMENU_PROPERTY_ID = "_dbusmenu_id";
-static constexpr auto DBUSMENU_PROPERTY_REQUEST_GENERATION = "_dbusmenu_request_generation";
 static constexpr auto DBUSMENU_PROPERTY_REQUEST_ID = "_dbusmenu_request_id";
 static constexpr auto DBUSMENU_PROPERTY_ICON_NAME = "_dbusmenu_icon_name";
 static constexpr auto DBUSMENU_PROPERTY_ICON_DATA_HASH = "_dbusmenu_icon_data_hash";
@@ -86,8 +85,6 @@ public:
 
     QSet<int> m_idsRefreshedByAboutToShow;
     QSet<int> m_pendingLayoutUpdates;
-    QHash<int, quint64> m_requestGenerations;
-    QHash<int, QList<QPointer<QDBusPendingCallWatcher>>> m_requestWatchers;
     QHash<int, quint64> m_activeMenuRequests;
     quint64 m_nextMenuRequestId = 0;
 
@@ -103,54 +100,12 @@ public:
         }
     }
 
-    quint64 requestGeneration(int id) const
-    {
-        return m_requestGenerations.value(id, 0);
-    }
-
-    void trackWatcher(int id, QDBusPendingCallWatcher *watcher)
-    {
-        m_requestWatchers[id].append(QPointer<QDBusPendingCallWatcher>(watcher));
-    }
-
-    void untrackWatcher(int id, QDBusPendingCallWatcher *watcher)
-    {
-        auto it = m_requestWatchers.find(id);
-        if (it == m_requestWatchers.end()) {
-            return;
-        }
-
-        for (auto watcherIt = it->begin(); watcherIt != it->end();) {
-            if (watcherIt->isNull() || watcherIt->data() == watcher) {
-                watcherIt = it->erase(watcherIt);
-            } else {
-                ++watcherIt;
-            }
-        }
-        if (it->isEmpty()) {
-            m_requestWatchers.erase(it);
-        }
-    }
-
-    void cancelWatchers(int id)
-    {
-        const auto watchers = m_requestWatchers.take(id);
-        for (const QPointer<QDBusPendingCallWatcher> &watcher : watchers) {
-            if (watcher) {
-                QObject::disconnect(watcher.data(), nullptr, q, nullptr);
-                watcher->deleteLater();
-            }
-        }
-    }
-
     QDBusPendingCallWatcher *refresh(int id, quint64 requestId = 0)
     {
         const auto call = m_interface->GetLayout(id, 1, QStringList());
         QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, q);
         watcher->setProperty(DBUSMENU_PROPERTY_ID, id);
-        watcher->setProperty(DBUSMENU_PROPERTY_REQUEST_GENERATION, requestGeneration(id));
         watcher->setProperty(DBUSMENU_PROPERTY_REQUEST_ID, QVariant::fromValue(requestId));
-        trackWatcher(id, watcher);
         QObject::connect(watcher, &QDBusPendingCallWatcher::finished, q, &DBusMenuImporter::slotGetLayoutFinished);
 
         return watcher;
@@ -444,15 +399,12 @@ void DBusMenuImporter::slotItemActivationRequested(int id, uint /*timestamp*/)
 void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
 {
     const int parentId = watcher->property(DBUSMENU_PROPERTY_ID).toInt();
-    const quint64 generation = watcher->property(DBUSMENU_PROPERTY_REQUEST_GENERATION).toULongLong();
     const quint64 requestId = watcher->property(DBUSMENU_PROPERTY_REQUEST_ID).toULongLong();
-    d->untrackWatcher(parentId, watcher);
     watcher->deleteLater();
 
     // A timed-out/cancelled request may finish after a retry has started.
     // Ignore it so it cannot mutate the menu or clear the newer request state.
-    if (generation != d->requestGeneration(parentId)
-        || (requestId && d->m_activeMenuRequests.value(parentId) != requestId)) {
+    if (requestId && d->m_activeMenuRequests.value(parentId) != requestId) {
         return;
     }
 
@@ -590,35 +542,6 @@ void DBusMenuImporter::updateMenu()
     updateMenu(DBusMenuImporter::menu());
 }
 
-void DBusMenuImporter::cancelUpdate(QMenu *menu)
-{
-    if (!menu) {
-        return;
-    }
-
-    QAction *action = menu->menuAction();
-    if (!action) {
-        return;
-    }
-
-    const QVariant idValue = action->property(DBUSMENU_PROPERTY_ID);
-    if (!idValue.isValid()) {
-        return;
-    }
-    const int id = idValue.toInt();
-
-    // Invalidate callbacks belonging to the abandoned request. The D-Bus
-    // call itself may still finish, but its generation will no longer match.
-    ++d->m_requestGenerations[id];
-    d->m_activeMenuRequests.remove(id);
-    d->cancelWatchers(id);
-    d->m_idsRefreshedByAboutToShow.remove(id);
-    d->m_pendingLayoutUpdates.remove(id);
-    if (d->m_pendingLayoutUpdates.isEmpty()) {
-        d->m_pendingLayoutUpdateTimer.stop();
-    }
-}
-
 void DBusMenuImporter::updateMenu(QMenu *menu)
 {
     requestMenuUpdate(menu);
@@ -669,9 +592,7 @@ quint64 DBusMenuImporter::requestMenuUpdate(QMenu *menu)
     const auto call = d->m_interface->AboutToShow(id);
     QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, this);
     watcher->setProperty(DBUSMENU_PROPERTY_ID, id);
-    watcher->setProperty(DBUSMENU_PROPERTY_REQUEST_GENERATION, d->requestGeneration(id));
     watcher->setProperty(DBUSMENU_PROPERTY_REQUEST_ID, QVariant::fromValue(requestId));
-    d->trackWatcher(id, watcher);
     connect(watcher, &QDBusPendingCallWatcher::finished, this, &DBusMenuImporter::slotAboutToShowDBusCallFinished);
 
     // Firefox deliberately ignores "aboutToShow" whereas Qt ignores" opened", so we'll just send both all the time...
@@ -682,13 +603,10 @@ quint64 DBusMenuImporter::requestMenuUpdate(QMenu *menu)
 void DBusMenuImporter::slotAboutToShowDBusCallFinished(QDBusPendingCallWatcher *watcher)
 {
     const int id = watcher->property(DBUSMENU_PROPERTY_ID).toInt();
-    const quint64 generation = watcher->property(DBUSMENU_PROPERTY_REQUEST_GENERATION).toULongLong();
     const quint64 requestId = watcher->property(DBUSMENU_PROPERTY_REQUEST_ID).toULongLong();
-    d->untrackWatcher(id, watcher);
     watcher->deleteLater();
 
-    if (generation != d->requestGeneration(id)
-        || (requestId && d->m_activeMenuRequests.value(id) != requestId)) {
+    if (requestId && d->m_activeMenuRequests.value(id) != requestId) {
         return;
     }
 
