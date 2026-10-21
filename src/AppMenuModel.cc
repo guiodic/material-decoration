@@ -119,6 +119,12 @@ AppMenuModel::AppMenuModel(QObject *parent)
 AppMenuModel::~AppMenuModel()
 {
     stopCaching();
+    // QObjects owned by the importer may destroy their menus during QObject's
+    // base destructor, after our members have already been destroyed. Delete
+    // popup timers now so their destroyed-menu callbacks cannot access them.
+    qDeleteAll(m_userMenuWaitTimers);
+    m_userMenuWaitTimers.clear();
+    m_userMenuWaitRequestIds.clear();
 }
 
 bool AppMenuModel::menuAvailable() const
