@@ -433,6 +433,10 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         d->finishMenuRequest(parentId, menuGuard.data(), requestId, false);
         if (importerGuard) {
             Q_EMIT menuFetchFailed(menuGuard.data());
+            if (importerGuard && menuGuard) {
+                // Retain the historical completion signal for legacy callers.
+                Q_EMIT menuUpdated(menuGuard.data());
+            }
         }
         return;
     }
@@ -680,6 +684,10 @@ void DBusMenuImporter::slotAboutToShowDBusCallFinished(QDBusPendingCallWatcher *
         d->finishMenuRequest(id, menuGuard.data(), requestId, false);
         if (importerGuard) {
             Q_EMIT menuFetchFailed(menuGuard.data());
+            if (importerGuard && menuGuard) {
+                // Retain the historical completion signal for legacy callers.
+                Q_EMIT menuUpdated(menuGuard.data());
+            }
         }
         return;
     }
