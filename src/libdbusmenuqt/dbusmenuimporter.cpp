@@ -113,8 +113,19 @@ public:
         QMenu *originalMenu = (id == 0) ? m_menu : menuForId(id);
         watcher->setProperty(DBUSMENU_PROPERTY_REQUEST_MENU, QVariant::fromValue(static_cast<QObject *>(originalMenu)));
         if (originalMenu) {
-            QObject::connect(originalMenu, &QObject::destroyed, watcher, [watcher]() {
+            QObject::connect(originalMenu, &QObject::destroyed, watcher, [this, watcher, id, requestId]() {
+                // Reject a late GetLayout reply for the destroyed menu, even if
+                // the D-Bus ID has been reused by a replacement.
                 watcher->setProperty(DBUSMENU_PROPERTY_REQUEST_MENU_INVALID, true);
+
+                // The AboutToShow watcher may already be gone. Complete the
+                // still-active request immediately instead of waiting for the
+                // GetLayout reply (or the model's five-second timeout).
+                // finishMenuRequest removes the token before emitting its
+                // signal, so a late reply cannot complete it again.
+                if (requestId && m_activeMenuRequests.value(id) == requestId) {
+                    finishMenuRequest(id, nullptr, requestId, false);
+                }
             });
         }
         QObject::connect(watcher, &QDBusPendingCallWatcher::finished, q, &DBusMenuImporter::slotGetLayoutFinished);
