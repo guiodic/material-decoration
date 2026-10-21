@@ -461,10 +461,10 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     const QDBusPendingReply<uint, DBusMenuLayoutItem> reply = *watcher;
     if (!reply.isValid()) {
         qCWarning(DBUSMENUQT) << reply.error().message();
+        d->finishMenuRequest(parentId, menu, requestId, false);
         if (menu) {
             Q_EMIT menuUpdateFailed(menu);
         }
-        d->finishMenuRequest(parentId, menu, requestId, false);
         return;
     }
 
@@ -574,9 +574,9 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     connect(menu, &QMenu::aboutToHide, this, &DBusMenuImporter::slotMenuAboutToHide, Qt::UniqueConnection);
     menu->setUpdatesEnabled(true);
     const QPointer<QMenu> guard(menu);
-    Q_EMIT menuUpdated(menu);
+    d->finishMenuRequest(parentId, guard.data(), requestId, true);
     if (guard) {
-        d->finishMenuRequest(parentId, guard.data(), requestId, true);
+        Q_EMIT menuUpdated(guard.data());
     }
 }
 
@@ -701,8 +701,11 @@ void DBusMenuImporter::slotAboutToShowDBusCallFinished(QDBusPendingCallWatcher *
     const QDBusPendingReply<bool> reply = *watcher;
     if (reply.isError()) {
         qCWarning(DBUSMENUQT) << "Call to AboutToShow() failed:" << reply.error().message();
-        Q_EMIT menuUpdateFailed(menu);
-        d->finishMenuRequest(id, menu, requestId, false);
+        const QPointer<QMenu> guard(menu);
+        d->finishMenuRequest(id, guard.data(), requestId, false);
+        if (guard) {
+            Q_EMIT menuUpdateFailed(guard.data());
+        }
         return;
     }
     // We used to only refresh if needRefresh was true.
