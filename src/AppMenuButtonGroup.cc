@@ -156,6 +156,7 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
         // Compare the originally requested menu, not the current action.
         if (!menu || m_menuWaitingForPopup == menu || m_menuWaitingForPopup.isNull()) {
             m_buttonIndexWaitingForPopup = -1;
+    m_menuWaitingForPopup = nullptr;
             m_menuWaitingForPopup = nullptr;
         }
     });
@@ -389,6 +390,7 @@ void AppMenuButtonGroup::resetButtons(bool closeSearchMenu)
     }
 
     m_buttonIndexWaitingForPopup = -1;
+    m_menuWaitingForPopup = nullptr;
     setCurrentIndex(-1);
     m_currentMenu = nullptr;
     m_searchUiVisible = false;
@@ -819,6 +821,7 @@ bool AppMenuButtonGroup::isWaitingForMenu() const
 void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
 {
     m_buttonIndexWaitingForPopup = -1;
+    m_menuWaitingForPopup = nullptr;
     // Stop any caching that may be in progress from a previously opened menu.
     m_appMenuModel->stopCaching();
 
@@ -896,6 +899,7 @@ void AppMenuButtonGroup::handleMenuButtonTrigger(int buttonIndex)
             // If we are already waiting for a different menu, cancel the old one.
             if (m_buttonIndexWaitingForPopup != -1 && m_buttonIndexWaitingForPopup != buttonIndex) {
                 m_buttonIndexWaitingForPopup = -1;
+    m_menuWaitingForPopup = nullptr;
             }
 
             // If we are already waiting for this menu, do nothing.
@@ -1071,6 +1075,7 @@ void AppMenuButtonGroup::updateShowing()
 void AppMenuButtonGroup::onMenuAboutToHide()
 {
     m_buttonIndexWaitingForPopup = -1;
+    m_menuWaitingForPopup = nullptr;
     QMenu *menu = qobject_cast<QMenu *>(sender());
     if (!menu) {
         return;
@@ -1165,17 +1170,25 @@ void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
     const auto actions = m_appMenuModel->menu()->actions();
     if (m_buttonIndexWaitingForPopup >= actions.count()) {
         m_buttonIndexWaitingForPopup = -1;
+    m_menuWaitingForPopup = nullptr;
         return;
     }
 
     QAction *action = actions.at(m_buttonIndexWaitingForPopup);
-    if (action && action->menu() == menu && m_menuWaitingForPopup == menu) {
+    if (!action || action->menu() != m_menuWaitingForPopup) {
+        // The top-level action list changed while this request was pending.
+        m_buttonIndexWaitingForPopup = -1;
+        m_menuWaitingForPopup = nullptr;
+        return;
+    }
+    if (action->menu() == menu && m_menuWaitingForPopup == menu) {
         // The menu we were waiting for is now ready.
         // We can now trigger the button again to pop it up.
         // It is crucial to reset the waiting index *before* calling trigger
         // to prevent an infinite loop.
         const int buttonIndex = m_buttonIndexWaitingForPopup;
         m_buttonIndexWaitingForPopup = -1;
+    m_menuWaitingForPopup = nullptr;
 
         if (menu->actions().isEmpty()) {
             popupMenu(menu, buttonIndex);
@@ -1249,6 +1262,7 @@ void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
 
     if (m_hoveredButton != newHoveredButton) {
         m_buttonIndexWaitingForPopup = -1;
+    m_menuWaitingForPopup = nullptr;
         m_hoveredButton = newHoveredButton;
 
         if (m_hoveredButton) {
