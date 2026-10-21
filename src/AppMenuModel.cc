@@ -141,17 +141,17 @@ void AppMenuModel::update()
 
 void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QString &menuObjectPath)
 {
-    // A menu change means any in-progress caching is now invalid.
+    // An update for the same source is not a change of menu identity.
+    // Preserve the outstanding recovery markers so late submenu updates can
+    // still resume deep caching after the top-level refresh.
+    if (m_serviceName == serviceName && m_menuObjectPath == menuObjectPath && m_importer) {
+        QMetaObject::invokeMethod(m_importer.data(), qOverload<>(&DBusMenuImporter::updateMenu), Qt::QueuedConnection);
+        return;
+    }
+
     stopCaching();
     m_timedOutDeepCacheMenus.clear();
     m_deepCacheCompleted = false;
-
-    if (m_serviceName == serviceName && m_menuObjectPath == menuObjectPath) {
-        if (m_importer) {
-            QMetaObject::invokeMethod(m_importer.data(), qOverload<>(&DBusMenuImporter::updateMenu), Qt::QueuedConnection);
-            return;
-        }
-    }
 
     m_serviceName = serviceName;
     m_serviceWatcher->setWatchedServices({m_serviceName});
@@ -439,12 +439,10 @@ void AppMenuModel::processNext()
                     return;
                 }
 
-                // Let the importer retry this menu later. It invalidates callbacks
-                // from this request so a stale reply cannot interfere with a retry.
+                // Stop waiting for deep caching, but do not cancel the shared
+                // importer request: a user may also be waiting to open this menu,
+                // and LayoutUpdated refreshes must remain independent.
                 addTimedOutMenu(menuGuard.data());
-                if (m_importer) {
-                    m_importer->cancelUpdate(menuGuard.data());
-                }
                 checkPendingUpdatesComplete(menuKey);
             });
             timeout->start(DeepCacheUpdateTimeoutMs);
