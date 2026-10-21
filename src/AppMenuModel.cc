@@ -93,6 +93,7 @@ AppMenuModel::AppMenuModel(QObject *parent)
             m_userMenuWaitRequestIds.clear();
             m_timedOutDeepCacheMenus.clear();
             m_suppressNextMenuUpdated.clear();
+            m_failedMenuUpdates.clear();
             m_deepCacheCompleted = false;
             m_menu = nullptr;
             m_serviceName.clear();
@@ -172,6 +173,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     m_userMenuWaitRequestIds.clear();
     m_timedOutDeepCacheMenus.clear();
     m_suppressNextMenuUpdated.clear();
+    m_failedMenuUpdates.clear();
     m_deepCacheCompleted = false;
     m_initialMenuRetries = 0;
 
@@ -192,6 +194,12 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, &AppMenuModel::onMenuUpdated);
     connect(m_importer.data(), &DBusMenuImporter::menuRequestFinished, this, &AppMenuModel::onMenuRequestFinished);
     connect(m_importer.data(), &DBusMenuImporter::menuFetchFailed, this, [this](QMenu *failedMenu) {
+        if (sender() != m_importer.data()) {
+            return;
+        }
+        if (failedMenu) {
+            m_failedMenuUpdates.append(QPointer<QMenu>(failedMenu));
+        }
         // The initial GetLayout uses requestId 0. It has no user request
         // token, but its failure must not leave the root menu permanently
         // unavailable. Retry a bounded number of times without treating
@@ -230,6 +238,20 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
 
     if (!menu) {
         return;
+    }
+
+    // The importer retains menuUpdated as the legacy completion signal even
+    // for failed requests. Do not treat those callbacks as loaded menu data.
+    for (auto it = m_failedMenuUpdates.begin(); it != m_failedMenuUpdates.end();) {
+        if (it->isNull() || it->data() == menu) {
+            const bool failed = it->data() == menu;
+            it = m_failedMenuUpdates.erase(it);
+            if (failed) {
+                return;
+            }
+        } else {
+            ++it;
+        }
     }
 
     // A LayoutUpdated notification may complete independently of the user's
