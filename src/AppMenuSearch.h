@@ -22,11 +22,13 @@
 #include <QAction>
 #include <QActionGroup>
 #include <QPointer>
+#include <QSet>
 #include <QList>
 #include <QSet>
 #include <QHash>
 #include <QStringList>
 #include <QStringMatcher>
+#include <QEvent>
 
 namespace Material
 {
@@ -169,6 +171,9 @@ signals:
     void candidatesInvalidated();
     void repositionRequested();
 
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
 private:
     /**
      * @brief Rebuilds the search candidates cache if marked dirty.
@@ -257,15 +262,23 @@ private Q_SLOTS:
     /**
      * @brief Slot invoked when a tracked QAction emits changed().
      *
-     * Invalidates candidates only if the action's cleaned text label actually changed.
-     * State changes (enabled, checked, icon) do not invalidate search candidates.
+     * Invalidates cached candidates and removes rendered proxies when an action
+     * changes. This refreshes both searchable text/path data and snapshotted
+     * presentation properties such as icon, enabled, checkable, and checked state.
      */
     void onActionChanged();
 
     /**
+     * @brief Slot invoked when a tracked QAction is destroyed.
+     *
+     * Invalidates cached candidates and schedules visible search results to refresh.
+     */
+    void onTrackedActionDestroyed(QObject *destroyedObject);
+
+    /**
      * @brief Slot invoked when a tracked QAction emits visibleChanged().
      *
-     * Invalidates candidates when an action becomes visible or hidden.
+     * Invalidates cached candidates and removes rendered proxies when visibility changes.
      */
     void onActionVisibilityChanged();
 
@@ -281,14 +294,16 @@ private:
     bool m_menuIsRendered = false;
     bool m_candidateTruncationLogged = false;
     QList<QPointer<QActionGroup>> m_searchResultGroups;
+
     
     // This cache maps QAction* pointers directly to their cleansed text labels (accelerator markers removed).
     // It is automatically cleared on exit of each filter() pass using a qScopeGuard.
     mutable QHash<QAction *, QString> m_actionTextCache;
 
-    // Actions connected to onActionChanged() and their known cleaned text labels at candidate build time
+    // Actions connected to change/destruction signals during candidate collection.
     QList<QPointer<QAction>> m_trackedActions;
-    QHash<QAction *, QString> m_knownActionTexts;
+    QSet<QAction *> m_trackedActionSet;
+    QList<QPointer<QMenu>> m_trackedMenus;
 };
 
 } // namespace Material

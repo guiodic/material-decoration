@@ -100,7 +100,16 @@ bool AppMenuSearch::isQueryTooShort(const QString &text)
 
 void AppMenuSearch::setSearchMenu(QMenu *searchMenu)
 {
+    if (m_searchMenu == searchMenu) {
+        return;
+    }
+
+    // Remove proxy actions from the old menu before switching the guarded pointer.
+    clear();
     m_searchMenu = searchMenu;
+    m_actionTextCache.clear();
+    resetSearchState();
+    m_menuIsRendered = false;
 }
 
 void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
@@ -178,12 +187,15 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
         }
       
         QPointer<QAction> safeAction = action;
-        connect(newAction, &QAction::triggered, this, [safeAction, searchMenu = m_searchMenu]() {
+        QPointer<QMenu> safeSearchMenu = m_searchMenu;
+        connect(newAction, &QAction::triggered, this, [safeAction, safeSearchMenu]() {
+            // Triggering the original action may synchronously close the window
+            // and destroy the search menu, so guard both objects across the call.
             if (safeAction) {
                 safeAction->trigger();
             }
-            if (searchMenu) {
-                searchMenu->hide();
+            if (safeSearchMenu) {
+                safeSearchMenu->hide();
             }
         });
         m_searchMenu->addAction(newAction);
@@ -196,21 +208,19 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
 
 void AppMenuSearch::clear()
 {
-    if (!m_searchMenu) {
-        return;
-    }
-
     m_menuIsRendered = false;
 
-    const auto actions = m_searchMenu->actions();
-    for (QAction *action : actions) {
-        if (action && action->property(PROPERTY_SEARCH_PROXY).toBool()) {
-            m_searchMenu->removeAction(action);
-            // Detach action from its group before scheduling deletion
-            if (QActionGroup *group = action->actionGroup()) {
-                group->removeAction(action);
+    if (m_searchMenu) {
+        const auto actions = m_searchMenu->actions();
+        for (QAction *action : actions) {
+            if (action && action->property(PROPERTY_SEARCH_PROXY).toBool()) {
+                m_searchMenu->removeAction(action);
+                // Detach action from its group before scheduling deletion
+                if (QActionGroup *group = action->actionGroup()) {
+                    group->removeAction(action);
+                }
+                action->deleteLater();
             }
-            action->deleteLater();
         }
     }
 
@@ -273,10 +283,18 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
         if (action) {
             disconnect(action.data(), &QAction::changed, this, &AppMenuSearch::onActionChanged);
             disconnect(action.data(), &QAction::visibleChanged, this, &AppMenuSearch::onActionVisibilityChanged);
+            disconnect(action.data(), &QObject::destroyed, this, &AppMenuSearch::onTrackedActionDestroyed);
         }
     }
     m_trackedActions.clear();
-    m_knownActionTexts.clear();
+
+    for (const QPointer<QMenu> &menu : std::as_const(m_trackedMenus)) {
+        if (menu) {
+            menu->removeEventFilter(this);
+        }
+    }
+    m_trackedMenus.clear();
+    m_trackedActionSet.clear();
 
     m_searchCandidates.clear();
     m_searchCandidates.reserve(MAX_SEARCH_CANDIDATES);
@@ -296,27 +314,75 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
     collectSearchCandidates(rootMenu, visited, ancestors);
 }
 
+bool AppMenuSearch::eventFilter(QObject *watched, QEvent *event)
+{
+    // The search menu contains generated proxy actions, not source candidates.
+    // Never let adding/removing those proxies invalidate the source-menu cache.
+    if (watched == m_searchMenu) {
+        return QObject::eventFilter(watched, event);
+    }
+
+    if (event && (event->type() == QEvent::ActionAdded || event->type() == QEvent::ActionRemoved)
+        && qobject_cast<QMenu *>(watched)) {
+        // Multiple membership events can be emitted while a dynamic menu is
+        // rebuilt. Once invalidated and cleared, further events need no work
+        // until the next search rebuilds the candidate cache.
+        if (!m_searchCandidatesDirty || m_menuIsRendered) {
+            clear();
+            invalidateCandidates();
+        }
+    }
+
+    return QObject::eventFilter(watched, event);
+}
+
 void AppMenuSearch::onActionChanged()
 {
     QAction *action = qobject_cast<QAction *>(sender());
     if (!action) {
         return;
     }
-    const QString rawText = action->text();
-    const QString currentText = KLocalizedString::removeAcceleratorMarker(rawText.trimmed());
-    auto it = m_knownActionTexts.find(action);
-    if (it != m_knownActionTexts.end()) {
-        if (it.value() != currentText) {
-            it.value() = currentText;
-            invalidateCandidates();
-        }
-    } else {
+    // QAction::changed covers searchable text, submenu associations, and
+    // presentation properties copied into rendered proxies. Remove stale
+    // proxies synchronously, then coalesce repeated changes while a rebuild
+    // is already pending.
+    if (!m_searchCandidatesDirty || m_menuIsRendered) {
+        clear();
         invalidateCandidates();
     }
 }
 
 void AppMenuSearch::onActionVisibilityChanged()
 {
+    // Visibility affects candidate membership. Remove rendered proxies now so
+    // hidden actions cannot remain clickable during the debounce interval.
+    if (!m_searchCandidatesDirty || m_menuIsRendered) {
+        clear();
+        invalidateCandidates();
+    }
+}
+
+void AppMenuSearch::onTrackedActionDestroyed(QObject *destroyedObject)
+{
+    Q_UNUSED(destroyedObject);
+
+    // A destroyed action may be a result itself or an ancestor of results
+    // collected from one of its submenus. Child actions can outlive their menu,
+    // so remove every rendered proxy synchronously rather than only proxies
+    // mapped to the destroyed action. clear() detaches proxies from the menu
+    // immediately and defers their destruction safely.
+    //
+    // Teardown can destroy many tracked actions in succession. The first
+    // callback clears rendered proxies and invalidates the cache; subsequent
+    // callbacks can then return until a fresh candidate rebuild occurs.
+    if (m_searchCandidatesDirty && !m_menuIsRendered) {
+        return;
+    }
+
+    clear();
+
+    // Preserve the current query while invalidating candidates so the existing
+    // debounce path can rebuild results from the current menu structure.
     invalidateCandidates();
 }
 
@@ -331,6 +397,9 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         return;
     }
 
+    menu->installEventFilter(this);
+    m_trackedMenus.append(menu);
+
     QAction *menuAction = menu->menuAction();
     bool addedAncestor = false;
     bool childHasNamedAncestor = hasNamedAncestor;
@@ -340,11 +409,12 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         if (!getActionText(menuAction).isEmpty()) {
             childHasNamedAncestor = true;
         }
-        if (!m_knownActionTexts.contains(menuAction)) {
+        if (!m_trackedActionSet.contains(menuAction)) {
             m_trackedActions.append(menuAction);
-            m_knownActionTexts.insert(menuAction, getActionText(menuAction));
+            m_trackedActionSet.insert(menuAction);
             connect(menuAction, &QAction::changed, this, &AppMenuSearch::onActionChanged);
             connect(menuAction, &QAction::visibleChanged, this, &AppMenuSearch::onActionVisibilityChanged);
+            connect(menuAction, &QObject::destroyed, this, &AppMenuSearch::onTrackedActionDestroyed);
         }
     }
 
@@ -397,11 +467,12 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         if (!action || action->isSeparator()) {
             continue;
         }
-        if (!m_knownActionTexts.contains(action)) {
+        if (!m_trackedActionSet.contains(action)) {
             m_trackedActions.append(action);
-            m_knownActionTexts.insert(action, getActionText(action));
+            m_trackedActionSet.insert(action);
             connect(action, &QAction::changed, this, &AppMenuSearch::onActionChanged);
             connect(action, &QAction::visibleChanged, this, &AppMenuSearch::onActionVisibilityChanged);
+            connect(action, &QObject::destroyed, this, &AppMenuSearch::onTrackedActionDestroyed);
         }
         if (!action->isVisible()) {
             continue;
