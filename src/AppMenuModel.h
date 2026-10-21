@@ -60,6 +60,7 @@ signals:
     void modelReset();
     void menuReadyForSearch();
     void subMenuReady(QMenu *menu);
+    void subMenuLoadFailed(QMenu *menu);
 
 public:
     void loadSubMenu(QMenu *menu);
@@ -68,6 +69,7 @@ public:
 
 private Q_SLOTS:
     void onMenuUpdated(QMenu *menu);
+    void onMenuUpdateFailed(QMenu *menu);
     void onActionChanged();
     void processNext();
 
@@ -95,6 +97,7 @@ private:
     bool m_deepCacheCompleted = false;
     bool m_updatePending = false;
 
+    QHash<QMenu *, QTimer *> m_userMenuWaitTimers;
     QPointer<QMenu> m_menu;
 
     QDBusServiceWatcher *m_serviceWatcher;
