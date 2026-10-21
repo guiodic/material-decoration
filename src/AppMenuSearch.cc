@@ -359,14 +359,24 @@ void AppMenuSearch::onActionChanged()
         m_knownActionTexts.insert(action, currentText);
     }
 
-    if (submenuChanged || textChanged) {
+    // QAction::changed also covers presentation state (icon, enabled,
+    // checkable and checked). The visible proxies snapshot these properties,
+    // so remove them synchronously before scheduling a refreshed result set.
+    // Coalesce repeated changes while a rebuild is already pending.
+    if (!m_searchCandidatesDirty || m_menuIsRendered) {
+        clear();
         invalidateCandidates();
     }
 }
 
 void AppMenuSearch::onActionVisibilityChanged()
 {
-    invalidateCandidates();
+    // Visibility affects candidate membership. Remove rendered proxies now so
+    // hidden actions cannot remain clickable during the debounce interval.
+    if (!m_searchCandidatesDirty || m_menuIsRendered) {
+        clear();
+        invalidateCandidates();
+    }
 }
 
 void AppMenuSearch::onTrackedActionDestroyed(QObject *destroyedObject)
