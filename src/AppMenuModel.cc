@@ -173,6 +173,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     m_timedOutDeepCacheMenus.clear();
     m_suppressNextMenuUpdated.clear();
     m_deepCacheCompleted = false;
+    m_initialMenuRetries = 0;
 
     m_serviceName = serviceName;
     m_serviceWatcher->setWatchedServices({m_serviceName});
@@ -190,6 +191,23 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
 
     connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, &AppMenuModel::onMenuUpdated);
     connect(m_importer.data(), &DBusMenuImporter::menuRequestFinished, this, &AppMenuModel::onMenuRequestFinished);
+    connect(m_importer.data(), &DBusMenuImporter::menuFetchFailed, this, [this](QMenu *failedMenu) {
+        // The initial GetLayout uses requestId 0. It has no user request
+        // token, but its failure must not leave the root menu permanently
+        // unavailable. Retry a bounded number of times without treating
+        // failure as menuUpdated(success).
+        if (sender() != m_importer.data() || !m_importer || m_menu
+            || failedMenu != m_importer->menu() || m_initialMenuRetries >= 2) {
+            return;
+        }
+        ++m_initialMenuRetries;
+        const QPointer<KDBusMenuImporter> importer(m_importer);
+        QTimer::singleShot(500, this, [this, importer]() {
+            if (importer && importer == m_importer && !m_menu) {
+                importer->updateMenu();
+            }
+        });
+    });
 
     Q_EMIT modelNeedsUpdate();
 }
