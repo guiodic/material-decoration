@@ -539,6 +539,11 @@ void AppMenuButtonGroup::updateAppMenuModel()
         // Preserve current menu state if possible
         const bool wasSearchOpen = (m_currentIndex == m_searchIndex && m_searchIndex != -1);
         const bool wasSearchVisible = wasSearchOpen && m_searchMenu && m_searchMenu->isVisible();
+        const bool wasOverflowOpen = (m_currentIndex == m_overflowIndex
+                                      && m_overflowIndex != -1
+                                      && m_overflowMenu
+                                      && m_overflowMenu->isVisible());
+        QPointer<QAction> savedOverflowAction = wasOverflowOpen ? m_overflowMenu->activeAction() : nullptr;
         QPointer<QMenu> previousMenu = m_currentMenu;
         const QString savedQuery = m_searchLineEdit ? m_searchLineEdit->text() : QString();
 
@@ -644,6 +649,23 @@ void AppMenuButtonGroup::updateAppMenuModel()
             QTimer::singleShot(0, this, [this]() {
                 if (m_searchMenu && m_searchMenu->isVisible() && m_searchButton) {
                     repositionSearchMenu();
+                }
+            });
+        }
+
+        // Recreate the overflow popup only if the rebuilt layout still needs it.
+        // QAction pointers remain valid only while the model keeps the action.
+        if (wasOverflowOpen) {
+            QTimer::singleShot(0, this, [this, savedOverflowAction]() {
+                if (!overflowing() || !m_overflowButton || !m_overflowButton->isVisible()) {
+                    return;
+                }
+
+                triggerOverflow();
+
+                if (m_overflowMenu && savedOverflowAction
+                    && m_overflowMenu->actions().contains(savedOverflowAction)) {
+                    m_overflowMenu->setActiveAction(savedOverflowAction);
                 }
             });
         }
