@@ -85,6 +85,7 @@ public:
 
     QSet<int> m_pendingLayoutUpdates;
     QHash<int, quint64> m_activeMenuRequests;
+    QHash<int, uint> m_lastAppliedLayoutRevisions;
     quint64 m_nextMenuRequestId = 0;
 
     void finishMenuRequest(int id, QMenu *menu, quint64 requestId, bool success)
@@ -418,6 +419,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
 #ifdef BENCHMARK
     qCDebug(DBUSMENUQT) << "- items received:" << sChrono.elapsed() << "ms";
 #endif
+    const uint revision = reply.argumentAt<0>();
     const DBusMenuLayoutItem rootItem = reply.argumentAt<1>();
 
     if (!menu) {
@@ -426,6 +428,15 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         return;
     }
 
+    // LayoutUpdated refreshes and AboutToShow/GetLayout calls may overlap.
+    // Do not let an older D-Bus reply replace a layout already applied at a
+    // newer revision for this menu ID.
+    if (d->m_lastAppliedLayoutRevisions.contains(parentId)
+        && revision < d->m_lastAppliedLayoutRevisions.value(parentId)) {
+        d->finishMenuRequest(parentId, menu, requestId, true);
+        return;
+    }
+    d->m_lastAppliedLayoutRevisions.insert(parentId, revision);
     menu->setUpdatesEnabled(false);
 
     int childCount = rootItem.children.count();
@@ -486,8 +497,13 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
             action = d->createAction(id, dbusMenuItem.properties, menu);
             d->m_actionForId.insert(id, action);
 
-            connect(action, &QObject::destroyed, this, [this, id]() {
-                d->m_actionForId.remove(id);
+            connect(action, &QObject::destroyed, this, [this, id, action]() {
+                // Deferred deletion of an old action must not erase the
+                // mapping of a replacement action reusing the same ID.
+                if (d->m_actionForId.value(id) == action) {
+                    d->m_actionForId.remove(id);
+                    d->m_lastAppliedLayoutRevisions.remove(id);
+                }
             });
 
             connect(action, &QAction::triggered, this, [id, this]() {
