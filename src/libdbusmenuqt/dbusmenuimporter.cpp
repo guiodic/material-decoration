@@ -451,7 +451,8 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
 
     // A timed-out/cancelled request may finish after a retry has started.
     // Ignore it so it cannot mutate the menu or clear the newer request state.
-    if (generation != d->requestGeneration(parentId)) {
+    if (generation != d->requestGeneration(parentId)
+        || (requestId && d->m_activeMenuRequests.value(parentId) != requestId)) {
         return;
     }
 
@@ -572,8 +573,11 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
 
     connect(menu, &QMenu::aboutToHide, this, &DBusMenuImporter::slotMenuAboutToHide, Qt::UniqueConnection);
     menu->setUpdatesEnabled(true);
+    const QPointer<QMenu> guard(menu);
     Q_EMIT menuUpdated(menu);
-    d->finishMenuRequest(parentId, menu, requestId, true);
+    if (guard) {
+        d->finishMenuRequest(parentId, guard.data(), requestId, true);
+    }
 }
 
 void DBusMenuImporter::sendClickedEvent(int id)
@@ -620,6 +624,28 @@ void DBusMenuImporter::updateMenu(QMenu *menu)
     requestMenuUpdate(menu);
 }
 
+void DBusMenuImporter::expireMenuRequest(QMenu *menu, quint64 requestId)
+{
+    if (!menu || !requestId) {
+        return;
+    }
+    QAction *action = menu->menuAction();
+    if (!action) {
+        return;
+    }
+    const QVariant idValue = action->property(DBUSMENU_PROPERTY_ID);
+    if (!idValue.isValid()) {
+        return;
+    }
+    const int id = idValue.toInt();
+    if (d->m_activeMenuRequests.value(id) == requestId) {
+        // The D-Bus watcher can still finish; its token check will discard
+        // the late reply. Unsolicited LayoutUpdated refreshes stay intact.
+        d->m_activeMenuRequests.remove(id);
+        d->m_idsRefreshedByAboutToShow.remove(id);
+    }
+}
+
 quint64 DBusMenuImporter::requestMenuUpdate(QMenu *menu)
 {
     if (!menu) {
@@ -661,7 +687,8 @@ void DBusMenuImporter::slotAboutToShowDBusCallFinished(QDBusPendingCallWatcher *
     d->untrackWatcher(id, watcher);
     watcher->deleteLater();
 
-    if (generation != d->requestGeneration(id)) {
+    if (generation != d->requestGeneration(id)
+        || (requestId && d->m_activeMenuRequests.value(id) != requestId)) {
         return;
     }
 
