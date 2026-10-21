@@ -537,8 +537,11 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     connect(menu, &QMenu::aboutToHide, this, &DBusMenuImporter::slotMenuAboutToHide, Qt::UniqueConnection);
     menu->setUpdatesEnabled(true);
     const QPointer<QMenu> guard(menu);
+    const QPointer<DBusMenuImporter> importerGuard(this);
     d->finishMenuRequest(parentId, guard.data(), requestId, true);
-    if (guard) {
+    // The completion signal has direct Qt connections: they can replace
+    // or destroy the importer and/or its menu before this slot resumes.
+    if (importerGuard && guard) {
         Q_EMIT menuUpdated(guard.data());
     }
 }
