@@ -156,7 +156,6 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
         // Compare the originally requested menu, not the current action.
         if (!menu || m_menuWaitingForPopup == menu || m_menuWaitingForPopup.isNull()) {
             m_buttonIndexWaitingForPopup = -1;
-    m_menuWaitingForPopup = nullptr;
             m_menuWaitingForPopup = nullptr;
         }
     });
@@ -899,7 +898,7 @@ void AppMenuButtonGroup::handleMenuButtonTrigger(int buttonIndex)
             // If we are already waiting for a different menu, cancel the old one.
             if (m_buttonIndexWaitingForPopup != -1 && m_buttonIndexWaitingForPopup != buttonIndex) {
                 m_buttonIndexWaitingForPopup = -1;
-    m_menuWaitingForPopup = nullptr;
+                m_menuWaitingForPopup = nullptr;
             }
 
             // If we are already waiting for this menu, do nothing.
@@ -1170,7 +1169,7 @@ void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
     const auto actions = m_appMenuModel->menu()->actions();
     if (m_buttonIndexWaitingForPopup >= actions.count()) {
         m_buttonIndexWaitingForPopup = -1;
-    m_menuWaitingForPopup = nullptr;
+        m_menuWaitingForPopup = nullptr;
         return;
     }
 
@@ -1188,7 +1187,7 @@ void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
         // to prevent an infinite loop.
         const int buttonIndex = m_buttonIndexWaitingForPopup;
         m_buttonIndexWaitingForPopup = -1;
-    m_menuWaitingForPopup = nullptr;
+        m_menuWaitingForPopup = nullptr;
 
         if (menu->actions().isEmpty()) {
             popupMenu(menu, buttonIndex);
@@ -1262,7 +1261,7 @@ void AppMenuButtonGroup::handleHoverMove(const QPointF &pos)
 
     if (m_hoveredButton != newHoveredButton) {
         m_buttonIndexWaitingForPopup = -1;
-    m_menuWaitingForPopup = nullptr;
+        m_menuWaitingForPopup = nullptr;
         m_hoveredButton = newHoveredButton;
 
         if (m_hoveredButton) {
