@@ -108,7 +108,7 @@ void AppMenuSearch::setSearchMenu(QMenu *searchMenu)
     clear();
     m_searchMenu = searchMenu;
     m_actionTextCache.clear();
-    clearSearchResultsState();
+    resetSearchState();
     m_menuIsRendered = false;
 }
 
@@ -295,6 +295,7 @@ void AppMenuSearch::rebuildSearchCandidatesIfNeeded()
     }
     m_trackedMenus.clear();
     m_knownActionTexts.clear();
+    m_knownActionMenus.clear();
 
     m_searchCandidates.clear();
     m_searchCandidates.reserve(MAX_SEARCH_CANDIDATES);
@@ -344,13 +345,21 @@ void AppMenuSearch::onActionChanged()
     }
     const QString rawText = action->text();
     const QString currentText = KLocalizedString::removeAcceleratorMarker(rawText.trimmed());
-    auto it = m_knownActionTexts.find(action);
-    if (it != m_knownActionTexts.end()) {
-        if (it.value() != currentText) {
-            it.value() = currentText;
-            invalidateCandidates();
-        }
-    } else {
+    const QPointer<QMenu> currentMenu = action->menu();
+
+    auto menuIt = m_knownActionMenus.find(action);
+    const bool submenuChanged = menuIt == m_knownActionMenus.end() || menuIt.value() != currentMenu;
+    if (submenuChanged) {
+        m_knownActionMenus.insert(action, currentMenu);
+    }
+
+    auto textIt = m_knownActionTexts.find(action);
+    const bool textChanged = textIt == m_knownActionTexts.end() || textIt.value() != currentText;
+    if (textChanged) {
+        m_knownActionTexts.insert(action, currentText);
+    }
+
+    if (submenuChanged || textChanged) {
         invalidateCandidates();
     }
 }
@@ -410,6 +419,7 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         if (!m_knownActionTexts.contains(menuAction)) {
             m_trackedActions.append(menuAction);
             m_knownActionTexts.insert(menuAction, getActionText(menuAction));
+            m_knownActionMenus.insert(menuAction, menuAction->menu());
             connect(menuAction, &QAction::changed, this, &AppMenuSearch::onActionChanged);
             connect(menuAction, &QAction::visibleChanged, this, &AppMenuSearch::onActionVisibilityChanged);
             connect(menuAction, &QObject::destroyed, this, &AppMenuSearch::onTrackedActionDestroyed);
@@ -468,6 +478,7 @@ void AppMenuSearch::collectSearchCandidates(QMenu *menu, QSet<QMenu *> &visited,
         if (!m_knownActionTexts.contains(action)) {
             m_trackedActions.append(action);
             m_knownActionTexts.insert(action, getActionText(action));
+            m_knownActionMenus.insert(action, action->menu());
             connect(action, &QAction::changed, this, &AppMenuSearch::onActionChanged);
             connect(action, &QAction::visibleChanged, this, &AppMenuSearch::onActionVisibilityChanged);
             connect(action, &QObject::destroyed, this, &AppMenuSearch::onTrackedActionDestroyed);
