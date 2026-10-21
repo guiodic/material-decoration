@@ -447,7 +447,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     if (!reply.isValid()) {
         qCWarning(DBUSMENUQT) << reply.error().message();
         if (menu) {
-            Q_EMIT menuUpdated(menu);
+            Q_EMIT menuUpdateFailed(menu);
         }
         return;
     }
@@ -645,7 +645,7 @@ void DBusMenuImporter::slotAboutToShowDBusCallFinished(QDBusPendingCallWatcher *
     if (reply.isError()) {
         d->m_idsRefreshedByAboutToShow.remove(id);
         qCWarning(DBUSMENUQT) << "Call to AboutToShow() failed:" << reply.error().message();
-        Q_EMIT menuUpdated(menu);
+        Q_EMIT menuUpdateFailed(menu);
         return;
     }
     // We used to only refresh if needRefresh was true.
