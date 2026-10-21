@@ -152,17 +152,11 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     connect(m_appMenuModel, &AppMenuModel::subMenuReady,
         this, &AppMenuButtonGroup::onSubMenuReady);
     connect(m_appMenuModel, &AppMenuModel::subMenuLoadFailed, this, [this](QMenu *menu) {
-        if (m_buttonIndexWaitingForPopup < 0 || !m_appMenuModel || !m_appMenuModel->menu()) {
-            return;
-        }
-        const auto actions = m_appMenuModel->menu()->actions();
-        if (m_buttonIndexWaitingForPopup >= actions.size()) {
+        // A model reset can change the action at the old button index.
+        // Compare the originally requested menu, not the current action.
+        if (!menu || m_menuWaitingForPopup == menu || m_menuWaitingForPopup.isNull()) {
             m_buttonIndexWaitingForPopup = -1;
-            return;
-        }
-        QAction *action = actions.at(m_buttonIndexWaitingForPopup);
-        if (action && action->menu() == menu) {
-            m_buttonIndexWaitingForPopup = -1;
+            m_menuWaitingForPopup = nullptr;
         }
     });
 
@@ -910,6 +904,7 @@ void AppMenuButtonGroup::handleMenuButtonTrigger(int buttonIndex)
             }
 
             m_buttonIndexWaitingForPopup = buttonIndex;
+            m_menuWaitingForPopup = actionMenu;
             m_appMenuModel->loadSubMenu(actionMenu);
             return; // Abort the trigger; the onSubMenuReady slot will re-trigger later.
         } else {
@@ -1174,7 +1169,7 @@ void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
     }
 
     QAction *action = actions.at(m_buttonIndexWaitingForPopup);
-    if (action && action->menu() == menu) {
+    if (action && action->menu() == menu && m_menuWaitingForPopup == menu) {
         // The menu we were waiting for is now ready.
         // We can now trigger the button again to pop it up.
         // It is crucial to reset the waiting index *before* calling trigger
