@@ -96,6 +96,7 @@ private:
     QHash<QMenu *, QTimer *> m_pendingDeepCacheTimers;
     QList<QPointer<QMenu>> m_timedOutDeepCacheMenus;
     QList<QPointer<QMenu>> m_suppressNextMenuUpdated;
+    QList<QPointer<QMenu>> m_failedMenuUpdates;
     bool m_deepCacheCompleted = false;
     bool m_updatePending = false;
     int m_initialMenuRetries = 0;
