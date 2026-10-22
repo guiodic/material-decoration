@@ -54,7 +54,6 @@ private:
     void update();
 
 signals:
-    void menuAvailableChanged();
     void modelNeedsUpdate();
     void modelReset();
     void menuReadyForSearch();
@@ -73,8 +72,6 @@ private Q_SLOTS:
 private:
     void registerSubMenus(QMenu *menu);
     void resumeDeepCacheIfIdle(QMenu *menu);
-    bool menuAvailable() const;
-    void setMenuAvailable(bool set);
     void checkPendingUpdatesComplete(QMenu *menu);
     void finishCaching();
 
@@ -83,7 +80,6 @@ private:
     QList<QPointer<QMenu>> m_menusToDeepCache;
     qsizetype m_nextMenuToProcess = 0;
     QSet<QMenu *> m_seenMenus;
-    bool m_menuAvailable = false;
     bool m_deepCacheRequested = false;
     bool m_deepCacheStarted = false;
     QSet<QMenu *> m_pendingDeepCacheUpdates;

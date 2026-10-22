@@ -78,7 +78,6 @@ AppMenuModel::AppMenuModel(QObject *parent)
     // we'll select the new menu when the focus changes
     connect(m_serviceWatcher, &QDBusServiceWatcher::serviceUnregistered, this, [this](const QString &serviceName) {
         if (serviceName == m_serviceName) {
-            setMenuAvailable(false);
             stopCaching();
             m_menu = nullptr;
             m_serviceName.clear();
@@ -112,19 +111,6 @@ AppMenuModel::AppMenuModel(QObject *parent)
 AppMenuModel::~AppMenuModel()
 {
     stopCaching();
-}
-
-bool AppMenuModel::menuAvailable() const
-{
-    return m_menuAvailable;
-}
-
-void AppMenuModel::setMenuAvailable(bool set)
-{
-    if (m_menuAvailable != set) {
-        m_menuAvailable = set;
-        Q_EMIT menuAvailableChanged();
-    }
 }
 
 QMenu *AppMenuModel::menu() const
@@ -199,7 +185,6 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
             connect(a, &QAction::changed, this, &AppMenuModel::onActionChanged, Qt::UniqueConnection);
         }
 
-        setMenuAvailable(true);
         Q_EMIT modelNeedsUpdate();
 
         // Pre-fetching and deep caching are now handled on-demand.
