@@ -100,12 +100,17 @@ bool isSafeRegularExpression(const QString &pattern, QString *errorReason)
         return false;
     }
 
+    // Heuristic checks for obvious ReDoS patterns.
+    // Note: This is a best-effort heuristic and does not guarantee complete security against all ReDoS patterns
+    // (such as complex ambiguous alternations). Primary ReDoS safety is enforced via MaxExceptionPatternLength
+    // and MaxExceptionValueLength in SettingsProvider.
     static const QRegularExpression nestedQuantifiersRegex(
         QStringLiteral("(?:\\(|\\|\\[)[^()]*?(?:[*+]|\\{\\d+,\\})[^()]*?\\)\\s*(?:[*+]|\\{\\d+,\\})"),
         QRegularExpression::CaseInsensitiveOption);
 
+    // Matches consecutive quantifiers while accounting for possessive ('+') or lazy ('?') modifier suffixes (e.g. '++', '*+').
     static const QRegularExpression consecutiveQuantifiersRegex(
-        QStringLiteral("(?:[*+]|\\{\\d+,\\})\\s*(?:[*+]|\\{\\d+,\\})"),
+        QStringLiteral("(?:[*+]|\\{\\d+,\\})[+?]?\\s*(?:[*+]|\\{\\d+,\\})"),
         QRegularExpression::CaseInsensitiveOption);
 
     if (nestedQuantifiersRegex.match(pattern).hasMatch() || consecutiveQuantifiersRegex.match(pattern).hasMatch()) {
