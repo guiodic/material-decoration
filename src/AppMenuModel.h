@@ -50,6 +50,9 @@ public:
     void updateApplicationMenu(const QString &serviceName, const QString &menuObjectPath);
 
     QMenu *menu() const;
+    // True if one or more submenu fetches failed or exceeded the cache timeout.
+    // Search remains usable, but nested actions may not be indexed yet.
+    bool deepCachePartial() const;
 
 private:
     void update();
@@ -59,6 +62,7 @@ signals:
     void modelNeedsUpdate();
     void modelReset();
     void menuReadyForSearch();
+    void deepCachePartialChanged(bool partial);
     void subMenuReady(QMenu *menu);
     void subMenuLoadFailed(QMenu *menu);
 
@@ -79,6 +83,7 @@ private:
     void startDeepCachingFrom(QMenu *menu);
     void addTimedOutMenu(QMenu *menu);
     bool takeTimedOutMenu(QMenu *menu);
+    void setDeepCachePartial(bool partial);
     bool menuAvailable() const;
     void setMenuAvailable(bool set);
     void checkPendingUpdatesComplete(QMenu *menu);
@@ -96,6 +101,7 @@ private:
     QHash<QMenu *, QTimer *> m_pendingDeepCacheTimers;
     QList<QPointer<QMenu>> m_timedOutDeepCacheMenus;
     bool m_deepCacheCompleted = false;
+    bool m_deepCachePartial = false;
     bool m_updatePending = false;
     int m_initialMenuRetries = 0;
 

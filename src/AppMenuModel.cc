@@ -33,6 +33,7 @@
 #include <QAction>
 #include <QMenu>
 #include <QDeadlineTimer>
+#include <QDebug>
 #include <QtAlgorithms>
 
 #include <QDBusConnection>
@@ -92,6 +93,7 @@ AppMenuModel::AppMenuModel(QObject *parent)
             m_userMenuWaitTimers.clear();
             m_userMenuWaitRequestIds.clear();
             m_timedOutDeepCacheMenus.clear();
+            setDeepCachePartial(false);
             m_deepCacheCompleted = false;
             m_menu = nullptr;
             m_serviceName.clear();
@@ -146,6 +148,20 @@ QMenu *AppMenuModel::menu() const
     return m_menu;
 }
 
+bool AppMenuModel::deepCachePartial() const
+{
+    return m_deepCachePartial;
+}
+
+void AppMenuModel::setDeepCachePartial(bool partial)
+{
+    if (m_deepCachePartial == partial) {
+        return;
+    }
+    m_deepCachePartial = partial;
+    Q_EMIT deepCachePartialChanged(partial);
+}
+
 void AppMenuModel::update()
 {
     Q_EMIT modelReset();
@@ -170,6 +186,7 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     m_userMenuWaitTimers.clear();
     m_userMenuWaitRequestIds.clear();
     m_timedOutDeepCacheMenus.clear();
+    setDeepCachePartial(false);
     m_deepCacheCompleted = false;
     m_initialMenuRetries = 0;
 
@@ -498,21 +515,27 @@ void AppMenuModel::addTimedOutMenu(QMenu *menu)
         }
     }
     m_timedOutDeepCacheMenus.append(QPointer<QMenu>(menu));
+    // This connection must survive stopCaching(), which disconnects
+    // menu -> model connections when a scan finishes.
+    connect(menu, &QObject::destroyed, m_serviceWatcher, [this, menu]() {
+        takeTimedOutMenu(menu);
+    });
+    setDeepCachePartial(true);
 }
 
 bool AppMenuModel::takeTimedOutMenu(QMenu *menu)
 {
+    bool removed = false;
     for (auto it = m_timedOutDeepCacheMenus.begin(); it != m_timedOutDeepCacheMenus.end();) {
-        if (it->isNull()) {
+        if (it->isNull() || it->data() == menu) {
+            removed |= it->data() == menu;
             it = m_timedOutDeepCacheMenus.erase(it);
-        } else if (it->data() == menu) {
-            m_timedOutDeepCacheMenus.erase(it);
-            return true;
         } else {
             ++it;
         }
     }
-    return false;
+    setDeepCachePartial(!m_timedOutDeepCacheMenus.isEmpty());
+    return removed;
 }
 
 void AppMenuModel::startDeepCachingFrom(QMenu *menu)
@@ -608,7 +631,15 @@ void AppMenuModel::processNext()
                 // Stop waiting for deep caching, but do not cancel the shared
                 // importer request: a user may also be waiting to open this menu,
                 // and LayoutUpdated refreshes must remain independent.
+                qWarning() << "App menu deep-cache: submenu request timed out after"
+                           << DeepCacheUpdateTimeoutMs << "ms; search results may be incomplete:"
+                           << menuGuard->menuAction()->text()
+                           << "request ID:" << m_pendingDeepCacheRequestIds.value(menuKey);
+                const QPointer<AppMenuModel> modelGuard(this);
                 addTimedOutMenu(menuGuard.data());
+                if (!modelGuard || !menuGuard) {
+                    return;
+                }
                 if (m_importer && !m_userMenuWaitTimers.contains(menuKey)) {
                     m_importer->expireMenuRequest(menuGuard.data(),
                         m_pendingDeepCacheRequestIds.value(menuKey));
