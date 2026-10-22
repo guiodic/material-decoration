@@ -46,6 +46,10 @@
 namespace Material
 {
 
+namespace {
+constexpr int DeepCacheTimeoutMs = 5000;
+}
+
 class KDBusMenuImporter : public DBusMenuImporter
 {
 
@@ -98,6 +102,11 @@ AppMenuModel::AppMenuModel(QObject *parent)
     m_staggerTimer->setSingleShot(true);
     m_staggerTimer->setInterval(8);
     connect(m_staggerTimer, &QTimer::timeout, this, &AppMenuModel::processNext);
+
+    // One timeout bounds the entire deep-cache scan.
+    m_deepCacheTimer = new QTimer(this);
+    m_deepCacheTimer->setSingleShot(true);
+    connect(m_deepCacheTimer, &QTimer::timeout, this, &AppMenuModel::finishCaching);
 }
 
 AppMenuModel::~AppMenuModel()
@@ -226,6 +235,7 @@ void AppMenuModel::stopCaching()
     m_menusToDeepCache.clear();
     m_nextMenuToProcess = 0;
     m_staggerTimer->stop();
+    m_deepCacheTimer->stop();
     m_deepCacheRequested = false;
     m_deepCacheStarted = false;
     m_pendingDeepCacheUpdates.clear();
@@ -244,6 +254,7 @@ void AppMenuModel::startDeepCaching()
     }
 
     m_deepCacheStarted = true;
+    m_deepCacheTimer->start(DeepCacheTimeoutMs);
     m_menusToDeepCache.clear();
     m_nextMenuToProcess = 0;
     m_seenMenus.clear();
@@ -302,7 +313,10 @@ void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
     registerSubMenus(menu);
 
     if (wasQueueFinished) {
-        m_deepCacheStarted = true;
+        if (!m_deepCacheStarted) {
+            m_deepCacheStarted = true;
+            m_deepCacheTimer->start(DeepCacheTimeoutMs);
+        }
         processNext();
     }
 }

@@ -79,6 +79,7 @@ private:
     void finishCaching();
 
     QTimer *m_staggerTimer;
+    QTimer *m_deepCacheTimer;
     QList<QPointer<QMenu>> m_menusToDeepCache;
     qsizetype m_nextMenuToProcess = 0;
     QSet<QMenu *> m_seenMenus;
