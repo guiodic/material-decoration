@@ -35,6 +35,7 @@ void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettings
     dst->setInactiveOpacity(src->inactiveOpacity());
     dst->setCornerRadius(src->cornerRadius());
     dst->setBottomCornerRadiusFlag(src->bottomCornerRadiusFlag());
+    dst->setSquareCornersTiled(src->squareCornersTiled());
     dst->setOutlineActive(src->outlineActive());
     dst->setUseSystemColors(src->useSystemColors());
     dst->setUseCustomBorderColors(src->useCustomBorderColors());
@@ -68,7 +69,6 @@ void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettings
     dst->setMask(src->mask());
     dst->setHideTitleBar(src->hideTitleBar());
     dst->setHideApplicationMenu(src->hideApplicationMenu());
-    dst->setHamburgerMenu(src->hamburgerMenu());
     dst->setSquareCorners(src->squareCorners());
     dst->setHideShadow(src->hideShadow());
 }
