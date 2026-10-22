@@ -109,8 +109,6 @@ void MaterialDecorationKCM::setupConnections()
 
     connect(m_ui->kcfg_HamburgerMenu, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_ShowDisabledActions, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
-    connect(m_ui->kcfg_SearchIgnoreTopLevel, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
-    connect(m_ui->kcfg_SearchIgnoreSubMenus, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_SearchFuzzyMatching, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_MenuButtonHorzPadding, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_UseSystemMenuFont, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
@@ -144,53 +142,58 @@ void MaterialDecorationKCM::load()
     updateChanged();
 }
 
-void MaterialDecorationKCM::updateUI()
+void MaterialDecorationKCM::loadUIFromSettings(const Material::InternalSettings &settings)
 {
-    m_ui->kcfg_TitleAlignment->setCurrentIndex(m_settings->titleAlignment());
-    m_ui->kcfg_ButtonSize->setCurrentIndex(m_settings->buttonSize());
-    m_ui->kcfg_ActiveOpacity->setValue(qRound(m_settings->activeOpacity() * 100));
-    m_ui->kcfg_InactiveOpacity->setValue(qRound(m_settings->inactiveOpacity() * 100));
-    m_ui->kcfg_CornerRadius->setValue(m_settings->cornerRadius());
-    m_ui->kcfg_UseSystemColors->setChecked(m_settings->useSystemColors());
-    m_ui->kcfg_UseCustomBorderColors->setChecked(m_settings->useCustomBorderColors());
-    m_ui->kcfg_ActiveBorderColor->setColor(m_settings->activeBorderColor());
-    m_ui->kcfg_InactiveBorderColor->setColor(m_settings->inactiveBorderColor());
+    m_ui->kcfg_TitleAlignment->setCurrentIndex(settings.titleAlignment());
+    m_ui->kcfg_ButtonSize->setCurrentIndex(settings.buttonSize());
+    m_ui->kcfg_ActiveOpacity->setValue(qRound(settings.activeOpacity() * 100));
+    m_ui->kcfg_InactiveOpacity->setValue(qRound(settings.inactiveOpacity() * 100));
+    m_ui->kcfg_CornerRadius->setValue(settings.cornerRadius());
+    m_ui->kcfg_UseSystemColors->setChecked(settings.useSystemColors());
+    m_ui->kcfg_UseCustomBorderColors->setChecked(settings.useCustomBorderColors());
+    m_ui->kcfg_ActiveBorderColor->setColor(settings.activeBorderColor());
+    m_ui->kcfg_InactiveBorderColor->setColor(settings.inactiveBorderColor());
     const bool useCustom = m_ui->kcfg_UseCustomBorderColors->isChecked();
     m_ui->kcfg_ActiveBorderColor->setEnabled(useCustom);
     m_ui->kcfg_InactiveBorderColor->setEnabled(useCustom);
-    m_ui->kcfg_MenuAlwaysShow->setChecked(m_settings->menuAlwaysShow());
-    m_ui->kcfg_ShowCaptionOnHover->setChecked(m_settings->showCaptionOnHover());
-    m_ui->kcfg_ShowCaptionOnHover->setEnabled(m_settings->menuAlwaysShow());
-    m_ui->kcfg_SearchEnabled->setChecked(m_settings->searchEnabled());
-    m_ui->kcfg_ShowDisabledActions->setEnabled(m_settings->searchEnabled());
-    m_ui->kcfg_SearchIgnoreTopLevel->setEnabled(m_settings->searchEnabled());
-    m_ui->kcfg_SearchIgnoreSubMenus->setEnabled(m_settings->searchEnabled());
-    m_ui->kcfg_SearchFuzzyMatching->setEnabled(m_settings->searchEnabled());
-    m_ui->kcfg_HamburgerMenu->setChecked(m_settings->hamburgerMenu());
-    m_ui->kcfg_ShowDisabledActions->setChecked(m_settings->showDisabledActions());
-    m_ui->kcfg_SearchIgnoreTopLevel->setChecked(m_settings->searchIgnoreTopLevel());
-    m_ui->kcfg_SearchIgnoreSubMenus->setChecked(m_settings->searchIgnoreSubMenus());
-    m_ui->kcfg_SearchFuzzyMatching->setChecked(m_settings->searchFuzzyMatching());
-    m_ui->kcfg_MenuButtonHorzPadding->setValue(m_settings->menuButtonHorzPadding());
-    m_ui->kcfg_UseSystemMenuFont->setChecked(m_settings->useSystemMenuFont());
-    m_ui->kcfg_ShadowSize->setCurrentIndex(m_settings->shadowSize());
-    m_ui->kcfg_ShadowColor->setColor(m_settings->shadowColor());
-    m_ui->kcfg_ShadowStrength->setValue(m_settings->shadowStrength());
-    m_ui->kcfg_AnimationsEnabled->setChecked(m_settings->animationsEnabled());
-    m_ui->kcfg_AnimationsDuration->setValue(m_settings->animationsDuration());
-    m_ui->kcfg_BottomCorners->setChecked(m_settings->bottomCornerRadiusFlag());
-    m_ui->kcfg_SquareCornersTiled->setChecked(m_settings->squareCornersTiled());
-    m_ui->kcfg_OutlineActive->setChecked(m_settings->outlineActive());
-    m_ui->kcfg_HideCaptionWhenLimitedSpace->setChecked(m_settings->hideCaptionWhenLimitedSpace());
-    m_ui->kcfg_MinWidthForCaption->setValue(m_settings->minWidthForCaption());
-    m_ui->kcfg_MinWidthForCaption->setEnabled(m_settings->hideCaptionWhenLimitedSpace());
-    m_ui->label_minWidthForCaption->setEnabled(m_settings->hideCaptionWhenLimitedSpace());
+    m_ui->kcfg_MenuAlwaysShow->setChecked(settings.menuAlwaysShow());
+    m_ui->kcfg_ShowCaptionOnHover->setChecked(settings.showCaptionOnHover());
+    m_ui->kcfg_ShowCaptionOnHover->setEnabled(settings.menuAlwaysShow());
+    m_ui->kcfg_SearchEnabled->setChecked(settings.searchEnabled());
+    m_ui->kcfg_ShowDisabledActions->setEnabled(settings.searchEnabled());
+    m_ui->kcfg_SearchIgnoreTopLevel->setEnabled(settings.searchEnabled());
+    m_ui->kcfg_SearchIgnoreSubMenus->setEnabled(settings.searchEnabled());
+    m_ui->kcfg_SearchFuzzyMatching->setEnabled(settings.searchEnabled());
+    m_ui->kcfg_HamburgerMenu->setChecked(settings.hamburgerMenu());
+    m_ui->kcfg_ShowDisabledActions->setChecked(settings.showDisabledActions());
+    m_ui->kcfg_SearchIgnoreTopLevel->setChecked(settings.searchIgnoreTopLevel());
+    m_ui->kcfg_SearchIgnoreSubMenus->setChecked(settings.searchIgnoreSubMenus());
+    m_ui->kcfg_SearchFuzzyMatching->setChecked(settings.searchFuzzyMatching());
+    m_ui->kcfg_MenuButtonHorzPadding->setValue(settings.menuButtonHorzPadding());
+    m_ui->kcfg_UseSystemMenuFont->setChecked(settings.useSystemMenuFont());
+    m_ui->kcfg_ShadowSize->setCurrentIndex(settings.shadowSize());
+    m_ui->kcfg_ShadowColor->setColor(settings.shadowColor());
+    m_ui->kcfg_ShadowStrength->setValue(settings.shadowStrength());
+    m_ui->kcfg_AnimationsEnabled->setChecked(settings.animationsEnabled());
+    m_ui->kcfg_AnimationsDuration->setValue(settings.animationsDuration());
+    m_ui->kcfg_BottomCorners->setChecked(settings.bottomCornerRadiusFlag());
+    m_ui->kcfg_SquareCornersTiled->setChecked(settings.squareCornersTiled());
+    m_ui->kcfg_OutlineActive->setChecked(settings.outlineActive());
+    m_ui->kcfg_HideCaptionWhenLimitedSpace->setChecked(settings.hideCaptionWhenLimitedSpace());
+    m_ui->kcfg_MinWidthForCaption->setValue(settings.minWidthForCaption());
+    m_ui->kcfg_MinWidthForCaption->setEnabled(settings.hideCaptionWhenLimitedSpace());
+    m_ui->label_minWidthForCaption->setEnabled(settings.hideCaptionWhenLimitedSpace());
 
-    m_ui->kcfg_LongPressEnabled->setChecked(m_settings->longPressEnabled());
-    m_ui->kcfg_LongPressDuration->setValue(m_settings->longPressDuration());
-    m_ui->kcfg_LongPressDuration->setEnabled(m_settings->longPressEnabled());
+    m_ui->kcfg_LongPressEnabled->setChecked(settings.longPressEnabled());
+    m_ui->kcfg_LongPressDuration->setValue(settings.longPressDuration());
+    m_ui->kcfg_LongPressDuration->setEnabled(settings.longPressEnabled());
 
-    m_ui->kcfg_DragFromButtonsEnabled->setChecked(m_settings->dragFromButtonsEnabled());
+    m_ui->kcfg_DragFromButtonsEnabled->setChecked(settings.dragFromButtonsEnabled());
+}
+
+void MaterialDecorationKCM::updateUI()
+{
+    loadUIFromSettings(*m_settings);
 }
 
 void MaterialDecorationKCM::save()
@@ -247,50 +250,7 @@ void MaterialDecorationKCM::defaults()
     Material::InternalSettings s;
     s.setDefaults();
 
-    m_ui->kcfg_TitleAlignment->setCurrentIndex(s.titleAlignment());
-    m_ui->kcfg_ButtonSize->setCurrentIndex(s.buttonSize());
-    m_ui->kcfg_ActiveOpacity->setValue(qRound(s.activeOpacity() * 100));
-    m_ui->kcfg_InactiveOpacity->setValue(qRound(s.inactiveOpacity() * 100));
-    m_ui->kcfg_CornerRadius->setValue(s.cornerRadius());
-    m_ui->kcfg_UseSystemColors->setChecked(s.useSystemColors());
-    m_ui->kcfg_UseCustomBorderColors->setChecked(s.useCustomBorderColors());
-    m_ui->kcfg_ActiveBorderColor->setColor(s.activeBorderColor());
-    m_ui->kcfg_InactiveBorderColor->setColor(s.inactiveBorderColor());
-    const bool useCustom = m_ui->kcfg_UseCustomBorderColors->isChecked();
-    m_ui->kcfg_ActiveBorderColor->setEnabled(useCustom);
-    m_ui->kcfg_InactiveBorderColor->setEnabled(useCustom);
-    m_ui->kcfg_MenuAlwaysShow->setChecked(s.menuAlwaysShow());
-    m_ui->kcfg_ShowCaptionOnHover->setChecked(s.showCaptionOnHover());
-    m_ui->kcfg_ShowCaptionOnHover->setEnabled(s.menuAlwaysShow());
-    m_ui->kcfg_SearchEnabled->setChecked(s.searchEnabled());
-    m_ui->kcfg_ShowDisabledActions->setEnabled(s.searchEnabled());
-    m_ui->kcfg_SearchIgnoreTopLevel->setEnabled(s.searchEnabled());
-    m_ui->kcfg_SearchIgnoreSubMenus->setEnabled(s.searchEnabled());
-    m_ui->kcfg_SearchFuzzyMatching->setEnabled(s.searchEnabled());
-    m_ui->kcfg_HamburgerMenu->setChecked(s.hamburgerMenu());
-    m_ui->kcfg_ShowDisabledActions->setChecked(s.showDisabledActions());
-    m_ui->kcfg_SearchIgnoreTopLevel->setChecked(s.searchIgnoreTopLevel());
-    m_ui->kcfg_SearchIgnoreSubMenus->setChecked(s.searchIgnoreSubMenus());
-    m_ui->kcfg_SearchFuzzyMatching->setChecked(s.searchFuzzyMatching());
-    m_ui->kcfg_MenuButtonHorzPadding->setValue(s.menuButtonHorzPadding());
-    m_ui->kcfg_UseSystemMenuFont->setChecked(s.useSystemMenuFont());
-    m_ui->kcfg_ShadowSize->setCurrentIndex(s.shadowSize());
-    m_ui->kcfg_ShadowColor->setColor(s.shadowColor());
-    m_ui->kcfg_ShadowStrength->setValue(s.shadowStrength());
-    m_ui->kcfg_AnimationsEnabled->setChecked(s.animationsEnabled());
-    m_ui->kcfg_AnimationsDuration->setValue(s.animationsDuration());
-    m_ui->kcfg_BottomCorners->setChecked(s.bottomCornerRadiusFlag());
-    m_ui->kcfg_SquareCornersTiled->setChecked(s.squareCornersTiled());
-    m_ui->kcfg_OutlineActive->setChecked(s.outlineActive());
-    m_ui->kcfg_HideCaptionWhenLimitedSpace->setChecked(s.hideCaptionWhenLimitedSpace());
-    m_ui->kcfg_MinWidthForCaption->setValue(s.minWidthForCaption());
-    m_ui->kcfg_MinWidthForCaption->setEnabled(s.hideCaptionWhenLimitedSpace());
-    m_ui->label_minWidthForCaption->setEnabled(s.hideCaptionWhenLimitedSpace());
-    m_ui->kcfg_LongPressEnabled->setChecked(s.longPressEnabled());
-    m_ui->kcfg_LongPressDuration->setValue(s.longPressDuration());
-    m_ui->kcfg_LongPressDuration->setEnabled(s.longPressEnabled());
-
-    m_ui->kcfg_DragFromButtonsEnabled->setChecked(s.dragFromButtonsEnabled());
+    loadUIFromSettings(s);
 
     updateChanged();
 }
