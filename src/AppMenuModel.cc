@@ -385,7 +385,7 @@ void AppMenuModel::processNext()
                 }
                 if (guard) {
                     qWarning() << "Deep-cache submenu timeout after" << DeepCacheTimeoutMs
-                               << "ms:" << guard->menuAction()->text();
+                               << "ms; search results may be incomplete";
                     // Partial describes this scan, not whether a later
                     // importer notification actually applied a layout.
                     setDeepCachePartial(true);
