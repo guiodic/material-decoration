@@ -100,17 +100,19 @@ bool isSafeRegularExpression(const QString &pattern, QString *errorReason)
         return false;
     }
 
-    // Heuristic checks for obvious ReDoS patterns.
-    // Note: This is a best-effort heuristic and does not guarantee complete security against all ReDoS patterns
-    // (such as complex ambiguous alternations). Primary ReDoS safety is enforced via MaxExceptionPatternLength
-    // and MaxExceptionValueLength in SettingsProvider.
+    // Heuristic checks for obvious ReDoS patterns (nested or consecutive quantifiers).
+    // Note: This is a best-effort heuristic. Complex ambiguous alternations (e.g. '(a|aa)+') are not statically
+    // separable from safe alternations (e.g. '(a|b)+') via simple regex. Primary ReDoS safety is enforced via
+    // MaxExceptionPatternLength and MaxExceptionValueLength in SettingsProvider.
+    // Negative lookbehind (?<!\\)(?:\\\\)* ensures escaped operators like '\*' or '\+' are treated as literals.
     static const QRegularExpression nestedQuantifiersRegex(
-        QStringLiteral("(?:\\(|\\|\\[)[^()]*?(?:[*+]|\\{\\d+,\\})[^()]*?\\)\\s*(?:[*+]|\\{\\d+,\\})"),
+        QStringLiteral("(?:\\(|\\|\\[)[^()]*?(?<!\\\\)(?:\\\\\\\\)*(?:[*+]|\\{\\d+,\\})(?>[+?]?)[^()]*?\\)(?<!\\\\)(?:\\\\\\\\)*(?:[*+]|\\{\\d+,\\})"),
         QRegularExpression::CaseInsensitiveOption);
 
-    // Matches consecutive quantifiers while accounting for possessive ('+') or lazy ('?') modifier suffixes (e.g. '++', '*+').
+    // Matches consecutive quantifiers while using atomic group (?>[+?]?) to prevent backtracking reinterpretation
+    // of possessive '+' or lazy '?' modifier suffixes as a second quantifier.
     static const QRegularExpression consecutiveQuantifiersRegex(
-        QStringLiteral("(?:[*+]|\\{\\d+,\\})[+?]?\\s*(?:[*+]|\\{\\d+,\\})"),
+        QStringLiteral("(?<!\\\\)(?:\\\\\\\\)*(?:[*+]|\\{\\d+,\\})(?>[+?]?)(?<!\\\\)(?:\\\\\\\\)*(?:[*+]|\\{\\d+,\\})"),
         QRegularExpression::CaseInsensitiveOption);
 
     if (nestedQuantifiersRegex.match(pattern).hasMatch() || consecutiveQuantifiersRegex.match(pattern).hasMatch()) {

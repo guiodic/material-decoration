@@ -59,8 +59,7 @@ InternalSettingsPtr cloneInternalSettings(const InternalSettingsPtr &src);
  * @brief Performs heuristic best-effort validation on user-provided regular expressions.
  *
  * Checks regex syntax, pattern length, and detects obvious nested or consecutive
- * quantifiers. Note that this function provides heuristic checks and does not guarantee
- * absolute immunity from ReDoS (e.g. complex ambiguous alternations).
+ * quantifiers as well as quantified alternations.
  * Primary ReDoS protection relies on \c MaxExceptionPatternLength and \c MaxExceptionValueLength.
  */
 bool isSafeRegularExpression(const QString &pattern, QString *errorReason = nullptr);
