@@ -106,7 +106,7 @@ bool isSafeRegularExpression(const QString &pattern, QString *errorReason)
     // MaxExceptionPatternLength and MaxExceptionValueLength in SettingsProvider.
     // Negative lookbehind (?<!\\)(?:\\\\)* ensures escaped operators like '\*' or '\+' are treated as literals.
     static const QRegularExpression nestedQuantifiersRegex(
-        QStringLiteral("(?:\\(|\\|\\[)[^()]*?(?<!\\\\)(?:\\\\\\\\)*(?:[*+]|\\{\\d+,\\})(?>[+?]?)[^()]*?\\)(?<!\\\\)(?:\\\\\\\\)*(?:[*+]|\\{\\d+,\\})"),
+        QStringLiteral("(?<!\\\\)(?:\\\\\\\\)*(?:\\(|\\|\\[)[^()]*?(?<!\\\\)(?:\\\\\\\\)*(?:[*+]|\\{\\d+,\\})(?>[+?]?)[^()]*?(?<!\\\\)(?:\\\\\\\\)*\\)(?<!\\\\)(?:\\\\\\\\)*(?:[*+]|\\{\\d+,\\})"),
         QRegularExpression::CaseInsensitiveOption);
 
     // Matches consecutive quantifiers while using atomic group (?>[+?]?) to prevent backtracking reinterpretation
