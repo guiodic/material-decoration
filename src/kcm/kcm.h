@@ -39,4 +39,5 @@ private:
     void setupConnections();
     bool isChanged() const;
     void updateUI();
+    void loadUIFromSettings(const Material::InternalSettings &settings);
 };
