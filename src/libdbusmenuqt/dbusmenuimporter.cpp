@@ -533,10 +533,6 @@ void DBusMenuImporter::updateMenu(QMenu *menu)
 
     const auto call = d->m_interface->AboutToShow(id);
     QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, this);
-    if (!watcher) {
-        d->m_idsRefreshedByAboutToShow.remove(id);
-        return;
-    }
     watcher->setProperty(DBUSMENU_PROPERTY_ID, id);
     connect(watcher, &QDBusPendingCallWatcher::finished, this, &DBusMenuImporter::slotAboutToShowDBusCallFinished);
 
