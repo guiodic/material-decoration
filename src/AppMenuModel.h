@@ -27,6 +27,7 @@
 #include <QDBusServiceWatcher>
 #include <QMenu>
 #include <QList>
+#include <QHash>
 #include <QPointer>
 #include <QSet>
 #include <QTimer>
@@ -49,6 +50,7 @@ public:
     void updateApplicationMenu(const QString &serviceName, const QString &menuObjectPath);
 
     QMenu *menu() const;
+    bool deepCachePartial() const;
 
 private:
     void update();
@@ -58,6 +60,7 @@ signals:
     void modelNeedsUpdate();
     void modelReset();
     void menuReadyForSearch();
+    void deepCachePartialChanged(bool partial);
     void subMenuReady(QMenu *menu);
 
 public:
@@ -77,6 +80,9 @@ private:
     void setMenuAvailable(bool set);
     void checkPendingUpdatesComplete(QMenu *menu);
     void finishCaching();
+    void setDeepCachePartial(bool partial);
+    void addTimedOutMenu(QMenu *menu);
+    bool takeTimedOutMenu(QMenu *menu);
 
     QTimer *m_staggerTimer;
     QList<QPointer<QMenu>> m_menusToDeepCache;
@@ -86,6 +92,9 @@ private:
     bool m_deepCacheRequested = false;
     bool m_deepCacheStarted = false;
     QSet<QMenu *> m_pendingDeepCacheUpdates;
+    QHash<QMenu *, QTimer *> m_deepCacheWaitTimers;
+    QList<QPointer<QMenu>> m_timedOutMenus;
+    bool m_deepCachePartial = false;
     bool m_updatePending = false;
 
     QPointer<QMenu> m_menu;

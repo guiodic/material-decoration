@@ -33,6 +33,7 @@
 #include <QAction>
 #include <QMenu>
 #include <QDeadlineTimer>
+#include <QDebug>
 
 #include <QDBusConnection>
 #include <QDBusServiceWatcher>
@@ -45,6 +46,10 @@
 
 namespace Material
 {
+
+namespace {
+constexpr int DeepCacheTimeoutMs = 5000;
+}
 
 class KDBusMenuImporter : public DBusMenuImporter
 {
@@ -76,6 +81,8 @@ AppMenuModel::AppMenuModel(QObject *parent)
         if (serviceName == m_serviceName) {
             setMenuAvailable(false);
             stopCaching();
+            m_timedOutMenus.clear();
+            setDeepCachePartial(false);
             m_menu = nullptr;
             m_serviceName.clear();
             m_menuObjectPath.clear();
@@ -123,6 +130,19 @@ QMenu *AppMenuModel::menu() const
     return m_menu;
 }
 
+bool AppMenuModel::deepCachePartial() const
+{
+    return m_deepCachePartial;
+}
+
+void AppMenuModel::setDeepCachePartial(bool partial)
+{
+    if (m_deepCachePartial != partial) {
+        m_deepCachePartial = partial;
+        Q_EMIT deepCachePartialChanged(partial);
+    }
+}
+
 void AppMenuModel::update()
 {
     Q_EMIT modelReset();
@@ -133,7 +153,12 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
 {
     // A menu change means any in-progress caching is now invalid.
     stopCaching();
-    
+    // Keep recovery markers only when refreshing the same menu source.
+    if (m_serviceName != serviceName || m_menuObjectPath != menuObjectPath) {
+        m_timedOutMenus.clear();
+        setDeepCachePartial(false);
+    }
+
     if (m_serviceName == serviceName && m_menuObjectPath == menuObjectPath) {
         if (m_importer) {
             QMetaObject::invokeMethod(m_importer.data(), qOverload<>(&DBusMenuImporter::updateMenu), Qt::QueuedConnection);
@@ -198,13 +223,28 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
             resumeDeepCacheIfIdle(m_menu.data());
         }
     } else { // This is an update for a submenu that was previously requested.
+        const QPointer<QMenu> menuGuard(menu);
         Q_EMIT subMenuReady(menu);
-        if (m_deepCacheRequested) {
-            resumeDeepCacheIfIdle(menu);
+        if (!menuGuard || sender() != m_importer.data()) {
+            return;
         }
 
-        // Track the specific submenus being deep cached. When all pending
-        // updates are finished, the entire menu tree has been fetched.
+        const bool recovered = takeTimedOutMenu(menu);
+        if (m_deepCacheRequested) {
+            resumeDeepCacheIfIdle(menu);
+        } else if (recovered) {
+            // Deep caching may already have finished with partial results.
+            // Resume only from the recovered subtree; do not reload the root.
+            m_deepCacheRequested = true;
+            m_deepCacheStarted = true;
+            m_menusToDeepCache.clear();
+            m_nextMenuToProcess = 0;
+            m_seenMenus.clear();
+            registerSubMenus(menu);
+            processNext();
+        }
+
+        // A normal, late importer response can still finish a pending scan.
         checkPendingUpdatesComplete(menu);
     }
 }
@@ -226,6 +266,11 @@ void AppMenuModel::stopCaching()
     m_menusToDeepCache.clear();
     m_nextMenuToProcess = 0;
     m_staggerTimer->stop();
+    for (QTimer *timer : std::as_const(m_deepCacheWaitTimers)) {
+        timer->stop();
+        timer->deleteLater();
+    }
+    m_deepCacheWaitTimers.clear();
     m_deepCacheRequested = false;
     m_deepCacheStarted = false;
     m_pendingDeepCacheUpdates.clear();
@@ -279,6 +324,10 @@ void AppMenuModel::registerSubMenus(QMenu *menu)
 void AppMenuModel::checkPendingUpdatesComplete(QMenu *menu)
 {
     if (m_pendingDeepCacheUpdates.remove(menu)) {
+        if (QTimer *timer = m_deepCacheWaitTimers.take(menu)) {
+            timer->stop();
+            timer->deleteLater();
+        }
         if (m_pendingDeepCacheUpdates.isEmpty() && m_nextMenuToProcess >= m_menusToDeepCache.size()) {
             QMetaObject::invokeMethod(this, &AppMenuModel::processNext, Qt::QueuedConnection);
         }
@@ -289,6 +338,40 @@ void AppMenuModel::finishCaching()
 {
     stopCaching();
     Q_EMIT menuReadyForSearch();
+}
+
+void AppMenuModel::addTimedOutMenu(QMenu *menu)
+{
+    if (!menu) {
+        return;
+    }
+    for (const QPointer<QMenu> &entry : std::as_const(m_timedOutMenus)) {
+        if (entry == menu) {
+            return;
+        }
+    }
+    m_timedOutMenus.append(QPointer<QMenu>(menu));
+    // Use a different receiver from this: stopCaching() disconnects
+    // submenu -> model connections.
+    connect(menu, &QObject::destroyed, m_staggerTimer, [this, menu] {
+        takeTimedOutMenu(menu);
+    });
+    setDeepCachePartial(true);
+}
+
+bool AppMenuModel::takeTimedOutMenu(QMenu *menu)
+{
+    bool found = false;
+    for (auto it = m_timedOutMenus.begin(); it != m_timedOutMenus.end();) {
+        if (it->isNull() || it->data() == menu) {
+            found |= (it->data() == menu);
+            it = m_timedOutMenus.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    setDeepCachePartial(!m_timedOutMenus.isEmpty());
+    return found;
 }
 
 void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
@@ -337,10 +420,29 @@ void AppMenuModel::processNext()
                 continue; // Process next item immediately
             }
 
-            m_pendingDeepCacheUpdates.insert(menuToProcess);
-            if (m_importer) {
-                m_importer->updateMenu(menuToProcess);
+            if (!m_importer) {
+                continue;
             }
+
+            m_pendingDeepCacheUpdates.insert(menuToProcess);
+            auto *timeout = new QTimer(this);
+            timeout->setSingleShot(true);
+            m_deepCacheWaitTimers.insert(menuToProcess, timeout);
+            const QPointer<QMenu> guard(menuToProcess);
+            connect(timeout, &QTimer::timeout, this, [this, guard, key = menuToProcess, timeout] {
+                if (m_deepCacheWaitTimers.value(key) != timeout) {
+                    return;
+                }
+                if (guard) {
+                    qWarning() << "Deep-cache submenu timeout after" << DeepCacheTimeoutMs
+                               << "ms:" << guard->menuAction()->text();
+                    addTimedOutMenu(guard.data());
+                }
+                // Stop waiting, but leave the D-Bus request untouched.
+                checkPendingUpdatesComplete(key);
+            });
+            timeout->start(DeepCacheTimeoutMs);
+            m_importer->updateMenu(menuToProcess);
             m_staggerTimer->start();
             return; // Wait for async update
         }
