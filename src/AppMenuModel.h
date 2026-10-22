@@ -81,8 +81,6 @@ private:
     void checkPendingUpdatesComplete(QMenu *menu);
     void finishCaching();
     void setDeepCachePartial(bool partial);
-    void addTimedOutMenu(QMenu *menu);
-    bool takeTimedOutMenu(QMenu *menu);
 
     QTimer *m_staggerTimer;
     QList<QPointer<QMenu>> m_menusToDeepCache;
@@ -93,7 +91,6 @@ private:
     bool m_deepCacheStarted = false;
     QSet<QMenu *> m_pendingDeepCacheUpdates;
     QHash<QMenu *, QTimer *> m_deepCacheWaitTimers;
-    QList<QPointer<QMenu>> m_timedOutMenus;
     bool m_deepCachePartial = false;
     bool m_updatePending = false;
 

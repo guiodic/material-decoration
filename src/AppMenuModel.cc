@@ -81,7 +81,6 @@ AppMenuModel::AppMenuModel(QObject *parent)
         if (serviceName == m_serviceName) {
             setMenuAvailable(false);
             stopCaching();
-            m_timedOutMenus.clear();
             setDeepCachePartial(false);
             m_menu = nullptr;
             m_serviceName.clear();
@@ -155,7 +154,6 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     stopCaching();
     // Keep recovery markers only when refreshing the same menu source.
     if (m_serviceName != serviceName || m_menuObjectPath != menuObjectPath) {
-        m_timedOutMenus.clear();
         setDeepCachePartial(false);
     }
 
@@ -223,28 +221,13 @@ void AppMenuModel::onMenuUpdated(QMenu *menu)
             resumeDeepCacheIfIdle(m_menu.data());
         }
     } else { // This is an update for a submenu that was previously requested.
-        const QPointer<QMenu> menuGuard(menu);
         Q_EMIT subMenuReady(menu);
-        if (!menuGuard || sender() != m_importer.data()) {
-            return;
-        }
-
-        const bool recovered = takeTimedOutMenu(menu);
         if (m_deepCacheRequested) {
             resumeDeepCacheIfIdle(menu);
-        } else if (recovered) {
-            // Deep caching may already have finished with partial results.
-            // Resume only from the recovered subtree; do not reload the root.
-            m_deepCacheRequested = true;
-            m_deepCacheStarted = true;
-            m_menusToDeepCache.clear();
-            m_nextMenuToProcess = 0;
-            m_seenMenus.clear();
-            registerSubMenus(menu);
-            processNext();
         }
 
-        // A normal, late importer response can still finish a pending scan.
+        // Only pending scans consume this update. A late reply must not
+        // restart deep caching after stopCaching() or completion.
         checkPendingUpdatesComplete(menu);
     }
 }
@@ -283,6 +266,7 @@ void AppMenuModel::startDeepCaching()
     }
 
     m_deepCacheRequested = true;
+    setDeepCachePartial(false);
 
     if (!m_menu) {
         return;
@@ -338,40 +322,6 @@ void AppMenuModel::finishCaching()
 {
     stopCaching();
     Q_EMIT menuReadyForSearch();
-}
-
-void AppMenuModel::addTimedOutMenu(QMenu *menu)
-{
-    if (!menu) {
-        return;
-    }
-    for (const QPointer<QMenu> &entry : std::as_const(m_timedOutMenus)) {
-        if (entry == menu) {
-            return;
-        }
-    }
-    m_timedOutMenus.append(QPointer<QMenu>(menu));
-    // Use a different receiver from this: stopCaching() disconnects
-    // submenu -> model connections.
-    connect(menu, &QObject::destroyed, m_staggerTimer, [this, menu] {
-        takeTimedOutMenu(menu);
-    });
-    setDeepCachePartial(true);
-}
-
-bool AppMenuModel::takeTimedOutMenu(QMenu *menu)
-{
-    bool found = false;
-    for (auto it = m_timedOutMenus.begin(); it != m_timedOutMenus.end();) {
-        if (it->isNull() || it->data() == menu) {
-            found |= (it->data() == menu);
-            it = m_timedOutMenus.erase(it);
-        } else {
-            ++it;
-        }
-    }
-    setDeepCachePartial(!m_timedOutMenus.isEmpty());
-    return found;
 }
 
 void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
@@ -436,7 +386,9 @@ void AppMenuModel::processNext()
                 if (guard) {
                     qWarning() << "Deep-cache submenu timeout after" << DeepCacheTimeoutMs
                                << "ms:" << guard->menuAction()->text();
-                    addTimedOutMenu(guard.data());
+                    // Partial describes this scan, not whether a later
+                    // importer notification actually applied a layout.
+                    setDeepCachePartial(true);
                 }
                 // Stop waiting, but leave the D-Bus request untouched.
                 checkPendingUpdatesComplete(key);
