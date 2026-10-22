@@ -381,10 +381,17 @@ void AppMenuModel::loadSubMenu(QMenu *menu)
         // Use the timer as receiver: stopCaching() disconnects menu -> model
         // deep-cache callbacks, but must not remove this lifetime cleanup.
         connect(menu, &QObject::destroyed, timer, [this, menu]() {
-            m_userMenuWaitRequestIds.remove(menu);
+            // The importer may already have finished this request with a
+            // null menu. Only notify if a popup is still waiting.
+            const bool wasWaiting = m_userMenuWaitRequestIds.remove(menu) > 0;
             if (QTimer *pending = m_userMenuWaitTimers.take(menu)) {
                 pending->stop();
                 pending->deleteLater();
+            }
+            // Notify after removing the wait: connected slots may reenter
+            // loadSubMenu() or otherwise change the model synchronously.
+            if (wasWaiting) {
+                Q_EMIT subMenuLoadFailed(nullptr);
             }
         });
         connect(timer, &QTimer::timeout, this, [this, menu, guard, timer, requestId]() {
