@@ -91,14 +91,14 @@ public:
     QHash<int, uint> m_lastAppliedLayoutRevisions;
     quint64 m_nextMenuRequestId = 0;
 
-    void finishMenuRequest(int id, QMenu *menu, quint64 requestId, bool success)
+    void finishMenuRequest(int id, QMenu *menu, quint64 requestId, bool success, bool willEmitMenuUpdated = false)
     {
         if (!requestId || m_activeMenuRequests.value(id) != requestId) {
             return;
         }
         m_activeMenuRequests.remove(id);
         m_requestMenus.remove(id);
-        Q_EMIT q->menuRequestFinished(menu, requestId, success);
+        Q_EMIT q->menuRequestFinished(menu, requestId, success, willEmitMenuUpdated);
     }
 
     QDBusPendingCallWatcher *refresh(int id, quint64 requestId = 0)
@@ -585,7 +585,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     menu->setUpdatesEnabled(true);
     const QPointer<QMenu> guard(menu);
     const QPointer<DBusMenuImporter> importerGuard(this);
-    d->finishMenuRequest(parentId, guard.data(), requestId, true);
+    d->finishMenuRequest(parentId, guard.data(), requestId, true, true);
     // The completion signal has direct Qt connections: they can replace
     // or destroy the importer and/or its menu before this slot resumes.
     if (importerGuard && guard) {

@@ -69,7 +69,7 @@ Q_SIGNALS:
     void menuFetchFailed(QMenu *);
     // Completion of a particular requestMenuUpdate() operation. Unsolicited
     // LayoutUpdated refreshes never satisfy the caller's request token.
-    void menuRequestFinished(QMenu *menu, quint64 requestId, bool success);
+    void menuRequestFinished(QMenu *menu, quint64 requestId, bool success, bool willEmitMenuUpdated);
 
     /**
      * Emitted when the exporter was asked to activate an action

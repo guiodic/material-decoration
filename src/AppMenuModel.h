@@ -69,7 +69,7 @@ public:
 
 private Q_SLOTS:
     void onMenuUpdated(QMenu *menu);
-    void onMenuRequestFinished(QMenu *menu, quint64 requestId, bool success);
+    void onMenuRequestFinished(QMenu *menu, quint64 requestId, bool success, bool willEmitMenuUpdated);
     void onActionChanged();
     void processNext();
 
@@ -95,7 +95,6 @@ private:
     QHash<QMenu *, quint64> m_pendingDeepCacheRequestIds;
     QHash<QMenu *, QTimer *> m_pendingDeepCacheTimers;
     QList<QPointer<QMenu>> m_timedOutDeepCacheMenus;
-    QList<QPointer<QMenu>> m_suppressNextMenuUpdated;
     bool m_deepCacheCompleted = false;
     bool m_updatePending = false;
     int m_initialMenuRetries = 0;
