@@ -46,6 +46,10 @@
 namespace Material
 {
 
+namespace {
+constexpr int DeepCacheTimeoutMs = 5000;
+}
+
 class KDBusMenuImporter : public DBusMenuImporter
 {
 
@@ -76,6 +80,7 @@ AppMenuModel::AppMenuModel(QObject *parent)
         if (serviceName == m_serviceName) {
             setMenuAvailable(false);
             stopCaching();
+            setDeepCachePartial(false);
             m_menu = nullptr;
             m_serviceName.clear();
             m_menuObjectPath.clear();
@@ -98,6 +103,16 @@ AppMenuModel::AppMenuModel(QObject *parent)
     m_staggerTimer->setSingleShot(true);
     m_staggerTimer->setInterval(8);
     connect(m_staggerTimer, &QTimer::timeout, this, &AppMenuModel::processNext);
+
+    // One deadline for the entire scan, not one per submenu.
+    m_deepCacheTimer = new QTimer(this);
+    m_deepCacheTimer->setSingleShot(true);
+    connect(m_deepCacheTimer, &QTimer::timeout, this, [this]() {
+        // End the scan before emitting signals: slots may start a new one.
+        stopCaching();
+        setDeepCachePartial(true);
+        Q_EMIT menuReadyForSearch();
+    });
 }
 
 AppMenuModel::~AppMenuModel()
@@ -123,6 +138,20 @@ QMenu *AppMenuModel::menu() const
     return m_menu;
 }
 
+bool AppMenuModel::deepCachePartial() const
+{
+    return m_deepCachePartial;
+}
+
+void AppMenuModel::setDeepCachePartial(bool partial)
+{
+    if (m_deepCachePartial == partial) {
+        return;
+    }
+    m_deepCachePartial = partial;
+    Q_EMIT deepCachePartialChanged(partial);
+}
+
 void AppMenuModel::update()
 {
     Q_EMIT modelReset();
@@ -133,6 +162,9 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
 {
     // A menu change means any in-progress caching is now invalid.
     stopCaching();
+    if (m_serviceName != serviceName || m_menuObjectPath != menuObjectPath) {
+        setDeepCachePartial(false);
+    }
     
     if (m_serviceName == serviceName && m_menuObjectPath == menuObjectPath) {
         if (m_importer) {
@@ -226,6 +258,7 @@ void AppMenuModel::stopCaching()
     m_menusToDeepCache.clear();
     m_nextMenuToProcess = 0;
     m_staggerTimer->stop();
+    m_deepCacheTimer->stop();
     m_deepCacheRequested = false;
     m_deepCacheStarted = false;
     m_pendingDeepCacheUpdates.clear();
@@ -238,12 +271,14 @@ void AppMenuModel::startDeepCaching()
     }
 
     m_deepCacheRequested = true;
+    setDeepCachePartial(false);
 
     if (!m_menu) {
         return;
     }
 
     m_deepCacheStarted = true;
+    m_deepCacheTimer->start(DeepCacheTimeoutMs);
     m_menusToDeepCache.clear();
     m_nextMenuToProcess = 0;
     m_seenMenus.clear();
@@ -302,7 +337,10 @@ void AppMenuModel::resumeDeepCacheIfIdle(QMenu *menu)
     registerSubMenus(menu);
 
     if (wasQueueFinished) {
-        m_deepCacheStarted = true;
+        if (!m_deepCacheStarted) {
+            m_deepCacheStarted = true;
+            m_deepCacheTimer->start(DeepCacheTimeoutMs);
+        }
         processNext();
     }
 }

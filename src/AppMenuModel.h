@@ -49,6 +49,8 @@ public:
     void updateApplicationMenu(const QString &serviceName, const QString &menuObjectPath);
 
     QMenu *menu() const;
+    // True if the most recent deep-cache scan reached its deadline.
+    bool deepCachePartial() const;
 
 private:
     void update();
@@ -58,6 +60,7 @@ signals:
     void modelNeedsUpdate();
     void modelReset();
     void menuReadyForSearch();
+    void deepCachePartialChanged(bool partial);
     void subMenuReady(QMenu *menu);
 
 public:
@@ -77,14 +80,17 @@ private:
     void setMenuAvailable(bool set);
     void checkPendingUpdatesComplete(QMenu *menu);
     void finishCaching();
+    void setDeepCachePartial(bool partial);
 
     QTimer *m_staggerTimer;
+    QTimer *m_deepCacheTimer;
     QList<QPointer<QMenu>> m_menusToDeepCache;
     qsizetype m_nextMenuToProcess = 0;
     QSet<QMenu *> m_seenMenus;
     bool m_menuAvailable = false;
     bool m_deepCacheRequested = false;
     bool m_deepCacheStarted = false;
+    bool m_deepCachePartial = false;
     QSet<QMenu *> m_pendingDeepCacheUpdates;
     bool m_updatePending = false;
 
