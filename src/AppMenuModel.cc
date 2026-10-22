@@ -271,9 +271,9 @@ void AppMenuModel::startDeepCaching()
     }
 
     m_deepCacheRequested = true;
-    setDeepCachePartial(false);
 
     if (!m_menu) {
+        setDeepCachePartial(false);
         return;
     }
 
@@ -283,11 +283,15 @@ void AppMenuModel::startDeepCaching()
     m_nextMenuToProcess = 0;
     m_seenMenus.clear();
 
-    // Populate the queue with the first level of submenus.
-    // The recursive loading will happen as each menu is processed.
+    // Populate the queue before notifying external slots of state changes.
     registerSubMenus(m_menu.data());
+    setDeepCachePartial(false);
 
-    // Start processing the queue.
+    // A direct signal handler may have stopped this scan.
+    if (!m_deepCacheRequested || !m_deepCacheStarted) {
+        return;
+    }
+
     processNext();
 }
 
