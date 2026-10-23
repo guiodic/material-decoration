@@ -6,6 +6,7 @@
 #include <QGridLayout>
 #include <QKeyEvent>
 #include <QMouseEvent>
+#include <QPainter>
 #include <QToolButton>
 #include <QWidgetAction>
 #include <limits>
@@ -29,6 +30,9 @@ QVector<TilingLayout> tilingLayouts()
 TilingPopup::TilingPopup(QWidget *parent)
     : QMenu(parent)
 {
+    // Use an alpha surface and paint only the backdrop with reduced opacity;
+    // window opacity would also fade the layout buttons and their highlight.
+    setAttribute(Qt::WA_TranslucentBackground);
     setObjectName(QStringLiteral("materialTilingPopup"));
     setAccessibleName(i18nd("materialdecoration", "Window tiling layouts"));
     auto *panel = new QWidget(this);
@@ -64,6 +68,21 @@ TilingPopup::TilingPopup(QWidget *parent)
     auto *action = new QWidgetAction(this);
     action->setDefaultWidget(panel);
     addAction(action);
+}
+
+void TilingPopup::paintEvent(QPaintEvent *event)
+{
+    Q_UNUSED(event)
+    constexpr qreal backgroundOpacity = 0.85;
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    QColor background = palette().color(QPalette::Window);
+    background.setAlphaF(backgroundOpacity);
+    QColor border = palette().color(QPalette::Mid);
+    border.setAlphaF(backgroundOpacity);
+    painter.setPen(border);
+    painter.setBrush(background);
+    painter.drawRoundedRect(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5), 6, 6);
 }
 
 void TilingPopup::showEvent(QShowEvent *event)

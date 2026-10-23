@@ -28,6 +28,7 @@ signals:
     void zoneSelected(Qt::Edges edges);
 
 protected:
+    void paintEvent(QPaintEvent *event) override;
     bool eventFilter(QObject *object, QEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
