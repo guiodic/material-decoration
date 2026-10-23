@@ -29,68 +29,6 @@ Note: if you configure the decoration to use Opacity < 100%,
 [Better Blur effect](https://github.com/xarblu/kwin-effects-better-blur-dx) is
 strongly recommended on Wayland.
 
-### Tiling layout popup
-
-Hold the **Maximize** button with the left mouse button to open the tiling
-selector. Release the button, then click a zone to tile that window. A short
-click keeps the usual maximize/restore behavior; middle and right clicks keep
-KWin's configured actions. The existing long-press setting and delay apply.
-
-In **Button Options**, **Tiling popup opacity** controls the background
-opacity from 0% (transparent) to 100% (opaque). The default is 85%. Layout buttons and their highlight remain opaque.
-
-The first version offers side-by-side halves, top/bottom halves, a left half
-with two right quarters, and four quarters. Only the selected window moves;
-other windows are not automatically arranged. Use the arrow keys and Enter or
-Space to select a zone, or Escape/click outside to cancel. No zone is preselected
-on opening: press an arrow key or Tab to begin keyboard selection. Enter and
-Space do nothing until a zone has been selected with the keyboard. The maximize/
-restore button keeps its hover color while the popup is open; its icon and
-maximized state are unchanged. Zone highlights fade between the theme colors
-for both mouse hover and keyboard selection, using the decoration's animation
-settings. Disabling animations makes the highlight change immediately.
-
-The popup uses a companion **Material Tiling Popup** KWin script for native
-quick tiling, including work areas, size constraints and restore behavior.
-`cmake --install` installs both the decoration and the script. The script is
-enabled by default unless explicitly disabled in **System Settings > Window
-Management > KWin Scripts**. Restart KWin or log out and back in after installing
-the updated decoration. If the script was disabled, enable it in that panel.
-No keyboard shortcut needs to be assigned to the script.
-
-Before opening, the popup checks that the script responds. If it is unavailable,
-a tooltip explains how to enable it. Requests carry the owning window's UUID,
-not the active window, and are acknowledged with a timeout. Missing/closed
-windows and unsupported hosts are rejected without tiling another window.
-
-The bridge uses Qt properties and D-Bus, with no KWin C++ headers or `libkwin`
-dependency. It reads `internalId` from the decoration's QObject parent; this
-relationship is checked at runtime and is not a formal KDecoration API guarantee.
-KDecoration/Qt compatibility is still required when updating Plasma. The script
-has been validated on KWin Wayland 6.7.4; native X11 and other versions require
-separate validation. Arbitrary ratios and custom tiling layouts are not included.
-
-To run the popup and bridge tests after configuring CMake:
-
-```sh
-cmake -S . -B build -DBUILD_TESTING=ON
-cmake --build build -j4
-ctest --test-dir build --output-on-failure
-```
-
-The bridge tests use an isolated session bus and require `dbus-run-session`.
-The script tests use Node.js without third-party packages; they are included in
-CTest when Node is available, or can be run with:
-
-```sh
-node tests/TilingScriptTest.js
-```
-
-For a desktop check, enable Material and long presses, then try a short click,
-a long press followed by release, selecting each zone, and cancelling the popup.
-Also check inactive and maximized windows, non-resizable windows, dragging out
-of the button before the timeout, and monitors with different scaling factors.
-
 ### Actions on Press-and-Hold buttons
 
 Pressing and holding the “Close” button will minimize the window to the traybar
@@ -103,6 +41,18 @@ windows but the active one on Plasma 6.6 (Wayland). This requires MinimizeAll
 script (please enable it in System Settings). For X11, please copy the
 directory `/usr/share/kwin-wayland/scripts/minimizeall` to `
 /usr/share/kwin-x11/scripts/minimizeall`
+
+### Tiling layout popup
+
+Hold the **Maximize** button with the left mouse button to open the tiling
+selector. 
+
+![image](data/TilingPopUp.png)
+
+The popup uses a companion **Material Tiling Popup** KWin script for native
+quick tiling. The script is enabled by default unless explicitly disabled in 
+**System Settings > Window Management > KWin Scripts**. 
+If the script was disabled, enable it in that panel.
 
 # Build instructions for Plasma 6
 
