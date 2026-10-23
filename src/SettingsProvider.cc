@@ -21,7 +21,7 @@
 #include <KDecoration3/DecoratedWindow>
 #include <QDBusConnection>
 #include <QDBusMessage>
-#include <QDebug>
+#include <QStringList>
 
 namespace Material
 {
@@ -72,17 +72,6 @@ void SettingsProvider::reconfigure()
 
         if (compiled.pattern.isEmpty()) {
             continue;
-        }
-
-        if (compiled.matchingMode == MatchingMode::RegularExpression) {
-            QString errorReason;
-            if (!isSafeRegularExpression(compiled.pattern, &errorReason)) {
-                qWarning() << "Invalid or unsafe exception regular expression pattern:" << compiled.pattern << errorReason;
-                continue;
-            }
-            QRegularExpression regex(compiled.pattern, QRegularExpression::CaseInsensitiveOption);
-            regex.optimize();
-            compiled.regex = regex;
         }
 
         if (compiled.type == ExceptionType::WindowTitle) {
@@ -171,7 +160,6 @@ InternalSettingsPtr SettingsProvider::internalSettings(const QString &windowClas
 
     InternalSettingsPtr matchedSettings = m_defaultSettings;
 
-    static const QRegularExpression splitRegex(QStringLiteral("[\\s\\r\\n\\t\\x00]+"));
     QStringList windowClassComponents;
     bool windowClassSplit = false;
 
@@ -188,7 +176,15 @@ InternalSettingsPtr SettingsProvider::internalSettings(const QString &windowClas
                 matches = true;
             } else if (compiled.type == ExceptionType::WindowClass) { // Window Class component match
                 if (!windowClassSplit) {
-                    windowClassComponents = windowClass.split(splitRegex, Qt::SkipEmptyParts);
+                    qsizetype componentStart = 0;
+                    for (qsizetype i = 0; i <= windowClass.size(); ++i) {
+                        if (i == windowClass.size() || windowClass.at(i).isSpace() || windowClass.at(i).isNull()) {
+                            if (i > componentStart) {
+                                windowClassComponents.append(windowClass.mid(componentStart, i - componentStart));
+                            }
+                            componentStart = i + 1;
+                        }
+                    }
                     windowClassSplit = true;
                 }
                 for (const QString &comp : windowClassComponents) {
@@ -198,10 +194,8 @@ InternalSettingsPtr SettingsProvider::internalSettings(const QString &windowClas
                     }
                 }
             }
-        } else if (compiled.matchingMode == MatchingMode::RegularExpression) {
-            if (valueToMatch.size() <= MaxExceptionValueLength) {
-                matches = compiled.regex.match(valueToMatch).hasMatch();
-            }
+        } else if (compiled.matchingMode == MatchingMode::SubstringMatch) {
+            matches = valueToMatch.contains(compiled.pattern, Qt::CaseInsensitive);
         }
 
         if (matches) {

@@ -317,12 +317,8 @@ msgid "Querying KWin for window information..."
 msgstr "Consultando la información de la ventana a KWin..."
 
 #: src/kcm/ExceptionDialog.cc:64
-msgid "Regular Expression"
-msgstr "Expresión regular"
-
-#: src/kcm/ExceptionDialog.cc:108
-msgid "Regular Expression syntax error: %1"
-msgstr "Error de sintaxis en la expresión regular: %1"
+msgid "Substring Match"
+msgstr "Coincidencia de subcadena"
 
 #: src/kcm/ExceptionListWidget.cc:68
 msgid "Remove"

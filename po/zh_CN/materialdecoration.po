@@ -317,12 +317,8 @@ msgid "Querying KWin for window information..."
 msgstr "正在向 KWin 查询窗口信息..."
 
 #: src/kcm/ExceptionDialog.cc:64
-msgid "Regular Expression"
-msgstr "正则表达式"
-
-#: src/kcm/ExceptionDialog.cc:108
-msgid "Regular Expression syntax error: %1"
-msgstr "正则表达式语法错误：%1"
+msgid "Substring Match"
+msgstr "子字符串匹配"
 
 #: src/kcm/ExceptionListWidget.cc:68
 msgid "Remove"
