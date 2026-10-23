@@ -125,6 +125,11 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     
    
     connect(this, &Button::hoveredChanged, this, &Button::updateAnimationState);
+    connect(this, &Button::hoveredChanged, this, [this](bool hovered) {
+        if (!hovered && this->type() == KDecoration3::DecorationButtonType::Maximize) {
+            m_holdTimer->stop();
+        }
+    });
 
     
     connect(this, &Button::transitionValueChanged, this, [this]() {
@@ -268,6 +273,15 @@ Button::Button(QObject *parent, const QVariantList &args)
 {
     if (args.size() < 2) {
         qWarning() << "Button constructor received too few arguments:" << args;
+    }
+}
+
+void Button::mousePressEvent(QMouseEvent *event)
+{
+    KDecoration3::DecorationButton::mousePressEvent(event);
+    // Preserve KWin's separate middle/right-click maximize actions.
+    if (type() == KDecoration3::DecorationButtonType::Maximize && event->button() != Qt::LeftButton) {
+        m_holdTimer->stop();
     }
 }
 
@@ -760,6 +774,7 @@ void Button::forceUnpress()
 
 void Button::handleHoldTimeout()
 {
+    if (type() == KDecoration3::DecorationButtonType::Maximize && (!isPressed() || !isHovered())) return;
     m_longPressTriggered = true;
     switch (type()) {
     case KDecoration3::DecorationButtonType::Close:
@@ -800,7 +815,14 @@ void Button::onMinimizeHold()
 
 void Button::onMaximizeHold()
 {
-    qCDebug(category) << "onMaximizeHold triggered";
+    auto *deco = qobject_cast<Decoration *>(decoration());
+    if (!deco || !deco->showTilingPopup(geometry())) {
+        // Preserve the normal click if this host cannot perform native tiling.
+        m_longPressTriggered = false;
+    } else {
+        // The popup takes the mouse grab, so the release may never reach us.
+        forceUnpress();
+    }
 }
 
 } // namespace Material

@@ -24,6 +24,8 @@
 
 // own
 #include "Decoration.h"
+#include "TilingPopup.h"
+#include "TilingController.h"
 #include "AppMenuButtonGroup.h"
 #include "BoxShadowHelper.h"
 #include "BuildConfig.h"
@@ -191,6 +193,22 @@ Decoration::~Decoration()
         s_shadowColor = QColor();
         s_cornerRadius = -1;
     }
+}
+
+bool Decoration::showTilingPopup(const QRectF &anchor)
+{
+    if (!canTileWindow(this)) return false;
+    if (!m_tilingPopup) {
+        m_tilingPopup = std::make_unique<TilingPopup>();
+        connect(m_tilingPopup.get(), &TilingPopup::zoneSelected, this, [this](Qt::Edges edges) {
+            // Defer the geometry change until the menu has released its grab.
+            QTimer::singleShot(0, this, [this, edges] { tileWindow(this, edges); });
+        });
+    }
+    KDecoration3::Positioner positioner;
+    positioner.setAnchorRect(anchor);
+    popup(positioner, m_tilingPopup.get());
+    return true;
 }
 
 void Decoration::setupMenu()

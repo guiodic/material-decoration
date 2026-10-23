@@ -62,6 +62,7 @@ public:
 
 
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
+    void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
 
     void forceUnpress();

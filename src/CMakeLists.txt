@@ -73,6 +73,8 @@ set (decoration_SRCS
     PixelSnapper.cc
     SearchButton.cc
     TextButton.cc
+    TilingPopup.cc
+    TilingController.cc
     plugin.cc
 )
 

@@ -29,6 +29,39 @@ Note: if you configure the decoration to use Opacity < 100%,
 [Better Blur effect](https://github.com/xarblu/kwin-effects-better-blur-dx) is
 strongly recommended on Wayland.
 
+### Tiling layout popup
+
+Hold the **Maximize** button with the left mouse button to open the tiling
+selector. Release the button, then click a zone to tile that window. A short
+click keeps the usual maximize/restore behavior; middle and right clicks keep
+KWin's configured actions. The existing long-press setting and delay apply.
+
+The first version offers side-by-side halves, top/bottom halves, a left half
+with two right quarters, and four quarters. Only the selected window moves;
+other windows are not automatically arranged. Use the arrow keys and Enter or
+Space to select a zone, or Escape/click outside to cancel.
+
+This uses KWin's native quick tiling, including its work area, size constraints
+and restore behavior. The target is identified by its decoration, rather than
+by the currently active window. It is available in the KWin Wayland build
+(including XWayland windows); the separate `FORCE_X11` build currently keeps the
+normal maximize action. The implementation uses KWin C++ APIs and must be built
+against the running KWin version. Arbitrary ratios and custom tiling layouts
+are not included yet.
+
+To run the popup interaction tests after configuring CMake:
+
+```sh
+cmake -S . -B build -DBUILD_TESTING=ON
+cmake --build build -j4
+ctest --test-dir build --output-on-failure
+```
+
+For a desktop check, enable Material and long presses, then try a short click,
+a long press followed by release, selecting each zone, and cancelling the popup.
+Also check inactive and maximized windows, non-resizable windows, dragging out
+of the button before the timeout, and monitors with different scaling factors.
+
 ### Actions on Press-and-Hold buttons
 
 Pressing and holding the “Close” button will minimize the window to the traybar

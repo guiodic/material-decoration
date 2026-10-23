@@ -39,6 +39,11 @@ add_subdirectory (src/libdbusmenuqt)
 add_subdirectory (src)
 add_subdirectory(po)
 
+include(CTest)
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
+
 feature_summary(WHAT ALL)
 
 # CPack Debian packaging

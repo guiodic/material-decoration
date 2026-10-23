@@ -47,6 +47,7 @@ namespace Material
 
 class Button;
 class TextButton;
+class TilingPopup;
 class MenuOverflowButton;
 
 class Decoration : public KDecoration3::Decoration
@@ -58,6 +59,7 @@ public:
     ~Decoration() override;
 
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
+    bool showTilingPopup(const QRectF &anchor);
 
 public slots:
     bool init() override;
@@ -75,6 +77,8 @@ protected:
     void wheelEvent(QWheelEvent *event) override;
 
 private:
+    std::unique_ptr<TilingPopup> m_tilingPopup;
+
     void onSectionUnderMouseChanged(const Qt::WindowFrameSection value);
     void onSizeChanged();
     void onNextScaleChanged();
