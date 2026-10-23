@@ -228,6 +228,7 @@ bool Decoration::showTilingPopup(const QRectF &anchor)
             });
         }
         m_tilingPopup->setBackgroundOpacity(m_internalSettings->tilingPopupOpacity());
+        m_tilingPopup->setAnimationSettings(animationsEnabled(), animationsDuration());
         KDecoration3::Positioner positioner;
         positioner.setAnchorRect(anchor);
         popup(positioner, m_tilingPopup.get());
@@ -442,6 +443,7 @@ void Decoration::applySettings()
     }
     if (m_tilingPopup) {
         m_tilingPopup->setBackgroundOpacity(m_internalSettings->tilingPopupOpacity());
+        m_tilingPopup->setAnimationSettings(animationsEnabled(), animationsDuration());
     }
     m_bottomCornersFlag = m_internalSettings->bottomCornerRadiusFlag();
 

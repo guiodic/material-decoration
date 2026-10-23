@@ -46,7 +46,9 @@ Space to select a zone, or Escape/click outside to cancel. No zone is preselecte
 on opening: press an arrow key or Tab to begin keyboard selection. Enter and
 Space do nothing until a zone has been selected with the keyboard. The maximize/
 restore button keeps its hover color while the popup is open; its icon and
-maximized state are unchanged.
+maximized state are unchanged. Zone highlights fade between the theme colors
+for both mouse hover and keyboard selection, using the decoration's animation
+settings. Disabling animations makes the highlight change immediately.
 
 The popup uses a companion **Material Tiling Popup** KWin script for native
 quick tiling, including work areas, size constraints and restore behavior.

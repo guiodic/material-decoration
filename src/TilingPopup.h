@@ -4,10 +4,11 @@
 #include <QMenu>
 #include <QVector>
 
-class QToolButton;
 
 namespace Material
 {
+
+class TilingZoneButton;
 
 // Logical edges, independent of the KWin API and screen coordinates.
 struct TilingZone {
@@ -24,6 +25,7 @@ class TilingPopup : public QMenu
 public:
     explicit TilingPopup(QWidget *parent = nullptr);
     void setBackgroundOpacity(int percent);
+    void setAnimationSettings(bool enabled, int duration);
 
 signals:
     void zoneSelected(Qt::Edges edges);
@@ -40,7 +42,7 @@ private:
     bool handleKeyPress(QKeyEvent *event);
     void selectKeyboardButton(int index);
 
-    QVector<QToolButton *> m_buttons;
+    QVector<TilingZoneButton *> m_buttons;
     int m_keyboardIndex = -1;
     bool m_waitingForRelease = false;
     qreal m_backgroundOpacity = 0.85;

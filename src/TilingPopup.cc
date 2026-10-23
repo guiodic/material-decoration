@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "TilingPopup.h"
+#include "TilingZoneButton.h"
 
 #include <KLocalizedString>
 #include <QApplication>
@@ -7,8 +8,6 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QStyle>
-#include <QToolButton>
 #include <QWidgetAction>
 #include <limits>
 
@@ -49,16 +48,13 @@ TilingPopup::TilingPopup(QWidget *parent)
         preview->setFixedSize(unit * 8, unit * 5);
         grid->addWidget(preview, int(i / 2), int(i % 2));
         for (const auto &zone : layouts[i]) {
-            auto *button = new QToolButton(preview);
+            auto *button = new TilingZoneButton(preview);
             const QRectF bounds(zone.rect.x() * preview->width(), zone.rect.y() * preview->height(),
                                 zone.rect.width() * preview->width(), zone.rect.height() * preview->height());
             button->setGeometry(bounds.toAlignedRect().adjusted(gap / 2, gap / 2, -gap / 2, -gap / 2));
             button->setAccessibleName(zone.label);
             button->setToolTip(zone.label);
             button->setFocusPolicy(Qt::StrongFocus);
-            button->setStyleSheet(QStringLiteral(
-                "QToolButton { background: palette(midlight); border: 1px solid palette(mid); border-radius: 4px; }"
-                "QToolButton:hover, QToolButton[keyboardSelected=\"true\"] { background: palette(highlight); border-color: palette(highlight); }"));
             button->installEventFilter(this);
             m_buttons.append(button);
             connect(button, &QToolButton::clicked, this, [this, edges = zone.edges] {
@@ -70,6 +66,11 @@ TilingPopup::TilingPopup(QWidget *parent)
     auto *action = new QWidgetAction(this);
     action->setDefaultWidget(panel);
     addAction(action);
+}
+
+void TilingPopup::setAnimationSettings(bool enabled, int duration)
+{
+    for (auto *button : m_buttons) button->setAnimationSettings(enabled, duration);
 }
 
 void TilingPopup::setBackgroundOpacity(int percent)
@@ -96,6 +97,7 @@ void TilingPopup::showEvent(QShowEvent *event)
 {
     m_waitingForRelease = QApplication::mouseButtons().testFlag(Qt::LeftButton);
     QMenu::showEvent(event);
+    for (auto *button : m_buttons) button->resetHighlight();
     selectKeyboardButton(-1);
 }
 
@@ -118,10 +120,7 @@ void TilingPopup::selectKeyboardButton(int index)
     m_keyboardIndex = index;
     for (qsizetype i = 0; i < m_buttons.size(); ++i) {
         auto *button = m_buttons[i];
-        button->setProperty("keyboardSelected", i == index);
-        button->style()->unpolish(button);
-        button->style()->polish(button);
-        button->update();
+        button->setKeyboardSelected(i == index);
     }
     if (index >= 0) m_buttons[index]->setFocus(Qt::OtherFocusReason);
     else setFocus(Qt::PopupFocusReason);

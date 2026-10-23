@@ -71,6 +71,7 @@ set (decoration_SRCS
     SearchButton.cc
     TextButton.cc
     TilingPopup.cc
+    TilingZoneButton.cc
     TilingController.cc
     plugin.cc
 )

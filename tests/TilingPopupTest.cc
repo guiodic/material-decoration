@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "TilingPopup.h"
+#include "TilingZoneButton.h"
+#include <QEnterEvent>
 #include <QSignalSpy>
 #include <QTest>
 #include <QToolButton>
@@ -66,6 +68,53 @@ private slots:
         QVERIFY(popup.isVisible());
         QTest::mouseClick(buttons.first(), Qt::LeftButton);
         QCOMPARE(selected.size(), 1);
+    }
+
+    void animatedHighlightReversesWithoutJump()
+    {
+        TilingZoneButton button;
+        button.resize(60, 40);
+        QPalette palette = button.palette();
+        palette.setColor(QPalette::Midlight, Qt::black);
+        palette.setColor(QPalette::Highlight, Qt::white);
+        button.setPalette(palette);
+        button.setAnimationSettings(true, 400);
+        button.show();
+        QCoreApplication::processEvents();
+        button.resetHighlight();
+        const auto color = [&] { return button.grab().toImage().pixelColor(button.rect().center()); };
+        QCOMPARE(color(), QColor(Qt::black));
+        button.setKeyboardSelected(true);
+        QCOMPARE(color(), QColor(Qt::black));
+        QTest::qWait(150);
+        const QColor halfway = color();
+        QVERIFY(halfway.red() > 0 && halfway.red() < 255);
+        QCOMPARE(halfway.alpha(), 255);
+        button.setKeyboardSelected(false);
+        QVERIFY(qAbs(color().red() - halfway.red()) <= 3);
+        QTRY_COMPARE(color(), QColor(Qt::black));
+        button.setKeyboardSelected(true);
+        QTRY_COMPARE(color(), QColor(Qt::white));
+        button.setKeyboardSelected(true);
+        QCOMPARE(color(), QColor(Qt::white));
+
+        button.setAnimationSettings(false, 400);
+        button.setKeyboardSelected(false);
+        QCOMPARE(color(), QColor(Qt::black));
+        QEnterEvent enter(QPointF(5, 5), QPointF(5, 5), QPointF(5, 5));
+        QCoreApplication::sendEvent(&button, &enter);
+        QCOMPARE(color(), QColor(Qt::white));
+        button.setKeyboardSelected(true);
+        button.setKeyboardSelected(false);
+        QCOMPARE(color(), QColor(Qt::white)); // Physical hover still holds it.
+        QEvent leave(QEvent::Leave);
+        QCoreApplication::sendEvent(&button, &leave);
+        QCOMPARE(color(), QColor(Qt::black));
+        button.setAnimationSettings(true, 0);
+        button.setKeyboardSelected(true);
+        QCOMPARE(color(), QColor(Qt::white));
+        button.hide();
+        QVERIFY(!button.keyboardSelected());
     }
 
     void keyboardAndCancel()
