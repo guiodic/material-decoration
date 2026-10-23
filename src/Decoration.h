@@ -33,6 +33,7 @@
 #include <QRectF>
 #include <QSharedPointer>
 #include <QWheelEvent>
+#include <memory>
 #include <QVariant>
 #include <QPainterPath>
 
@@ -183,9 +184,9 @@ private:
 
     qreal cornerRadius() const;
 
-    KDecoration3::DecorationButtonGroup *m_leftButtons = nullptr;
-    KDecoration3::DecorationButtonGroup *m_rightButtons = nullptr;
-    AppMenuButtonGroup *m_menuButtons = nullptr;
+    std::unique_ptr<KDecoration3::DecorationButtonGroup> m_leftButtons;
+    std::unique_ptr<KDecoration3::DecorationButtonGroup> m_rightButtons;
+    std::unique_ptr<AppMenuButtonGroup> m_menuButtons;
 
     QSharedPointer<InternalSettings> m_internalSettings;
     qreal m_cornerRadius = 0.0;

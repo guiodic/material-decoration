@@ -946,7 +946,8 @@ void AppMenuButtonGroup::handleOverflowTrigger()
         }
 
         const auto actions = m_appMenuModel->menu()->actions();
-        for (int i = overflowStartsAt; i < actions.count(); ++i) {
+        const int actionCount = actions.count();
+        for (int i = overflowStartsAt; i < actionCount; ++i) {
             actionMenu->addAction(actions.at(i));
         }
     }

@@ -154,7 +154,8 @@ void ExceptionList::writeConfig(KSharedConfig::Ptr config)
         }
     }
 
-    for (int i = 0; i < m_exceptions.size(); ++i) {
+    const int count = m_exceptions.size();
+    for (int i = 0; i < count; ++i) {
         const auto &exception = m_exceptions.at(i);
         const QString groupName = QStringLiteral("Windeco Exception %1").arg(i);
         KConfigGroup group = config->group(groupName);

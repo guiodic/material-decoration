@@ -238,11 +238,12 @@ void ExceptionListWidget::defaults()
 bool ExceptionListWidget::isChanged() const
 {
     const auto &current = m_model->exceptions();
-    if (current.size() != m_initialExceptions.size()) {
+    const auto count = current.size();
+    if (count != m_initialExceptions.size()) {
         return true;
     }
 
-    for (int i = 0; i < current.size(); ++i) {
+    for (qsizetype i = 0; i < count; ++i) {
         const auto &a = current.at(i);
         const auto &b = m_initialExceptions.at(i);
 
