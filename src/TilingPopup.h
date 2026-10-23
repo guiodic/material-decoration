@@ -25,6 +25,7 @@ class TilingPopup : public QMenu
 public:
     explicit TilingPopup(QWidget *parent = nullptr);
     void setBackgroundOpacity(int percent);
+    void setCornerRadius(qreal radius);
     void setAnimationSettings(bool enabled, int duration);
 
 signals:
@@ -46,6 +47,7 @@ private:
     int m_keyboardIndex = -1;
     bool m_waitingForRelease = false;
     qreal m_backgroundOpacity = 0.85;
+    qreal m_cornerRadius = 6;
 };
 
 }

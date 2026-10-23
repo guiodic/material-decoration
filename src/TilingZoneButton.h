@@ -17,6 +17,7 @@ public:
     void setKeyboardSelected(bool selected);
     void setAnimationSettings(bool enabled, int duration);
     void resetHighlight();
+    void setCornerRadius(qreal radius);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -30,6 +31,7 @@ private:
 
     QVariantAnimation m_animation;
     qreal m_progress = 0;
+    qreal m_cornerRadius = 6;
     bool m_hovered = false;
     bool m_keyboardSelected = false;
     bool m_animationsEnabled = true;

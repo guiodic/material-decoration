@@ -33,6 +33,12 @@ void TilingZoneButton::setAnimationSettings(bool enabled, int duration)
     updateHighlight();
 }
 
+void TilingZoneButton::setCornerRadius(qreal radius)
+{
+    m_cornerRadius = qMax(qreal(0), radius);
+    update();
+}
+
 void TilingZoneButton::resetHighlight()
 {
     m_animation.stop();
@@ -77,7 +83,7 @@ void TilingZoneButton::paintEvent(QPaintEvent *event)
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setPen(interpolatedColor(QPalette::Mid));
     painter.setBrush(interpolatedColor(QPalette::Midlight));
-    painter.drawRoundedRect(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5), 4, 4);
+    painter.drawRoundedRect(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5), m_cornerRadius, m_cornerRadius);
 }
 
 void TilingZoneButton::enterEvent(QEnterEvent *event)

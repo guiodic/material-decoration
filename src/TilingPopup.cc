@@ -73,6 +73,13 @@ void TilingPopup::setAnimationSettings(bool enabled, int duration)
     for (auto *button : m_buttons) button->setAnimationSettings(enabled, duration);
 }
 
+void TilingPopup::setCornerRadius(qreal radius)
+{
+    m_cornerRadius = qMax(qreal(0), radius);
+    for (auto *button : m_buttons) button->setCornerRadius(m_cornerRadius);
+    update();
+}
+
 void TilingPopup::setBackgroundOpacity(int percent)
 {
     m_backgroundOpacity = qBound(0, percent, 100) / 100.0;
@@ -90,7 +97,7 @@ void TilingPopup::paintEvent(QPaintEvent *event)
     border.setAlphaF(m_backgroundOpacity);
     painter.setPen(border);
     painter.setBrush(background);
-    painter.drawRoundedRect(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5), 6, 6);
+    painter.drawRoundedRect(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5), m_cornerRadius, m_cornerRadius);
 }
 
 void TilingPopup::showEvent(QShowEvent *event)
