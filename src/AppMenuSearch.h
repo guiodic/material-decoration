@@ -64,7 +64,6 @@ public:
 
     struct ActionInfo {
         QString path;
-        QString label;
         bool isEffectivelyEnabled = false;
         bool isChecked = false;
         bool isCheckable = false;
