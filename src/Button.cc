@@ -283,6 +283,9 @@ Button::Button(QObject *parent, const QVariantList &args)
 
 void Button::mousePressEvent(QMouseEvent *event)
 {
+    // A popup can consume the release ending the previous long press. A new
+    // gesture must start clean even if long-press actions were since disabled.
+    m_longPressTriggered = false;
     KDecoration3::DecorationButton::mousePressEvent(event);
     // Preserve KWin's separate middle/right-click maximize actions.
     if (type() == KDecoration3::DecorationButtonType::Maximize && event->button() != Qt::LeftButton) {
