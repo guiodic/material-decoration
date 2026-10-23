@@ -22,7 +22,6 @@
 
 #include <QHash>
 #include <QObject>
-#include <QRegularExpression>
 #include <QSharedPointer>
 
 namespace Material
@@ -57,7 +56,6 @@ signals:
 private:
     struct CompiledException {
         InternalSettingsPtr mergedSettings;
-        QRegularExpression regex;
         QString pattern;
         ExceptionType type = ExceptionType::WindowTitle;
         MatchingMode matchingMode = MatchingMode::ExactMatch;

@@ -300,11 +300,7 @@ msgid "Querying KWin for window information..."
 msgstr ""
 
 #: src/kcm/ExceptionDialog.cc:64
-msgid "Regular Expression"
-msgstr ""
-
-#: src/kcm/ExceptionDialog.cc:108
-msgid "Regular Expression syntax error: %1"
+msgid "Substring Match"
 msgstr ""
 
 #: src/kcm/ExceptionListWidget.cc:68

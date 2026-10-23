@@ -162,6 +162,7 @@
         <entry name="ExceptionType" type="Int">
             <default>1</default>
         </entry>
+        <!-- 0: exact match; 1: literal substring match (formerly regular expression). -->
         <entry name="MatchingMode" type="Int">
             <default>0</default>
         </entry>

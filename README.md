@@ -29,6 +29,20 @@ Note: if you configure the decoration to use Opacity < 100%,
 [Better Blur effect](https://github.com/xarblu/kwin-effects-better-blur-dx) is
 strongly recommended on Wayland.
 
+### Window exceptions
+
+Window titles and classes support **Exact Match** and **Substring Match**.
+Both modes compare literal text, ignoring case. Exact class matching also checks
+individual components separated by whitespace or NUL (for example, `konsole`
+matches the class `konsole org.kde.konsole`). Empty patterns are ignored.
+Rules are evaluated in order; the first matching rule is applied.
+
+Regular expressions are no longer supported. Existing exact rules are unchanged.
+Existing rules using `MatchingMode=1` now use literal substring matching: a plain
+pattern such as `konsole` still works, but patterns such as `^konsole$` or
+`konsole.*` must be edited. No regular-expression syntax is interpreted or
+converted automatically.
+
 ### Actions on Press-and-Hold buttons
 
 Pressing and holding the “Close” button will minimize the window to the traybar

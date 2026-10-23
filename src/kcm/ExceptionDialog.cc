@@ -29,7 +29,6 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QRegularExpression>
 #include <QVBoxLayout>
 
 namespace Material
@@ -61,7 +60,7 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
     criteriaLayout->addRow(i18n("Match against:"), m_exceptionTypeCombo);
 
     m_matchingModeCombo = new QComboBox(this);
-    m_matchingModeCombo->addItems({i18n("Exact Match"), i18n("Regular Expression")});
+    m_matchingModeCombo->addItems({i18n("Exact Match"), i18n("Substring Match")});
     criteriaLayout->addRow(i18n("Matching mode:"), m_matchingModeCombo);
 
     mainLayout->addWidget(criteriaGroup);
@@ -100,15 +99,6 @@ void ExceptionDialog::accept()
     if (m_patternLineEdit->text().trimmed().isEmpty()) {
         QMessageBox::warning(this, i18n("Warning"), i18n("Pattern cannot be empty."));
         return;
-    }
-
-    if (static_cast<MatchingMode>(m_matchingModeCombo->currentIndex()) == MatchingMode::RegularExpression) {
-        const QString pattern = m_patternLineEdit->text().trimmed();
-        QString errorReason;
-        if (!isSafeRegularExpression(pattern, &errorReason)) {
-            QMessageBox::warning(this, i18n("Warning"), i18n("Regular Expression error: %1", errorReason));
-            return;
-        }
     }
 
     QDialog::accept();
