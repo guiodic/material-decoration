@@ -200,14 +200,21 @@ Decoration::~Decoration()
 
 bool Decoration::isTilingPopupVisible() const
 {
-    return m_tilingPopup && m_tilingPopup->isVisible();
+    return m_tilingPopupOpening || (m_tilingPopup && m_tilingPopup->isVisible());
 }
 
 bool Decoration::showTilingPopup(const QRectF &anchor)
 {
     if (!canTileWindow(this)) return false;
+    if (isTilingPopupVisible()) return true;
+    // Pin the button before the asynchronous availability check and before
+    // forceUnpress() can temporarily clear the physical hover state.
+    m_tilingPopupOpening = true;
+    Q_EMIT tilingPopupVisibilityChanged(true);
     checkTilingScript(this, [this, anchor](bool available) {
+        m_tilingPopupOpening = false;
         if (!available) {
+            Q_EMIT tilingPopupVisibilityChanged(false);
             QToolTip::showText(QCursor::pos(), i18nd("materialdecoration", "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."));
             return;
         }

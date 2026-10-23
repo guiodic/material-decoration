@@ -764,8 +764,20 @@ void Button::setTilingPopupOpen(bool open)
 
 void Button::updateAnimationState(bool hovered)
 {
-    hovered = hovered || m_tilingPopupOpen;
+    if (m_tilingPopupOpen) {
+        // Popup grabs generate hover changes even while the logical hover is
+        // pinned. Restarting a completed Forward animation resets it to zero.
+        m_animation->stop();
+        setTransitionValue(1);
+        UPDATE_GEOM();
+        return;
+    }
     if (m_animationEnabled) {
+        if (type() == KDecoration3::DecorationButtonType::Maximize
+            && ((hovered && qFuzzyCompare(m_transitionValue, 1.0)) || (!hovered && qFuzzyIsNull(m_transitionValue)))) {
+            m_animation->stop();
+            return;
+        }
         const QAbstractAnimation::Direction dir = hovered ? QAbstractAnimation::Forward : QAbstractAnimation::Backward;
         if (m_animation->state() == QAbstractAnimation::Running && m_animation->direction() != dir) {
             m_animation->stop();

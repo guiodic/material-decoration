@@ -82,6 +82,7 @@ protected:
 
 private:
     std::unique_ptr<TilingPopup> m_tilingPopup;
+    bool m_tilingPopupOpening = false;
 
     void onSectionUnderMouseChanged(const Qt::WindowFrameSection value);
     void onSizeChanged();
