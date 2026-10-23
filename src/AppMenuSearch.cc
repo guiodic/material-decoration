@@ -822,14 +822,8 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
 
     auto backtrackAssignment = [&](auto &self, int qIdx, int currentSum) -> void {
         if (qIdx == numQ) {
-            int totalScore = currentSum;
-            for (int i = 1; i < numQ; ++i) {
-                if (currentAssignment[i] > currentAssignment[i - 1]) {
-                    totalScore += 100;
-                }
-            }
-            if (totalScore > maxTotalScore) {
-                maxTotalScore = totalScore;
+            if (currentSum > maxTotalScore) {
+                maxTotalScore = currentSum;
                 for (int k = 0; k < numQ; ++k) {
                     bestAssignment[k] = currentAssignment[k];
                 }
@@ -837,7 +831,8 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
             return;
         }
 
-        // Upper bound on possible sequential order bonuses remaining (at most (numQ - qIdx) transitions of 100 pts)
+        // currentSum includes order bonuses for the assigned prefix.
+        // Each remaining token can add at most one order bonus of 100.
         const int maxRemainingOrderBonus = (numQ - qIdx) * 100;
 
         // Branch-and-bound pruning: stop search if currentSum + maxSuffixSum[qIdx] + maxRemainingOrderBonus <= maxTotalScore
@@ -850,7 +845,8 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
                 setTargetUsed(cand.targetIdx, true);
                 currentAssignment[qIdx] = cand.targetIdx;
 
-                self(self, qIdx + 1, currentSum + cand.score);
+                const int orderBonus = (qIdx > 0 && cand.targetIdx > currentAssignment[qIdx - 1]) ? 100 : 0;
+                self(self, qIdx + 1, currentSum + cand.score + orderBonus);
 
                 setTargetUsed(cand.targetIdx, false);
                 currentAssignment[qIdx] = -1;
