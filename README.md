@@ -36,6 +36,10 @@ selector. Release the button, then click a zone to tile that window. A short
 click keeps the usual maximize/restore behavior; middle and right clicks keep
 KWin's configured actions. The existing long-press setting and delay apply.
 
+In **Button Options**, **Tiling popup transparency** controls the background
+transparency from 0% (opaque) to 100% (transparent). The default is 15%, equivalent
+to 85% opacity. Layout buttons and their highlight remain opaque.
+
 The first version offers side-by-side halves, top/bottom halves, a left half
 with two right quarters, and four quarters. Only the selected window moves;
 other windows are not automatically arranged. Use the arrow keys and Enter or

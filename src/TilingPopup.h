@@ -23,6 +23,7 @@ class TilingPopup : public QMenu
     Q_OBJECT
 public:
     explicit TilingPopup(QWidget *parent = nullptr);
+    void setTransparency(int percent);
 
 signals:
     void zoneSelected(Qt::Edges edges);
@@ -37,6 +38,7 @@ protected:
 private:
     QVector<QToolButton *> m_buttons;
     bool m_waitingForRelease = false;
+    qreal m_backgroundOpacity = 0.85;
 };
 
 }

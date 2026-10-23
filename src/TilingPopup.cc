@@ -70,16 +70,21 @@ TilingPopup::TilingPopup(QWidget *parent)
     addAction(action);
 }
 
+void TilingPopup::setTransparency(int percent)
+{
+    m_backgroundOpacity = 1.0 - qBound(0, percent, 100) / 100.0;
+    update();
+}
+
 void TilingPopup::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event)
-    constexpr qreal backgroundOpacity = 0.85;
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
     QColor background = palette().color(QPalette::Window);
-    background.setAlphaF(backgroundOpacity);
+    background.setAlphaF(m_backgroundOpacity);
     QColor border = palette().color(QPalette::Mid);
-    border.setAlphaF(backgroundOpacity);
+    border.setAlphaF(m_backgroundOpacity);
     painter.setPen(border);
     painter.setBrush(background);
     painter.drawRoundedRect(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5), 6, 6);

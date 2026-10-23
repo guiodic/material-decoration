@@ -205,6 +205,7 @@ bool Decoration::showTilingPopup(const QRectF &anchor)
             QTimer::singleShot(0, this, [this, edges] { tileWindow(this, edges); });
         });
     }
+    m_tilingPopup->setTransparency(m_internalSettings->tilingPopupTransparency());
     KDecoration3::Positioner positioner;
     positioner.setAnchorRect(anchor);
     popup(positioner, m_tilingPopup.get());
@@ -415,6 +416,9 @@ void Decoration::applySettings()
 {
     if (!m_internalSettings) {
         return;
+    }
+    if (m_tilingPopup) {
+        m_tilingPopup->setTransparency(m_internalSettings->tilingPopupTransparency());
     }
     m_bottomCornersFlag = m_internalSettings->bottomCornerRadiusFlag();
 
