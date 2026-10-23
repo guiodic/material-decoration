@@ -23,7 +23,7 @@ class TilingPopup : public QMenu
     Q_OBJECT
 public:
     explicit TilingPopup(QWidget *parent = nullptr);
-    void setTransparency(int percent);
+    void setBackgroundOpacity(int percent);
 
 signals:
     void zoneSelected(Qt::Edges edges);

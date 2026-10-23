@@ -16,6 +16,7 @@
  */
 
 #include "SettingsProvider.h"
+#include "SettingsMigration.h"
 #include "Decoration.h"
 
 #include <KDecoration3/DecoratedWindow>
@@ -47,11 +48,11 @@ SettingsProvider::SettingsProvider()
 
 void SettingsProvider::reconfigure()
 {
-    m_defaultSettings = InternalSettingsPtr::create();
-    m_defaultSettings->load();
-
     auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
     config->reparseConfiguration();
+    migrateTilingPopupOpacity(*config);
+    m_defaultSettings = InternalSettingsPtr::create();
+    m_defaultSettings->load();
     m_exceptions.readConfig(config);
 
     m_compiledExceptions.clear();

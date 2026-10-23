@@ -205,7 +205,7 @@ bool Decoration::showTilingPopup(const QRectF &anchor)
             QTimer::singleShot(0, this, [this, edges] { tileWindow(this, edges); });
         });
     }
-    m_tilingPopup->setTransparency(m_internalSettings->tilingPopupTransparency());
+    m_tilingPopup->setBackgroundOpacity(m_internalSettings->tilingPopupOpacity());
     KDecoration3::Positioner positioner;
     positioner.setAnchorRect(anchor);
     popup(positioner, m_tilingPopup.get());
@@ -418,7 +418,7 @@ void Decoration::applySettings()
         return;
     }
     if (m_tilingPopup) {
-        m_tilingPopup->setTransparency(m_internalSettings->tilingPopupTransparency());
+        m_tilingPopup->setBackgroundOpacity(m_internalSettings->tilingPopupOpacity());
     }
     m_bottomCornersFlag = m_internalSettings->bottomCornerRadiusFlag();
 

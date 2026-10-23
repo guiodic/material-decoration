@@ -59,7 +59,7 @@ void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettings
     dst->setShadowStrength(src->shadowStrength());
     dst->setLongPressEnabled(src->longPressEnabled());
     dst->setLongPressDuration(src->longPressDuration());
-    dst->setTilingPopupTransparency(src->tilingPopupTransparency());
+    dst->setTilingPopupOpacity(src->tilingPopupOpacity());
     dst->setDragFromButtonsEnabled(src->dragFromButtonsEnabled());
 
     dst->setExceptionPattern(src->exceptionPattern());

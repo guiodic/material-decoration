@@ -70,9 +70,9 @@ TilingPopup::TilingPopup(QWidget *parent)
     addAction(action);
 }
 
-void TilingPopup::setTransparency(int percent)
+void TilingPopup::setBackgroundOpacity(int percent)
 {
-    m_backgroundOpacity = 1.0 - qBound(0, percent, 100) / 100.0;
+    m_backgroundOpacity = qBound(0, percent, 100) / 100.0;
     update();
 }
 
