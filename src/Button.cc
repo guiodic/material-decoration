@@ -124,6 +124,11 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     });
     
    
+    if (type == KDecoration3::DecorationButtonType::Maximize) {
+        connect(decoration, &Decoration::tilingPopupVisibilityChanged, this, &Button::setTilingPopupOpen);
+        setTilingPopupOpen(decoration->isTilingPopupVisible());
+    }
+
     connect(this, &Button::hoveredChanged, this, &Button::updateAnimationState);
     connect(this, &Button::hoveredChanged, this, [this](bool hovered) {
         if (!hovered && this->type() == KDecoration3::DecorationButtonType::Maximize) {
@@ -516,7 +521,7 @@ QColor Button::backgroundColor() const
             return KColorUtils::mix(normalColor, pressedColor, m_transitionValue);
         }
 
-        if (isHovered()) {
+        if (isVisuallyHovered()) {
             if (qFuzzyCompare(m_transitionValue, 0.0)) return normalColor;
             if (!decoratedClient->isActive()) {  
                 hoveredColor = KColorUtils::mix(titleBarBg, hoveredColor,0.7);
@@ -548,7 +553,7 @@ QColor Button::backgroundColor() const
                 0.7);
             return KColorUtils::mix(normalColor, pressedColor, m_transitionValue);
         }
-        if (isHovered()) {
+        if (isVisuallyHovered()) {
             const QColor hoveredColor = KColorUtils::mix(
                 titleBarBg,
                 titleBarFg,
@@ -575,7 +580,7 @@ QColor Button::backgroundColor() const
         if (qFuzzyCompare(m_transitionValue, 1.0)) return pressedColor;
         return KColorUtils::mix(normalColor, pressedColor, m_transitionValue);
     }
-    if (isHovered()) {
+    if (isVisuallyHovered()) {
         if (qFuzzyCompare(m_transitionValue, 0.0)) return normalColor;
         if (qFuzzyCompare(m_transitionValue, 1.0)) return hoveredColor;
         return KColorUtils::mix(normalColor, hoveredColor, m_transitionValue);
@@ -608,7 +613,7 @@ QColor Button::foregroundColor() const
             titleBarFg,
             0.2);
 
-        if (isPressed() || isHovered()) {
+        if (isPressed() || isVisuallyHovered()) {
             if (qFuzzyCompare(m_transitionValue, 0.0)) return activeColor;
             if (qFuzzyCompare(m_transitionValue, 1.0)) return titleBarOpaqueBg;
             return KColorUtils::mix(
@@ -625,7 +630,7 @@ QColor Button::foregroundColor() const
         titleBarFg,
         0.8);
 
-    if (isPressed() || isHovered()) {
+    if (isPressed() || isVisuallyHovered()) {
         if (qFuzzyCompare(m_transitionValue, 0.0)) return normalColor;
         // Breeze GTK has huge margins around the button. It looks better
         // when we just change the fgColor on hover instead of the bgColor.
@@ -744,8 +749,22 @@ void Button::setIsRightmost(bool isRightmost)
     m_isRightmost = isRightmost;
 }
 
+bool Button::isVisuallyHovered() const
+{
+    return isHovered() || m_tilingPopupOpen;
+}
+
+void Button::setTilingPopupOpen(bool open)
+{
+    if (m_tilingPopupOpen == open) return;
+    m_tilingPopupOpen = open;
+    updateAnimationState(isHovered());
+    UPDATE_GEOM();
+}
+
 void Button::updateAnimationState(bool hovered)
 {
+    hovered = hovered || m_tilingPopupOpen;
     if (m_animationEnabled) {
         const QAbstractAnimation::Direction dir = hovered ? QAbstractAnimation::Forward : QAbstractAnimation::Backward;
         if (m_animation->state() == QAbstractAnimation::Running && m_animation->direction() != dir) {

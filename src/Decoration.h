@@ -60,6 +60,10 @@ public:
 
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
     bool showTilingPopup(const QRectF &anchor);
+    bool isTilingPopupVisible() const;
+
+signals:
+    void tilingPopupVisibilityChanged(bool visible);
 
 public slots:
     bool init() override;

@@ -7,6 +7,7 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QStyle>
 #include <QToolButton>
 #include <QWidgetAction>
 #include <limits>
@@ -34,6 +35,7 @@ TilingPopup::TilingPopup(QWidget *parent)
     // window opacity would also fade the layout buttons and their highlight.
     setAttribute(Qt::WA_TranslucentBackground);
     setObjectName(QStringLiteral("materialTilingPopup"));
+    installEventFilter(this);
     setAccessibleName(i18nd("materialdecoration", "Window tiling layouts"));
     auto *panel = new QWidget(this);
     auto *grid = new QGridLayout(panel);
@@ -56,7 +58,7 @@ TilingPopup::TilingPopup(QWidget *parent)
             button->setFocusPolicy(Qt::StrongFocus);
             button->setStyleSheet(QStringLiteral(
                 "QToolButton { background: palette(midlight); border: 1px solid palette(mid); border-radius: 4px; }"
-                "QToolButton:hover, QToolButton:focus { background: palette(highlight); border-color: palette(highlight); }"));
+                "QToolButton:hover, QToolButton[keyboardSelected=\"true\"] { background: palette(highlight); border-color: palette(highlight); }"));
             button->installEventFilter(this);
             m_buttons.append(button);
             connect(button, &QToolButton::clicked, this, [this, edges = zone.edges] {
@@ -94,7 +96,7 @@ void TilingPopup::showEvent(QShowEvent *event)
 {
     m_waitingForRelease = QApplication::mouseButtons().testFlag(Qt::LeftButton);
     QMenu::showEvent(event);
-    m_buttons.first()->setFocus(Qt::PopupFocusReason);
+    selectKeyboardButton(-1);
 }
 
 bool TilingPopup::eventFilter(QObject *object, QEvent *event)
@@ -106,35 +108,68 @@ bool TilingPopup::eventFilter(QObject *object, QEvent *event)
         m_waitingForRelease = false;
         return true;
     } else if (event->type() == QEvent::KeyPress) {
-        const auto *key = static_cast<QKeyEvent *>(event);
-        if (key->key() == Qt::Key_Escape) {
-            hide();
-            return true;
-        }
-        const int code = key->key();
-        if (code == Qt::Key_Return || code == Qt::Key_Enter) {
-            if (auto *button = qobject_cast<QToolButton *>(object)) button->click();
-            return true;
-        }
-        if (code == Qt::Key_Left || code == Qt::Key_Right || code == Qt::Key_Up || code == Qt::Key_Down) {
-            const auto *current = qobject_cast<QToolButton *>(object);
-            if (!current) return false;
-            const QPoint origin = current->mapTo(this, current->rect().center());
-            QToolButton *next = nullptr;
-            qreal best = std::numeric_limits<qreal>::max();
-            for (auto *candidate : m_buttons) {
-                const QPoint delta = candidate->mapTo(this, candidate->rect().center()) - origin;
-                const int forward = code == Qt::Key_Left ? -delta.x() : code == Qt::Key_Right ? delta.x()
-                    : code == Qt::Key_Up ? -delta.y() : delta.y();
-                const int sideways = (code == Qt::Key_Left || code == Qt::Key_Right) ? delta.y() : delta.x();
-                const qreal score = forward * forward + 4.0 * sideways * sideways;
-                if (forward > 0 && score < best) { best = score; next = candidate; }
-            }
-            if (next) next->setFocus(Qt::OtherFocusReason);
-            return true;
-        }
+        if (handleKeyPress(static_cast<QKeyEvent *>(event))) return true;
     }
     return QMenu::eventFilter(object, event);
+}
+
+void TilingPopup::selectKeyboardButton(int index)
+{
+    m_keyboardIndex = index;
+    for (qsizetype i = 0; i < m_buttons.size(); ++i) {
+        auto *button = m_buttons[i];
+        button->setProperty("keyboardSelected", i == index);
+        button->style()->unpolish(button);
+        button->style()->polish(button);
+        button->update();
+    }
+    if (index >= 0) m_buttons[index]->setFocus(Qt::OtherFocusReason);
+    else setFocus(Qt::PopupFocusReason);
+}
+
+bool TilingPopup::handleKeyPress(QKeyEvent *event)
+{
+    const int code = event->key();
+    if (code == Qt::Key_Escape) {
+        hide();
+        return true;
+    }
+    if (code == Qt::Key_Return || code == Qt::Key_Enter || code == Qt::Key_Space) {
+        // Opening the popup alone must never arm a default action.
+        if (m_keyboardIndex >= 0) m_buttons[m_keyboardIndex]->click();
+        return true;
+    }
+    if (code == Qt::Key_Tab || code == Qt::Key_Backtab) {
+        const bool backwards = code == Qt::Key_Backtab || event->modifiers().testFlag(Qt::ShiftModifier);
+        const int count = int(m_buttons.size());
+        selectKeyboardButton(m_keyboardIndex < 0 ? (backwards ? count - 1 : 0)
+            : (m_keyboardIndex + (backwards ? count - 1 : 1)) % count);
+        return true;
+    }
+    if (code != Qt::Key_Left && code != Qt::Key_Right && code != Qt::Key_Up && code != Qt::Key_Down) return false;
+    if (m_keyboardIndex < 0) {
+        selectKeyboardButton(0);
+        return true;
+    }
+    const auto *current = m_buttons[m_keyboardIndex];
+    const QPoint origin = current->mapTo(this, current->rect().center());
+    int next = m_keyboardIndex;
+    qreal best = std::numeric_limits<qreal>::max();
+    for (qsizetype i = 0; i < m_buttons.size(); ++i) {
+        const QPoint delta = m_buttons[i]->mapTo(this, m_buttons[i]->rect().center()) - origin;
+        const int forward = code == Qt::Key_Left ? -delta.x() : code == Qt::Key_Right ? delta.x()
+            : code == Qt::Key_Up ? -delta.y() : delta.y();
+        const int sideways = (code == Qt::Key_Left || code == Qt::Key_Right) ? delta.y() : delta.x();
+        const qreal score = forward * forward + 4.0 * sideways * sideways;
+        if (forward > 0 && score < best) { best = score; next = int(i); }
+    }
+    selectKeyboardButton(next);
+    return true;
+}
+
+void TilingPopup::keyPressEvent(QKeyEvent *event)
+{
+    if (!handleKeyPress(event)) QMenu::keyPressEvent(event);
 }
 
 void TilingPopup::mousePressEvent(QMouseEvent *event)

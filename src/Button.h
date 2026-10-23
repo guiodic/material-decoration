@@ -87,6 +87,8 @@ public:
 
 private:
     void updateAnimationState(bool hovered);
+    void setTilingPopupOpen(bool open);
+    bool isVisuallyHovered() const;
     void handleHoldTimeout();
 
 signals:
@@ -126,6 +128,7 @@ protected:
 
     QTimer *m_holdTimer = nullptr;
     bool m_longPressTriggered = false;
+    bool m_tilingPopupOpen = false;
     qreal m_penScale = 1.0;
 
     friend class Decoration;

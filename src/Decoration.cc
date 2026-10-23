@@ -198,6 +198,11 @@ Decoration::~Decoration()
     }
 }
 
+bool Decoration::isTilingPopupVisible() const
+{
+    return m_tilingPopup && m_tilingPopup->isVisible();
+}
+
 bool Decoration::showTilingPopup(const QRectF &anchor)
 {
     if (!canTileWindow(this)) return false;
@@ -208,6 +213,8 @@ bool Decoration::showTilingPopup(const QRectF &anchor)
         }
         if (!m_tilingPopup) {
             m_tilingPopup = std::make_unique<TilingPopup>();
+            connect(m_tilingPopup.get(), &QMenu::aboutToShow, this, [this] { Q_EMIT tilingPopupVisibilityChanged(true); });
+            connect(m_tilingPopup.get(), &QMenu::aboutToHide, this, [this] { Q_EMIT tilingPopupVisibilityChanged(false); });
             connect(m_tilingPopup.get(), &TilingPopup::zoneSelected, this, [this](Qt::Edges edges) {
                 // Defer the geometry change until the menu has released its grab.
                 QTimer::singleShot(0, this, [this, edges] { tileWindow(this, edges); });

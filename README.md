@@ -42,7 +42,11 @@ opacity from 0% (transparent) to 100% (opaque). The default is 85%. Layout butto
 The first version offers side-by-side halves, top/bottom halves, a left half
 with two right quarters, and four quarters. Only the selected window moves;
 other windows are not automatically arranged. Use the arrow keys and Enter or
-Space to select a zone, or Escape/click outside to cancel.
+Space to select a zone, or Escape/click outside to cancel. No zone is preselected
+on opening: press an arrow key or Tab to begin keyboard selection. Enter and
+Space do nothing until a zone has been selected with the keyboard. The maximize/
+restore button keeps its hover color while the popup is open; its icon and
+maximized state are unchanged.
 
 The popup uses a companion **Material Tiling Popup** KWin script for native
 quick tiling, including work areas, size constraints and restore behavior.
