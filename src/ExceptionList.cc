@@ -100,26 +100,103 @@ bool isSafeRegularExpression(const QString &pattern, QString *errorReason)
         return false;
     }
 
-    // Heuristic checks for obvious ReDoS patterns (nested or consecutive quantifiers).
-    // Note: This is a best-effort heuristic. Complex ambiguous alternations (e.g. '(a|aa)+') are not statically
-    // separable from safe alternations (e.g. '(a|b)+') via simple regex. Primary ReDoS safety is enforced via
-    // MaxExceptionPatternLength and MaxExceptionValueLength in SettingsProvider.
-    // Negative lookbehind (?<!\\)(?:\\\\)* ensures escaped operators like '\*' or '\+' are treated as literals.
-    static const QRegularExpression nestedQuantifiersRegex(
-        QStringLiteral("(?<!\\\\)(?:\\\\\\\\)*(?:\\(|\\|\\[)[^()]*?(?<!\\\\)(?:\\\\\\\\)*(?:[*+]|\\{\\d+,\\})(?>[+?]?)[^()]*?(?<!\\\\)(?:\\\\\\\\)*\\)(?<!\\\\)(?:[*+]|\\{\\d+,\\})"),
-        QRegularExpression::CaseInsensitiveOption);
-
     // Matches consecutive quantifiers while using atomic group (?>[+?]?) to prevent backtracking reinterpretation
     // of possessive '+' or lazy '?' modifier suffixes as a second quantifier.
     static const QRegularExpression consecutiveQuantifiersRegex(
         QStringLiteral("(?<!\\\\)(?:\\\\\\\\)*(?:[*+]|\\{\\d+,\\})(?>[+?]?)(?<!\\\\)(?:[*+]|\\{\\d+,\\})"),
         QRegularExpression::CaseInsensitiveOption);
 
-    if (nestedQuantifiersRegex.match(pattern).hasMatch() || consecutiveQuantifiersRegex.match(pattern).hasMatch()) {
+    if (consecutiveQuantifiersRegex.match(pattern).hasMatch()) {
         if (errorReason) {
-            *errorReason = QStringLiteral("Pattern contains nested or consecutive unbounded quantifiers susceptible to ReDoS.");
+            *errorReason = QStringLiteral("Pattern contains consecutive unbounded quantifiers susceptible to ReDoS.");
         }
         return false;
+    }
+
+    // Deterministic C++ scanner to accurately detect nested quantifiers (e.g. '(a+)+', '(\(a+\))+')
+    // while ignoring escaped characters (\(, \+) and character classes ([b+]).
+    bool inCharClass = false;
+    bool escaped = false;
+    struct GroupState {
+        bool hasQuantifier = false;
+    };
+    QList<GroupState> groupStack;
+
+    for (int i = 0; i < pattern.length(); ++i) {
+        const QChar ch = pattern.at(i);
+
+        if (escaped) {
+            escaped = false;
+            continue;
+        }
+
+        if (ch == u'\\') {
+            escaped = true;
+            continue;
+        }
+
+        if (inCharClass) {
+            if (ch == u']') {
+                inCharClass = false;
+            }
+            continue;
+        }
+
+        if (ch == u'[') {
+            inCharClass = true;
+            continue;
+        }
+
+        if (ch == u'(') {
+            groupStack.append(GroupState{false});
+            continue;
+        }
+
+        if (ch == u')' && !groupStack.isEmpty()) {
+            GroupState state = groupStack.takeLast();
+
+            // Check if this group is followed by a quantifier (+, *, {n,})
+            int j = i + 1;
+            bool groupIsQuantified = false;
+            if (j < pattern.length()) {
+                const QChar nextCh = pattern.at(j);
+                if (nextCh == u'*' || nextCh == u'+') {
+                    groupIsQuantified = true;
+                } else if (nextCh == u'{') {
+                    static const QRegularExpression rangeQuantifierRegex(QStringLiteral("^\\{\\d+,\\}"));
+                    if (rangeQuantifierRegex.match(pattern.mid(j)).hasMatch()) {
+                        groupIsQuantified = true;
+                    }
+                }
+            }
+
+            if (groupIsQuantified && state.hasQuantifier) {
+                if (errorReason) {
+                    *errorReason = QStringLiteral("Pattern contains nested unbounded quantifiers susceptible to ReDoS.");
+                }
+                return false;
+            }
+
+            if (!groupStack.isEmpty() && (state.hasQuantifier || groupIsQuantified)) {
+                groupStack.last().hasQuantifier = true;
+            }
+            continue;
+        }
+
+        // Check for unescaped quantifiers (*, +, or {n,})
+        bool isQuantifier = false;
+        if (ch == u'*' || ch == u'+') {
+            isQuantifier = true;
+        } else if (ch == u'{') {
+            static const QRegularExpression rangeQuantifierRegex(QStringLiteral("^\\{\\d+,\\}"));
+            if (rangeQuantifierRegex.match(pattern.mid(i)).hasMatch()) {
+                isQuantifier = true;
+            }
+        }
+
+        if (isQuantifier && !groupStack.isEmpty()) {
+            groupStack.last().hasQuantifier = true;
+        }
     }
 
     return true;
