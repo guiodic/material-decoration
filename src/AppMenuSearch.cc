@@ -791,31 +791,6 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     std::array<int, MAX_QUERY_TOKENS> currentAssignment;
     currentAssignment.fill(-1);
 
-    // Small Buffer Optimization (SBO) for tracking target tokens used during backtracking:
-    // For standard menu paths (numT <= 32), stackUsedTarget avoids dynamic heap allocation.
-    // For unusually long menu paths (numT > 32), heapUsedTarget uses std::vector<uint8_t>
-    // to avoid std::vector<bool> proxy reference overhead and bitwise operations.
-    constexpr int MAX_STACK_TARGET_TOKENS = 32;
-    std::array<bool, MAX_STACK_TARGET_TOKENS> stackUsedTarget{};
-    std::vector<uint8_t> heapUsedTarget;
-    if (numT > MAX_STACK_TARGET_TOKENS) {
-        heapUsedTarget.resize(numT, 0);
-    }
-
-    auto isTargetUsed = [&](int tIdx) -> bool {
-        Q_ASSERT(tIdx >= 0 && tIdx < numT);
-        return (numT <= MAX_STACK_TARGET_TOKENS) ? stackUsedTarget[tIdx] : static_cast<bool>(heapUsedTarget[tIdx]);
-    };
-
-    auto setTargetUsed = [&](int tIdx, bool used) {
-        Q_ASSERT(tIdx >= 0 && tIdx < numT);
-        if (numT <= MAX_STACK_TARGET_TOKENS) {
-            stackUsedTarget[tIdx] = used;
-        } else {
-            heapUsedTarget[tIdx] = used ? 1 : 0;
-        }
-    };
-
     int maxTotalScore = -1;
 
     auto backtrackAssignment = [&](auto &self, int qIdx, int currentSum) -> void {
@@ -836,14 +811,13 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
         }
 
         for (const auto &cand : sortedCandidates[qIdx]) {
-            if (!isTargetUsed(cand.targetIdx)) {
-                setTargetUsed(cand.targetIdx, true);
+            const auto assignedEnd = currentAssignment.begin() + qIdx;
+            if (std::find(currentAssignment.begin(), assignedEnd, cand.targetIdx) == assignedEnd) {
                 currentAssignment[qIdx] = cand.targetIdx;
 
                 const int orderBonus = (qIdx > 0 && cand.targetIdx > currentAssignment[qIdx - 1]) ? 100 : 0;
                 self(self, qIdx + 1, currentSum + cand.score + orderBonus);
 
-                setTargetUsed(cand.targetIdx, false);
                 currentAssignment[qIdx] = -1;
             }
         }
