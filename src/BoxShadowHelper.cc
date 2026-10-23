@@ -59,6 +59,16 @@ struct BoxLobes {
     int right; ///< how many pixels sample to the right
 };
 
+enum class TransposeInput : bool {
+    No = false,
+    Yes = true
+};
+
+enum class TransposeOutput : bool {
+    No = false,
+    Yes = true
+};
+
 /**
  * Compute box filter parameters.
  *
@@ -121,11 +131,11 @@ static inline void boxBlurRowAlpha(const uint8_t *src,
                                    int horizontalStride,
                                    int verticalStride,
                                    const BoxLobes &lobes,
-                                   bool transposeInput,
-                                   bool transposeOutput)
+                                   TransposeInput transposeInput,
+                                   TransposeOutput transposeOutput)
 {
-    const ptrdiff_t inputStep = transposeInput ? verticalStride : horizontalStride;
-    const ptrdiff_t outputStep = transposeOutput ? verticalStride : horizontalStride;
+    const ptrdiff_t inputStep = (transposeInput == TransposeInput::Yes) ? verticalStride : horizontalStride;
+    const ptrdiff_t outputStep = (transposeOutput == TransposeOutput::Yes) ? verticalStride : horizontalStride;
 
     const int boxSize = lobes.left + 1 + lobes.right;
     const int reciprocal = (1 << 24) / boxSize;
@@ -221,18 +231,18 @@ static inline void boxBlurAlpha(QImage &image, int radius, const QRect &rect = {
     for (int i = 0; i < height; ++i) {
         const ptrdiff_t rowOffset = static_cast<ptrdiff_t>(blurRect.x()) * pixelStride + alphaOffset;
         uint8_t *row = image.scanLine(blurRect.y() + i) + rowOffset;
-        boxBlurRowAlpha(row, buf1, width, pixelStride, rowStride, lobes[0], false, false);
-        boxBlurRowAlpha(buf1, buf2, width, pixelStride, rowStride, lobes[1], false, false);
-        boxBlurRowAlpha(buf2, row, width, pixelStride, rowStride, lobes[2], false, false);
+        boxBlurRowAlpha(row, buf1, width, pixelStride, rowStride, lobes[0], TransposeInput::No, TransposeOutput::No);
+        boxBlurRowAlpha(buf1, buf2, width, pixelStride, rowStride, lobes[1], TransposeInput::No, TransposeOutput::No);
+        boxBlurRowAlpha(buf2, row, width, pixelStride, rowStride, lobes[2], TransposeInput::No, TransposeOutput::No);
     }
 
     // Blur the image in vertical direction.
     for (int i = 0; i < width; ++i) {
         const ptrdiff_t colOffset = static_cast<ptrdiff_t>(blurRect.x() + i) * pixelStride + alphaOffset;
         uint8_t *column = image.scanLine(blurRect.y()) + colOffset;
-        boxBlurRowAlpha(column, buf1, height, pixelStride, rowStride, lobes[0], true, false);
-        boxBlurRowAlpha(buf1, buf2, height, pixelStride, rowStride, lobes[1], false, false);
-        boxBlurRowAlpha(buf2, column, height, pixelStride, rowStride, lobes[2], false, true);
+        boxBlurRowAlpha(column, buf1, height, pixelStride, rowStride, lobes[0], TransposeInput::Yes, TransposeOutput::No);
+        boxBlurRowAlpha(buf1, buf2, height, pixelStride, rowStride, lobes[1], TransposeInput::No, TransposeOutput::No);
+        boxBlurRowAlpha(buf2, column, height, pixelStride, rowStride, lobes[2], TransposeInput::No, TransposeOutput::Yes);
     }
 }
 
