@@ -318,7 +318,7 @@ msgstr "Consultando la información de la ventana a KWin..."
 
 #: src/kcm/ExceptionDialog.cc:64
 msgid "Substring Match"
-msgstr ""
+msgstr "Coincidencia de subcadena"
 
 #: src/kcm/ExceptionListWidget.cc:68
 msgid "Remove"

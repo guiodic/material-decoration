@@ -318,7 +318,7 @@ msgstr "正在向 KWin 查询窗口信息..."
 
 #: src/kcm/ExceptionDialog.cc:64
 msgid "Substring Match"
-msgstr ""
+msgstr "子字符串匹配"
 
 #: src/kcm/ExceptionListWidget.cc:68
 msgid "Remove"

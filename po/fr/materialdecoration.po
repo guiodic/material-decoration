@@ -318,7 +318,7 @@ msgstr "Demande d'informations sur la fenêtre à KWin en cours..."
 
 #: src/kcm/ExceptionDialog.cc:64
 msgid "Substring Match"
-msgstr ""
+msgstr "Correspondance de sous-chaîne"
 
 #: src/kcm/ExceptionListWidget.cc:68
 msgid "Remove"

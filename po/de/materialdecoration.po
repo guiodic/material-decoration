@@ -318,7 +318,7 @@ msgstr "Fensterinformationen werden von KWin abgefragt..."
 
 #: src/kcm/ExceptionDialog.cc:64
 msgid "Substring Match"
-msgstr ""
+msgstr "Teilzeichenfolgen-Übereinstimmung"
 
 #: src/kcm/ExceptionListWidget.cc:68
 msgid "Remove"

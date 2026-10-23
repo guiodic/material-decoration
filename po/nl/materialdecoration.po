@@ -318,7 +318,7 @@ msgstr "Venster-informatie opvragen bij KWin..."
 
 #: src/kcm/ExceptionDialog.cc:64
 msgid "Substring Match"
-msgstr ""
+msgstr "Overeenkomst met deeltekenreeks"
 
 #: src/kcm/ExceptionListWidget.cc:68
 msgid "Remove"
