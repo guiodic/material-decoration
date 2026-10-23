@@ -46,6 +46,7 @@
 
 // KF
 #include <KWindowSystem>
+#include <KLocalizedString>
 
 // Qt
 #include <QApplication>
@@ -59,6 +60,8 @@
 #include <QSharedPointer>
 #include <QWheelEvent>
 #include <QTimer>
+#include <QToolTip>
+#include <QCursor>
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusPendingCallWatcher>
@@ -198,17 +201,23 @@ Decoration::~Decoration()
 bool Decoration::showTilingPopup(const QRectF &anchor)
 {
     if (!canTileWindow(this)) return false;
-    if (!m_tilingPopup) {
-        m_tilingPopup = std::make_unique<TilingPopup>();
-        connect(m_tilingPopup.get(), &TilingPopup::zoneSelected, this, [this](Qt::Edges edges) {
-            // Defer the geometry change until the menu has released its grab.
-            QTimer::singleShot(0, this, [this, edges] { tileWindow(this, edges); });
-        });
-    }
-    m_tilingPopup->setBackgroundOpacity(m_internalSettings->tilingPopupOpacity());
-    KDecoration3::Positioner positioner;
-    positioner.setAnchorRect(anchor);
-    popup(positioner, m_tilingPopup.get());
+    checkTilingScript(this, [this, anchor](bool available) {
+        if (!available) {
+            QToolTip::showText(QCursor::pos(), i18nd("materialdecoration", "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."));
+            return;
+        }
+        if (!m_tilingPopup) {
+            m_tilingPopup = std::make_unique<TilingPopup>();
+            connect(m_tilingPopup.get(), &TilingPopup::zoneSelected, this, [this](Qt::Edges edges) {
+                // Defer the geometry change until the menu has released its grab.
+                QTimer::singleShot(0, this, [this, edges] { tileWindow(this, edges); });
+            });
+        }
+        m_tilingPopup->setBackgroundOpacity(m_internalSettings->tilingPopupOpacity());
+        KDecoration3::Positioner positioner;
+        positioner.setAnchorRect(anchor);
+        popup(positioner, m_tilingPopup.get());
+    });
     return true;
 }
 

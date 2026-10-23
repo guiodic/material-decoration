@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Id": "material-tiling",
+        "Name": "Material Tiling Popup",
+        "Description": "Native tiling for the Material window decoration popup",
+        "Version": "1.0",
+        "License": "GPL-2.0+",
+        "EnabledByDefault": true
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js"
+}

@@ -39,6 +39,8 @@ add_subdirectory (src/libdbusmenuqt)
 add_subdirectory (src)
 add_subdirectory(po)
 
+install(DIRECTORY scripts/material-tiling DESTINATION ${KDE_INSTALL_DATADIR}/kwin/scripts)
+
 include(CTest)
 if(BUILD_TESTING)
     add_subdirectory(tests)

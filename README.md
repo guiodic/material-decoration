@@ -44,20 +44,40 @@ with two right quarters, and four quarters. Only the selected window moves;
 other windows are not automatically arranged. Use the arrow keys and Enter or
 Space to select a zone, or Escape/click outside to cancel.
 
-This uses KWin's native quick tiling, including its work area, size constraints
-and restore behavior. The target is identified by its decoration, rather than
-by the currently active window. It is available in the KWin Wayland build
-(including XWayland windows); the separate `FORCE_X11` build currently keeps the
-normal maximize action. The implementation uses KWin C++ APIs and must be built
-against the running KWin version. Arbitrary ratios and custom tiling layouts
-are not included yet.
+The popup uses a companion **Material Tiling Popup** KWin script for native
+quick tiling, including work areas, size constraints and restore behavior.
+`cmake --install` installs both the decoration and the script. The script is
+enabled by default unless explicitly disabled in **System Settings > Window
+Management > KWin Scripts**. Restart KWin or log out and back in after installing
+the updated decoration. If the script was disabled, enable it in that panel.
+No keyboard shortcut needs to be assigned to the script.
 
-To run the popup interaction tests after configuring CMake:
+Before opening, the popup checks that the script responds. If it is unavailable,
+a tooltip explains how to enable it. Requests carry the owning window's UUID,
+not the active window, and are acknowledged with a timeout. Missing/closed
+windows and unsupported hosts are rejected without tiling another window.
+
+The bridge uses Qt properties and D-Bus, with no KWin C++ headers or `libkwin`
+dependency. It reads `internalId` from the decoration's QObject parent; this
+relationship is checked at runtime and is not a formal KDecoration API guarantee.
+KDecoration/Qt compatibility is still required when updating Plasma. The script
+has been validated on KWin Wayland 6.7.4; native X11 and other versions require
+separate validation. Arbitrary ratios and custom tiling layouts are not included.
+
+To run the popup and bridge tests after configuring CMake:
 
 ```sh
 cmake -S . -B build -DBUILD_TESTING=ON
 cmake --build build -j4
 ctest --test-dir build --output-on-failure
+```
+
+The bridge tests use an isolated session bus and require `dbus-run-session`.
+The script tests use Node.js without third-party packages; they are included in
+CTest when Node is available, or can be run with:
+
+```sh
+node tests/TilingScriptTest.js
 ```
 
 For a desktop check, enable Material and long presses, then try a short click,
