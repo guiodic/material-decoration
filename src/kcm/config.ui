@@ -447,7 +447,7 @@
        <item row="2" column="0">
         <widget class="QLabel" name="label_tilingPopupOpacity">
          <property name="text">
-          <string notr="true">Tiling popup opacity</string>
+          <string>Tiling popup opacity</string>
          </property>
          <property name="buddy">
           <cstring>kcfg_TilingPopupOpacity</cstring>

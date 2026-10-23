@@ -358,3 +358,47 @@ msgstr ""
 #: src/kcm/config.ui:35
 msgid "Don't round corners for tiled windows"
 msgstr ""
+
+#: src/TilingPopup.cc
+msgid "Left half"
+msgstr ""
+
+#: src/TilingPopup.cc
+msgid "Right half"
+msgstr ""
+
+#: src/TilingPopup.cc
+msgid "Top half"
+msgstr ""
+
+#: src/TilingPopup.cc
+msgid "Bottom half"
+msgstr ""
+
+#: src/TilingPopup.cc
+msgid "Top left quarter"
+msgstr ""
+
+#: src/TilingPopup.cc
+msgid "Top right quarter"
+msgstr ""
+
+#: src/TilingPopup.cc
+msgid "Bottom left quarter"
+msgstr ""
+
+#: src/TilingPopup.cc
+msgid "Bottom right quarter"
+msgstr ""
+
+#: src/TilingPopup.cc
+msgid "Window tiling layouts"
+msgstr ""
+
+#: src/kcm/config.ui
+msgid "Tiling popup opacity"
+msgstr ""
+
+#: src/Decoration.cc
+msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
+msgstr ""

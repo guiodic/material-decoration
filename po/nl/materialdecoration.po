@@ -375,3 +375,47 @@ msgstr "Vensterspecifieke uitzonderingen"
 #: src/kcm/config.ui:35
 msgid "Don't round corners for tiled windows"
 msgstr "Hoeken van tegelvensters niet afronden"
+
+#: src/TilingPopup.cc
+msgid "Left half"
+msgstr "Linkerhelft"
+
+#: src/TilingPopup.cc
+msgid "Right half"
+msgstr "Rechterhelft"
+
+#: src/TilingPopup.cc
+msgid "Top half"
+msgstr "Bovenste helft"
+
+#: src/TilingPopup.cc
+msgid "Bottom half"
+msgstr "Onderste helft"
+
+#: src/TilingPopup.cc
+msgid "Top left quarter"
+msgstr "Kwart linksboven"
+
+#: src/TilingPopup.cc
+msgid "Top right quarter"
+msgstr "Kwart rechtsboven"
+
+#: src/TilingPopup.cc
+msgid "Bottom left quarter"
+msgstr "Kwart linksonder"
+
+#: src/TilingPopup.cc
+msgid "Bottom right quarter"
+msgstr "Kwart rechtsonder"
+
+#: src/TilingPopup.cc
+msgid "Window tiling layouts"
+msgstr "Indelingen voor venstertegels"
+
+#: src/kcm/config.ui
+msgid "Tiling popup opacity"
+msgstr "Dekking van de tegelpop-up"
+
+#: src/Decoration.cc
+msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
+msgstr "Schakel het script Material Tiling Popup in via Systeeminstellingen > Vensterbeheer > KWin-scripts."

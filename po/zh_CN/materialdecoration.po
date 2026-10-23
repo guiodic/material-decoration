@@ -375,3 +375,47 @@ msgstr "特定窗口覆盖"
 #: src/kcm/config.ui:35
 msgid "Don't round corners for tiled windows"
 msgstr "不对平铺窗口进行圆角处理"
+
+#: src/TilingPopup.cc
+msgid "Left half"
+msgstr "左半部分"
+
+#: src/TilingPopup.cc
+msgid "Right half"
+msgstr "右半部分"
+
+#: src/TilingPopup.cc
+msgid "Top half"
+msgstr "上半部分"
+
+#: src/TilingPopup.cc
+msgid "Bottom half"
+msgstr "下半部分"
+
+#: src/TilingPopup.cc
+msgid "Top left quarter"
+msgstr "左上四分之一区域"
+
+#: src/TilingPopup.cc
+msgid "Top right quarter"
+msgstr "右上四分之一区域"
+
+#: src/TilingPopup.cc
+msgid "Bottom left quarter"
+msgstr "左下四分之一区域"
+
+#: src/TilingPopup.cc
+msgid "Bottom right quarter"
+msgstr "右下四分之一区域"
+
+#: src/TilingPopup.cc
+msgid "Window tiling layouts"
+msgstr "窗口平铺布局"
+
+#: src/kcm/config.ui
+msgid "Tiling popup opacity"
+msgstr "平铺弹窗不透明度"
+
+#: src/Decoration.cc
+msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
+msgstr "请在系统设置 > 窗口管理 > KWin 脚本中启用 Material Tiling Popup 脚本。"

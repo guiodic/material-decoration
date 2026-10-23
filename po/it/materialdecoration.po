@@ -375,3 +375,47 @@ msgstr "Eccezioni specifiche per finestra"
 #: src/kcm/config.ui:35
 msgid "Don't round corners for tiled windows"
 msgstr "Non arrotondare gli angoli per le finestre affiancate"
+
+#: src/TilingPopup.cc
+msgid "Left half"
+msgstr "Metà sinistra"
+
+#: src/TilingPopup.cc
+msgid "Right half"
+msgstr "Metà destra"
+
+#: src/TilingPopup.cc
+msgid "Top half"
+msgstr "Metà superiore"
+
+#: src/TilingPopup.cc
+msgid "Bottom half"
+msgstr "Metà inferiore"
+
+#: src/TilingPopup.cc
+msgid "Top left quarter"
+msgstr "Quarto in alto a sinistra"
+
+#: src/TilingPopup.cc
+msgid "Top right quarter"
+msgstr "Quarto in alto a destra"
+
+#: src/TilingPopup.cc
+msgid "Bottom left quarter"
+msgstr "Quarto in basso a sinistra"
+
+#: src/TilingPopup.cc
+msgid "Bottom right quarter"
+msgstr "Quarto in basso a destra"
+
+#: src/TilingPopup.cc
+msgid "Window tiling layouts"
+msgstr "Schemi di affiancamento delle finestre"
+
+#: src/kcm/config.ui
+msgid "Tiling popup opacity"
+msgstr "Opacità del popup di affiancamento"
+
+#: src/Decoration.cc
+msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
+msgstr "Abilita lo script Material Tiling Popup in Impostazioni di sistema > Gestione delle finestre > Script di KWin."

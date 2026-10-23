@@ -375,3 +375,47 @@ msgstr "Fensterspezifische Ausnahmen"
 #: src/kcm/config.ui:35
 msgid "Don't round corners for tiled windows"
 msgstr "Ecken bei gekachelten Fenstern nicht abrunden"
+
+#: src/TilingPopup.cc
+msgid "Left half"
+msgstr "Linke Hälfte"
+
+#: src/TilingPopup.cc
+msgid "Right half"
+msgstr "Rechte Hälfte"
+
+#: src/TilingPopup.cc
+msgid "Top half"
+msgstr "Obere Hälfte"
+
+#: src/TilingPopup.cc
+msgid "Bottom half"
+msgstr "Untere Hälfte"
+
+#: src/TilingPopup.cc
+msgid "Top left quarter"
+msgstr "Viertel oben links"
+
+#: src/TilingPopup.cc
+msgid "Top right quarter"
+msgstr "Viertel oben rechts"
+
+#: src/TilingPopup.cc
+msgid "Bottom left quarter"
+msgstr "Viertel unten links"
+
+#: src/TilingPopup.cc
+msgid "Bottom right quarter"
+msgstr "Viertel unten rechts"
+
+#: src/TilingPopup.cc
+msgid "Window tiling layouts"
+msgstr "Layouts zur Fensteraufteilung"
+
+#: src/kcm/config.ui
+msgid "Tiling popup opacity"
+msgstr "Deckkraft des Aufteilungs-Popups"
+
+#: src/Decoration.cc
+msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
+msgstr "Aktivieren Sie das Skript Material Tiling Popup unter Systemeinstellungen > Fensterverwaltung > KWin-Skripte."
