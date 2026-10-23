@@ -199,12 +199,12 @@ void Decoration::setupMenu()
         update(titleBar());
     };
 
-    m_menuButtons = std::make_unique<AppMenuButtonGroup>(this);
-    connect(m_menuButtons.get(), &AppMenuButtonGroup::menuUpdated,
+    m_menuButtons = new AppMenuButtonGroup(this);
+    connect(m_menuButtons, &AppMenuButtonGroup::menuUpdated,
             this, &Decoration::updateButtonsGeometry);
-    connect(m_menuButtons.get(), &AppMenuButtonGroup::opacityChanged,
+    connect(m_menuButtons, &AppMenuButtonGroup::opacityChanged,
             this, repaintTitleBar);
-    connect(m_menuButtons.get(), &AppMenuButtonGroup::alwaysShowChanged,
+    connect(m_menuButtons, &AppMenuButtonGroup::alwaysShowChanged,
             this, repaintTitleBar);
     m_menuButtons->updateAppMenuModel();
     m_menuButtons->setHamburgerMenu(m_internalSettings->hamburgerMenu());
@@ -251,12 +251,12 @@ bool Decoration::init()
 
     const auto *decoratedClient = window();
 
-    m_leftButtons = std::make_unique<KDecoration3::DecorationButtonGroup>(
+    m_leftButtons = new KDecoration3::DecorationButtonGroup(
         KDecoration3::DecorationButtonGroup::Position::Left,
         this,
         &Button::create);
 
-    m_rightButtons = std::make_unique<KDecoration3::DecorationButtonGroup>(
+    m_rightButtons = new KDecoration3::DecorationButtonGroup(
         KDecoration3::DecorationButtonGroup::Position::Right,
         this,
         &Button::create);
@@ -601,9 +601,9 @@ void Decoration::setButtonGroupHorzPadding(KDecoration3::DecorationButtonGroup *
 void Decoration::updateButtonHeight()
 {
     const qreal buttonHeight = titleBarHeight();
-    setButtonGroupHeight(m_leftButtons.get(), buttonHeight);
-    setButtonGroupHeight(m_rightButtons.get(), buttonHeight);
-    setButtonGroupHeight(m_menuButtons.get(), buttonHeight);
+    setButtonGroupHeight(m_leftButtons, buttonHeight);
+    setButtonGroupHeight(m_rightButtons, buttonHeight);
+    setButtonGroupHeight(m_menuButtons, buttonHeight);
 }
 
 void Decoration::invalidateCaptionCache() const
@@ -624,7 +624,7 @@ void Decoration::updateButtonsGeometry()
     const qreal top = topOffset();
 
     if (m_menuButtons) {
-        setButtonGroupHorzPadding(m_menuButtons.get(), m_internalSettings->menuButtonHorzPadding());
+        setButtonGroupHorzPadding(m_menuButtons, m_internalSettings->menuButtonHorzPadding());
     }
 
     updateButtonHeight();
@@ -683,9 +683,9 @@ void Decoration::updateButtonsGeometry()
         });
     };
 
-    updateGroupFlags(m_leftButtons.get());
-    updateGroupFlags(m_rightButtons.get());
-    updateGroupFlags(m_menuButtons.get());
+    updateGroupFlags(m_leftButtons);
+    updateGroupFlags(m_rightButtons);
+    updateGroupFlags(m_menuButtons);
 
     if (leftmostButton) {
         leftmostButton->setIsLeftmost(true);
@@ -716,9 +716,9 @@ void Decoration::updateButtonAnimation()
 {
     const bool enabled = animationsEnabled();
     const int duration = animationsDuration();
-    setButtonGroupAnimation(m_leftButtons.get(), enabled, duration);
-    setButtonGroupAnimation(m_rightButtons.get(), enabled, duration);
-    setButtonGroupAnimation(m_menuButtons.get(), enabled, duration);
+    setButtonGroupAnimation(m_leftButtons, enabled, duration);
+    setButtonGroupAnimation(m_rightButtons, enabled, duration);
+    setButtonGroupAnimation(m_menuButtons, enabled, duration);
 
     // Hover Animation
     if (m_menuButtons) {
@@ -1091,9 +1091,9 @@ bool Decoration::dragMoveTick(const QPoint pos)
 void Decoration::unPressAllButtons()
 {
     auto forceUnpress = [](Button *b) { b->forceUnpress(); };
-    forEachButton<Button>(m_leftButtons.get(), forceUnpress);
-    forEachButton<Button>(m_rightButtons.get(), forceUnpress);
-    forEachButton<Button>(m_menuButtons.get(), forceUnpress);
+    forEachButton<Button>(m_leftButtons, forceUnpress);
+    forEachButton<Button>(m_rightButtons, forceUnpress);
+    forEachButton<Button>(m_menuButtons, forceUnpress);
 }
 
 qreal Decoration::cornerRadius() const
