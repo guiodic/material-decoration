@@ -789,9 +789,7 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
 
     // Find complete 1-to-1 distinct assignment using branch-and-bound backtracking
     std::array<int, MAX_QUERY_TOKENS> currentAssignment;
-    std::array<int, MAX_QUERY_TOKENS> bestAssignment;
     currentAssignment.fill(-1);
-    bestAssignment.fill(-1);
 
     // Small Buffer Optimization (SBO) for tracking target tokens used during backtracking:
     // For standard menu paths (numT <= 32), stackUsedTarget avoids dynamic heap allocation.
@@ -824,9 +822,6 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
         if (qIdx == numQ) {
             if (currentSum > maxTotalScore) {
                 maxTotalScore = currentSum;
-                for (int k = 0; k < numQ; ++k) {
-                    bestAssignment[k] = currentAssignment[k];
-                }
             }
             return;
         }
@@ -954,7 +949,6 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
         }
 
         ActionInfo info;
-        info.label = itemText;
         info.isEffectivelyEnabled = isEffectivelyEnabled;
         info.isChecked = action->isChecked();
         info.isCheckable = action->isCheckable();
