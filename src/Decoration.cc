@@ -349,6 +349,10 @@ bool Decoration::init()
     setInternalSettings(SettingsProvider::self()->internalSettings(this));
     connect(SettingsProvider::self(), &SettingsProvider::configChanged, this, &Decoration::reconfigure);
 
+    // "visualParent" is an internal KWin preview detail, not a public API.
+    // If KWin removes or renames it, the runtime lookup safely returns an invalid
+    // QVariant. Preview artifacts may return, but the missing property itself
+    // cannot cause a compilation failure or crash.
     if (property("visualParent").isValid()) {
         // KWin's preview applies the initial state but can leave later border
         // changes pending. Real windows must keep KWin's state synchronization.
