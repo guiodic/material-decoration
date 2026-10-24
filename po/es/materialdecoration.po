@@ -375,3 +375,51 @@ msgstr "Excepciones específicas de ventana"
 #: src/kcm/config.ui:35
 msgid "Don't round corners for tiled windows"
 msgstr "No redondear las esquinas de las ventanas en mosaico"
+
+#: src/TilingPopup.cc
+msgid "Left half"
+msgstr "Mitad izquierda"
+
+#: src/TilingPopup.cc
+msgid "Right half"
+msgstr "Mitad derecha"
+
+#: src/TilingPopup.cc
+msgid "Top half"
+msgstr "Mitad superior"
+
+#: src/TilingPopup.cc
+msgid "Bottom half"
+msgstr "Mitad inferior"
+
+#: src/TilingPopup.cc
+msgid "Top left quarter"
+msgstr "Cuarto superior izquierdo"
+
+#: src/TilingPopup.cc
+msgid "Top right quarter"
+msgstr "Cuarto superior derecho"
+
+#: src/TilingPopup.cc
+msgid "Bottom left quarter"
+msgstr "Cuarto inferior izquierdo"
+
+#: src/TilingPopup.cc
+msgid "Bottom right quarter"
+msgstr "Cuarto inferior derecho"
+
+#: src/TilingPopup.cc
+msgid "Window tiling layouts"
+msgstr "Distribuciones de ventanas en mosaico"
+
+#: src/Decoration.cc
+msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
+msgstr "Activa el script Material Tiling Popup en Preferencias del sistema > Gestión de ventanas > Scripts de KWin."
+
+#: src/Button.cc
+msgid "Install kwin-minimize2tray and enable Minimize to Tray in System Settings > Window Management > KWin Scripts."
+msgstr "Instala kwin-minimize2tray y activa Minimize to Tray en Preferencias del sistema > Gestión de ventanas > Scripts de KWin."
+
+#: src/Button.cc
+msgid "The action to minimize all other windows is unavailable. It requires Plasma 6.6 or later."
+msgstr "La acción para minimizar todas las demás ventanas no está disponible. Requiere Plasma 6.6 o posterior."

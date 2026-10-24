@@ -32,20 +32,17 @@ find_package (KF6 REQUIRED COMPONENTS
 
 if(FORCE_X11)
     set(HAVE_WAYLAND OFF)
-    find_package(KWinX11 REQUIRED)
     find_package(X11 REQUIRED)
     find_package(XCB MODULE REQUIRED COMPONENTS XCB)
     set(HAVE_X11 ON)
     set(X11_LIBRARIES XCB::XCB)
     message(STATUS "Forcing X11 support, disabling Wayland")
 else()
-    find_package(KWin REQUIRED)
     set(HAVE_WAYLAND ON)
-    find_package(KWinX11 QUIET)
     find_package(X11 QUIET)
     find_package(XCB MODULE QUIET COMPONENTS XCB)
 
-    if(KWinX11_FOUND AND X11_FOUND AND XCB_FOUND)
+    if(X11_FOUND AND XCB_FOUND)
         set(HAVE_X11 ON)
         set(X11_LIBRARIES XCB::XCB)
         message(STATUS "Building with X11 support")
@@ -73,6 +70,11 @@ set (decoration_SRCS
     PixelSnapper.cc
     SearchButton.cc
     TextButton.cc
+    DrawHelper.cc
+    TilingPopup.cc
+    TilingZoneButton.cc
+    LongPressAction.cc
+    TilingController.cc
     plugin.cc
 )
 
@@ -112,14 +114,6 @@ target_link_libraries (materialdecoration
     PRIVATE
         KDecoration3::KDecoration
 )
-
-if(KWin_FOUND)
-    target_link_libraries(materialdecoration PRIVATE KWin::kwin)
-endif()
-
-if(KWinX11_FOUND)
-    #target_link_libraries(materialdecoration PRIVATE KWinX11::kwin)
-endif()
 
 # Core library with shared code (e.g., settings)
 set(core_SRCS
