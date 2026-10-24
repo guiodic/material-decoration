@@ -1,8 +1,9 @@
 find_package(Qt6 REQUIRED COMPONENTS Test)
+find_package(KF6WindowSystem REQUIRED)
 add_executable(tilingpopup_test TilingPopupTest.cc ../src/TilingPopup.cc ../src/TilingZoneButton.cc ../src/DrawHelper.cc)
 set_target_properties(tilingpopup_test PROPERTIES AUTOMOC ON)
 target_include_directories(tilingpopup_test PRIVATE ../src)
-target_link_libraries(tilingpopup_test PRIVATE Qt6::Widgets Qt6::Test KF6::I18n)
+target_link_libraries(tilingpopup_test PRIVATE Qt6::Widgets Qt6::Test KF6::I18n KF6::WindowSystem)
 add_test(NAME tilingpopup COMMAND tilingpopup_test)
 set_tests_properties(tilingpopup PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 

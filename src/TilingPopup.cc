@@ -4,11 +4,13 @@
 #include "TilingZoneButton.h"
 
 #include <KLocalizedString>
+#include <KWindowEffects>
 #include <QApplication>
 #include <QGridLayout>
 #include <QKeyEvent>
 #include <QPainter>
 #include <QResizeEvent>
+#include <QTimer>
 #include <QWidgetAction>
 #include <limits>
 
@@ -94,6 +96,7 @@ void TilingPopup::setSquareCornersTiled(bool enabled)
 void TilingPopup::setBackgroundOpacity(int percent)
 {
     m_backgroundOpacity = qBound(0, percent, 100) / 100.0;
+    updateBlur();
     update();
 }
 
@@ -115,11 +118,19 @@ void TilingPopup::updateMask()
 {
     if (m_cornerRadius <= 0) {
         clearMask();
-        return;
+    } else {
+        // Include the outer half of the one-pixel border in the widget silhouette.
+        const auto path = DrawHelper::getRoundedPath(QRectF(rect()), m_cornerRadius + 0.5, true, true, true, true);
+        setMask(QRegion(path.toFillPolygon().toPolygon()));
     }
-    // Include the outer half of the one-pixel border in the widget silhouette.
-    const auto path = DrawHelper::getRoundedPath(QRectF(rect()), m_cornerRadius + 0.5, true, true, true, true);
-    setMask(QRegion(path.toFillPolygon().toPolygon()));
+    updateBlur();
+}
+
+void TilingPopup::updateBlur()
+{
+    if (!isVisible() || !windowHandle()) return;
+    const QRegion region = mask().isEmpty() ? QRegion(rect()) : mask();
+    KWindowEffects::enableBlurBehind(windowHandle(), m_backgroundOpacity < 1.0, region);
 }
 
 void TilingPopup::resizeEvent(QResizeEvent *event)
@@ -139,6 +150,11 @@ void TilingPopup::showEvent(QShowEvent *event)
 
 bool TilingPopup::eventFilter(QObject *object, QEvent *event)
 {
+    if (object == this && event->type() == QEvent::StyleChange) {
+        // Reapply after the style has updated its own menu blur region.
+        QTimer::singleShot(0, this, &TilingPopup::updateBlur);
+    }
+
     if (event->type() == QEvent::MouseButtonPress) {
         m_waitingForRelease = false;
     } else if (event->type() == QEvent::MouseButtonRelease && m_waitingForRelease) {

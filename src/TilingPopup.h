@@ -41,6 +41,7 @@ private:
     bool handleKeyPress(QKeyEvent *event);
     void selectKeyboardButton(int index);
     void updateMask();
+    void updateBlur();
 
     QVector<TilingZoneButton *> m_buttons;
     int m_keyboardIndex = -1;
