@@ -1,0 +1,26 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Id": "material-tiling",
+        "Name": "Material Tiling Popup",
+        "Description": "Native tiling for the Material window decoration popup",
+        "Version": "1.0",
+        "License": "GPL-2.0+",
+        "EnabledByDefault": true,
+        "Authors": [
+            {
+                "Name": "guiodic"
+            }
+        ],
+        "Copyright": "© 2026 guiodic",
+        "Website": "https://github.com/guiodic/material-decoration",
+        "Description[it]": "Affiancamento nativo delle finestre dal popup della decorazione Material",
+        "Description[de]": "Native Fensteraufteilung über das Popup der Material-Fensterdekoration",
+        "Description[es]": "Distribución nativa de ventanas en mosaico desde el popup de la decoración Material",
+        "Description[fr]": "Disposition native des fenêtres en mosaïque depuis le popup de la décoration Material",
+        "Description[nl]": "Vensters naast elkaar plaatsen via de pop-up van de Material-vensterdecoratie",
+        "Description[zh_CN]": "通过 Material 窗口装饰弹窗使用原生窗口平铺功能"
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js"
+}

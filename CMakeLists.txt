@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 3.16.0)
 project (material-decoration)
 
+option(BUILD_TESTING "Build tests" OFF)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -38,6 +40,13 @@ ki18n_install(po)
 add_subdirectory (src/libdbusmenuqt)
 add_subdirectory (src)
 add_subdirectory(po)
+
+install(DIRECTORY scripts/material-tiling DESTINATION ${KDE_INSTALL_DATADIR}/kwin/scripts)
+
+include(CTest)
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
 
 feature_summary(WHAT ALL)
 

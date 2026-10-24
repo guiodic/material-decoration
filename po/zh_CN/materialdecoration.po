@@ -375,3 +375,51 @@ msgstr "特定窗口覆盖"
 #: src/kcm/config.ui:35
 msgid "Don't round corners for tiled windows"
 msgstr "不对平铺窗口进行圆角处理"
+
+#: src/TilingPopup.cc
+msgid "Left half"
+msgstr "左半部分"
+
+#: src/TilingPopup.cc
+msgid "Right half"
+msgstr "右半部分"
+
+#: src/TilingPopup.cc
+msgid "Top half"
+msgstr "上半部分"
+
+#: src/TilingPopup.cc
+msgid "Bottom half"
+msgstr "下半部分"
+
+#: src/TilingPopup.cc
+msgid "Top left quarter"
+msgstr "左上四分之一区域"
+
+#: src/TilingPopup.cc
+msgid "Top right quarter"
+msgstr "右上四分之一区域"
+
+#: src/TilingPopup.cc
+msgid "Bottom left quarter"
+msgstr "左下四分之一区域"
+
+#: src/TilingPopup.cc
+msgid "Bottom right quarter"
+msgstr "右下四分之一区域"
+
+#: src/TilingPopup.cc
+msgid "Window tiling layouts"
+msgstr "窗口平铺布局"
+
+#: src/Decoration.cc
+msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
+msgstr "请在系统设置 > 窗口管理 > KWin 脚本中启用 Material Tiling Popup 脚本。"
+
+#: src/Button.cc
+msgid "Install kwin-minimize2tray and enable Minimize to Tray in System Settings > Window Management > KWin Scripts."
+msgstr "请安装 kwin-minimize2tray，并在系统设置 > 窗口管理 > KWin 脚本中启用 Minimize to Tray。"
+
+#: src/Button.cc
+msgid "The action to minimize all other windows is unavailable. It requires Plasma 6.6 or later."
+msgstr "最小化所有其他窗口的操作不可用。此操作需要 Plasma 6.6 或更新版本。"

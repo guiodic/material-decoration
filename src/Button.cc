@@ -20,6 +20,8 @@
 // own
 #include "BuildConfig.h"
 #include "Button.h"
+#include "DrawHelper.h"
+#include "LongPressAction.h"
 #include "Material.h"
 #include "Decoration.h"
 
@@ -48,6 +50,7 @@
 
 // KF
 #include <KColorUtils>
+#include <KLocalizedString>
 
 // Qt
 #include <QCoreApplication>
@@ -59,6 +62,9 @@
 #include <QTimer>
 #include <QDBusConnection>
 #include <QDBusMessage>
+#include <QDBusPendingCallWatcher>
+#include <QCursor>
+#include <QToolTip>
 #include <cmath>
 
 #define UPDATE_GEOM() update(geometry().adjusted(-1, -1, 1, 1))
@@ -124,7 +130,17 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     });
     
    
+    if (type == KDecoration3::DecorationButtonType::Maximize) {
+        connect(decoration, &Decoration::tilingPopupVisibilityChanged, this, &Button::setTilingPopupOpen);
+        setTilingPopupOpen(decoration->isTilingPopupVisible());
+    }
+
     connect(this, &Button::hoveredChanged, this, &Button::updateAnimationState);
+    connect(this, &Button::hoveredChanged, this, [this](bool hovered) {
+        if (!hovered && this->type() == KDecoration3::DecorationButtonType::Maximize) {
+            m_holdTimer->stop();
+        }
+    });
 
     
     connect(this, &Button::transitionValueChanged, this, [this]() {
@@ -271,9 +287,24 @@ Button::Button(QObject *parent, const QVariantList &args)
     }
 }
 
+void Button::mousePressEvent(QMouseEvent *event)
+{
+    // A popup can consume the release ending the previous long press. A new
+    // gesture must start clean even if long-press actions were since disabled.
+    m_longPressTriggered = false;
+    ++m_pressGeneration;
+    KDecoration3::DecorationButton::mousePressEvent(event);
+    // Preserve KWin's separate middle/right-click maximize actions.
+    if (type() == KDecoration3::DecorationButtonType::Maximize && event->button() != Qt::LeftButton) {
+        m_holdTimer->stop();
+    }
+}
+
 void Button::mouseReleaseEvent(QMouseEvent *event)
 {
     if (m_longPressTriggered) {
+        // A recognized long press consumes the click even if its action is
+        // still pending or unavailable, consistently for all three buttons.
         m_longPressTriggered = false;
         forceUnpress();
 
@@ -309,8 +340,9 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->setBrush(bgColor);
     const qreal radius = deco->cornerRadius();
 
-    // Smart way to draw a rectangle with the right rounded/squared corner
-    painter->drawPath(deco->getRoundedPath(geometry(), radius-Material::cornerRadiusAdjustment, m_isLeftmost && deco->leftBorderVisible(), m_isRightmost && deco->rightBorderVisible(), false, false));
+    painter->drawPath(DrawHelper::getRoundedPath(
+        geometry(), radius - Material::cornerRadiusAdjustment,
+        m_isLeftmost && deco->leftBorderVisible(), m_isRightmost && deco->rightBorderVisible(), false, false));
 
     // Foreground.
     painter->setRenderHint(QPainter::Antialiasing, true);
@@ -502,7 +534,7 @@ QColor Button::backgroundColor() const
             return KColorUtils::mix(normalColor, pressedColor, m_transitionValue);
         }
 
-        if (isHovered()) {
+        if (isVisuallyHovered()) {
             if (qFuzzyCompare(m_transitionValue, 0.0)) return normalColor;
             if (!decoratedClient->isActive()) {  
                 hoveredColor = KColorUtils::mix(titleBarBg, hoveredColor,0.7);
@@ -534,7 +566,7 @@ QColor Button::backgroundColor() const
                 0.7);
             return KColorUtils::mix(normalColor, pressedColor, m_transitionValue);
         }
-        if (isHovered()) {
+        if (isVisuallyHovered()) {
             const QColor hoveredColor = KColorUtils::mix(
                 titleBarBg,
                 titleBarFg,
@@ -561,7 +593,7 @@ QColor Button::backgroundColor() const
         if (qFuzzyCompare(m_transitionValue, 1.0)) return pressedColor;
         return KColorUtils::mix(normalColor, pressedColor, m_transitionValue);
     }
-    if (isHovered()) {
+    if (isVisuallyHovered()) {
         if (qFuzzyCompare(m_transitionValue, 0.0)) return normalColor;
         if (qFuzzyCompare(m_transitionValue, 1.0)) return hoveredColor;
         return KColorUtils::mix(normalColor, hoveredColor, m_transitionValue);
@@ -594,7 +626,7 @@ QColor Button::foregroundColor() const
             titleBarFg,
             0.2);
 
-        if (isPressed() || isHovered()) {
+        if (isPressed() || isVisuallyHovered()) {
             if (qFuzzyCompare(m_transitionValue, 0.0)) return activeColor;
             if (qFuzzyCompare(m_transitionValue, 1.0)) return titleBarOpaqueBg;
             return KColorUtils::mix(
@@ -611,7 +643,7 @@ QColor Button::foregroundColor() const
         titleBarFg,
         0.8);
 
-    if (isPressed() || isHovered()) {
+    if (isPressed() || isVisuallyHovered()) {
         if (qFuzzyCompare(m_transitionValue, 0.0)) return normalColor;
         // Breeze GTK has huge margins around the button. It looks better
         // when we just change the fgColor on hover instead of the bgColor.
@@ -730,9 +762,35 @@ void Button::setIsRightmost(bool isRightmost)
     m_isRightmost = isRightmost;
 }
 
+bool Button::isVisuallyHovered() const
+{
+    return isHovered() || m_tilingPopupOpen;
+}
+
+void Button::setTilingPopupOpen(bool open)
+{
+    if (m_tilingPopupOpen == open) return;
+    m_tilingPopupOpen = open;
+    updateAnimationState(isHovered());
+    UPDATE_GEOM();
+}
+
 void Button::updateAnimationState(bool hovered)
 {
+    if (m_tilingPopupOpen) {
+        // Popup grabs generate hover changes even while the logical hover is
+        // pinned. Restarting a completed Forward animation resets it to zero.
+        m_animation->stop();
+        setTransitionValue(1);
+        UPDATE_GEOM();
+        return;
+    }
     if (m_animationEnabled) {
+        if (type() == KDecoration3::DecorationButtonType::Maximize
+            && ((hovered && qFuzzyCompare(m_transitionValue, 1.0)) || (!hovered && qFuzzyIsNull(m_transitionValue)))) {
+            m_animation->stop();
+            return;
+        }
         const QAbstractAnimation::Direction dir = hovered ? QAbstractAnimation::Forward : QAbstractAnimation::Backward;
         if (m_animation->state() == QAbstractAnimation::Running && m_animation->direction() != dir) {
             m_animation->stop();
@@ -760,6 +818,7 @@ void Button::forceUnpress()
 
 void Button::handleHoldTimeout()
 {
+    if (type() == KDecoration3::DecorationButtonType::Maximize && (!isPressed() || !isHovered())) return;
     m_longPressTriggered = true;
     switch (type()) {
     case KDecoration3::DecorationButtonType::Close:
@@ -776,31 +835,52 @@ void Button::handleHoldTimeout()
     }
 }
 
+void Button::invokeLongPressAction(const QString &shortcut, const QString &script, const QString &unavailableMessage)
+{
+    const auto generation = m_pressGeneration;
+    checkLongPressAction(this, shortcut, script, [this, shortcut, unavailableMessage, generation](bool available) {
+        if (generation != m_pressGeneration) return;
+        if (!available) {
+            QToolTip::showText(QCursor::pos(), unavailableMessage);
+            return;
+        }
+        // These shortcuts act on the active window. Do not affect another
+        // window if focus changed while the asynchronous check was pending.
+        auto *deco = qobject_cast<Decoration *>(decoration());
+        if (!deco || !deco->window() || !deco->window()->isActive()) return;
+        auto message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.kglobalaccel"), QStringLiteral("/component/kwin"),
+                                                    QStringLiteral("org.kde.kglobalaccel.Component"), QStringLiteral("invokeShortcut"));
+        message << shortcut;
+        auto *watcher = new QDBusPendingCallWatcher(QDBusConnection::sessionBus().asyncCall(message, 1500), this);
+        connect(watcher, &QDBusPendingCallWatcher::finished, this, [unavailableMessage](QDBusPendingCallWatcher *call) {
+            if (call->reply().type() == QDBusMessage::ErrorMessage) QToolTip::showText(QCursor::pos(), unavailableMessage);
+            call->deleteLater();
+        });
+    });
+}
+
 void Button::onCloseHold()
 {
-    qCDebug(category) << "onCloseHold triggered";
-    QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.kglobalaccel"),
-                                                         QStringLiteral("/component/kwin"),
-                                                         QStringLiteral("org.kde.kglobalaccel.Component"),
-                                                         QStringLiteral("invokeShortcut"));
-    message << QStringLiteral("Minimize to tray");
-    QDBusConnection::sessionBus().send(message);
+    invokeLongPressAction(QStringLiteral("Minimize to tray"), QStringLiteral("com.github.luisbocanegra.minimize2tray"),
+                         i18nd("materialdecoration", "Install kwin-minimize2tray and enable Minimize to Tray in System Settings > Window Management > KWin Scripts."));
 }
 
 void Button::onMinimizeHold()
 {
-    qCDebug(category) << "onMinimizeHold triggered";
-    QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.kglobalaccel"),
-                                                         QStringLiteral("/component/kwin"),
-                                                         QStringLiteral("org.kde.kglobalaccel.Component"),
-                                                         QStringLiteral("invokeShortcut"));
-    message << QStringLiteral("minimizeAllOthersActiveScreen");
-    QDBusConnection::sessionBus().send(message);
+    invokeLongPressAction(QStringLiteral("minimizeAllOthersActiveScreen"), {},
+                         i18nd("materialdecoration", "The action to minimize all other windows is unavailable. It requires Plasma 6.6 or later."));
 }
 
 void Button::onMaximizeHold()
 {
-    qCDebug(category) << "onMaximizeHold triggered";
+    auto *deco = qobject_cast<Decoration *>(decoration());
+    if (!deco || !deco->showTilingPopup(geometry())) {
+        // Preserve the normal click if this host cannot perform native tiling.
+        m_longPressTriggered = false;
+    } else {
+        // The popup takes the mouse grab, so the release may never reach us.
+        forceUnpress();
+    }
 }
 
 } // namespace Material

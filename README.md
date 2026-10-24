@@ -42,6 +42,21 @@ script (please enable it in System Settings). For X11, please copy the
 directory `/usr/share/kwin-wayland/scripts/minimizeall` to `
 /usr/share/kwin-x11/scripts/minimizeall`
 
+### Tiling layout popup
+
+Hold the **Maximize** button with the left mouse button to open the tiling
+selector.
+
+![image](data/TilingPopUp.png)
+
+The popup uses a companion **Material Tiling Popup** KWin script for native
+quick tiling. The script is enabled by default unless explicitly disabled in
+**System Settings > Window Management > KWin Scripts**.
+If the script was disabled, enable it in that panel.
+
+After the first installation, log out and log back in so KWin discovers and
+loads the companion script.
+
 # Build instructions for Plasma 6
 
 ```

@@ -47,6 +47,7 @@ namespace Material
 
 class Button;
 class TextButton;
+class TilingPopup;
 class MenuOverflowButton;
 
 class Decoration : public KDecoration3::Decoration
@@ -58,6 +59,11 @@ public:
     ~Decoration() override;
 
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
+    bool showTilingPopup(const QRectF &anchor);
+    bool isTilingPopupVisible() const;
+
+signals:
+    void tilingPopupVisibilityChanged(bool visible);
 
 public slots:
     bool init() override;
@@ -65,6 +71,7 @@ public slots:
 
 private slots:
     void onTabletModeChanged(bool mode);
+    void closeTilingPopup();
 
 protected:
     void hoverEnterEvent(QHoverEvent *event) override;
@@ -75,6 +82,10 @@ protected:
     void wheelEvent(QWheelEvent *event) override;
 
 private:
+    std::unique_ptr<TilingPopup> m_tilingPopup;
+    bool m_tilingPopupOpening = false;
+    quint64 m_tilingPopupRequest = 0;
+
     void onSectionUnderMouseChanged(const Qt::WindowFrameSection value);
     void onSizeChanged();
     void onNextScaleChanged();
@@ -180,7 +191,6 @@ private:
     void paintTitleBarBackground(QPainter *painter, const QRectF &repaintRegion) const;
     void paintCaption(QPainter *painter, const QRectF &repaintRegion) const;
     void paintButtons(QPainter *painter, const QRectF &repaintRegion) const;
-    QPainterPath getRoundedPath(const QRectF &rect, qreal radius, bool roundTopLeft = true, bool roundTopRight = true, bool roundBottomLeft = false, bool roundBottomRight = false) const;
 
     qreal cornerRadius() const;
 
