@@ -5,6 +5,7 @@
 #include <QDBusMessage>
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
+#include <QSet>
 #include <QTest>
 #include <QTimer>
 #include <QUuid>
