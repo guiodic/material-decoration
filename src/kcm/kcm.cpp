@@ -138,8 +138,6 @@ void MaterialDecorationKCM::setupConnections()
 
 void MaterialDecorationKCM::load()
 {
-    auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
-    config->reparseConfiguration();
     m_settings->load();
     m_ui->exceptionsWidget->load();
     updateUI();
