@@ -423,3 +423,11 @@ msgstr "请安装 kwin-minimize2tray，并在系统设置 > 窗口管理 > KWin 
 #: src/Button.cc
 msgid "The action to minimize all other windows is unavailable. It requires Plasma 6.6 or later."
 msgstr "最小化所有其他窗口的操作不可用。此操作需要 Plasma 6.6 或更新版本。"
+
+#: src/kcm/config.ui
+msgid "Open tiling popup when hovering over maximize"
+msgstr "鼠标悬停在最大化按钮上时打开平铺弹出菜单"
+
+#: src/kcm/config.ui
+msgid "Tiling popup hover delay"
+msgstr "平铺弹出菜单悬停延迟"

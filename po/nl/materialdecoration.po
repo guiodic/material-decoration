@@ -423,3 +423,11 @@ msgstr "Installeer kwin-minimize2tray en schakel Minimize to Tray in via Systeem
 #: src/Button.cc
 msgid "The action to minimize all other windows is unavailable. It requires Plasma 6.6 or later."
 msgstr "De actie om alle andere vensters te minimaliseren is niet beschikbaar. Hiervoor is Plasma 6.6 of nieuwer vereist."
+
+#: src/kcm/config.ui
+msgid "Open tiling popup when hovering over maximize"
+msgstr "Pop-up voor venstertegels openen bij aanwijzen van de maximaliseerknop"
+
+#: src/kcm/config.ui
+msgid "Tiling popup hover delay"
+msgstr "Vertraging bij openen van pop-up voor venstertegels"
