@@ -85,8 +85,9 @@ private:
     };
     bool trustedCaller() const
     {
-        // The companion script runs inside this KWin process on this same
-        // connection. Do not expose a general-purpose window-control service.
+        // Verified on KWin 6.x: script callDBus() and this bridge both use
+        // QDBusConnection::sessionBus(), so their unique bus names match.
+        // Sharing a process alone would not guarantee the same connection.
         return calledFromDBus() && message().service() == QDBusConnection::sessionBus().baseService();
     }
     void dispatch()
