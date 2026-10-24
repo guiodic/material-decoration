@@ -176,6 +176,7 @@ static int s_shadowSizePreset = InternalSettings::ShadowVeryLarge;
 static int s_shadowStrength = 255;
 static QColor s_shadowColor = QColor(33, 33, 33);
 static qreal s_cornerRadius = -1;
+static bool s_previewShadow = false;
 static std::shared_ptr<KDecoration3::DecorationShadow> s_cachedShadow;
 
 Decoration::Decoration(QObject *parent, const QVariantList &args)
@@ -347,6 +348,22 @@ bool Decoration::init()
 {    
     setInternalSettings(SettingsProvider::self()->internalSettings(this));
     connect(SettingsProvider::self(), &SettingsProvider::configChanged, this, &Decoration::reconfigure);
+
+    // "visualParent" is an internal KWin preview detail, not a public API.
+    // If KWin removes or renames it, the runtime lookup safely returns an invalid
+    // QVariant. Preview artifacts may return, but the missing property itself
+    // cannot cause a compilation failure or crash.
+    if (property("visualParent").isValid()) {
+        // KWin's preview applies the initial state but can leave later border
+        // changes pending. Real windows must keep KWin's state synchronization.
+        auto *previewStateTimer = new QTimer(this);
+        previewStateTimer->setSingleShot(true);
+        connect(this, &KDecoration3::Decoration::nextStateChanged,
+                previewStateTimer, qOverload<>(&QTimer::start));
+        connect(previewStateTimer, &QTimer::timeout, this, [this] {
+            apply(nextState()->clone());
+        });
+    }
 
     const auto *decoratedClient = window();
 
@@ -857,12 +874,14 @@ void Decoration::updateShadow()
     const QColor shadowColor = m_internalSettings->shadowColor();
     const int shadowStrengthInt = m_internalSettings->shadowStrength();
     const int shadowSizePreset = m_internalSettings->shadowSize();
+    const bool preview = property("visualParent").isValid();
 
     if (s_cachedShadow
         && s_shadowColor == shadowColor
         && s_shadowSizePreset == shadowSizePreset
         && s_shadowStrength == shadowStrengthInt
         && s_cornerRadius == m_cornerRadius
+        && s_previewShadow == preview
     ) {
         setShadow(s_cachedShadow);
         return;
@@ -872,6 +891,7 @@ void Decoration::updateShadow()
     s_shadowStrength = shadowStrengthInt;
     s_shadowSizePreset = shadowSizePreset;
     s_cornerRadius = m_cornerRadius;
+    s_previewShadow = preview;
 
     s_cachedShadow = createShadowObject(1.0);
     setShadow(s_cachedShadow);
@@ -917,6 +937,11 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
                                         outerRect.right() - boxRect.right() + params.offset.x(),
                                         outerRect.bottom() - boxRect.bottom() + params.offset.y());
     QRectF innerRect = outerRect - padding;
+    if (property("visualParent").isValid()) {
+        // Like Breeze, keep shadow pixels under the frame to avoid visible
+        // seams where the preview stitches the shadow tiles together.
+        innerRect.adjust(2, 2, -2, -2);
+    }
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
@@ -926,7 +951,11 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
 
     auto ret = std::make_shared<KDecoration3::DecorationShadow>();
     ret->setPadding(padding);
-    ret->setInnerShadowRect(QRectF(outerRect.center(), QSizeF(1, 1)));
+    // The preview copies shadow tiles with QPainter; keep their source edges
+    // on whole texels rather than splitting the central pixel in half.
+    const QPointF shadowCenter = property("visualParent").isValid()
+        ? QPointF(shadowTexture.rect().center()) : outerRect.center();
+    ret->setInnerShadowRect(QRectF(shadowCenter, QSizeF(1, 1)));
     ret->setShadow(shadowTexture);
     return ret;
 }
@@ -1028,7 +1057,10 @@ qreal Decoration::titleBarHeight() const
         return 0;
     }
     const QFontMetricsF fontMetrics(settings()->font());
-    return buttonPadding()*2 + fontMetrics.height();
+    const qreal height = buttonPadding()*2 + fontMetrics.height();
+    // The preview fills its client background using integer coordinates.
+    // Keep its titlebar height integral so the thumbnail has no uncovered strips.
+    return property("visualParent").isValid() ? qCeil(height) : height;
 }
 
 qreal Decoration::appMenuCaptionSpacing() const
