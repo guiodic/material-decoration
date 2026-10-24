@@ -106,8 +106,7 @@ private:
             const auto reply = call->reply();
             call->deleteLater();
             if (m_pending.isEmpty() || m_pending.head().data.value(QStringLiteral("id")).toString() != id) return;
-            if (reply.type() == QDBusMessage::ErrorMessage
-                || (!reply.arguments().isEmpty() && reply.arguments().first().metaType().id() == QMetaType::Bool && !reply.arguments().first().toBool())) {
+            if (reply.type() == QDBusMessage::ErrorMessage) {
                 finish(false, QStringLiteral("Script action is unavailable"));
             }
         });

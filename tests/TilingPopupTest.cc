@@ -54,6 +54,13 @@ private slots:
         QCOMPARE(index, buttons.size());
     }
 
+    void openingReleaseDoesNotSelect_data()
+    {
+        QTest::addColumn<bool>("onZone");
+        QTest::newRow("zone") << true;
+        QTest::newRow("popup") << false;
+    }
+
     void openingReleaseDoesNotSelect()
     {
         QWidget source;
@@ -63,7 +70,8 @@ private slots:
         QSignalSpy selected(&popup, &TilingPopup::zoneSelected);
         popup.popup(QPoint(10, 10));
         const auto buttons = popup.findChildren<QToolButton *>();
-        QTest::mouseRelease(buttons.first(), Qt::LeftButton);
+        QFETCH(bool, onZone);
+        QTest::mouseRelease(onZone ? buttons.first() : static_cast<QWidget *>(&popup), Qt::LeftButton);
         QVERIFY(selected.isEmpty());
         QVERIFY(popup.isVisible());
         QTest::mouseClick(buttons.first(), Qt::LeftButton);

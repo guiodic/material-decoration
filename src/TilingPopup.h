@@ -4,7 +4,6 @@
 #include <QMenu>
 #include <QVector>
 
-
 namespace Material
 {
 
@@ -34,9 +33,6 @@ signals:
 protected:
     void paintEvent(QPaintEvent *event) override;
     bool eventFilter(QObject *object, QEvent *event) override;
-    void keyPressEvent(QKeyEvent *event) override;
-    void mousePressEvent(QMouseEvent *event) override;
-    void mouseReleaseEvent(QMouseEvent *event) override;
     void showEvent(QShowEvent *event) override;
 
 private:

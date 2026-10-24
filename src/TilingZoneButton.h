@@ -6,7 +6,6 @@
 
 namespace Material
 {
-// A zone's appearance is independent of its layout and tiling operation.
 class TilingZoneButton : public QToolButton
 {
     Q_OBJECT

@@ -17,9 +17,8 @@ public:
     QList<QVariantMap> requests;
     bool respond = true;
 public slots:
-    bool invokeShortcut(const QString &name) {
-        if (name != QStringLiteral("MaterialTilingPopupDispatch")) return false;
-        if (!respond) return true;
+    void invokeShortcut(const QString &name) {
+        if (name != QStringLiteral("MaterialTilingPopupDispatch") || !respond) return;
         auto message = QDBusMessage::createMethodCall(QStringLiteral("com.github.guiodic.MaterialTiling"), QStringLiteral("/Tiling"),
             QStringLiteral("com.github.guiodic.MaterialTiling"), QStringLiteral("takeRequest"));
         auto *watcher = new QDBusPendingCallWatcher(QDBusConnection::sessionBus().asyncCall(message), this);
@@ -33,7 +32,6 @@ public slots:
             message << reply.value().value(QStringLiteral("id")).toString() << true << QString();
             QDBusConnection::sessionBus().asyncCall(message);
         });
-        return true;
     }
 };
 

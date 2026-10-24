@@ -47,10 +47,11 @@ SettingsProvider::SettingsProvider()
 
 void SettingsProvider::reconfigure()
 {
-    auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
-    config->reparseConfiguration();
     m_defaultSettings = InternalSettingsPtr::create();
     m_defaultSettings->load();
+
+    auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+    config->reparseConfiguration();
     m_exceptions.readConfig(config);
 
     m_compiledExceptions.clear();

@@ -6,7 +6,6 @@
 #include <QApplication>
 #include <QGridLayout>
 #include <QKeyEvent>
-#include <QMouseEvent>
 #include <QPainter>
 #include <QWidgetAction>
 #include <limits>
@@ -54,7 +53,6 @@ TilingPopup::TilingPopup(QWidget *parent)
             button->setGeometry(bounds.toAlignedRect().adjusted(gap / 2, gap / 2, -gap / 2, -gap / 2));
             button->setAccessibleName(zone.label);
             button->setToolTip(zone.label);
-            button->setFocusPolicy(Qt::StrongFocus);
             button->installEventFilter(this);
             m_buttons.append(button);
             connect(button, &QToolButton::clicked, this, [this, edges = zone.edges] {
@@ -171,27 +169,6 @@ bool TilingPopup::handleKeyPress(QKeyEvent *event)
     }
     selectKeyboardButton(next);
     return true;
-}
-
-void TilingPopup::keyPressEvent(QKeyEvent *event)
-{
-    if (!handleKeyPress(event)) QMenu::keyPressEvent(event);
-}
-
-void TilingPopup::mousePressEvent(QMouseEvent *event)
-{
-    m_waitingForRelease = false;
-    QMenu::mousePressEvent(event);
-}
-
-void TilingPopup::mouseReleaseEvent(QMouseEvent *event)
-{
-    if (m_waitingForRelease) {
-        m_waitingForRelease = false;
-        event->accept();
-        return;
-    }
-    QMenu::mouseReleaseEvent(event);
 }
 
 }

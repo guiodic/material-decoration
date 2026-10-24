@@ -3,15 +3,15 @@
     "use strict";
     const service = "com.github.guiodic.MaterialTiling";
     const path = "/Tiling";
-    const zones = {
-        2: [0, 0, .5, 1, "slotWindowQuickTileLeft"],
-        4: [.5, 0, .5, 1, "slotWindowQuickTileRight"],
-        1: [0, 0, 1, .5, "slotWindowQuickTileTop"],
-        8: [0, .5, 1, .5, "slotWindowQuickTileBottom"],
-        3: [0, 0, .5, .5, "slotWindowQuickTileTopLeft"],
-        5: [.5, 0, .5, .5, "slotWindowQuickTileTopRight"],
-        10: [0, .5, .5, .5, "slotWindowQuickTileBottomLeft"],
-        12: [.5, .5, .5, .5, "slotWindowQuickTileBottomRight"]
+    const tileActions = {
+        2: "slotWindowQuickTileLeft",
+        4: "slotWindowQuickTileRight",
+        1: "slotWindowQuickTileTop",
+        8: "slotWindowQuickTileBottom",
+        3: "slotWindowQuickTileTopLeft",
+        5: "slotWindowQuickTileTopRight",
+        10: "slotWindowQuickTileBottomLeft",
+        12: "slotWindowQuickTileBottomRight"
     };
     const lastSelection = {};
     function id(window) { return String(window.internalId).replace(/[{}]/g, "").toLowerCase(); }
@@ -21,8 +21,8 @@
         const target = workspace.windowList().find(function (window) { return id(window) === request.uuid; });
         if (!target || !target.resizeable || target.specialWindow) throw new Error("Target window is unavailable");
         if (request.operation === "ping") return;
-        const zone = zones[request.edges];
-        if (request.operation !== "tile" || !zone || typeof workspace[zone[4]] !== "function") throw new Error("Unsupported tiling request");
+        const action = tileActions[request.edges];
+        if (request.operation !== "tile" || !action || typeof workspace[action] !== "function") throw new Error("Unsupported tiling request");
         const output = target.output;
         const tile = target.tile;
         const previous = lastSelection[request.uuid];
@@ -38,7 +38,7 @@
             // the output which contained the window when the request arrived.
             if (target.output !== output) workspace.sendClientToScreen(target, output);
         }
-        workspace[zone[4]]();
+        workspace[action]();
         if (!target.tile) throw new Error("KWin did not assign a native tile");
         lastSelection[request.uuid] = {edges: request.edges, tile: target.tile, output: output};
     }
