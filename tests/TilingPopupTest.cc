@@ -186,6 +186,31 @@ private slots:
         QVERIFY(!button.keyboardSelected());
     }
 
+    void onlyNavigationKeysStartKeyboardNavigation_data()
+    {
+        QTest::addColumn<int>("key");
+        QTest::addColumn<bool>("navigates");
+        for (const auto key : {Qt::Key_Shift, Qt::Key_Control, Qt::Key_Alt,
+                               Qt::Key_Return, Qt::Key_Enter, Qt::Key_Space}) {
+            QTest::newRow(qPrintable(QString::number(key))) << int(key) << false;
+        }
+        for (const auto key : {Qt::Key_Left, Qt::Key_Right, Qt::Key_Up,
+                               Qt::Key_Down, Qt::Key_Tab, Qt::Key_Backtab}) {
+            QTest::newRow(qPrintable(QString::number(key))) << int(key) << true;
+        }
+    }
+
+    void onlyNavigationKeysStartKeyboardNavigation()
+    {
+        QFETCH(int, key);
+        QFETCH(bool, navigates);
+        TilingPopup popup;
+        QSignalSpy navigation(&popup, &TilingPopup::keyboardNavigationStarted);
+        popup.popup(QPoint(10, 10));
+        QTest::keyClick(&popup, Qt::Key(key));
+        QCOMPARE(navigation.size(), navigates ? 1 : 0);
+    }
+
     void keyboardAndCancel()
     {
         TilingPopup popup;

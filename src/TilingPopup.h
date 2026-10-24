@@ -29,6 +29,7 @@ public:
 
 signals:
     void zoneSelected(Qt::Edges edges);
+    void keyboardNavigationStarted();
 
 protected:
     bool eventFilter(QObject *object, QEvent *event) override;

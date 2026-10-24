@@ -128,6 +128,7 @@ bool TilingPopup::handleKeyPress(QKeyEvent *event)
         return true;
     }
     if (code == Qt::Key_Tab || code == Qt::Key_Backtab) {
+        Q_EMIT keyboardNavigationStarted();
         const bool backwards = code == Qt::Key_Backtab || event->modifiers().testFlag(Qt::ShiftModifier);
         const int count = int(m_buttons.size());
         selectKeyboardButton(m_keyboardIndex < 0 ? (backwards ? count - 1 : 0)
@@ -135,6 +136,7 @@ bool TilingPopup::handleKeyPress(QKeyEvent *event)
         return true;
     }
     if (code != Qt::Key_Left && code != Qt::Key_Right && code != Qt::Key_Up && code != Qt::Key_Down) return false;
+    Q_EMIT keyboardNavigationStarted();
     if (m_keyboardIndex < 0) {
         selectKeyboardButton(0);
         return true;

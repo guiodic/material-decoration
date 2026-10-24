@@ -151,6 +151,15 @@
             <max>5000</max>
         </entry>
 
+        <entry name="TilingPopupHoverEnabled" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="TilingPopupHoverDelay" type="Int">
+            <default>750</default>
+            <min>500</min>
+            <max>5000</max>
+        </entry>
+
         <entry name="DragFromButtonsEnabled" type="Bool">
             <default>true</default>
         </entry>

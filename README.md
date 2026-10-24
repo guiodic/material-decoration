@@ -47,6 +47,9 @@ directory `/usr/share/kwin-wayland/scripts/minimizeall` to `
 Hold the **Maximize** button with the left mouse button to open the tiling
 selector.
 
+In **Button options**, you can also enable opening the popup by hovering over
+Maximize/Restore.
+
 ![image](data/TilingPopUp.png)
 
 The popup uses a companion **Material Tiling Popup** KWin script for native

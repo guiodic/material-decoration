@@ -423,3 +423,11 @@ msgstr "Installa kwin-minimize2tray e abilita Minimize to Tray in Impostazioni d
 #: src/Button.cc
 msgid "The action to minimize all other windows is unavailable. It requires Plasma 6.6 or later."
 msgstr "L’azione per minimizzare tutte le altre finestre non è disponibile. Richiede Plasma 6.6 o successivo."
+
+#: src/kcm/config.ui
+msgid "Open tiling popup when hovering over maximize"
+msgstr "Apri il popup di affiancamento al passaggio del mouse sul pulsante massimizza"
+
+#: src/kcm/config.ui
+msgid "Tiling popup hover delay"
+msgstr "Ritardo di apertura del popup di affiancamento"
