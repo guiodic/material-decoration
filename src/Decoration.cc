@@ -1166,6 +1166,11 @@ bool Decoration::dragMoveTick(const QPoint pos)
     if (m_pressedPoint.isNull()) {
         return false;
     }
+    // A popup can consume the release before the decoration receives it.
+    if (!QApplication::mouseButtons().testFlag(Qt::LeftButton)) {
+        resetDragMove();
+        return false;
+    }
 
     QPoint diff = pos - m_pressedPoint;
     if (diff.manhattanLength() >= QApplication::startDragDistance()) {
