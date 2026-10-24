@@ -70,6 +70,7 @@ set (decoration_SRCS
     PixelSnapper.cc
     SearchButton.cc
     TextButton.cc
+    DrawHelper.cc
     TilingPopup.cc
     TilingZoneButton.cc
     LongPressAction.cc

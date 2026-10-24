@@ -20,6 +20,7 @@
 // own
 #include "BuildConfig.h"
 #include "Button.h"
+#include "DrawHelper.h"
 #include "LongPressAction.h"
 #include "Material.h"
 #include "Decoration.h"
@@ -338,7 +339,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     const qreal radius = deco->cornerRadius();
 
     // Smart way to draw a rectangle with the right rounded/squared corner
-    painter->drawPath(deco->getRoundedPath(geometry(), radius-Material::cornerRadiusAdjustment, m_isLeftmost && deco->leftBorderVisible(), m_isRightmost && deco->rightBorderVisible(), false, false));
+    painter->drawPath(DrawHelper::getRoundedPath(geometry(), radius-Material::cornerRadiusAdjustment, m_isLeftmost && deco->leftBorderVisible(), m_isRightmost && deco->rightBorderVisible(), false, false));
 
     // Foreground.
     painter->setRenderHint(QPainter::Antialiasing, true);
