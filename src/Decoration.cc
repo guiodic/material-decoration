@@ -63,6 +63,7 @@
 #include <QTimer>
 #include <QToolTip>
 #include <QCursor>
+#include <QMetaMethod>
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusPendingCallWatcher>
@@ -211,8 +212,10 @@ bool Decoration::showTilingPopup(const QRectF &anchor)
     // Pin the button before the asynchronous availability check and before
     // forceUnpress() can temporarily clear the physical hover state.
     m_tilingPopupOpening = true;
+    const auto request = ++m_tilingPopupRequest;
     Q_EMIT tilingPopupVisibilityChanged(true);
-    checkTilingScript(this, [this, anchor](bool available) {
+    checkTilingScript(this, [this, anchor, request](bool available) {
+        if (request != m_tilingPopupRequest) return;
         m_tilingPopupOpening = false;
         if (!available) {
             Q_EMIT tilingPopupVisibilityChanged(false);
@@ -236,6 +239,18 @@ bool Decoration::showTilingPopup(const QRectF &anchor)
         popup(positioner, m_tilingPopup.get());
     });
     return true;
+}
+
+void Decoration::closeTilingPopup()
+{
+    if (!isTilingPopupVisible()) return;
+    ++m_tilingPopupRequest;
+    m_tilingPopupOpening = false;
+    if (m_tilingPopup && m_tilingPopup->isVisible()) {
+        m_tilingPopup->hide();
+    } else {
+        Q_EMIT tilingPopupVisibilityChanged(false);
+    }
 }
 
 void Decoration::setupMenu()
@@ -295,6 +310,20 @@ bool Decoration::init()
     connect(SettingsProvider::self(), &SettingsProvider::configChanged, this, &Decoration::reconfigure);
 
     const auto *decoratedClient = window();
+
+    // KWin can start an interactive move while the button is still held
+    // stationary. Close on an actual step, without depending on KWin's ABI.
+    if (auto *owner = parent()) {
+        const auto closeSlot = metaObject()->method(metaObject()->indexOfSlot("closeTilingPopup()"));
+        const auto *ownerMeta = owner->metaObject();
+        for (int i = 0; i < ownerMeta->methodCount(); ++i) {
+            const auto signal = ownerMeta->method(i);
+            if (signal.methodType() == QMetaMethod::Signal && signal.name() == "interactiveMoveResizeStepped") {
+                connect(owner, signal, this, closeSlot);
+                break;
+            }
+        }
+    }
 
     m_leftButtons = new KDecoration3::DecorationButtonGroup(
         KDecoration3::DecorationButtonGroup::Position::Left,
@@ -520,6 +549,7 @@ void Decoration::hoverMoveEvent(QHoverEvent *event)
 
     const bool dragStarted = dragMoveTick(event->position().toPoint());
     if (dragStarted) {
+        closeTilingPopup();
         unPressAllButtons();
         return;
     }

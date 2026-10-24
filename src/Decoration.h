@@ -71,6 +71,7 @@ public slots:
 
 private slots:
     void onTabletModeChanged(bool mode);
+    void closeTilingPopup();
 
 protected:
     void hoverEnterEvent(QHoverEvent *event) override;
@@ -83,6 +84,7 @@ protected:
 private:
     std::unique_ptr<TilingPopup> m_tilingPopup;
     bool m_tilingPopupOpening = false;
+    quint64 m_tilingPopupRequest = 0;
 
     void onSectionUnderMouseChanged(const Qt::WindowFrameSection value);
     void onSizeChanged();
