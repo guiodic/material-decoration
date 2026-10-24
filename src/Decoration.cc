@@ -947,7 +947,11 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
 
     auto ret = std::make_shared<KDecoration3::DecorationShadow>();
     ret->setPadding(padding);
-    ret->setInnerShadowRect(QRectF(outerRect.center(), QSizeF(1, 1)));
+    // The preview copies shadow tiles with QPainter; keep their source edges
+    // on whole texels rather than splitting the central pixel in half.
+    const QPointF shadowCenter = property("visualParent").isValid()
+        ? QPointF(shadowTexture.rect().center()) : outerRect.center();
+    ret->setInnerShadowRect(QRectF(shadowCenter, QSizeF(1, 1)));
     ret->setShadow(shadowTexture);
     return ret;
 }
