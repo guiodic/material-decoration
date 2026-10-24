@@ -412,10 +412,6 @@ msgstr "Viertel unten rechts"
 msgid "Window tiling layouts"
 msgstr "Layouts zur Fensteraufteilung"
 
-#: src/kcm/config.ui
-msgid "Tiling popup opacity"
-msgstr "Deckkraft des Aufteilungs-Popups"
-
 #: src/Decoration.cc
 msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
 msgstr "Aktivieren Sie das Skript Material Tiling Popup unter Systemeinstellungen > Fensterverwaltung > KWin-Skripte."

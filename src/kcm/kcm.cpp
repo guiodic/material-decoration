@@ -16,7 +16,6 @@
 #include <QLabel>
 #include <QTabBar>
 
-
 K_PLUGIN_CLASS_WITH_JSON(MaterialDecorationKCM, "materialdecoration_kcm.json")
 
 MaterialDecorationKCM::MaterialDecorationKCM(QObject *parent, const KPluginMetaData &data)
@@ -129,8 +128,6 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_LongPressEnabled, &QCheckBox::toggled, m_ui->kcfg_LongPressDuration, &QWidget::setEnabled);
     connect(m_ui->kcfg_LongPressDuration, qOverload<int>(&QSpinBox::valueChanged), this, &MaterialDecorationKCM::updateChanged);
 
-    connect(m_ui->kcfg_TilingPopupOpacity, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
-
     connect(m_ui->kcfg_DragFromButtonsEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
 
     connect(m_ui->exceptionsWidget, &Material::ExceptionListWidget::changed, this, &MaterialDecorationKCM::updateChanged);
@@ -190,8 +187,6 @@ void MaterialDecorationKCM::loadUIFromSettings(const Material::InternalSettings 
     m_ui->kcfg_LongPressDuration->setValue(settings.longPressDuration());
     m_ui->kcfg_LongPressDuration->setEnabled(settings.longPressEnabled());
 
-    m_ui->kcfg_TilingPopupOpacity->setValue(settings.tilingPopupOpacity());
-
     m_ui->kcfg_DragFromButtonsEnabled->setChecked(settings.dragFromButtonsEnabled());
 }
 
@@ -236,8 +231,6 @@ void MaterialDecorationKCM::save()
 
     m_settings->setLongPressEnabled(m_ui->kcfg_LongPressEnabled->isChecked());
     m_settings->setLongPressDuration(m_ui->kcfg_LongPressDuration->value());
-
-    m_settings->setTilingPopupOpacity(m_ui->kcfg_TilingPopupOpacity->value());
 
     m_settings->setDragFromButtonsEnabled(m_ui->kcfg_DragFromButtonsEnabled->isChecked());
 
@@ -294,7 +287,6 @@ bool MaterialDecorationKCM::isChanged() const
     if (m_ui->kcfg_MinWidthForCaption->value() != m_settings->minWidthForCaption()) return true;
     if (m_ui->kcfg_LongPressEnabled->isChecked() != m_settings->longPressEnabled()) return true;
     if (m_ui->kcfg_LongPressDuration->value() != m_settings->longPressDuration()) return true;
-    if (m_ui->kcfg_TilingPopupOpacity->value() != m_settings->tilingPopupOpacity()) return true;
     if (m_ui->kcfg_DragFromButtonsEnabled->isChecked() != m_settings->dragFromButtonsEnabled()) return true;
 
     if (m_ui->exceptionsWidget->isChanged()) return true;

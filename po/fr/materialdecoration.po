@@ -412,10 +412,6 @@ msgstr "Quart inférieur droit"
 msgid "Window tiling layouts"
 msgstr "Dispositions des fenêtres en mosaïque"
 
-#: src/kcm/config.ui
-msgid "Tiling popup opacity"
-msgstr "Opacité du popup de mosaïque"
-
 #: src/Decoration.cc
 msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
 msgstr "Activez le script Material Tiling Popup dans Configuration du système > Gestion des fenêtres > Scripts KWin."

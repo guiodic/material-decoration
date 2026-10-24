@@ -151,12 +151,6 @@
             <max>5000</max>
         </entry>
 
-        <entry name="TilingPopupOpacity" type="Int">
-            <default>85</default>
-            <min>0</min>
-            <max>100</max>
-        </entry>
-
         <entry name="DragFromButtonsEnabled" type="Bool">
             <default>true</default>
         </entry>

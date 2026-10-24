@@ -412,10 +412,6 @@ msgstr "Kwart rechtsonder"
 msgid "Window tiling layouts"
 msgstr "Indelingen voor venstertegels"
 
-#: src/kcm/config.ui
-msgid "Tiling popup opacity"
-msgstr "Dekking van de tegelpop-up"
-
 #: src/Decoration.cc
 msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
 msgstr "Schakel het script Material Tiling Popup in via Systeeminstellingen > Vensterbeheer > KWin-scripts."

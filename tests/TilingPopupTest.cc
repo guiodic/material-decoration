@@ -82,8 +82,7 @@ private slots:
     void selectiveCornersPreserveGaps()
     {
         TilingPopup popup;
-        popup.setBackgroundOpacity(100);
-        popup.setCornerRadius(12);
+        popup.setZoneCornerRadius(12);
         QPalette palette = popup.palette();
         palette.setColor(QPalette::Window, Qt::white);
         palette.setColor(QPalette::Mid, Qt::black);

@@ -412,10 +412,6 @@ msgstr "Cuarto inferior derecho"
 msgid "Window tiling layouts"
 msgstr "Distribuciones de ventanas en mosaico"
 
-#: src/kcm/config.ui
-msgid "Tiling popup opacity"
-msgstr "Opacidad del popup de mosaico"
-
 #: src/Decoration.cc
 msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
 msgstr "Activa el script Material Tiling Popup en Preferencias del sistema > Gestión de ventanas > Scripts de KWin."

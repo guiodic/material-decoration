@@ -412,10 +412,6 @@ msgstr "Quarto in basso a destra"
 msgid "Window tiling layouts"
 msgstr "Schemi di affiancamento delle finestre"
 
-#: src/kcm/config.ui
-msgid "Tiling popup opacity"
-msgstr "Opacità del popup di affiancamento"
-
 #: src/Decoration.cc
 msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
 msgstr "Abilita lo script Material Tiling Popup in Impostazioni di sistema > Gestione delle finestre > Script di KWin."

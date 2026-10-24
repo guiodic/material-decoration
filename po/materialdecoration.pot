@@ -395,10 +395,6 @@ msgstr ""
 msgid "Window tiling layouts"
 msgstr ""
 
-#: src/kcm/config.ui
-msgid "Tiling popup opacity"
-msgstr ""
-
 #: src/Decoration.cc
 msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
 msgstr ""
