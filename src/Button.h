@@ -128,6 +128,7 @@ protected:
     bool m_isRightmost = false;
 
     QTimer *m_holdTimer = nullptr;
+    QTimer *m_hoverTimer = nullptr;
     bool m_longPressTriggered = false;
     quint64 m_pressGeneration = 0;
     bool m_tilingPopupOpen = false;

@@ -125,6 +125,9 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_MinWidthForCaption, qOverload<int>(&QSpinBox::valueChanged), this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_ShowCaptionOnHover, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
 
+    connect(m_ui->kcfg_TilingPopupHoverEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_TilingPopupHoverEnabled, &QCheckBox::toggled, m_ui->kcfg_TilingPopupHoverDelay, &QWidget::setEnabled);
+    connect(m_ui->kcfg_TilingPopupHoverDelay, qOverload<int>(&QSpinBox::valueChanged), this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_LongPressEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_LongPressEnabled, &QCheckBox::toggled, m_ui->kcfg_LongPressDuration, &QWidget::setEnabled);
     connect(m_ui->kcfg_LongPressDuration, qOverload<int>(&QSpinBox::valueChanged), this, &MaterialDecorationKCM::updateChanged);
@@ -184,6 +187,9 @@ void MaterialDecorationKCM::loadUIFromSettings(const Material::InternalSettings 
     m_ui->kcfg_MinWidthForCaption->setEnabled(settings.hideCaptionWhenLimitedSpace());
     m_ui->label_minWidthForCaption->setEnabled(settings.hideCaptionWhenLimitedSpace());
 
+    m_ui->kcfg_TilingPopupHoverEnabled->setChecked(settings.tilingPopupHoverEnabled());
+    m_ui->kcfg_TilingPopupHoverDelay->setValue(settings.tilingPopupHoverDelay());
+    m_ui->kcfg_TilingPopupHoverDelay->setEnabled(settings.tilingPopupHoverEnabled());
     m_ui->kcfg_LongPressEnabled->setChecked(settings.longPressEnabled());
     m_ui->kcfg_LongPressDuration->setValue(settings.longPressDuration());
     m_ui->kcfg_LongPressDuration->setEnabled(settings.longPressEnabled());
@@ -230,6 +236,8 @@ void MaterialDecorationKCM::save()
     m_settings->setHideCaptionWhenLimitedSpace(m_ui->kcfg_HideCaptionWhenLimitedSpace->isChecked());
     m_settings->setMinWidthForCaption(m_ui->kcfg_MinWidthForCaption->value());
 
+    m_settings->setTilingPopupHoverEnabled(m_ui->kcfg_TilingPopupHoverEnabled->isChecked());
+    m_settings->setTilingPopupHoverDelay(m_ui->kcfg_TilingPopupHoverDelay->value());
     m_settings->setLongPressEnabled(m_ui->kcfg_LongPressEnabled->isChecked());
     m_settings->setLongPressDuration(m_ui->kcfg_LongPressDuration->value());
 
@@ -286,6 +294,8 @@ bool MaterialDecorationKCM::isChanged() const
     if (m_ui->kcfg_OutlineActive->isChecked() != m_settings->outlineActive()) return true;
     if (m_ui->kcfg_HideCaptionWhenLimitedSpace->isChecked() != m_settings->hideCaptionWhenLimitedSpace()) return true;
     if (m_ui->kcfg_MinWidthForCaption->value() != m_settings->minWidthForCaption()) return true;
+    if (m_ui->kcfg_TilingPopupHoverEnabled->isChecked() != m_settings->tilingPopupHoverEnabled()) return true;
+    if (m_ui->kcfg_TilingPopupHoverDelay->value() != m_settings->tilingPopupHoverDelay()) return true;
     if (m_ui->kcfg_LongPressEnabled->isChecked() != m_settings->longPressEnabled()) return true;
     if (m_ui->kcfg_LongPressDuration->value() != m_settings->longPressDuration()) return true;
     if (m_ui->kcfg_DragFromButtonsEnabled->isChecked() != m_settings->dragFromButtonsEnabled()) return true;

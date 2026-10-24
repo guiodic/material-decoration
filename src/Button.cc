@@ -65,6 +65,7 @@
 #include <QDBusPendingCallWatcher>
 #include <QCursor>
 #include <QToolTip>
+#include <QApplication>
 #include <cmath>
 
 #define UPDATE_GEOM() update(geometry().adjusted(-1, -1, 1, 1))
@@ -131,6 +132,26 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     
    
     if (type == KDecoration3::DecorationButtonType::Maximize) {
+        m_hoverTimer = new QTimer(this);
+        m_hoverTimer->setSingleShot(true);
+        connect(m_hoverTimer, &QTimer::timeout, this, [this, decoration] {
+            if (isHovered() && isEnabled() && isVisible() &&
+                QApplication::mouseButtons() == Qt::NoButton &&
+                decoration->m_internalSettings->tilingPopupHoverEnabled()) {
+                decoration->showTilingPopup(geometry(), true);
+            }
+        });
+        connect(this, &Button::hoveredChanged, this, [this, decoration](bool hovered) {
+            m_hoverTimer->stop();
+            if (hovered && decoration->m_internalSettings->tilingPopupHoverEnabled()) {
+                // The base button has already requested its tooltip on this signal.
+                decoration->requestHideToolTip();
+                if (!isPressed()) m_hoverTimer->start(decoration->m_internalSettings->tilingPopupHoverDelay());
+            }
+        });
+        connect(this, &Button::pressedChanged, this, [this] {
+            if (isPressed()) m_hoverTimer->stop();
+        });
         connect(decoration, &Decoration::tilingPopupVisibilityChanged, this, &Button::setTilingPopupOpen);
         setTilingPopupOpen(decoration->isTilingPopupVisible());
     }

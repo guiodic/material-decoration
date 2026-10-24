@@ -36,6 +36,8 @@
 #include <memory>
 #include <QVariant>
 #include <QPainterPath>
+#include <QTimer>
+#include <QElapsedTimer>
 
 namespace KDecoration3
 {
@@ -59,7 +61,7 @@ public:
     ~Decoration() override;
 
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
-    bool showTilingPopup(const QRectF &anchor);
+    bool showTilingPopup(const QRectF &anchor, bool fromHover = false);
     bool isTilingPopupVisible() const;
 
 signals:
@@ -85,6 +87,8 @@ private:
     std::unique_ptr<TilingPopup> m_tilingPopup;
     bool m_tilingPopupOpening = false;
     quint64 m_tilingPopupRequest = 0;
+    QTimer m_tilingPopupHoverMonitor;
+    QElapsedTimer m_tilingPopupOutsideTime;
 
     void onSectionUnderMouseChanged(const Qt::WindowFrameSection value);
     void onSizeChanged();

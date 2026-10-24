@@ -47,6 +47,13 @@ directory `/usr/share/kwin-wayland/scripts/minimizeall` to `
 Hold the **Maximize** button with the left mouse button to open the tiling
 selector.
 
+In **Button options**, you can also enable opening the popup by hovering over
+Maximize/Restore. This is disabled by default. The hover delay defaults to
+750 ms and can be adjusted independently of the long-press duration. With hover
+opening enabled, the button's normal tooltip is suppressed. A popup opened this
+way closes after the pointer stays outside both the button and popup for 500 ms;
+keyboard navigation keeps it open until a selection or dismissal.
+
 ![image](data/TilingPopUp.png)
 
 The popup uses a companion **Material Tiling Popup** KWin script for native

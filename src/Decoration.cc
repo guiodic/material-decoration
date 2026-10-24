@@ -206,10 +206,34 @@ bool Decoration::isTilingPopupVisible() const
     return m_tilingPopupOpening || (m_tilingPopup && m_tilingPopup->isVisible());
 }
 
-bool Decoration::showTilingPopup(const QRectF &anchor)
+bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
 {
     if (!canTileWindow(this)) return false;
     if (isTilingPopupVisible()) return true;
+    m_tilingPopupHoverMonitor.stop();
+    m_tilingPopupOutsideTime.invalidate();
+    if (fromHover) {
+        m_tilingPopupHoverMonitor.disconnect(this);
+        m_tilingPopupHoverMonitor.setInterval(50);
+        // Popup grabs can clear the button hover state. Check the actual cursor
+        // position so crossing from the button to the menu does not close it.
+        connect(&m_tilingPopupHoverMonitor, &QTimer::timeout, this, [this, anchor] {
+            const auto cursor = QCursor::pos();
+            const auto origin = parent()->property("frameGeometry").toRectF().topLeft();
+            const bool inside = anchor.translated(origin).contains(cursor) ||
+                (m_tilingPopup && m_tilingPopup->isVisible() && m_tilingPopup->frameGeometry().contains(cursor));
+            if (!m_internalSettings->tilingPopupHoverEnabled()) {
+                closeTilingPopup();
+            } else if (inside || QApplication::mouseButtons() != Qt::NoButton) {
+                m_tilingPopupOutsideTime.invalidate();
+            } else if (!m_tilingPopupOutsideTime.isValid()) {
+                m_tilingPopupOutsideTime.start();
+            } else if (m_tilingPopupOutsideTime.elapsed() >= 500) {
+                closeTilingPopup();
+            }
+        });
+        m_tilingPopupHoverMonitor.start();
+    }
     // Pin the button before the asynchronous availability check and before
     // forceUnpress() can temporarily clear the physical hover state.
     m_tilingPopupOpening = true;
@@ -219,6 +243,7 @@ bool Decoration::showTilingPopup(const QRectF &anchor)
         if (request != m_tilingPopupRequest) return;
         m_tilingPopupOpening = false;
         if (!available) {
+            m_tilingPopupHoverMonitor.stop();
             Q_EMIT tilingPopupVisibilityChanged(false);
             QToolTip::showText(QCursor::pos(), i18nd("materialdecoration", "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."));
             return;
@@ -226,7 +251,13 @@ bool Decoration::showTilingPopup(const QRectF &anchor)
         if (!m_tilingPopup) {
             m_tilingPopup = std::make_unique<TilingPopup>();
             connect(m_tilingPopup.get(), &QMenu::aboutToShow, this, [this] { Q_EMIT tilingPopupVisibilityChanged(true); });
-            connect(m_tilingPopup.get(), &QMenu::aboutToHide, this, [this] { Q_EMIT tilingPopupVisibilityChanged(false); });
+            connect(m_tilingPopup.get(), &QMenu::aboutToHide, this, [this] {
+                m_tilingPopupHoverMonitor.stop();
+                Q_EMIT tilingPopupVisibilityChanged(false);
+            });
+            connect(m_tilingPopup.get(), &TilingPopup::keyboardNavigationStarted, this, [this] {
+                m_tilingPopupHoverMonitor.stop();
+            });
             connect(m_tilingPopup.get(), &TilingPopup::zoneSelected, this, [this](Qt::Edges edges) {
                 // Defer the geometry change until the menu has released its grab.
                 QTimer::singleShot(0, this, [this, edges] { tileWindow(this, edges); });
@@ -250,6 +281,7 @@ bool Decoration::showTilingPopup(const QRectF &anchor)
 
 void Decoration::closeTilingPopup()
 {
+    m_tilingPopupHoverMonitor.stop();
     if (!isTilingPopupVisible()) return;
     ++m_tilingPopupRequest;
     m_tilingPopupOpening = false;
@@ -512,6 +544,7 @@ void Decoration::reconfigure()
 
 void Decoration::mousePressEvent(QMouseEvent *event)
 {
+    if (m_tilingPopupHoverMonitor.isActive()) closeTilingPopup();
     KDecoration3::Decoration::mousePressEvent(event);
 
     const QPoint pos = event->position().toPoint();

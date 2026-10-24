@@ -99,6 +99,7 @@ bool TilingPopup::eventFilter(QObject *object, QEvent *event)
         m_waitingForRelease = false;
         return true;
     } else if (event->type() == QEvent::KeyPress) {
+        Q_EMIT keyboardNavigationStarted();
         if (handleKeyPress(static_cast<QKeyEvent *>(event))) return true;
     }
     return QMenu::eventFilter(object, event);
