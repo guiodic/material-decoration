@@ -1153,7 +1153,6 @@ qreal Decoration::cornerRadius() const
     return m_cornerRadius;
 }
 
-
 void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRegion) const
 {
     if (!rect().intersects(repaintRegion)) {
@@ -1426,12 +1425,10 @@ void Decoration::updatePaths()
     const bool roundTopLeft = roundTopLeftCorners();
     const bool roundTopRight = roundTopRightCorners();
 
-    m_framePath = DrawHelper::getRoundedPath(rect(),
-                                 m_cornerRadius,
-                                 roundTopLeft,
-                                 roundTopRight,
-                                 m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
-                                 m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible());
+    m_framePath = DrawHelper::getRoundedPath(
+        rect(), m_cornerRadius, roundTopLeft, roundTopRight,
+        m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
+        m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible());
 
     if (hideTitleBar()) {
         m_titleBarPath = QPainterPath();
@@ -1443,12 +1440,8 @@ void Decoration::updatePaths()
     const qreal right = rightOffset();
     const QRectF titleBarBackgroundRect(left, top, size().width() - left - right, titleBarHeight() + 1);
     
-    m_titleBarPath = DrawHelper::getRoundedPath(titleBarBackgroundRect,
-                                    m_cornerRadius,
-                                    roundTopLeft,
-                                    roundTopRight,
-                                    false,
-                                    false);
+    m_titleBarPath = DrawHelper::getRoundedPath(titleBarBackgroundRect, m_cornerRadius,
+                                               roundTopLeft, roundTopRight, false, false);
 }
 
 void Decoration::onSizeChanged()

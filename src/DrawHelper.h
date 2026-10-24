@@ -10,7 +10,7 @@ class DrawHelper
 {
 public:
     static QPainterPath getRoundedPath(const QRectF &rect, qreal radius,
-                                       bool roundTopLeft = true, bool roundTopRight = true,
-                                       bool roundBottomLeft = false, bool roundBottomRight = false);
+                                      bool roundTopLeft = true, bool roundTopRight = true,
+                                      bool roundBottomLeft = false, bool roundBottomRight = false);
 };
 }

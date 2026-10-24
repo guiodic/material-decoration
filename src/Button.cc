@@ -338,8 +338,9 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->setBrush(bgColor);
     const qreal radius = deco->cornerRadius();
 
-    // Smart way to draw a rectangle with the right rounded/squared corner
-    painter->drawPath(DrawHelper::getRoundedPath(geometry(), radius-Material::cornerRadiusAdjustment, m_isLeftmost && deco->leftBorderVisible(), m_isRightmost && deco->rightBorderVisible(), false, false));
+    painter->drawPath(DrawHelper::getRoundedPath(
+        geometry(), radius - Material::cornerRadiusAdjustment,
+        m_isLeftmost && deco->leftBorderVisible(), m_isRightmost && deco->rightBorderVisible(), false, false));
 
     // Foreground.
     painter->setRenderHint(QPainter::Antialiasing, true);
