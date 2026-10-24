@@ -419,3 +419,11 @@ msgstr "Opacidad del popup de mosaico"
 #: src/Decoration.cc
 msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
 msgstr "Activa el script Material Tiling Popup en Preferencias del sistema > Gestión de ventanas > Scripts de KWin."
+
+#: src/Button.cc
+msgid "Install kwin-minimize2tray and enable Minimize to Tray in System Settings > Window Management > KWin Scripts."
+msgstr "Instala kwin-minimize2tray y activa Minimize to Tray en Preferencias del sistema > Gestión de ventanas > Scripts de KWin."
+
+#: src/Button.cc
+msgid "The action to minimize all other windows is unavailable. It requires Plasma 6.6 or later."
+msgstr "La acción para minimizar todas las demás ventanas no está disponible. Requiere Plasma 6.6 o posterior."

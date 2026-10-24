@@ -8,6 +8,12 @@ set_tests_properties(tilingpopup PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscre
 
 find_program(DBUS_RUN_SESSION dbus-run-session)
 if(DBUS_RUN_SESSION)
+    add_executable(longpressaction_test LongPressActionTest.cc ../src/LongPressAction.cc)
+    set_target_properties(longpressaction_test PROPERTIES AUTOMOC ON)
+    target_include_directories(longpressaction_test PRIVATE ../src)
+    target_link_libraries(longpressaction_test PRIVATE Qt6::Test Qt6::DBus)
+    add_test(NAME longpressaction COMMAND ${DBUS_RUN_SESSION} -- $<TARGET_FILE:longpressaction_test>)
+
     add_executable(tilingcontroller_test TilingControllerTest.cc ../src/TilingController.cc)
     set_target_properties(tilingcontroller_test PROPERTIES AUTOMOC ON)
     target_include_directories(tilingcontroller_test PRIVATE ../src)

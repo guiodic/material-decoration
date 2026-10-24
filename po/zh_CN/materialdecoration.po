@@ -419,3 +419,11 @@ msgstr "平铺弹窗不透明度"
 #: src/Decoration.cc
 msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
 msgstr "请在系统设置 > 窗口管理 > KWin 脚本中启用 Material Tiling Popup 脚本。"
+
+#: src/Button.cc
+msgid "Install kwin-minimize2tray and enable Minimize to Tray in System Settings > Window Management > KWin Scripts."
+msgstr "请安装 kwin-minimize2tray，并在系统设置 > 窗口管理 > KWin 脚本中启用 Minimize to Tray。"
+
+#: src/Button.cc
+msgid "The action to minimize all other windows is unavailable. It requires Plasma 6.6 or later."
+msgstr "最小化所有其他窗口的操作不可用。此操作需要 Plasma 6.6 或更新版本。"

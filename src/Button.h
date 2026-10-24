@@ -113,6 +113,7 @@ protected:
 
     QMarginsF &padding();
 
+    void invokeLongPressAction(const QString &shortcut, const QString &script, const QString &unavailableMessage);
     void onCloseHold();
     void onMinimizeHold();
     void onMaximizeHold();
@@ -128,6 +129,7 @@ protected:
 
     QTimer *m_holdTimer = nullptr;
     bool m_longPressTriggered = false;
+    quint64 m_pressGeneration = 0;
     bool m_tilingPopupOpen = false;
     qreal m_penScale = 1.0;
 

@@ -419,3 +419,11 @@ msgstr "Dekking van de tegelpop-up"
 #: src/Decoration.cc
 msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
 msgstr "Schakel het script Material Tiling Popup in via Systeeminstellingen > Vensterbeheer > KWin-scripts."
+
+#: src/Button.cc
+msgid "Install kwin-minimize2tray and enable Minimize to Tray in System Settings > Window Management > KWin Scripts."
+msgstr "Installeer kwin-minimize2tray en schakel Minimize to Tray in via Systeeminstellingen > Vensterbeheer > KWin-scripts."
+
+#: src/Button.cc
+msgid "The action to minimize all other windows is unavailable. It requires Plasma 6.6 or later."
+msgstr "De actie om alle andere vensters te minimaliseren is niet beschikbaar. Hiervoor is Plasma 6.6 of nieuwer vereist."

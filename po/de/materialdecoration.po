@@ -419,3 +419,11 @@ msgstr "Deckkraft des Aufteilungs-Popups"
 #: src/Decoration.cc
 msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
 msgstr "Aktivieren Sie das Skript Material Tiling Popup unter Systemeinstellungen > Fensterverwaltung > KWin-Skripte."
+
+#: src/Button.cc
+msgid "Install kwin-minimize2tray and enable Minimize to Tray in System Settings > Window Management > KWin Scripts."
+msgstr "Installieren Sie kwin-minimize2tray und aktivieren Sie Minimize to Tray unter Systemeinstellungen > Fensterverwaltung > KWin-Skripte."
+
+#: src/Button.cc
+msgid "The action to minimize all other windows is unavailable. It requires Plasma 6.6 or later."
+msgstr "Die Aktion zum Minimieren aller anderen Fenster ist nicht verfügbar. Sie erfordert Plasma 6.6 oder neuer."

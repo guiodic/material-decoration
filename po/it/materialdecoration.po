@@ -419,3 +419,11 @@ msgstr "Opacità del popup di affiancamento"
 #: src/Decoration.cc
 msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
 msgstr "Abilita lo script Material Tiling Popup in Impostazioni di sistema > Gestione delle finestre > Script di KWin."
+
+#: src/Button.cc
+msgid "Install kwin-minimize2tray and enable Minimize to Tray in System Settings > Window Management > KWin Scripts."
+msgstr "Installa kwin-minimize2tray e abilita Minimize to Tray in Impostazioni di sistema > Gestione delle finestre > Script di KWin."
+
+#: src/Button.cc
+msgid "The action to minimize all other windows is unavailable. It requires Plasma 6.6 or later."
+msgstr "L’azione per minimizzare tutte le altre finestre non è disponibile. Richiede Plasma 6.6 o successivo."

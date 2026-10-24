@@ -72,6 +72,7 @@ set (decoration_SRCS
     TextButton.cc
     TilingPopup.cc
     TilingZoneButton.cc
+    LongPressAction.cc
     TilingController.cc
     plugin.cc
 )

@@ -20,6 +20,7 @@
 // own
 #include "BuildConfig.h"
 #include "Button.h"
+#include "LongPressAction.h"
 #include "Material.h"
 #include "Decoration.h"
 
@@ -48,6 +49,7 @@
 
 // KF
 #include <KColorUtils>
+#include <KLocalizedString>
 
 // Qt
 #include <QCoreApplication>
@@ -59,6 +61,9 @@
 #include <QTimer>
 #include <QDBusConnection>
 #include <QDBusMessage>
+#include <QDBusPendingCallWatcher>
+#include <QCursor>
+#include <QToolTip>
 #include <cmath>
 
 #define UPDATE_GEOM() update(geometry().adjusted(-1, -1, 1, 1))
@@ -286,6 +291,7 @@ void Button::mousePressEvent(QMouseEvent *event)
     // A popup can consume the release ending the previous long press. A new
     // gesture must start clean even if long-press actions were since disabled.
     m_longPressTriggered = false;
+    ++m_pressGeneration;
     KDecoration3::DecorationButton::mousePressEvent(event);
     // Preserve KWin's separate middle/right-click maximize actions.
     if (type() == KDecoration3::DecorationButtonType::Maximize && event->button() != Qt::LeftButton) {
@@ -825,26 +831,40 @@ void Button::handleHoldTimeout()
     }
 }
 
+void Button::invokeLongPressAction(const QString &shortcut, const QString &script, const QString &unavailableMessage)
+{
+    const auto generation = m_pressGeneration;
+    checkLongPressAction(this, shortcut, script, [this, shortcut, unavailableMessage, generation](bool available) {
+        if (generation != m_pressGeneration) return;
+        if (!available) {
+            QToolTip::showText(QCursor::pos(), unavailableMessage);
+            return;
+        }
+        // These shortcuts act on the active window. Do not affect another
+        // window if focus changed while the asynchronous check was pending.
+        auto *deco = qobject_cast<Decoration *>(decoration());
+        if (!deco || !deco->window() || !deco->window()->isActive()) return;
+        auto message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.kglobalaccel"), QStringLiteral("/component/kwin"),
+                                                    QStringLiteral("org.kde.kglobalaccel.Component"), QStringLiteral("invokeShortcut"));
+        message << shortcut;
+        auto *watcher = new QDBusPendingCallWatcher(QDBusConnection::sessionBus().asyncCall(message, 1500), this);
+        connect(watcher, &QDBusPendingCallWatcher::finished, this, [unavailableMessage](QDBusPendingCallWatcher *call) {
+            if (call->reply().type() == QDBusMessage::ErrorMessage) QToolTip::showText(QCursor::pos(), unavailableMessage);
+            call->deleteLater();
+        });
+    });
+}
+
 void Button::onCloseHold()
 {
-    qCDebug(category) << "onCloseHold triggered";
-    QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.kglobalaccel"),
-                                                         QStringLiteral("/component/kwin"),
-                                                         QStringLiteral("org.kde.kglobalaccel.Component"),
-                                                         QStringLiteral("invokeShortcut"));
-    message << QStringLiteral("Minimize to tray");
-    QDBusConnection::sessionBus().send(message);
+    invokeLongPressAction(QStringLiteral("Minimize to tray"), QStringLiteral("com.github.luisbocanegra.minimize2tray"),
+                         i18nd("materialdecoration", "Install kwin-minimize2tray and enable Minimize to Tray in System Settings > Window Management > KWin Scripts."));
 }
 
 void Button::onMinimizeHold()
 {
-    qCDebug(category) << "onMinimizeHold triggered";
-    QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.kglobalaccel"),
-                                                         QStringLiteral("/component/kwin"),
-                                                         QStringLiteral("org.kde.kglobalaccel.Component"),
-                                                         QStringLiteral("invokeShortcut"));
-    message << QStringLiteral("minimizeAllOthersActiveScreen");
-    QDBusConnection::sessionBus().send(message);
+    invokeLongPressAction(QStringLiteral("minimizeAllOthersActiveScreen"), {},
+                         i18nd("materialdecoration", "The action to minimize all other windows is unavailable. It requires Plasma 6.6 or later."));
 }
 
 void Button::onMaximizeHold()
