@@ -303,6 +303,8 @@ void Button::mousePressEvent(QMouseEvent *event)
 void Button::mouseReleaseEvent(QMouseEvent *event)
 {
     if (m_longPressTriggered) {
+        // A recognized long press consumes the click even if its action is
+        // still pending or unavailable, consistently for all three buttons.
         m_longPressTriggered = false;
         forceUnpress();
 

@@ -54,6 +54,9 @@ quick tiling. The script is enabled by default unless explicitly disabled in
 **System Settings > Window Management > KWin Scripts**.
 If the script was disabled, enable it in that panel.
 
+After the first installation, log out and log back in so KWin discovers and
+loads the companion script.
+
 # Build instructions for Plasma 6
 
 ```

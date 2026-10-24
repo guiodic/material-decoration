@@ -27,6 +27,7 @@
 #include "DrawHelper.h"
 #include "TilingPopup.h"
 #include "TilingController.h"
+#include "LongPressAction.h"
 #include "AppMenuButtonGroup.h"
 #include "BoxShadowHelper.h"
 #include "BuildConfig.h"
@@ -214,7 +215,7 @@ bool Decoration::showTilingPopup(const QRectF &anchor)
     m_tilingPopupOpening = true;
     const auto request = ++m_tilingPopupRequest;
     Q_EMIT tilingPopupVisibilityChanged(true);
-    checkTilingScript(this, [this, anchor, request](bool available) {
+    const auto showPopup = [this, anchor, request](bool available) {
         if (request != m_tilingPopupRequest) return;
         m_tilingPopupOpening = false;
         if (!available) {
@@ -237,6 +238,12 @@ bool Decoration::showTilingPopup(const QRectF &anchor)
         KDecoration3::Positioner positioner;
         positioner.setAnchorRect(anchor);
         popup(positioner, m_tilingPopup.get());
+    };
+    checkLongPressAction(this, QStringLiteral("MaterialTilingPopupDispatch"), QStringLiteral("material-tiling"),
+                         [this, showPopup, request](bool loaded) {
+        if (request != m_tilingPopupRequest) return;
+        if (loaded) checkTilingScript(this, showPopup);
+        else showPopup(false);
     });
     return true;
 }

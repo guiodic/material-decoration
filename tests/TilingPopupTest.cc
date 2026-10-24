@@ -67,6 +67,7 @@ private slots:
         QWidget source;
         source.show();
         QTest::mousePress(&source, Qt::LeftButton);
+        QVERIFY(QApplication::mouseButtons().testFlag(Qt::LeftButton));
         TilingPopup popup;
         QSignalSpy selected(&popup, &TilingPopup::zoneSelected);
         popup.popup(QPoint(10, 10));
