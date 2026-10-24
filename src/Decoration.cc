@@ -176,6 +176,7 @@ static int s_shadowSizePreset = InternalSettings::ShadowVeryLarge;
 static int s_shadowStrength = 255;
 static QColor s_shadowColor = QColor(33, 33, 33);
 static qreal s_cornerRadius = -1;
+static bool s_previewShadow = false;
 static std::shared_ptr<KDecoration3::DecorationShadow> s_cachedShadow;
 
 Decoration::Decoration(QObject *parent, const QVariantList &args)
@@ -869,12 +870,14 @@ void Decoration::updateShadow()
     const QColor shadowColor = m_internalSettings->shadowColor();
     const int shadowStrengthInt = m_internalSettings->shadowStrength();
     const int shadowSizePreset = m_internalSettings->shadowSize();
+    const bool preview = property("visualParent").isValid();
 
     if (s_cachedShadow
         && s_shadowColor == shadowColor
         && s_shadowSizePreset == shadowSizePreset
         && s_shadowStrength == shadowStrengthInt
         && s_cornerRadius == m_cornerRadius
+        && s_previewShadow == preview
     ) {
         setShadow(s_cachedShadow);
         return;
@@ -884,6 +887,7 @@ void Decoration::updateShadow()
     s_shadowStrength = shadowStrengthInt;
     s_shadowSizePreset = shadowSizePreset;
     s_cornerRadius = m_cornerRadius;
+    s_previewShadow = preview;
 
     s_cachedShadow = createShadowObject(1.0);
     setShadow(s_cachedShadow);
@@ -929,6 +933,11 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
                                         outerRect.right() - boxRect.right() + params.offset.x(),
                                         outerRect.bottom() - boxRect.bottom() + params.offset.y());
     QRectF innerRect = outerRect - padding;
+    if (property("visualParent").isValid()) {
+        // Like Breeze, keep shadow pixels under the frame to avoid visible
+        // seams where the preview stitches the shadow tiles together.
+        innerRect.adjust(2, 2, -2, -2);
+    }
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
@@ -1040,7 +1049,10 @@ qreal Decoration::titleBarHeight() const
         return 0;
     }
     const QFontMetricsF fontMetrics(settings()->font());
-    return buttonPadding()*2 + fontMetrics.height();
+    const qreal height = buttonPadding()*2 + fontMetrics.height();
+    // The preview fills its client background using integer coordinates.
+    // Keep its titlebar height integral so the thumbnail has no uncovered strips.
+    return property("visualParent").isValid() ? qCeil(height) : height;
 }
 
 qreal Decoration::appMenuCaptionSpacing() const
