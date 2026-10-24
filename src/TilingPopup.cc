@@ -6,7 +6,6 @@
 #include <QApplication>
 #include <QGridLayout>
 #include <QKeyEvent>
-#include <QPainter>
 #include <QWidgetAction>
 #include <limits>
 
@@ -29,9 +28,6 @@ QVector<TilingLayout> tilingLayouts()
 TilingPopup::TilingPopup(QWidget *parent)
     : QMenu(parent)
 {
-    // Use an alpha surface and paint only the backdrop with reduced opacity;
-    // window opacity would also fade the layout buttons and their highlight.
-    setAttribute(Qt::WA_TranslucentBackground);
     setObjectName(QStringLiteral("materialTilingPopup"));
     installEventFilter(this);
     setAccessibleName(i18nd("materialdecoration", "Window tiling layouts"));
@@ -76,36 +72,14 @@ void TilingPopup::setAnimationSettings(bool enabled, int duration)
     for (auto *button : m_buttons) button->setAnimationSettings(enabled, duration);
 }
 
-void TilingPopup::setCornerRadius(qreal radius)
+void TilingPopup::setZoneCornerRadius(qreal radius)
 {
-    m_cornerRadius = qMax(qreal(0), radius);
-    for (auto *button : m_buttons) button->setCornerRadius(m_cornerRadius);
-    update();
+    for (auto *button : m_buttons) button->setCornerRadius(radius);
 }
 
 void TilingPopup::setSquareCornersTiled(bool enabled)
 {
     for (auto *button : m_buttons) button->setSquareCornersTiled(enabled);
-}
-
-void TilingPopup::setBackgroundOpacity(int percent)
-{
-    m_backgroundOpacity = qBound(0, percent, 100) / 100.0;
-    update();
-}
-
-void TilingPopup::paintEvent(QPaintEvent *event)
-{
-    Q_UNUSED(event)
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
-    QColor background = palette().color(QPalette::Window);
-    background.setAlphaF(m_backgroundOpacity);
-    QColor border = palette().color(QPalette::Mid);
-    border.setAlphaF(m_backgroundOpacity);
-    painter.setPen(border);
-    painter.setBrush(background);
-    painter.drawRoundedRect(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5), m_cornerRadius, m_cornerRadius);
 }
 
 void TilingPopup::showEvent(QShowEvent *event)

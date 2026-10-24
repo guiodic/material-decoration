@@ -23,8 +23,7 @@ class TilingPopup : public QMenu
     Q_OBJECT
 public:
     explicit TilingPopup(QWidget *parent = nullptr);
-    void setBackgroundOpacity(int percent);
-    void setCornerRadius(qreal radius);
+    void setZoneCornerRadius(qreal radius);
     void setSquareCornersTiled(bool enabled);
     void setAnimationSettings(bool enabled, int duration);
 
@@ -32,7 +31,6 @@ signals:
     void zoneSelected(Qt::Edges edges);
 
 protected:
-    void paintEvent(QPaintEvent *event) override;
     bool eventFilter(QObject *object, QEvent *event) override;
     void showEvent(QShowEvent *event) override;
 
@@ -43,8 +41,6 @@ private:
     QVector<TilingZoneButton *> m_buttons;
     int m_keyboardIndex = -1;
     bool m_waitingForRelease = false;
-    qreal m_backgroundOpacity = 0.85;
-    qreal m_cornerRadius = 6;
 };
 
 }

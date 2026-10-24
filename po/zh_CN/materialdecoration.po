@@ -412,10 +412,6 @@ msgstr "右下四分之一区域"
 msgid "Window tiling layouts"
 msgstr "窗口平铺布局"
 
-#: src/kcm/config.ui
-msgid "Tiling popup opacity"
-msgstr "平铺弹窗不透明度"
-
 #: src/Decoration.cc
 msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
 msgstr "请在系统设置 > 窗口管理 > KWin 脚本中启用 Material Tiling Popup 脚本。"

@@ -54,6 +54,10 @@ quick tiling. The script is enabled by default unless explicitly disabled in
 **System Settings > Window Management > KWin Scripts**. 
 If the script was disabled, enable it in that panel.
 
+The popup background, opacity, outer corners and shadow follow the Qt/KDE
+menu style. The decoration settings still control the
+corner radius and animations of the layout previews.
+
 # Build instructions for Plasma 6
 
 ```
