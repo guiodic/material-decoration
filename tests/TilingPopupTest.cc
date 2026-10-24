@@ -191,9 +191,9 @@ private slots:
         QSignalSpy selected(&popup, &TilingPopup::zoneSelected);
         popup.popup(QPoint(10, 10));
         QCoreApplication::processEvents();
-        auto *first = popup.findChildren<QToolButton *>().first();
-        for (auto *button : popup.findChildren<QToolButton *>()) {
-            QVERIFY(!button->property("keyboardSelected").toBool());
+        auto *first = popup.findChildren<TilingZoneButton *>().first();
+        for (auto *button : popup.findChildren<TilingZoneButton *>()) {
+            QVERIFY(!button->keyboardSelected());
         }
         QTest::keyClick(&popup, Qt::Key_Return);
         QTest::keyClick(&popup, Qt::Key_Space);
@@ -201,7 +201,7 @@ private slots:
         QVERIFY(popup.isVisible());
         QTest::keyClick(&popup, Qt::Key_Right);
         QVERIFY(first->hasFocus());
-        QVERIFY(first->property("keyboardSelected").toBool());
+        QVERIFY(first->keyboardSelected());
         QTest::keyClick(first, Qt::Key_Right);
         QVERIFY(QApplication::focusWidget() != first);
         QTest::keyClick(QApplication::focusWidget(), Qt::Key_Return);
@@ -210,13 +210,13 @@ private slots:
         selected.clear();
         popup.popup(QPoint(10, 10));
         QCoreApplication::processEvents();
-        for (auto *button : popup.findChildren<QToolButton *>()) {
-            QVERIFY(!button->property("keyboardSelected").toBool());
+        for (auto *button : popup.findChildren<TilingZoneButton *>()) {
+            QVERIFY(!button->keyboardSelected());
         }
         QTest::keyClick(&popup, Qt::Key_Tab);
         QVERIFY(first->hasFocus());
         QTest::keyClick(first, Qt::Key_Backtab);
-        QVERIFY(popup.findChildren<QToolButton *>().last()->hasFocus());
+        QVERIFY(popup.findChildren<TilingZoneButton *>().last()->hasFocus());
         QTest::keyClick(QApplication::focusWidget(), Qt::Key_Escape);
         QVERIFY(!popup.isVisible());
         QVERIFY(selected.isEmpty());

@@ -16,6 +16,7 @@
 #include <QLabel>
 #include <QTabBar>
 
+
 K_PLUGIN_CLASS_WITH_JSON(MaterialDecorationKCM, "materialdecoration_kcm.json")
 
 MaterialDecorationKCM::MaterialDecorationKCM(QObject *parent, const KPluginMetaData &data)

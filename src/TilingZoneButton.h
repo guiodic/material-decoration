@@ -9,7 +9,6 @@ namespace Material
 class TilingZoneButton : public QToolButton
 {
     Q_OBJECT
-    Q_PROPERTY(bool keyboardSelected READ keyboardSelected WRITE setKeyboardSelected)
 public:
     explicit TilingZoneButton(Qt::Edges outerEdges, QWidget *parent = nullptr);
     bool keyboardSelected() const { return m_keyboardSelected; }

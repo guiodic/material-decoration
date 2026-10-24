@@ -80,7 +80,7 @@ QColor TilingZoneButton::interpolatedColor(QPalette::ColorRole normal) const
     const QColor from = palette().color(normal);
     const QColor to = palette().color(QPalette::Highlight);
     const auto mix = [this](qreal a, qreal b) { return a + (b - a) * m_progress; };
-    // Only the popup backdrop is translucent; zones always remain opaque.
+    // Keep zones opaque regardless of the menu background opacity.
     return QColor::fromRgbF(mix(from.redF(), to.redF()), mix(from.greenF(), to.greenF()), mix(from.blueF(), to.blueF()));
 }
 
