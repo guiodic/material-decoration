@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "TilingZoneButton.h"
+#include "DrawHelper.h"
 
 #include <QPainter>
 #include <cmath>
 
 namespace Material
 {
-TilingZoneButton::TilingZoneButton(QWidget *parent)
+TilingZoneButton::TilingZoneButton(Qt::Edges outerEdges, QWidget *parent)
     : QToolButton(parent)
+    , m_outerEdges(outerEdges)
 {
     setFocusPolicy(Qt::StrongFocus);
     m_animation.setEasingCurve(QEasingCurve::InOutCubic);
@@ -36,6 +38,12 @@ void TilingZoneButton::setAnimationSettings(bool enabled, int duration)
 void TilingZoneButton::setCornerRadius(qreal radius)
 {
     m_cornerRadius = qMax(qreal(0), radius);
+    update();
+}
+
+void TilingZoneButton::setSquareCornersTiled(bool enabled)
+{
+    m_squareCornersTiled = enabled;
     update();
 }
 
@@ -83,7 +91,15 @@ void TilingZoneButton::paintEvent(QPaintEvent *event)
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setPen(interpolatedColor(QPalette::Mid));
     painter.setBrush(interpolatedColor(QPalette::Midlight));
-    painter.drawRoundedRect(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5), m_cornerRadius, m_cornerRadius);
+    const bool top = m_outerEdges.testFlag(Qt::TopEdge);
+    const bool bottom = m_outerEdges.testFlag(Qt::BottomEdge);
+    const bool left = m_outerEdges.testFlag(Qt::LeftEdge);
+    const bool right = m_outerEdges.testFlag(Qt::RightEdge);
+    painter.drawPath(DrawHelper::getRoundedPath(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5), m_cornerRadius,
+                                              !m_squareCornersTiled || (top && left),
+                                              !m_squareCornersTiled || (top && right),
+                                              !m_squareCornersTiled || (bottom && left),
+                                              !m_squareCornersTiled || (bottom && right)));
 }
 
 void TilingZoneButton::enterEvent(QEnterEvent *event)

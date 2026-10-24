@@ -25,6 +25,7 @@ public:
     explicit TilingPopup(QWidget *parent = nullptr);
     void setBackgroundOpacity(int percent);
     void setCornerRadius(qreal radius);
+    void setSquareCornersTiled(bool enabled);
     void setAnimationSettings(bool enabled, int duration);
 
 signals:

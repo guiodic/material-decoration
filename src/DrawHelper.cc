@@ -20,11 +20,13 @@ QPainterPath DrawHelper::getRoundedPath(const QRectF &rect,
         return path;
     }
 
-    // Rounder rectangle
+    // Rounded rectangle
     if (roundedCorners == 4) {
         path.addRoundedRect(rect, radius, radius);
         return path;
     }
+
+    radius = qMin(radius, qMin(rect.width(), rect.height()) / 2);
 
     // === START: top-right ===
     path.moveTo(rect.topRight() - QPointF(roundTopRight ? radius : 0, 0));

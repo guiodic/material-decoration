@@ -47,7 +47,12 @@ TilingPopup::TilingPopup(QWidget *parent)
         preview->setFixedSize(unit * 8, unit * 5);
         grid->addWidget(preview, int(i / 2), int(i % 2));
         for (const auto &zone : layouts[i]) {
-            auto *button = new TilingZoneButton(preview);
+            Qt::Edges outerEdges;
+            if (qFuzzyIsNull(zone.rect.left())) outerEdges |= Qt::LeftEdge;
+            if (qFuzzyCompare(zone.rect.right(), 1.0)) outerEdges |= Qt::RightEdge;
+            if (qFuzzyIsNull(zone.rect.top())) outerEdges |= Qt::TopEdge;
+            if (qFuzzyCompare(zone.rect.bottom(), 1.0)) outerEdges |= Qt::BottomEdge;
+            auto *button = new TilingZoneButton(outerEdges, preview);
             const QRectF bounds(zone.rect.x() * preview->width(), zone.rect.y() * preview->height(),
                                 zone.rect.width() * preview->width(), zone.rect.height() * preview->height());
             button->setGeometry(bounds.toAlignedRect().adjusted(gap / 2, gap / 2, -gap / 2, -gap / 2));
@@ -76,6 +81,11 @@ void TilingPopup::setCornerRadius(qreal radius)
     m_cornerRadius = qMax(qreal(0), radius);
     for (auto *button : m_buttons) button->setCornerRadius(m_cornerRadius);
     update();
+}
+
+void TilingPopup::setSquareCornersTiled(bool enabled)
+{
+    for (auto *button : m_buttons) button->setSquareCornersTiled(enabled);
 }
 
 void TilingPopup::setBackgroundOpacity(int percent)

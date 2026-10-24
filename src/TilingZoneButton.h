@@ -11,12 +11,13 @@ class TilingZoneButton : public QToolButton
     Q_OBJECT
     Q_PROPERTY(bool keyboardSelected READ keyboardSelected WRITE setKeyboardSelected)
 public:
-    explicit TilingZoneButton(QWidget *parent = nullptr);
+    explicit TilingZoneButton(Qt::Edges outerEdges, QWidget *parent = nullptr);
     bool keyboardSelected() const { return m_keyboardSelected; }
     void setKeyboardSelected(bool selected);
     void setAnimationSettings(bool enabled, int duration);
     void resetHighlight();
     void setCornerRadius(qreal radius);
+    void setSquareCornersTiled(bool enabled);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -31,6 +32,8 @@ private:
     QVariantAnimation m_animation;
     qreal m_progress = 0;
     qreal m_cornerRadius = 6;
+    Qt::Edges m_outerEdges;
+    bool m_squareCornersTiled = false;
     bool m_hovered = false;
     bool m_keyboardSelected = false;
     bool m_animationsEnabled = true;

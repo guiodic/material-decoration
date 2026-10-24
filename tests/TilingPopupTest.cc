@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "TilingPopup.h"
+#include "DrawHelper.h"
 #include "TilingZoneButton.h"
 #include <QEnterEvent>
 #include <QSignalSpy>
@@ -78,9 +79,69 @@ private slots:
         QCOMPARE(selected.size(), 1);
     }
 
+    void selectiveCornersPreserveGaps()
+    {
+        TilingPopup popup;
+        popup.setBackgroundOpacity(100);
+        popup.setCornerRadius(12);
+        QPalette palette = popup.palette();
+        palette.setColor(QPalette::Window, Qt::white);
+        palette.setColor(QPalette::Mid, Qt::black);
+        palette.setColor(QPalette::Midlight, Qt::black);
+        palette.setColor(QPalette::Highlight, Qt::black);
+        popup.setPalette(palette);
+        popup.popup(QPoint(10, 10));
+        QCoreApplication::processEvents();
+        const auto buttons = popup.findChildren<TilingZoneButton *>();
+        // Top-left, top-right, bottom-left, bottom-right for every layout zone.
+        const QList<QList<bool>> outerCorners = {
+            {true, false, true, false}, {false, true, false, true},
+            {true, true, false, false}, {false, false, true, true},
+            {true, false, true, false}, {false, true, false, false}, {false, false, false, true},
+            {true, false, false, false}, {false, true, false, false},
+            {false, false, true, false}, {false, false, false, true}
+        };
+        QCOMPARE(buttons.size(), outerCorners.size());
+        QList<QRect> geometry;
+        for (auto *button : buttons) geometry.append(button->geometry());
+        const QSize popupSize = popup.size();
+        for (bool square : {false, true, false}) {
+            popup.setSquareCornersTiled(square);
+            for (qsizetype i = 0; i < buttons.size(); ++i) {
+                const auto image = buttons[i]->grab().toImage();
+                const QList<QPoint> corners = {
+                    {2, 2}, {image.width() - 3, 2},
+                    {2, image.height() - 3}, {image.width() - 3, image.height() - 3}
+                };
+                for (qsizetype c = 0; c < corners.size(); ++c) {
+                    const QColor color = image.pixelColor(corners[c]);
+                    const bool filled = color.alpha() > 128 && color.red() < 128;
+                    QCOMPARE(filled, square && !outerCorners[i][c]);
+                }
+                QCOMPARE(buttons[i]->geometry(), geometry[i]);
+                // Every zone keeps an inset from its preview's perimeter.
+                QVERIFY(buttons[i]->geometry().left() > 0);
+                QVERIFY(buttons[i]->geometry().top() > 0);
+                QVERIFY(buttons[i]->geometry().right() < buttons[i]->parentWidget()->width() - 1);
+                QVERIFY(buttons[i]->geometry().bottom() < buttons[i]->parentWidget()->height() - 1);
+            }
+            QCOMPARE(popup.size(), popupSize);
+        }
+    }
+
+    void largeRadiusStaysInsideZone()
+    {
+        const QRectF bounds(0.5, 0.5, 29, 17);
+        for (int corners = 0; corners < 16; ++corners) {
+            const auto path = DrawHelper::getRoundedPath(bounds, 16, corners & 1, corners & 2, corners & 4, corners & 8);
+            QVERIFY(bounds.adjusted(-0.001, -0.001, 0.001, 0.001).contains(path.boundingRect()));
+            QVERIFY(path.contains(bounds.center()));
+        }
+    }
+
     void animatedHighlightReversesWithoutJump()
     {
-        TilingZoneButton button;
+        TilingZoneButton button(Qt::TopEdge | Qt::BottomEdge | Qt::LeftEdge | Qt::RightEdge);
         button.resize(60, 40);
         QPalette palette = button.palette();
         palette.setColor(QPalette::Midlight, Qt::black);
