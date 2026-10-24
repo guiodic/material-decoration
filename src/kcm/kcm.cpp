@@ -4,7 +4,6 @@
 #include <QObject>
 
 #include "../InternalSettings.h"
-#include "../SettingsMigration.h"
 
 #include <ui_config.h>
 
@@ -141,7 +140,6 @@ void MaterialDecorationKCM::load()
 {
     auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
     config->reparseConfiguration();
-    Material::migrateTilingPopupOpacity(*config);
     m_settings->load();
     m_ui->exceptionsWidget->load();
     updateUI();
