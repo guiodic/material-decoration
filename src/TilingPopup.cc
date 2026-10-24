@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "TilingPopup.h"
+#include "DrawHelper.h"
 #include "TilingZoneButton.h"
 
 #include <KLocalizedString>
@@ -7,6 +8,7 @@
 #include <QGridLayout>
 #include <QKeyEvent>
 #include <QPainter>
+#include <QResizeEvent>
 #include <QWidgetAction>
 #include <limits>
 
@@ -80,6 +82,7 @@ void TilingPopup::setCornerRadius(qreal radius)
 {
     m_cornerRadius = qMax(qreal(0), radius);
     for (auto *button : m_buttons) button->setCornerRadius(m_cornerRadius);
+    updateMask();
     update();
 }
 
@@ -108,10 +111,28 @@ void TilingPopup::paintEvent(QPaintEvent *event)
     painter.drawRoundedRect(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5), m_cornerRadius, m_cornerRadius);
 }
 
+void TilingPopup::updateMask()
+{
+    if (m_cornerRadius <= 0) {
+        clearMask();
+        return;
+    }
+    // Include the outer half of the one-pixel border in the widget silhouette.
+    const auto path = DrawHelper::getRoundedPath(QRectF(rect()), m_cornerRadius + 0.5, true, true, true, true);
+    setMask(QRegion(path.toFillPolygon().toPolygon()));
+}
+
+void TilingPopup::resizeEvent(QResizeEvent *event)
+{
+    QMenu::resizeEvent(event);
+    updateMask();
+}
+
 void TilingPopup::showEvent(QShowEvent *event)
 {
     m_waitingForRelease = QApplication::mouseButtons().testFlag(Qt::LeftButton);
     QMenu::showEvent(event);
+    updateMask();
     for (auto *button : m_buttons) button->resetHighlight();
     selectKeyboardButton(-1);
 }

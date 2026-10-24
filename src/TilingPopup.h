@@ -35,10 +35,12 @@ protected:
     void paintEvent(QPaintEvent *event) override;
     bool eventFilter(QObject *object, QEvent *event) override;
     void showEvent(QShowEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private:
     bool handleKeyPress(QKeyEvent *event);
     void selectKeyboardButton(int index);
+    void updateMask();
 
     QVector<TilingZoneButton *> m_buttons;
     int m_keyboardIndex = -1;

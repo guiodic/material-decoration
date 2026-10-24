@@ -129,6 +129,41 @@ private slots:
         }
     }
 
+    void widgetMaskFollowsRadiusAndSize()
+    {
+        TilingPopup popup;
+        popup.setCornerRadius(16);
+        popup.popup(QPoint(10, 10));
+        QCoreApplication::processEvents();
+        const QRect geometry = popup.geometry();
+        const auto checkCorners = [&] {
+            const auto mask = popup.mask();
+            QVERIFY(!mask.isEmpty());
+            QVERIFY(!mask.contains(popup.rect().topLeft()));
+            QVERIFY(!mask.contains(popup.rect().topRight()));
+            QVERIFY(!mask.contains(popup.rect().bottomLeft()));
+            QVERIFY(!mask.contains(popup.rect().bottomRight()));
+            QVERIFY(mask.contains(popup.rect().center()));
+            QVERIFY(mask.contains(QPoint(0, popup.height() / 2)));
+            QVERIFY(mask.contains(QPoint(popup.width() / 2, popup.height() - 1)));
+        };
+        checkCorners();
+        const auto rounded = popup.mask();
+        popup.setCornerRadius(0);
+        QVERIFY(popup.mask().isEmpty());
+        QCOMPARE(popup.geometry(), geometry);
+        popup.setCornerRadius(16);
+        QCOMPARE(popup.mask(), rounded);
+        popup.resize(popup.size() + QSize(40, 30));
+        QCoreApplication::processEvents();
+        checkCorners();
+        QCOMPARE(popup.mask().boundingRect(), popup.rect());
+        popup.hide();
+        popup.popup(QPoint(10, 10));
+        QCoreApplication::processEvents();
+        checkCorners();
+    }
+
     void largeRadiusStaysInsideZone()
     {
         const QRectF bounds(0.5, 0.5, 29, 17);

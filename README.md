@@ -54,6 +54,9 @@ quick tiling. The script is enabled by default unless explicitly disabled in
 **System Settings > Window Management > KWin Scripts**. 
 If the script was disabled, enable it in that panel.
 
+This experimental branch applies a rounded widget mask to the popup. Blur and
+the automatic menu shadow are unchanged; no custom shadow is installed.
+
 # Build instructions for Plasma 6
 
 ```
