@@ -3,6 +3,9 @@
 #include "TilingZoneButton.h"
 
 #include <KLocalizedString>
+#include <KWindowShadow>
+#include <QPlatformSurfaceEvent>
+#include <QWindow>
 #include <QApplication>
 #include <QGridLayout>
 #include <QKeyEvent>
@@ -28,7 +31,11 @@ QVector<TilingLayout> tilingLayouts()
 
 TilingPopup::TilingPopup(QWidget *parent)
     : QMenu(parent)
+    , m_shadow(new KWindowShadow(this))
 {
+    setProperty("_KDE_NET_WM_SKIP_SHADOW", true);
+    m_shadowUpdateTimer.setSingleShot(true);
+    connect(&m_shadowUpdateTimer, &QTimer::timeout, this, &TilingPopup::updateShadow);
     // Use an alpha surface and paint only the backdrop with reduced opacity;
     // window opacity would also fade the layout buttons and their highlight.
     setAttribute(Qt::WA_TranslucentBackground);
@@ -108,16 +115,74 @@ void TilingPopup::paintEvent(QPaintEvent *event)
     painter.drawRoundedRect(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5), m_cornerRadius, m_cornerRadius);
 }
 
+void TilingPopup::setShadowTexture(const QImage &image, const QMargins &padding)
+{
+    if (m_shadowTexture == image && m_shadowPadding == padding) return;
+    m_shadowTexture = image;
+    m_shadowPadding = padding;
+    if (isVisible()) m_shadowUpdateTimer.start(0);
+}
+
+void TilingPopup::updateShadow()
+{
+    if (!isVisible() || !windowHandle()) return;
+    m_shadow->destroy();
+    m_shadow->setWindow(windowHandle());
+    windowHandle()->installEventFilter(this);
+    const auto tile = [](const QImage &image) {
+        auto result = KWindowShadowTile::Ptr::create();
+        result->setImage(image);
+        return result;
+    };
+    QImage image = m_shadowTexture;
+    QMargins padding = m_shadowPadding;
+    if (image.isNull()) {
+        // Transparent tiles also replace any shadow installed by the style.
+        image = QImage(3, 3, QImage::Format_ARGB32_Premultiplied);
+        image.fill(Qt::transparent);
+        padding = QMargins();
+    }
+    const int x = image.width() / 2;
+    const int y = image.height() / 2;
+    const int right = image.width() - x - 1;
+    const int bottom = image.height() - y - 1;
+    m_shadow->setTopLeftTile(tile(image.copy(0, 0, x, y)));
+    m_shadow->setTopTile(tile(image.copy(x, 0, 1, y)));
+    m_shadow->setTopRightTile(tile(image.copy(x + 1, 0, right, y)));
+    m_shadow->setLeftTile(tile(image.copy(0, y, x, 1)));
+    m_shadow->setRightTile(tile(image.copy(x + 1, y, right, 1)));
+    m_shadow->setBottomLeftTile(tile(image.copy(0, y + 1, x, bottom)));
+    m_shadow->setBottomTile(tile(image.copy(x, y + 1, 1, bottom)));
+    m_shadow->setBottomRightTile(tile(image.copy(x + 1, y + 1, right, bottom)));
+    m_shadow->setPadding(padding);
+    m_shadow->create();
+}
+
 void TilingPopup::showEvent(QShowEvent *event)
 {
     m_waitingForRelease = QApplication::mouseButtons().testFlag(Qt::LeftButton);
     QMenu::showEvent(event);
     for (auto *button : m_buttons) button->resetHighlight();
     selectKeyboardButton(-1);
+    updateShadow();
 }
 
 bool TilingPopup::eventFilter(QObject *object, QEvent *event)
 {
+    if (object == m_shadow->window()) {
+        if (event->type() == QEvent::PlatformSurface) {
+            const auto *surface = static_cast<QPlatformSurfaceEvent *>(event);
+            if (surface->surfaceEventType() == QPlatformSurfaceEvent::SurfaceAboutToBeDestroyed) {
+                m_shadow->destroy();
+            } else if (isVisible()) {
+                m_shadowUpdateTimer.start(0);
+            }
+        }
+        return false;
+    }
+    if (object == this && event->type() == QEvent::StyleChange && isVisible()) {
+        m_shadowUpdateTimer.start(0);
+    }
     if (event->type() == QEvent::MouseButtonPress) {
         m_waitingForRelease = false;
     } else if (event->type() == QEvent::MouseButtonRelease && m_waitingForRelease) {

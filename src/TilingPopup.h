@@ -3,6 +3,10 @@
 
 #include <QMenu>
 #include <QVector>
+#include <QImage>
+#include <QTimer>
+
+class KWindowShadow;
 
 namespace Material
 {
@@ -27,6 +31,7 @@ public:
     void setCornerRadius(qreal radius);
     void setSquareCornersTiled(bool enabled);
     void setAnimationSettings(bool enabled, int duration);
+    void setShadowTexture(const QImage &image, const QMargins &padding);
 
 signals:
     void zoneSelected(Qt::Edges edges);
@@ -39,7 +44,12 @@ protected:
 private:
     bool handleKeyPress(QKeyEvent *event);
     void selectKeyboardButton(int index);
+    void updateShadow();
 
+    KWindowShadow *m_shadow;
+    QImage m_shadowTexture;
+    QMargins m_shadowPadding;
+    QTimer m_shadowUpdateTimer;
     QVector<TilingZoneButton *> m_buttons;
     int m_keyboardIndex = -1;
     bool m_waitingForRelease = false;

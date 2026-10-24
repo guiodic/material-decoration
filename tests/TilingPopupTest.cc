@@ -3,6 +3,7 @@
 #include "DrawHelper.h"
 #include "TilingZoneButton.h"
 #include <QEnterEvent>
+#include <KWindowShadow>
 #include <QSignalSpy>
 #include <QTest>
 #include <QToolButton>
@@ -127,6 +128,41 @@ private slots:
             }
             QCOMPARE(popup.size(), popupSize);
         }
+    }
+
+    void shadowChangesDoNotChangePopupGeometry()
+    {
+        TilingPopup popup;
+        QImage texture(41, 41, QImage::Format_ARGB32_Premultiplied);
+        texture.fill(QColor(0, 0, 0, 80));
+        const QMargins padding(12, 8, 12, 16);
+        popup.setShadowTexture(texture, padding);
+        popup.popup(QPoint(10, 10));
+        QCoreApplication::processEvents();
+        const QRect geometry = popup.geometry();
+        auto *shadow = popup.findChild<KWindowShadow *>();
+        QVERIFY(shadow);
+        QCOMPARE(shadow->window(), popup.windowHandle());
+        QCOMPARE(shadow->padding(), padding);
+        QCOMPARE(shadow->topLeftTile()->image().size(), QSize(20, 20));
+        QCOMPARE(shadow->bottomTile()->image().size(), QSize(1, 20));
+        const auto tile = shadow->topLeftTile();
+        popup.setShadowTexture(texture, padding);
+        QCoreApplication::processEvents();
+        QCOMPARE(shadow->topLeftTile(), tile); // Identical settings do not recreate native tiles.
+        popup.hide();
+        popup.popup(QPoint(10, 10));
+        QCoreApplication::processEvents();
+        QCOMPARE(shadow->window(), popup.windowHandle());
+        QCOMPARE(shadow->padding(), padding);
+        popup.setShadowTexture(QImage(), QMargins());
+        QTRY_COMPARE(shadow->padding(), QMargins());
+        QCOMPARE(shadow->topLeftTile()->image().pixelColor(0, 0).alpha(), 0);
+        QCOMPARE(shadow->bottomRightTile()->image().pixelColor(0, 0).alpha(), 0);
+        QCOMPARE(popup.geometry(), geometry);
+        popup.setShadowTexture(texture, padding);
+        QTRY_COMPARE(shadow->padding(), padding);
+        QCOMPARE(shadow->topLeftTile()->image().pixelColor(0, 0).alpha(), 80);
     }
 
     void largeRadiusStaysInsideZone()

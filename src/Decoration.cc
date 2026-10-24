@@ -228,15 +228,22 @@ bool Decoration::showTilingPopup(const QRectF &anchor)
                 QTimer::singleShot(0, this, [this, edges] { tileWindow(this, edges); });
             });
         }
-        m_tilingPopup->setBackgroundOpacity(m_internalSettings->tilingPopupOpacity());
-        m_tilingPopup->setCornerRadius(m_internalSettings->cornerRadius());
-        m_tilingPopup->setSquareCornersTiled(m_internalSettings->squareCornersTiled());
-        m_tilingPopup->setAnimationSettings(animationsEnabled(), animationsDuration());
+        updateTilingPopupSettings();
         KDecoration3::Positioner positioner;
         positioner.setAnchorRect(anchor);
         popup(positioner, m_tilingPopup.get());
     });
     return true;
+}
+
+void Decoration::updateTilingPopupSettings()
+{
+    m_tilingPopup->setBackgroundOpacity(m_internalSettings->tilingPopupOpacity());
+    m_tilingPopup->setCornerRadius(m_internalSettings->cornerRadius());
+    m_tilingPopup->setSquareCornersTiled(m_internalSettings->squareCornersTiled());
+    m_tilingPopup->setAnimationSettings(animationsEnabled(), animationsDuration());
+    const auto shadow = m_internalSettings->hideShadow() ? nullptr : createShadowObject(m_internalSettings->cornerRadius());
+    m_tilingPopup->setShadowTexture(shadow ? shadow->shadow() : QImage(), shadow ? shadow->padding().toMargins() : QMargins());
 }
 
 void Decoration::setupMenu()
@@ -445,10 +452,7 @@ void Decoration::applySettings()
         return;
     }
     if (m_tilingPopup) {
-        m_tilingPopup->setBackgroundOpacity(m_internalSettings->tilingPopupOpacity());
-        m_tilingPopup->setCornerRadius(m_internalSettings->cornerRadius());
-        m_tilingPopup->setSquareCornersTiled(m_internalSettings->squareCornersTiled());
-        m_tilingPopup->setAnimationSettings(animationsEnabled(), animationsDuration());
+        updateTilingPopupSettings();
     }
     m_bottomCornersFlag = m_internalSettings->bottomCornerRadiusFlag();
 
@@ -805,11 +809,11 @@ void Decoration::updateShadow()
     s_shadowSizePreset = shadowSizePreset;
     s_cornerRadius = m_cornerRadius;
 
-    s_cachedShadow = createShadowObject(1.0);
+    s_cachedShadow = createShadowObject(m_cornerRadius);
     setShadow(s_cachedShadow);
 }
 
-std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(const float strengthScale)
+std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(qreal cornerRadius)
 {
     CompositeShadowParams params = lookupShadowParams(m_internalSettings->shadowSize());
     if (params.isNone()) {
@@ -826,10 +830,10 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
         BoxShadowRenderer::calculateMinimumBoxSize(params.shadow1.radius).expandedTo(BoxShadowRenderer::calculateMinimumBoxSize(params.shadow2.radius));
 
     BoxShadowRenderer shadowRenderer;
-    shadowRenderer.setBorderRadius(m_cornerRadius + 0.5);
+    shadowRenderer.setBorderRadius(cornerRadius + 0.5);
     shadowRenderer.setBoxSize(boxSize);
 
-    const qreal strength = m_internalSettings->shadowStrength() / 255.0 * strengthScale;
+    const qreal strength = m_internalSettings->shadowStrength() / 255.0;
     shadowRenderer.addShadow(params.shadow1.offset, params.shadow1.radius, withOpacity(m_internalSettings->shadowColor(), params.shadow1.opacity * strength));
     shadowRenderer.addShadow(params.shadow2.offset, params.shadow2.radius, withOpacity(m_internalSettings->shadowColor(), params.shadow2.opacity * strength));
 
@@ -852,7 +856,7 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
-    painter.drawRoundedRect(innerRect, m_cornerRadius + 0.5, m_cornerRadius + 0.5);
+    painter.drawRoundedRect(innerRect, cornerRadius + 0.5, cornerRadius + 0.5);
 
     painter.end();
 
