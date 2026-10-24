@@ -348,6 +348,18 @@ bool Decoration::init()
     setInternalSettings(SettingsProvider::self()->internalSettings(this));
     connect(SettingsProvider::self(), &SettingsProvider::configChanged, this, &Decoration::reconfigure);
 
+    if (property("visualParent").isValid()) {
+        // KWin's preview applies the initial state but can leave later border
+        // changes pending. Real windows must keep KWin's state synchronization.
+        auto *previewStateTimer = new QTimer(this);
+        previewStateTimer->setSingleShot(true);
+        connect(this, &KDecoration3::Decoration::nextStateChanged,
+                previewStateTimer, qOverload<>(&QTimer::start));
+        connect(previewStateTimer, &QTimer::timeout, this, [this] {
+            apply(nextState()->clone());
+        });
+    }
+
     const auto *decoratedClient = window();
 
     // KWin can start an interactive move while the button is still held
