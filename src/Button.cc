@@ -66,6 +66,7 @@
 #include <QDBusPendingCallWatcher>
 #include <QCursor>
 #include <QToolTip>
+#include <QScopedValueRollback>
 #include <QApplication>
 #include <cmath>
 
@@ -167,7 +168,7 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
         m_toolTipTimer->setSingleShot(true);
         connect(m_toolTipTimer, &QTimer::timeout, this, &Button::refreshLongPressToolTip);
         connect(this, &Button::hoveredChanged, this, [this](bool hovered) {
-            if (hovered && !m_longPressTriggered) {
+            if (hovered && !m_restoringHover) {
                 m_longPressToolTipSuspended = false;
                 m_longPressWarning.clear();
             }
@@ -355,6 +356,8 @@ void Button::mouseReleaseEvent(QMouseEvent *event)
     if (m_longPressTriggered) {
         // A recognized long press consumes the click even if its action is
         // still pending or unavailable, consistently for all three buttons.
+        QScopedValueRollback<bool> restoringHover(m_restoringHover, true);
+        m_longPressTriggered = false;
         forceUnpress();
 
         // Refresh hover state, simulate a mouse HoverMove.
@@ -366,7 +369,6 @@ void Button::mouseReleaseEvent(QMouseEvent *event)
         // without losing an unavailable-action warning shown during the hold.
         decoration()->requestHideToolTip();
         if (!m_longPressWarning.isEmpty()) QToolTip::showText(QCursor::pos(), m_longPressWarning);
-        m_longPressTriggered = false;
         return;
     }
     KDecoration3::DecorationButton::mouseReleaseEvent(event);
