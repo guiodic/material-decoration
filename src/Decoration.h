@@ -66,6 +66,7 @@ public:
 
 signals:
     void tilingPopupVisibilityChanged(bool visible);
+    void tilingPopupUnavailable(const QString &message);
 
 public slots:
     bool init() override;

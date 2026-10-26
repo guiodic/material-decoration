@@ -135,6 +135,8 @@ protected:
     quint64 m_toolTipGeneration = 0;
     QString m_toolTipText;
     bool m_longPressTriggered = false;
+    bool m_longPressToolTipSuspended = false;
+    QString m_longPressWarning;
     quint64 m_pressGeneration = 0;
     bool m_tilingPopupOpen = false;
     qreal m_penScale = 1.0;
