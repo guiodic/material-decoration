@@ -431,3 +431,19 @@ msgstr "Pop-up voor venstertegels openen bij aanwijzen van de maximaliseerknop"
 #: src/kcm/config.ui
 msgid "Tiling popup hover delay"
 msgstr "Vertraging bij openen van pop-up voor venstertegels"
+
+#: src/TilingPopup.cc
+msgid "Custom tiling layout (Meta+T)"
+msgstr "Aangepaste tegelindeling (Meta+T)"
+
+#: src/TilingPopup.cc
+msgid "Custom layout unavailable"
+msgstr "Aangepaste indeling niet beschikbaar"
+
+#: src/TilingPopup.cc
+msgid "Custom tile %1"
+msgstr "Aangepaste tegel %1"
+
+#: src/Decoration.cc
+msgid "The custom tile is unavailable. Open the popup again."
+msgstr "De aangepaste tegel is niet beschikbaar. Open de pop-up opnieuw."

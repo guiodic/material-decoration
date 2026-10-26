@@ -6,6 +6,7 @@
 #include <QApplication>
 #include <QGridLayout>
 #include <QKeyEvent>
+#include <QLabel>
 #include <QWidgetAction>
 #include <limits>
 
@@ -22,7 +23,7 @@ QVector<TilingLayout> tilingLayouts()
     const TilingZone topRight{{.5, 0, .5, .5}, Qt::TopEdge | Qt::RightEdge, i18nd("materialdecoration", "Top right quarter")};
     const TilingZone bottomLeft{{0, .5, .5, .5}, Qt::BottomEdge | Qt::LeftEdge, i18nd("materialdecoration", "Bottom left quarter")};
     const TilingZone bottomRight{{.5, .5, .5, .5}, Qt::BottomEdge | Qt::RightEdge, i18nd("materialdecoration", "Bottom right quarter")};
-    return {{left, right}, {top, bottom}, {left, topRight, bottomRight}, {topLeft, topRight, bottomLeft, bottomRight}};
+    return {{left, right}, {top, bottom}, {}, {topLeft, topRight, bottomLeft, bottomRight}};
 }
 
 TilingPopup::TilingPopup(QWidget *parent)
@@ -42,43 +43,80 @@ TilingPopup::TilingPopup(QWidget *parent)
         auto *preview = new QWidget(panel);
         preview->setFixedSize(unit * 8, unit * 5);
         grid->addWidget(preview, int(i / 2), int(i % 2));
-        for (const auto &zone : layouts[i]) {
-            Qt::Edges outerEdges;
-            if (qFuzzyIsNull(zone.rect.left())) outerEdges |= Qt::LeftEdge;
-            if (qFuzzyCompare(zone.rect.right(), 1.0)) outerEdges |= Qt::RightEdge;
-            if (qFuzzyIsNull(zone.rect.top())) outerEdges |= Qt::TopEdge;
-            if (qFuzzyCompare(zone.rect.bottom(), 1.0)) outerEdges |= Qt::BottomEdge;
-            auto *button = new TilingZoneButton(outerEdges, preview);
-            const QRectF bounds(zone.rect.x() * preview->width(), zone.rect.y() * preview->height(),
-                                zone.rect.width() * preview->width(), zone.rect.height() * preview->height());
-            button->setGeometry(bounds.toAlignedRect().adjusted(gap / 2, gap / 2, -gap / 2, -gap / 2));
-            button->setAccessibleName(zone.label);
-            button->setToolTip(zone.label);
-            button->installEventFilter(this);
-            m_buttons.append(button);
-            connect(button, &QToolButton::clicked, this, [this, edges = zone.edges] {
-                hide();
-                Q_EMIT zoneSelected(edges);
-            });
+        if (i == 2) {
+            m_customPreview = preview;
+            preview->setAccessibleName(i18nd("materialdecoration", "Custom tiling layout (Meta+T)"));
+            m_customPlaceholder = new QLabel(i18nd("materialdecoration", "Custom layout unavailable"), preview);
+            m_customPlaceholder->setGeometry(preview->rect());
+            m_customPlaceholder->setAlignment(Qt::AlignCenter);
+            m_customPlaceholder->setWordWrap(true);
+            m_customPlaceholder->setEnabled(false);
         }
+        for (const auto &zone : layouts[i]) m_buttons.append(createZone(preview, zone));
     }
+
     auto *action = new QWidgetAction(this);
     action->setDefaultWidget(panel);
     addAction(action);
 }
 
+TilingZoneButton *TilingPopup::createZone(QWidget *preview, const TilingZone &zone)
+{
+    Qt::Edges outerEdges;
+    if (qFuzzyIsNull(zone.rect.left())) outerEdges |= Qt::LeftEdge;
+    if (qFuzzyCompare(zone.rect.right(), 1.0)) outerEdges |= Qt::RightEdge;
+    if (qFuzzyIsNull(zone.rect.top())) outerEdges |= Qt::TopEdge;
+    if (qFuzzyCompare(zone.rect.bottom(), 1.0)) outerEdges |= Qt::BottomEdge;
+    auto *button = new TilingZoneButton(outerEdges, preview);
+    const int gap = qMax(4, fontMetrics().height() / 3);
+    const QRectF bounds(zone.rect.x() * preview->width(), zone.rect.y() * preview->height(),
+                        zone.rect.width() * preview->width(), zone.rect.height() * preview->height());
+    button->setGeometry(bounds.toAlignedRect().adjusted(gap / 2, gap / 2, -gap / 2, -gap / 2));
+    button->setAccessibleName(zone.label);
+    button->setToolTip(zone.label);
+    button->setCornerRadius(m_zoneCornerRadius);
+    button->setSquareCornersTiled(m_squareCornersTiled);
+    button->setAnimationSettings(m_animationsEnabled, m_animationDuration);
+    button->installEventFilter(this);
+    connect(button, &QToolButton::clicked, this, [this, edges = zone.edges, id = zone.customTileId] {
+        hide();
+        if (id.isEmpty()) Q_EMIT zoneSelected(edges);
+        else Q_EMIT customZoneSelected(id);
+    });
+    return button;
+}
+
+void TilingPopup::setCustomLayout(const CustomTilingLayout &layout)
+{
+    selectKeyboardButton(-1);
+    for (qsizetype i = m_buttons.size(); i-- > 0;) {
+        if (m_buttons[i]->parentWidget() == m_customPreview) delete m_buttons.takeAt(i);
+    }
+    m_customPlaceholder->setVisible(layout.isEmpty());
+    int index = 4; // After the two fixed previews in the top row.
+    for (const auto &zone : layout) {
+        m_buttons.insert(index, createZone(m_customPreview, {zone.rect, {},
+                         i18nd("materialdecoration", "Custom tile %1", index - 3), zone.id}));
+        ++index;
+    }
+}
+
 void TilingPopup::setAnimationSettings(bool enabled, int duration)
 {
+    m_animationsEnabled = enabled;
+    m_animationDuration = duration;
     for (auto *button : m_buttons) button->setAnimationSettings(enabled, duration);
 }
 
 void TilingPopup::setZoneCornerRadius(qreal radius)
 {
+    m_zoneCornerRadius = radius;
     for (auto *button : m_buttons) button->setCornerRadius(radius);
 }
 
 void TilingPopup::setSquareCornersTiled(bool enabled)
 {
+    m_squareCornersTiled = enabled;
     for (auto *button : m_buttons) button->setSquareCornersTiled(enabled);
 }
 

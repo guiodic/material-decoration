@@ -5,9 +5,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: materialdecoration\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-08 13:54+0000\n"
+"POT-Creation-Date: 2026-10-26 18:20+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,393 +16,582 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: materialdecoration_kcm.json
-msgid "Material Decoration"
+#: src/Button.cc:886
+#, kde-format
+msgid ""
+"Install kwin-minimize2tray and enable Minimize to Tray in System Settings > "
+"Window Management > KWin Scripts."
 msgstr ""
 
-#: materialdecoration_kcm.json
-msgid "Configuration module for the Material Decoration"
+#: src/Button.cc:892
+#, kde-format
+msgid ""
+"The action to minimize all other windows is unavailable. It requires Plasma "
+"6.6 or later."
 msgstr ""
 
-#: config.ui:20
-msgid "Appearance"
+#: src/Decoration.cc:249
+#, kde-format
+msgid ""
+"Enable the Material Tiling Popup script in System Settings > Window "
+"Management > KWin Scripts."
 msgstr ""
 
-#: config.ui:26
-msgid "Title alignment"
+#: src/Decoration.cc:265
+#, kde-format
+msgid "The custom tile is unavailable. Open the popup again."
 msgstr ""
 
-#: config.ui:33
-msgid "Button size"
+#: src/TilingPopup.cc:18
+#, kde-format
+msgid "Left half"
 msgstr ""
 
-#: config.ui:40
-msgid "Active window opacity"
+#: src/TilingPopup.cc:19
+#, kde-format
+msgid "Right half"
 msgstr ""
 
-#: config.ui:58
-msgid "Inactive window opacity"
+#: src/TilingPopup.cc:20
+#, kde-format
+msgid "Top half"
 msgstr ""
 
-#: config.ui:76
-msgid "Corner radius"
+#: src/TilingPopup.cc:21
+#, kde-format
+msgid "Bottom half"
 msgstr ""
 
-#: config.ui:145
-msgid "Round bottom corners"
+#: src/TilingPopup.cc:22
+#, kde-format
+msgid "Top left quarter"
 msgstr ""
 
-#: config.ui:95
-msgid "Menu and Search"
+#: src/TilingPopup.cc:23
+#, kde-format
+msgid "Top right quarter"
 msgstr ""
 
-#: config.ui:101
-msgid "Always show application menu"
+#: src/TilingPopup.cc:24
+#, kde-format
+msgid "Bottom left quarter"
 msgstr ""
 
-#: config.ui:108
-msgid "Enable search button"
+#: src/TilingPopup.cc:25
+#, kde-format
+msgid "Bottom right quarter"
 msgstr ""
 
-#: config.ui:115
-msgid "Show disabled menu actions"
+#: src/TilingPopup.cc:34
+#, kde-format
+msgid "Window tiling layouts"
 msgstr ""
 
-#: config.ui:122
-msgid "Use hamburger menu"
+#: src/TilingPopup.cc:48
+#, kde-format
+msgid "Custom tiling layout (Meta+T)"
 msgstr ""
 
-#: config.ui:129
-msgid "Menu button horizontal padding"
+#: src/TilingPopup.cc:49
+#, kde-format
+msgid "Custom layout unavailable"
 msgstr ""
 
-#: config.ui:139
-msgid "Shadows"
+#: src/TilingPopup.cc:99
+#, kde-format
+msgid "Custom tile %1"
 msgstr ""
 
-#: config.ui:145
-msgid "Shadow size"
+#: src/kcm/DetectDialog.cc:37
+#, kde-format
+msgid "Detect Window Properties"
 msgstr ""
 
-#: config.ui:152
-msgid "Shadow color"
+#: src/kcm/DetectDialog.cc:41
+#, kde-format
+msgid ""
+"Click 'Detect' and then click on the target window to capture its properties."
 msgstr ""
 
-#: config.ui:159
-msgid "Shadow strength"
+#: src/kcm/DetectDialog.cc:46
+#, kde-format
+msgid "Detect"
 msgstr ""
 
-#: config.ui:185
-msgid "Animations"
+#: src/kcm/DetectDialog.cc:60
+#, kde-format
+msgid "Querying KWin for window information..."
 msgstr ""
 
-#: config.ui:191
-msgid "Enable animations"
+#: src/kcm/DetectDialog.cc:80 src/kcm/DetectDialog.cc:81
+#, kde-format
+msgid "(unavailable)"
 msgstr ""
 
-#: config.ui:198
-msgid "Animation duration"
-msgstr ""
-
-msgid "Minimum reserved space"
-msgstr ""
-
-#: kcm.cpp:30
-msgid "Left"
-msgstr ""
-
-#: kcm.cpp:31
-msgid "Center"
-msgstr ""
-
-#: kcm.cpp:32
-msgid "Center (Full Width)"
-msgstr ""
-
-#: kcm.cpp:33
-msgid "Right"
-msgstr ""
-
-#: kcm.cpp:34
-msgid "Hidden"
-msgstr ""
-
-#: kcm.cpp:36
-msgid "Very Tiny"
-msgstr ""
-
-#: kcm.cpp:37
-msgid "Tiny"
-msgstr ""
-
-#: kcm.cpp:38 kcm.cpp:44
-msgid "Small"
-msgstr ""
-
-#: kcm.cpp:39
-msgid "Default"
-msgstr ""
-
-#: kcm.cpp:40 kcm.cpp:46
-msgid "Large"
-msgstr ""
-
-#: kcm.cpp:41 kcm.cpp:47
-msgid "Very Large"
-msgstr ""
-
-#: kcm.cpp:43
-msgid "None"
-msgstr ""
-
-#: kcm.cpp:45
-msgid "Medium"
-msgstr ""
-
-#: config.ui:136
-msgid "Use system menu font"
-msgstr ""
-
-#: config.ui:110
-msgid "Use custom border colors"
-msgstr ""
-
-#: config.ui:117
-msgid "Active window border color"
-msgstr ""
-
-#: config.ui:127
-msgid "Inactive window border color"
-msgstr ""
-
-#: config.ui:154
-msgid "Hide window title when space is limited"
-msgstr ""
-
-msgid "Use system colors"
-msgstr ""
-
-msgid "Button Options"
-msgstr ""
-
-msgid "Allow window dragging from buttons"
-msgstr ""
-
-msgid "Ignore top-level menu labels"
-msgstr ""
-
-msgid "Paint a thin outline around the window"
-msgstr ""
-
-msgid "Show window title on mouse over"
-msgstr ""
-
-#: src/kcm/ExceptionListWidget.cc:66
-msgid "Add..."
-msgstr ""
-
-#: src/kcm/config.ui:231
-msgid "Also ignore submenu labels"
-msgstr ""
-
-#: src/kcm/DetectDialog.cc:79
+#: src/kcm/DetectDialog.cc:83
+#, kde-format
 msgid ""
 "Captured Window Class: %1\n"
 "Captured Window Title: %2"
 msgstr ""
 
-#: src/kcm/ExceptionModel.cc:52
-msgid "Class"
-msgstr ""
-
-#: src/kcm/DetectDialog.cc:41
-msgid "Click 'Detect' and then click on the target window to capture its properties."
-msgstr ""
-
-#: src/kcm/DetectDialog.cc:45
-msgid "Detect"
-msgstr ""
-
-#: src/kcm/DetectDialog.cc:37
-msgid "Detect Window Properties"
-msgstr ""
-
-#: src/kcm/ExceptionDialog.cc:50
-msgid "Detect Window Properties..."
-msgstr ""
-
-#: src/kcm/ExceptionDialog.cc:76
-msgid "Don't draw window shadow"
-msgstr ""
-
-#: src/kcm/ExceptionDialog.cc:77
-msgid "Don't round window corners"
-msgstr ""
-
-#: src/kcm/ExceptionListWidget.cc:67
-msgid "Edit..."
-msgstr ""
-
-#: src/kcm/ExceptionModel.cc:50
-msgid "Empty pattern"
-msgstr ""
-
-#: src/kcm/config.ui:238
-msgid "Enable fuzzy search"
-msgstr ""
-
-#: src/kcm/config.ui:374
-msgid "Enable long-press actions on window buttons"
-msgstr ""
-
-#: src/kcm/ExceptionDialog.cc:64
-msgid "Exact Match"
-msgstr ""
-
-#: src/kcm/DetectDialog.cc:82
+#: src/kcm/DetectDialog.cc:86
+#, kde-format
 msgid "Failed to detect window info: %1"
 msgstr ""
 
-#: src/kcm/ExceptionDialog.cc:73
-msgid "Hide window title bar"
-msgstr ""
-
-#: src/kcm/config.ui:412
-msgid "Long-press duration"
-msgstr ""
-
-#: src/kcm/ExceptionDialog.cc:61
-msgid "Match against:"
-msgstr ""
-
-#: src/kcm/ExceptionDialog.cc:65
-msgid "Matching mode:"
-msgstr ""
-
-#: src/kcm/ExceptionListWidget.cc:70
-msgid "Move Down"
-msgstr ""
-
-#: src/kcm/ExceptionListWidget.cc:69
-msgid "Move Up"
-msgstr ""
-
-#: src/kcm/ExceptionDialog.cc:78
-msgid "Paint a thin line around the window"
-msgstr ""
-
-#: src/kcm/ExceptionDialog.cc:101
-msgid "Pattern cannot be empty."
-msgstr ""
-
-#: src/kcm/DetectDialog.cc:59
-msgid "Querying KWin for window information..."
-msgstr ""
-
-#: src/kcm/ExceptionDialog.cc:64
-msgid "Substring Match"
-msgstr ""
-
-#: src/kcm/ExceptionListWidget.cc:68
-msgid "Remove"
-msgstr ""
-
-#: src/kcm/ExceptionListWidget.cc:82
-msgid "Rules are evaluated from top to bottom; the first matching rule will be applied."
-msgstr ""
-
-#: src/kcm/ExceptionDialog.cc:75
-msgid "Show menu as hamburger"
-msgstr ""
-
-#: src/kcm/ExceptionDialog.cc:74
-msgid "Show the window title and hide the menu"
-msgstr ""
-
-#: src/kcm/ExceptionModel.cc:52
-msgid "Title"
-msgstr ""
-
-#: src/kcm/ExceptionDialog.cc:101 src/kcm/ExceptionDialog.cc:108
-msgid "Warning"
-msgstr ""
-
-#: src/kcm/ExceptionDialog.cc:59
-msgid "Window Class"
-msgstr ""
-
-#: src/kcm/ExceptionDialog.cc:41
+#: src/kcm/ExceptionDialog.cc:40
+#, kde-format
 msgid "Window Exception Settings"
 msgstr ""
 
-#: src/kcm/ExceptionDialog.cc:46
+#: src/kcm/ExceptionDialog.cc:45
+#, kde-format
 msgid "Window Identification"
 msgstr ""
 
-#: src/kcm/ExceptionDialog.cc:70
-msgid "Window Options"
+#: src/kcm/ExceptionDialog.cc:49
+#, kde-format
+msgid "Detect Window Properties..."
 msgstr ""
 
-#: src/kcm/ExceptionDialog.cc:56
+#: src/kcm/ExceptionDialog.cc:55
+#, kde-format
 msgid "Window Property / Pattern:"
 msgstr ""
 
-#: src/kcm/ExceptionDialog.cc:59
+#: src/kcm/ExceptionDialog.cc:58
+#, kde-format
+msgid "Window Class"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:58
+#, kde-format
 msgid "Window Title"
 msgstr ""
 
-#: src/kcm/config.ui:440
-msgid "Window-Specific Overrides"
+#: src/kcm/ExceptionDialog.cc:60
+#, kde-format
+msgid "Match against:"
 msgstr ""
 
-#: src/kcm/config.ui:35
+#: src/kcm/ExceptionDialog.cc:63
+#, kde-format
+msgid "Exact Match"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:63
+#, kde-format
+msgid "Substring Match"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:64
+#, kde-format
+msgid "Matching mode:"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:69
+#, kde-format
+msgid "Window Options"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:72
+#, kde-format
+msgid "Hide window title bar"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:73
+#, kde-format
+msgid "Show the window title and hide the menu"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:74
+#, kde-format
+msgid "Show menu as hamburger"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:75
+#, kde-format
+msgid "Don't draw window shadow"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:76
+#, kde-format
+msgid "Don't round window corners"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:77
+#, kde-format
+msgid "Paint a thin line around the window"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:100
+#, kde-format
+msgid "Pattern cannot be empty."
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:100
+#, kde-format
+msgid "Warning"
+msgstr ""
+
+#: src/kcm/ExceptionListWidget.cc:66
+#, kde-format
+msgid "Add..."
+msgstr ""
+
+#: src/kcm/ExceptionListWidget.cc:67
+#, kde-format
+msgid "Edit..."
+msgstr ""
+
+#: src/kcm/ExceptionListWidget.cc:68
+#, kde-format
+msgid "Remove"
+msgstr ""
+
+#: src/kcm/ExceptionListWidget.cc:69
+#, kde-format
+msgid "Move Up"
+msgstr ""
+
+#: src/kcm/ExceptionListWidget.cc:70
+#, kde-format
+msgid "Move Down"
+msgstr ""
+
+#: src/kcm/ExceptionListWidget.cc:82
+#, kde-format
+msgid ""
+"Rules are evaluated from top to bottom; the first matching rule will be "
+"applied."
+msgstr ""
+
+#: src/kcm/ExceptionModel.cc:50
+#, kde-format
+msgid "Empty pattern"
+msgstr ""
+
+#: src/kcm/ExceptionModel.cc:52
+#, kde-format
+msgid "Class"
+msgstr ""
+
+#: src/kcm/ExceptionModel.cc:52
+#, kde-format
+msgid "Title"
+msgstr ""
+
+#: src/kcm/config.ui:14
+#, kde-format
+msgid "Form"
+msgstr ""
+
+#: src/kcm/config.ui:39
+#, kde-format
+msgid "Appearance"
+msgstr ""
+
+#: src/kcm/config.ui:45
+#, kde-format
+msgid "Title alignment"
+msgstr ""
+
+#: src/kcm/config.ui:55
+#, kde-format
+msgid "Button size"
+msgstr ""
+
+#: src/kcm/config.ui:65
+#, kde-format
+msgid "Active window opacity"
+msgstr ""
+
+#: src/kcm/config.ui:72 src/kcm/config.ui:92
+#, kde-format
+msgid "%"
+msgstr ""
+
+#: src/kcm/config.ui:85
+#, kde-format
+msgid "Inactive window opacity"
+msgstr ""
+
+#: src/kcm/config.ui:105
+#, kde-format
+msgid "Corner radius"
+msgstr ""
+
+#: src/kcm/config.ui:112
+#, kde-format
+msgid "px"
+msgstr ""
+
+#: src/kcm/config.ui:125
+#, kde-format
+msgid "Round bottom corners"
+msgstr ""
+
+#: src/kcm/config.ui:135
+#, kde-format
 msgid "Don't round corners for tiled windows"
 msgstr ""
 
-#: src/TilingPopup.cc
-msgid "Left half"
+#: src/kcm/config.ui:145
+#, kde-format
+msgid "Use custom border colors"
 msgstr ""
 
-#: src/TilingPopup.cc
-msgid "Right half"
+#: src/kcm/config.ui:152
+#, kde-format
+msgid "Active window border color"
 msgstr ""
 
-#: src/TilingPopup.cc
-msgid "Top half"
+#: src/kcm/config.ui:166
+#, kde-format
+msgid "Inactive window border color"
 msgstr ""
 
-#: src/TilingPopup.cc
-msgid "Bottom half"
+#: src/kcm/config.ui:180
+#, kde-format
+msgid "Paint a thin outline around the window"
 msgstr ""
 
-#: src/TilingPopup.cc
-msgid "Top left quarter"
+#: src/kcm/config.ui:187
+#, kde-format
+msgid "Hide window title when space is limited"
 msgstr ""
 
-#: src/TilingPopup.cc
-msgid "Top right quarter"
+#: src/kcm/config.ui:194
+#, kde-format
+msgid "Show window title on mouse over"
 msgstr ""
 
-#: src/TilingPopup.cc
-msgid "Bottom left quarter"
+#: src/kcm/config.ui:201
+#, kde-format
+msgid "Minimum reserved space"
 msgstr ""
 
-#: src/TilingPopup.cc
-msgid "Bottom right quarter"
+#: src/kcm/config.ui:208
+#, kde-format
+msgid " px"
 msgstr ""
 
-#: src/TilingPopup.cc
-msgid "Window tiling layouts"
+#: src/kcm/config.ui:221
+#, kde-format
+msgid "Enable animations"
 msgstr ""
 
-#: src/Decoration.cc
-msgid "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."
+#: src/kcm/config.ui:228
+#, kde-format
+msgid "Animation duration"
 msgstr ""
 
-#: src/Button.cc
-msgid "Install kwin-minimize2tray and enable Minimize to Tray in System Settings > Window Management > KWin Scripts."
+#: src/kcm/config.ui:235
+#, kde-format
+msgid "ms"
 msgstr ""
 
-#: src/Button.cc
-msgid "The action to minimize all other windows is unavailable. It requires Plasma 6.6 or later."
+#: src/kcm/config.ui:249
+#, kde-format
+msgid "Menu and Search"
+msgstr ""
+
+#: src/kcm/config.ui:255
+#, kde-format
+msgid "Always show application menu"
+msgstr ""
+
+#: src/kcm/config.ui:262
+#, kde-format
+msgid "Enable search button"
+msgstr ""
+
+#: src/kcm/config.ui:269
+#, kde-format
+msgid "Show disabled menu actions"
+msgstr ""
+
+#: src/kcm/config.ui:276
+#, kde-format
+msgid "Ignore top-level menu labels"
+msgstr ""
+
+#: src/kcm/config.ui:283
+#, kde-format
+msgid "Also ignore submenu labels"
+msgstr ""
+
+#: src/kcm/config.ui:290
+#, kde-format
+msgid "Enable fuzzy search"
+msgstr ""
+
+#: src/kcm/config.ui:297
+#, kde-format
+msgid "Use hamburger menu"
+msgstr ""
+
+#: src/kcm/config.ui:304
+#, kde-format
+msgid "Menu button horizontal padding"
+msgstr ""
+
+#: src/kcm/config.ui:314
+#, kde-format
+msgid "Use system menu font"
+msgstr ""
+
+#: src/kcm/config.ui:321
+#, kde-format
+msgid "Use system colors"
+msgstr ""
+
+#: src/kcm/config.ui:329
+#, kde-format
+msgid "Shadows"
+msgstr ""
+
+#: src/kcm/config.ui:335
+#, kde-format
+msgid "Shadow size"
+msgstr ""
+
+#: src/kcm/config.ui:345
+#, kde-format
+msgid "Shadow color"
+msgstr ""
+
+#: src/kcm/config.ui:355
+#, kde-format
+msgid "Shadow strength"
+msgstr ""
+
+#: src/kcm/config.ui:384
+#, kde-format
+msgid "Button Options"
+msgstr ""
+
+#: src/kcm/config.ui:392
+#, kde-format
+msgid "Enable long-press actions on window buttons"
+msgstr ""
+
+#: src/kcm/config.ui:405
+#, kde-format
+msgid ""
+"<html><body><div style=\"width: 350px;\">\n"
+"<p>When enabled:</p>\n"
+"<ul>\n"
+"<li>Long-pressing the close button minimizes the window to the system tray "
+"(requires the kwin-minimize2tray plugin)</li>\n"
+"<li>Long-pressing the minimize button minimizes all windows except the "
+"current one (requires Plasma 6.6 or later)</li>\n"
+"</ul>\n"
+"</div></body></html>"
+msgstr ""
+
+#: src/kcm/config.ui:430
+#, kde-format
+msgid "Long-press duration"
+msgstr ""
+
+#: src/kcm/config.ui:437 src/kcm/config.ui:459
+#, kde-format
+msgid " ms"
+msgstr ""
+
+#: src/kcm/config.ui:449
+#, kde-format
+msgid "Open tiling popup when hovering over maximize"
+msgstr ""
+
+#: src/kcm/config.ui:454
+#, kde-format
+msgid "Tiling popup hover delay"
+msgstr ""
+
+#: src/kcm/config.ui:467
+#, kde-format
+msgid "Allow window dragging from buttons"
+msgstr ""
+
+#: src/kcm/config.ui:475
+#, kde-format
+msgid "Window-Specific Overrides"
+msgstr ""
+
+#: src/kcm/kcm.cpp:34
+#, kde-format
+msgid "Left"
+msgstr ""
+
+#: src/kcm/kcm.cpp:35
+#, kde-format
+msgid "Center"
+msgstr ""
+
+#: src/kcm/kcm.cpp:36
+#, kde-format
+msgid "Center (Full Width)"
+msgstr ""
+
+#: src/kcm/kcm.cpp:37
+#, kde-format
+msgid "Right"
+msgstr ""
+
+#: src/kcm/kcm.cpp:38
+#, kde-format
+msgid "Hidden"
+msgstr ""
+
+#: src/kcm/kcm.cpp:40
+#, kde-format
+msgid "Very Tiny"
+msgstr ""
+
+#: src/kcm/kcm.cpp:41
+#, kde-format
+msgid "Tiny"
+msgstr ""
+
+#: src/kcm/kcm.cpp:42 src/kcm/kcm.cpp:48
+#, kde-format
+msgid "Small"
+msgstr ""
+
+#: src/kcm/kcm.cpp:43
+#, kde-format
+msgid "Default"
+msgstr ""
+
+#: src/kcm/kcm.cpp:44 src/kcm/kcm.cpp:50
+#, kde-format
+msgid "Large"
+msgstr ""
+
+#: src/kcm/kcm.cpp:45 src/kcm/kcm.cpp:51
+#, kde-format
+msgid "Very Large"
+msgstr ""
+
+#: src/kcm/kcm.cpp:47
+#, kde-format
+msgid "None"
+msgstr ""
+
+#: src/kcm/kcm.cpp:49
+#, kde-format
+msgid "Medium"
+msgstr ""
+
+#: src/kcm/materialdecoration_kcm.json:3
+#, kde-format
+msgid "Configuration module for the Material Decoration"
+msgstr ""
+
+#: src/kcm/materialdecoration_kcm.json:5
+#, kde-format
+msgid "Material Decoration"
 msgstr ""

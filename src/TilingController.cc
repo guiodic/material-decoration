@@ -8,6 +8,12 @@
 #include <QDBusMessage>
 #include <QDBusPendingCallWatcher>
 #include <QDebug>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QSet>
+#include <cmath>
+#include <limits>
 #include <QPointer>
 #include <QQueue>
 #include <QTimer>
@@ -45,19 +51,18 @@ public:
         connect(&m_timeout, &QTimer::timeout, this, [this] { finish(false, QStringLiteral("Script did not respond")); });
     }
 
-    bool enqueue(QObject *decoration, Qt::Edges edges, std::function<void(bool)> callback = {})
+    bool enqueue(QObject *decoration, QVariantMap data, std::function<void(bool, const QString &)> callback = {})
     {
         if (!m_registered || m_pending.size() >= 8 || !canTileWindow(decoration)) {
-            if (callback) QTimer::singleShot(0, decoration, [callback] { callback(false); });
+            if (callback) QTimer::singleShot(0, decoration, [callback] { callback(false, {}); });
             return false;
         }
         Request request;
         request.context = decoration;
         request.callback = std::move(callback);
-        request.data = {{QStringLiteral("id"), QUuid::createUuid().toString(QUuid::WithoutBraces)},
-                        {QStringLiteral("uuid"), windowId(decoration).toString(QUuid::WithoutBraces)},
-                        {QStringLiteral("edges"), int(edges)},
-                        {QStringLiteral("operation"), edges ? QStringLiteral("tile") : QStringLiteral("ping")}};
+        request.data = std::move(data);
+        request.data.insert(QStringLiteral("id"), QUuid::createUuid().toString(QUuid::WithoutBraces));
+        request.data.insert(QStringLiteral("uuid"), windowId(decoration).toString(QUuid::WithoutBraces));
         m_pending.enqueue(std::move(request));
         if (m_pending.size() == 1) dispatch();
         return true;
@@ -77,11 +82,17 @@ public slots:
         finish(success, reason);
     }
 
+    void completeLayout(const QString &id, const QString &layout)
+    {
+        if (!trustedCaller() || m_pending.isEmpty() || m_pending.head().data.value(QStringLiteral("id")).toString() != id) return;
+        finish(true, {}, layout);
+    }
+
 private:
     struct Request {
         QPointer<QObject> context;
         QVariantMap data;
-        std::function<void(bool)> callback;
+        std::function<void(bool, const QString &)> callback;
     };
     bool trustedCaller() const
     {
@@ -112,7 +123,7 @@ private:
             }
         });
     }
-    void finish(bool success, const QString &reason)
+    void finish(bool success, const QString &reason, const QString &layout = {})
     {
         if (m_pending.isEmpty()) return;
         m_timeout.stop();
@@ -120,7 +131,7 @@ private:
         auto request = m_pending.dequeue();
         if (!success) qWarning() << "Material tiling:" << reason;
         if (request.context && request.callback) {
-            QTimer::singleShot(0, request.context, [callback = std::move(request.callback), success] { callback(success); });
+            QTimer::singleShot(0, request.context, [callback = std::move(request.callback), success, layout] { callback(success, layout); });
         }
         // Let the script finish its acknowledgement before delivering another request.
         QTimer::singleShot(0, this, [this] { dispatch(); });
@@ -144,16 +155,48 @@ bool canTileWindow(QObject *decoration)
         && !decoration->parent()->property("specialWindow").toBool();
 }
 
-void checkTilingScript(QObject *decoration, std::function<void(bool)> callback)
+void fetchTilingLayout(QObject *decoration, std::function<void(bool, const CustomTilingLayout &)> callback)
 {
-    bridge()->enqueue(decoration, {}, std::move(callback));
+    bridge()->enqueue(decoration, {{QStringLiteral("operation"), QStringLiteral("ping")}, {QStringLiteral("layout"), true}},
+                      [callback = std::move(callback)](bool available, const QString &json) {
+        CustomTilingLayout layout;
+        QSet<QString> ids;
+        const auto zones = QJsonDocument::fromJson(json.toUtf8()).array();
+        for (const auto &value : zones) {
+            const auto zone = value.toObject();
+            const auto coordinate = [&zone](const char *name) {
+                return zone.value(QLatin1String(name)).toDouble(std::numeric_limits<double>::quiet_NaN());
+            };
+            const QRectF rect(coordinate("x"), coordinate("y"), coordinate("width"), coordinate("height"));
+            const auto id = zone.value(QStringLiteral("id")).toString();
+            if (id.isEmpty() || ids.contains(id) || !std::isfinite(rect.x()) || !std::isfinite(rect.y()) ||
+                !std::isfinite(rect.width()) || !std::isfinite(rect.height()) || rect.isEmpty() ||
+                !QRectF(-0.000001, -0.000001, 1.000002, 1.000002).contains(rect)) {
+                layout.clear();
+                break;
+            }
+            ids.insert(id);
+            layout.append({rect.intersected(QRectF(0, 0, 1, 1)), id});
+        }
+        callback(available, layout);
+    });
 }
 
 bool tileWindow(QObject *decoration, Qt::Edges edges)
 {
     const int mask = int(edges);
     if (mask != 1 && mask != 2 && mask != 4 && mask != 8 && mask != 3 && mask != 5 && mask != 10 && mask != 12) return false;
-    return bridge()->enqueue(decoration, edges);
+    return bridge()->enqueue(decoration, {{QStringLiteral("operation"), QStringLiteral("tile")}, {QStringLiteral("edges"), mask}});
+}
+
+bool tileCustomWindow(QObject *decoration, const QString &tileId, std::function<void(bool)> callback)
+{
+    if (tileId.isEmpty()) {
+        if (callback) QTimer::singleShot(0, decoration, [callback = std::move(callback)] { callback(false); });
+        return false;
+    }
+    return bridge()->enqueue(decoration, {{QStringLiteral("operation"), QStringLiteral("tileCustom")}, {QStringLiteral("tileId"), tileId}},
+                             [callback = std::move(callback)](bool success, const QString &) { callback(success); });
 }
 }
 #include "TilingController.moc"

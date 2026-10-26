@@ -17,6 +17,8 @@ class ScriptAction : public QObject {
 public:
     QList<QVariantMap> requests;
     bool respond = true;
+    bool legacyReply = false;
+    QString layoutJson = QStringLiteral("[]");
 public slots:
     void invokeShortcut(const QString &name) {
         if (name != QStringLiteral("MaterialTilingPopupDispatch") || !respond) return;
@@ -30,7 +32,13 @@ public slots:
             requests.append(reply.value());
             auto message = QDBusMessage::createMethodCall(QStringLiteral("com.github.guiodic.MaterialTiling"), QStringLiteral("/Tiling"),
                 QStringLiteral("com.github.guiodic.MaterialTiling"), QStringLiteral("complete"));
-            message << reply.value().value(QStringLiteral("id")).toString() << true << QString();
+            if (reply.value().value(QStringLiteral("layout")).toBool() && !legacyReply) {
+                message = QDBusMessage::createMethodCall(QStringLiteral("com.github.guiodic.MaterialTiling"), QStringLiteral("/Tiling"),
+                    QStringLiteral("com.github.guiodic.MaterialTiling"), QStringLiteral("completeLayout"));
+                message << reply.value().value(QStringLiteral("id")).toString() << layoutJson;
+            } else {
+                message << reply.value().value(QStringLiteral("id")).toString() << true << QString();
+            }
             QDBusConnection::sessionBus().asyncCall(message);
         });
     }
@@ -65,7 +73,7 @@ private slots:
         int replies = 0;
         bool allSucceeded = true;
         for (int i = 0; i < 3; ++i) {
-            Material::checkTilingScript(&valid, [&](bool success) { ++replies; allSucceeded &= success; });
+            Material::fetchTilingLayout(&valid, [&](bool success, const Material::CustomTilingLayout &) { ++replies; allSucceeded &= success; });
         }
         QTRY_COMPARE(replies, 3);
         QVERIFY(allSucceeded);
@@ -77,24 +85,95 @@ private slots:
         }
         QCOMPARE(ids.size(), 3);
     }
+    void readsLayoutAndSelectsCustomTile() {
+        QObject valid(&window);
+        action.layoutJson = QStringLiteral(R"([{"id":"snapshot:0","x":0,"y":0,"width":0.3333333333333333,"height":1}])");
+        bool finished = false;
+        Material::CustomTilingLayout layout;
+        Material::fetchTilingLayout(&valid, [&](bool success, const Material::CustomTilingLayout &result) {
+            QVERIFY(success);
+            layout = result;
+            finished = true;
+        });
+        QTRY_VERIFY(finished);
+        QCOMPARE(layout.size(), 1);
+        QCOMPARE(layout[0].id, QStringLiteral("snapshot:0"));
+        QCOMPARE(layout[0].rect, QRectF(0, 0, 1.0 / 3, 1));
+        finished = false;
+        QVERIFY(Material::tileCustomWindow(&valid, layout[0].id, [&](bool success) { QVERIFY(success); finished = true; }));
+        QTRY_VERIFY(finished);
+        QCOMPARE(action.requests.last().value(QStringLiteral("operation")).toString(), QStringLiteral("tileCustom"));
+        QCOMPARE(action.requests.last().value(QStringLiteral("tileId")).toString(), layout[0].id);
+        action.layoutJson = QStringLiteral("[]");
+    }
+    void emptyCustomTileReportsFailureWithoutDispatch() {
+        QObject valid(&window);
+        const auto requests = action.requests.size();
+        int callbacks = 0;
+        bool succeeded = true;
+        QVERIFY(!Material::tileCustomWindow(&valid, {}, [&](bool success) {
+            ++callbacks;
+            succeeded = success;
+        }));
+        QCOMPARE(callbacks, 0);
+        QTRY_COMPARE(callbacks, 1);
+        QVERIFY(!succeeded);
+        QCoreApplication::processEvents();
+        QCOMPARE(callbacks, 1);
+        QCOMPARE(action.requests.size(), requests);
+
+        auto *decoration = new QObject(&window);
+        bool called = false;
+        QVERIFY(!Material::tileCustomWindow(decoration, {}, [&](bool) { called = true; }));
+        delete decoration;
+        QCoreApplication::processEvents();
+        QVERIFY(!called);
+        QCOMPARE(action.requests.size(), requests);
+    }
+    void ignoresMalformedLayoutAndSupportsOlderScript() {
+        QObject valid(&window);
+        for (const auto &json : {QStringLiteral("not json"),
+             QStringLiteral(R"([{"id":"missing-coordinates","width":0.5,"height":1}])"),
+             QStringLiteral(R"([{"id":"bad","x":0,"y":0,"width":2,"height":1}])"),
+             QStringLiteral(R"([{"id":"same","x":0,"y":0,"width":0.5,"height":1},{"id":"same","x":0.5,"y":0,"width":0.5,"height":1}])")}) {
+            action.layoutJson = json;
+            bool finished = false;
+            Material::fetchTilingLayout(&valid, [&](bool success, const Material::CustomTilingLayout &layout) {
+                QVERIFY(success);
+                QVERIFY(layout.isEmpty());
+                finished = true;
+            });
+            QTRY_VERIFY(finished);
+        }
+        action.legacyReply = true;
+        bool finished = false;
+        Material::fetchTilingLayout(&valid, [&](bool success, const Material::CustomTilingLayout &layout) {
+            QVERIFY(success);
+            QVERIFY(layout.isEmpty());
+            finished = true;
+        });
+        QTRY_VERIFY(finished);
+        action.legacyReply = false;
+        action.layoutJson = QStringLiteral("[]");
+    }
     void timesOutAndRecovers() {
         QObject valid(&window);
         action.respond = false;
         bool finished = false;
         bool succeeded = true;
-        Material::checkTilingScript(&valid, [&](bool result) { succeeded = result; finished = true; });
+        Material::fetchTilingLayout(&valid, [&](bool result, const Material::CustomTilingLayout &) { succeeded = result; finished = true; });
         QTRY_VERIFY_WITH_TIMEOUT(finished, 3000);
         QVERIFY(!succeeded);
         action.respond = true;
         finished = false;
-        Material::checkTilingScript(&valid, [&](bool result) { succeeded = result; finished = true; });
+        Material::fetchTilingLayout(&valid, [&](bool result, const Material::CustomTilingLayout &) { succeeded = result; finished = true; });
         QTRY_VERIFY(finished);
         QVERIFY(succeeded);
     }
     void deletedDecorationDoesNotReceiveCallback() {
         auto *decoration = new QObject(&window);
         bool called = false;
-        Material::checkTilingScript(decoration, [&](bool) { called = true; });
+        Material::fetchTilingLayout(decoration, [&](bool, const Material::CustomTilingLayout &) { called = true; });
         delete decoration;
         QTest::qWait(100);
         QVERIFY(!called);
