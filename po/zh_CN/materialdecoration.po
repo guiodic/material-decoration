@@ -447,3 +447,19 @@ msgstr "自定义平铺区域 %1"
 #: src/Decoration.cc
 msgid "The custom tile is unavailable. Open the popup again."
 msgstr "自定义平铺区域不可用。请重新打开弹出菜单。"
+
+#: src/Button.cc
+msgid "Press and hold to minimize other windows"
+msgstr "按住以最小化其他窗口"
+
+#: src/Button.cc
+msgid "Press and hold to show snapping zones"
+msgstr "按住以显示贴靠区域"
+
+#: src/Button.cc
+msgid "Press and hold to minimize to the notification area"
+msgstr "按住以最小化到通知区域"
+
+#: src/TilingPopup.cc
+msgid "Meta+T to edit snapping zones"
+msgstr "按 Meta+T 编辑贴靠区域"

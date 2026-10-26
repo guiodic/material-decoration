@@ -22,6 +22,7 @@
 #include "Button.h"
 #include "DrawHelper.h"
 #include "LongPressAction.h"
+#include "TilingController.h"
 #include "Material.h"
 #include "Decoration.h"
 
@@ -152,8 +153,35 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
         connect(this, &Button::pressedChanged, this, [this] {
             if (isPressed()) m_hoverTimer->stop();
         });
+        connect(decoration, &Decoration::tilingPopupUnavailable, this, [this](const QString &message) {
+            if (m_longPressToolTipSuspended) m_longPressWarning = message;
+        });
         connect(decoration, &Decoration::tilingPopupVisibilityChanged, this, &Button::setTilingPopupOpen);
         setTilingPopupOpen(decoration->isTilingPopupVisible());
+    }
+
+    if (type == KDecoration3::DecorationButtonType::Minimize ||
+        type == KDecoration3::DecorationButtonType::Maximize ||
+        type == KDecoration3::DecorationButtonType::Close) {
+        m_toolTipTimer = new QTimer(this);
+        m_toolTipTimer->setSingleShot(true);
+        connect(m_toolTipTimer, &QTimer::timeout, this, &Button::refreshLongPressToolTip);
+        connect(this, &Button::hoveredChanged, this, [this](bool hovered) {
+            if (hovered && !m_longPressTriggered) {
+                m_longPressToolTipSuspended = false;
+                m_longPressWarning.clear();
+            }
+            m_toolTipText.clear();
+            ++m_toolTipGeneration;
+            // Another button's leave event can hide the tooltip later in the
+            // same dispatch. Refresh after the group's hover events finish.
+            if (hovered) m_toolTipTimer->start(0);
+            else refreshLongPressToolTip();
+        });
+        connect(this, &Button::pressedChanged, this, &Button::refreshLongPressToolTip);
+        connect(this, &Button::checkedChanged, this, &Button::refreshLongPressToolTip);
+        connect(this, &Button::enabledChanged, this, &Button::refreshLongPressToolTip);
+        connect(this, &Button::visibilityChanged, this, &Button::refreshLongPressToolTip);
     }
 
     connect(this, &Button::hoveredChanged, this, &Button::updateAnimationState);
@@ -313,6 +341,7 @@ void Button::mousePressEvent(QMouseEvent *event)
     // A popup can consume the release ending the previous long press. A new
     // gesture must start clean even if long-press actions were since disabled.
     m_longPressTriggered = false;
+    m_longPressWarning.clear();
     ++m_pressGeneration;
     KDecoration3::DecorationButton::mousePressEvent(event);
     // Preserve KWin's separate middle/right-click maximize actions.
@@ -326,7 +355,6 @@ void Button::mouseReleaseEvent(QMouseEvent *event)
     if (m_longPressTriggered) {
         // A recognized long press consumes the click even if its action is
         // still pending or unavailable, consistently for all three buttons.
-        m_longPressTriggered = false;
         forceUnpress();
 
         // Refresh hover state, simulate a mouse HoverMove.
@@ -334,6 +362,11 @@ void Button::mouseReleaseEvent(QMouseEvent *event)
         QHoverEvent hoverEvent(QEvent::HoverMove, decoPos, event->globalPosition(), QPointF(-1, -1), event->modifiers());
         QCoreApplication::sendEvent(decoration(), &hoverEvent);
 
+        // Restoring hover can request the base tooltip. Cancel that request
+        // without losing an unavailable-action warning shown during the hold.
+        decoration()->requestHideToolTip();
+        if (!m_longPressWarning.isEmpty()) QToolTip::showText(QCursor::pos(), m_longPressWarning);
+        m_longPressTriggered = false;
         return;
     }
     KDecoration3::DecorationButton::mouseReleaseEvent(event);
@@ -792,6 +825,7 @@ void Button::setTilingPopupOpen(bool open)
 {
     if (m_tilingPopupOpen == open) return;
     m_tilingPopupOpen = open;
+    refreshLongPressToolTip();
     updateAnimationState(isHovered());
     UPDATE_GEOM();
 }
@@ -837,10 +871,86 @@ void Button::forceUnpress()
     setEnabled(wasEnabled);
 }
 
+QString Button::normalToolTip() const
+{
+    switch (type()) {
+    case KDecoration3::DecorationButtonType::Minimize: return i18nd("kdecoration", "Minimize");
+    case KDecoration3::DecorationButtonType::Maximize:
+        return isChecked() ? i18nd("kdecoration", "Restore") : i18nd("kdecoration", "Maximize");
+    case KDecoration3::DecorationButtonType::Close: return i18nd("kdecoration", "Close");
+    default: return {};
+    }
+}
+
+void Button::refreshLongPressToolTip()
+{
+    if (!m_toolTipTimer) return;
+    m_toolTipTimer->stop();
+    const auto generation = ++m_toolTipGeneration;
+    auto *deco = qobject_cast<Decoration *>(decoration());
+    if (!deco || m_isGtkButton || !isHovered() || isPressed() || !isVisible() || !isEnabled() || m_tilingPopupOpen || m_longPressToolTipSuspended) {
+        m_toolTipText.clear();
+        return;
+    }
+    if (type() == KDecoration3::DecorationButtonType::Maximize && deco->m_internalSettings->tilingPopupHoverEnabled()) {
+        deco->requestHideToolTip();
+        m_toolTipText.clear();
+        return;
+    }
+    if (m_toolTipText.isEmpty()) {
+        m_toolTipText = normalToolTip();
+        deco->requestShowToolTip(m_toolTipText);
+    }
+    const auto update = [this, generation](bool available) {
+        if (generation != m_toolTipGeneration || !isHovered() || isPressed() || !isVisible() || !isEnabled() || m_tilingPopupOpen || m_longPressToolTipSuspended) return;
+        auto *deco = qobject_cast<Decoration *>(decoration());
+        if (!deco) return;
+        if (type() == KDecoration3::DecorationButtonType::Maximize && deco->m_internalSettings->tilingPopupHoverEnabled()) {
+            deco->requestHideToolTip();
+            m_toolTipText.clear();
+            return;
+        }
+        QString text = normalToolTip();
+        if (available && deco->m_internalSettings->longPressEnabled()) {
+            switch (type()) {
+            case KDecoration3::DecorationButtonType::Minimize:
+                text += QLatin1Char('\n') + i18nd("materialdecoration", "Press and hold to minimize other windows");
+                break;
+            case KDecoration3::DecorationButtonType::Maximize:
+                text += QLatin1Char('\n') + i18nd("materialdecoration", "Press and hold to show snapping zones");
+                break;
+            case KDecoration3::DecorationButtonType::Close:
+                text += QLatin1Char('\n') + i18nd("materialdecoration", "Press and hold to minimize to the notification area");
+                break;
+            default: break;
+            }
+        }
+        if (text != m_toolTipText) {
+            m_toolTipText = text;
+            deco->requestShowToolTip(text);
+        }
+        // Refresh only while hovered, without restarting an unchanged tooltip.
+        m_toolTipTimer->start(2000);
+    };
+    if (!deco->m_internalSettings->longPressEnabled()) {
+        update(false);
+    } else if (type() == KDecoration3::DecorationButtonType::Minimize) {
+        checkLongPressAction(this, QStringLiteral("minimizeAllOthersActiveScreen"), QStringLiteral("minimizeall"), update);
+    } else if (type() == KDecoration3::DecorationButtonType::Close) {
+        checkLongPressAction(this, QStringLiteral("Minimize to tray"), QStringLiteral("com.github.luisbocanegra.minimize2tray"), update);
+    } else if (canTileWindow(deco)) {
+        checkLongPressAction(this, QStringLiteral("MaterialTilingPopupDispatch"), QStringLiteral("material-tiling"), update);
+    } else {
+        update(false);
+    }
+}
+
 void Button::handleHoldTimeout()
 {
     if (type() == KDecoration3::DecorationButtonType::Maximize && (!isPressed() || !isHovered())) return;
     m_longPressTriggered = true;
+    m_longPressToolTipSuspended = true;
+    refreshLongPressToolTip();
     switch (type()) {
     case KDecoration3::DecorationButtonType::Close:
         onCloseHold();
@@ -862,6 +972,7 @@ void Button::invokeLongPressAction(const QString &shortcut, const QString &scrip
     checkLongPressAction(this, shortcut, script, [this, shortcut, unavailableMessage, generation](bool available) {
         if (generation != m_pressGeneration) return;
         if (!available) {
+            m_longPressWarning = unavailableMessage;
             QToolTip::showText(QCursor::pos(), unavailableMessage);
             return;
         }
@@ -873,8 +984,11 @@ void Button::invokeLongPressAction(const QString &shortcut, const QString &scrip
                                                     QStringLiteral("org.kde.kglobalaccel.Component"), QStringLiteral("invokeShortcut"));
         message << shortcut;
         auto *watcher = new QDBusPendingCallWatcher(QDBusConnection::sessionBus().asyncCall(message, 1500), this);
-        connect(watcher, &QDBusPendingCallWatcher::finished, this, [unavailableMessage](QDBusPendingCallWatcher *call) {
-            if (call->reply().type() == QDBusMessage::ErrorMessage) QToolTip::showText(QCursor::pos(), unavailableMessage);
+        connect(watcher, &QDBusPendingCallWatcher::finished, this, [this, generation, unavailableMessage](QDBusPendingCallWatcher *call) {
+            if (generation == m_pressGeneration && call->reply().type() == QDBusMessage::ErrorMessage) {
+                m_longPressWarning = unavailableMessage;
+                QToolTip::showText(QCursor::pos(), unavailableMessage);
+            }
             call->deleteLater();
         });
     });
@@ -898,6 +1012,7 @@ void Button::onMaximizeHold()
     if (!deco || !deco->showTilingPopup(geometry())) {
         // Preserve the normal click if this host cannot perform native tiling.
         m_longPressTriggered = false;
+        m_longPressToolTipSuspended = false;
     } else {
         // The popup takes the mouse grab, so the release may never reach us.
         forceUnpress();

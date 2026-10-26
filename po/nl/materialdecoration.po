@@ -447,3 +447,19 @@ msgstr "Aangepaste tegel %1"
 #: src/Decoration.cc
 msgid "The custom tile is unavailable. Open the popup again."
 msgstr "De aangepaste tegel is niet beschikbaar. Open de pop-up opnieuw."
+
+#: src/Button.cc
+msgid "Press and hold to minimize other windows"
+msgstr "Ingedrukt houden om de andere vensters te minimaliseren"
+
+#: src/Button.cc
+msgid "Press and hold to show snapping zones"
+msgstr "Ingedrukt houden om de uitlijningsgebieden te tonen"
+
+#: src/Button.cc
+msgid "Press and hold to minimize to the notification area"
+msgstr "Ingedrukt houden om naar het systeemvak te minimaliseren"
+
+#: src/TilingPopup.cc
+msgid "Meta+T to edit snapping zones"
+msgstr "Meta+T om de uitlijningsgebieden te bewerken"

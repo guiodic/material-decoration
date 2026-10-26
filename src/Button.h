@@ -90,6 +90,8 @@ private:
     void setTilingPopupOpen(bool open);
     bool isVisuallyHovered() const;
     void handleHoldTimeout();
+    void refreshLongPressToolTip();
+    QString normalToolTip() const;
 
 signals:
     void animationEnabledChanged();
@@ -129,7 +131,12 @@ protected:
 
     QTimer *m_holdTimer = nullptr;
     QTimer *m_hoverTimer = nullptr;
+    QTimer *m_toolTipTimer = nullptr;
+    quint64 m_toolTipGeneration = 0;
+    QString m_toolTipText;
     bool m_longPressTriggered = false;
+    bool m_longPressToolTipSuspended = false;
+    QString m_longPressWarning;
     quint64 m_pressGeneration = 0;
     bool m_tilingPopupOpen = false;
     qreal m_penScale = 1.0;

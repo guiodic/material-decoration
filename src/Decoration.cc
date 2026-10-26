@@ -245,8 +245,10 @@ bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
         m_tilingPopupOpening = false;
         if (!available) {
             m_tilingPopupHoverMonitor.stop();
+            const QString message = i18nd("materialdecoration", "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts.");
+            Q_EMIT tilingPopupUnavailable(message);
             Q_EMIT tilingPopupVisibilityChanged(false);
-            QToolTip::showText(QCursor::pos(), i18nd("materialdecoration", "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts."));
+            QToolTip::showText(QCursor::pos(), message);
             return;
         }
         if (!m_tilingPopup) {

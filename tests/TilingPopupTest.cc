@@ -6,6 +6,7 @@
 #include <QSignalSpy>
 #include <QTest>
 #include <QToolButton>
+#include <KLocalizedString>
 
 using namespace Material;
 
@@ -68,6 +69,13 @@ private slots:
         popup.popup(QPoint(10, 10));
         auto buttons = popup.findChildren<TilingZoneButton *>();
         QCOMPARE(buttons.size(), 11);
+        for (int i = 0; i < buttons.size(); ++i) {
+            if (i >= 4 && i <= 6) {
+                QCOMPARE(buttons[i]->toolTip(), buttons[i]->accessibleName() + QLatin1Char('\n') + i18nd("materialdecoration", "Meta+T to edit snapping zones"));
+            } else {
+                QCOMPARE(buttons[i]->toolTip(), buttons[i]->accessibleName());
+            }
+        }
         for (int i = 0; i < 6; ++i) QTest::keyClick(i ? QApplication::focusWidget() : static_cast<QWidget *>(&popup), Qt::Key_Tab);
         QVERIFY(buttons[5]->hasFocus());
         QTest::keyClick(buttons[5], Qt::Key_Return);
