@@ -378,14 +378,15 @@ bool Decoration::init()
     const auto *decoratedClient = window();
 
     // KWin can start an interactive move while the button is still held
-    // stationary. Close on an actual step, without depending on KWin's ABI.
+    // stationary. Cancel button actions on an actual step, without depending
+    // on KWin's ABI.
     if (auto *owner = parent()) {
-        const auto closeSlot = metaObject()->method(metaObject()->indexOfSlot("closeTilingPopup()"));
+        const auto dragSlot = metaObject()->method(metaObject()->indexOfSlot("cancelButtonActionsForDrag()"));
         const auto *ownerMeta = owner->metaObject();
         for (int i = 0; i < ownerMeta->methodCount(); ++i) {
             const auto signal = ownerMeta->method(i);
             if (signal.methodType() == QMetaMethod::Signal && signal.name() == "interactiveMoveResizeStepped") {
-                connect(owner, signal, this, closeSlot);
+                connect(owner, signal, this, dragSlot);
                 break;
             }
         }
@@ -616,8 +617,7 @@ void Decoration::hoverMoveEvent(QHoverEvent *event)
 
     const bool dragStarted = dragMoveTick(event->position().toPoint());
     if (dragStarted) {
-        closeTilingPopup();
-        unPressAllButtons();
+        cancelButtonActionsForDrag();
         return;
     }
 
@@ -1257,10 +1257,20 @@ bool Decoration::dragMoveTick(const QPoint pos)
 
 void Decoration::unPressAllButtons()
 {
-    auto forceUnpress = [](Button *b) { b->forceUnpress(); };
+    auto forceUnpress = [](Button *b) {
+        b->cancelLongPress();
+        b->forceUnpress();
+    };
     forEachButton<Button>(m_leftButtons, forceUnpress);
     forEachButton<Button>(m_rightButtons, forceUnpress);
     forEachButton<Button>(m_menuButtons, forceUnpress);
+}
+
+void Decoration::cancelButtonActionsForDrag()
+{
+    resetDragMove();
+    closeTilingPopup();
+    unPressAllButtons();
 }
 
 qreal Decoration::cornerRadius() const

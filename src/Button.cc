@@ -862,6 +862,16 @@ void Button::updateAnimationState(bool hovered)
     }
 }
 
+void Button::cancelLongPress()
+{
+    m_holdTimer->stop();
+    if (m_hoverTimer) m_hoverTimer->stop();
+    // A script availability check may already be pending when movement starts.
+    ++m_pressGeneration;
+    m_longPressTriggered = false;
+    m_longPressWarning.clear();
+}
+
 void Button::forceUnpress()
 {
     // HACK: There is no public API to set the pressed state of a
