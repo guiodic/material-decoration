@@ -31,6 +31,8 @@ namespace Material
 NavigableMenu::NavigableMenu(QWidget *parent)
     : QMenu(parent)
 {
+    // KWin exposes the Qt window title as caption to the companion script.
+    setWindowTitle(QStringLiteral("com.github.guiodic.material-decoration.popup"));
 }
 
 void NavigableMenu::keyPressEvent(QKeyEvent *event)

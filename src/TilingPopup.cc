@@ -30,6 +30,8 @@ TilingPopup::TilingPopup(QWidget *parent)
     : QMenu(parent)
 {
     setObjectName(QStringLiteral("materialTilingPopup"));
+    // Match NavigableMenu so the companion script can identify our popups.
+    setWindowTitle(QStringLiteral("com.github.guiodic.material-decoration.popup"));
     installEventFilter(this);
     setAccessibleName(i18nd("materialdecoration", "Window tiling layouts"));
     auto *panel = new QWidget(this);
