@@ -431,3 +431,19 @@ msgstr "Ouvrir le menu de disposition en mosaïque au survol du bouton d’agran
 #: src/kcm/config.ui
 msgid "Tiling popup hover delay"
 msgstr "Délai d’ouverture du menu de disposition en mosaïque"
+
+#: src/TilingPopup.cc
+msgid "Custom tiling layout (Meta+T)"
+msgstr "Disposition en mosaïque personnalisée (Meta+T)"
+
+#: src/TilingPopup.cc
+msgid "Custom layout unavailable"
+msgstr "Disposition personnalisée indisponible"
+
+#: src/TilingPopup.cc
+msgid "Custom tile %1"
+msgstr "Tuile personnalisée %1"
+
+#: src/Decoration.cc
+msgid "The custom tile is unavailable. Open the popup again."
+msgstr "La tuile personnalisée est indisponible. Rouvrez le menu contextuel."

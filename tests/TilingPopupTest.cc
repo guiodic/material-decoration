@@ -17,7 +17,9 @@ private slots:
     {
         const auto layouts = tilingLayouts();
         QCOMPARE(layouts.size(), 4);
+        QVERIFY(layouts[2].isEmpty()); // Reserved for the monitor's custom layout.
         for (const auto &layout : layouts) {
+            if (layout.isEmpty()) continue;
             qreal area = 0;
             for (qsizetype i = 0; i < layout.size(); ++i) {
                 const auto &zone = layout[i];
@@ -55,6 +57,36 @@ private slots:
         QCOMPARE(index, buttons.size());
     }
 
+    void customLayoutSelectionAndRefresh()
+    {
+        TilingPopup popup;
+        QSignalSpy custom(&popup, &TilingPopup::customZoneSelected);
+        QSignalSpy quick(&popup, &TilingPopup::zoneSelected);
+        popup.setCustomLayout({{{0, 0, 1.0 / 3, 1}, QStringLiteral("left")},
+                               {{1.0 / 3, 0, 1.0 / 3, 1}, QStringLiteral("middle")},
+                               {{2.0 / 3, 0, 1.0 / 3, 1}, QStringLiteral("right")}});
+        popup.popup(QPoint(10, 10));
+        auto buttons = popup.findChildren<TilingZoneButton *>();
+        QCOMPARE(buttons.size(), 11);
+        for (int i = 0; i < 6; ++i) QTest::keyClick(i ? QApplication::focusWidget() : static_cast<QWidget *>(&popup), Qt::Key_Tab);
+        QVERIFY(buttons[5]->hasFocus());
+        QTest::keyClick(buttons[5], Qt::Key_Return);
+        QCOMPARE(custom.size(), 1);
+        QCOMPARE(custom.takeFirst().at(0).toString(), QStringLiteral("middle"));
+        QVERIFY(quick.isEmpty());
+        QVERIFY(!popup.isVisible());
+
+        popup.setCustomLayout({{{0, 0, 1, 0.5}, QStringLiteral("new-top")},
+                               {{0, 0.5, 1, 0.5}, QStringLiteral("new-bottom")}});
+        popup.popup(QPoint(10, 10));
+        buttons = popup.findChildren<TilingZoneButton *>();
+        QCOMPARE(buttons.size(), 10);
+        QTest::mouseClick(buttons[4], Qt::LeftButton);
+        QCOMPARE(custom.takeFirst().at(0).toString(), QStringLiteral("new-top"));
+        popup.setCustomLayout({});
+        QCOMPARE(popup.findChildren<TilingZoneButton *>().size(), 8);
+    }
+
     void openingReleaseDoesNotSelect_data()
     {
         QTest::addColumn<bool>("onZone");
@@ -84,6 +116,9 @@ private slots:
     {
         TilingPopup popup;
         popup.setZoneCornerRadius(12);
+        popup.setCustomLayout({{{0, 0, 1.0 / 3, 1}, QStringLiteral("left")},
+                               {{1.0 / 3, 0, 1.0 / 3, 1}, QStringLiteral("middle")},
+                               {{2.0 / 3, 0, 1.0 / 3, 1}, QStringLiteral("right")}});
         QPalette palette = popup.palette();
         palette.setColor(QPalette::Window, Qt::white);
         palette.setColor(QPalette::Mid, Qt::black);
@@ -97,7 +132,7 @@ private slots:
         const QList<QList<bool>> outerCorners = {
             {true, false, true, false}, {false, true, false, true},
             {true, true, false, false}, {false, false, true, true},
-            {true, false, true, false}, {false, true, false, false}, {false, false, false, true},
+            {true, false, true, false}, {false, false, false, false}, {false, true, false, true},
             {true, false, false, false}, {false, true, false, false},
             {false, false, true, false}, {false, false, false, true}
         };

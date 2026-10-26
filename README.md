@@ -50,6 +50,8 @@ selector.
 In **Button options**, you can also enable opening the popup by hovering over
 Maximize/Restore.
 
+The bottom-left preview shows the current monitor's custom layout (Meta+T).
+
 ![image](data/TilingPopUp.png)
 
 The popup uses a companion **Material Tiling Popup** KWin script for native

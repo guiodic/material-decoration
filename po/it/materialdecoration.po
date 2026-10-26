@@ -431,3 +431,19 @@ msgstr "Apri il popup di affiancamento al passaggio del mouse sul pulsante massi
 #: src/kcm/config.ui
 msgid "Tiling popup hover delay"
 msgstr "Ritardo di apertura del popup di affiancamento"
+
+#: src/TilingPopup.cc
+msgid "Custom tiling layout (Meta+T)"
+msgstr "Schema di affiancamento personalizzato (Meta+T)"
+
+#: src/TilingPopup.cc
+msgid "Custom layout unavailable"
+msgstr "Schema personalizzato non disponibile"
+
+#: src/TilingPopup.cc
+msgid "Custom tile %1"
+msgstr "Area personalizzata %1"
+
+#: src/Decoration.cc
+msgid "The custom tile is unavailable. Open the popup again."
+msgstr "L’area personalizzata non è disponibile. Riapri il popup."

@@ -431,3 +431,19 @@ msgstr "Popup zur Fensteraufteilung beim Überfahren des Maximieren-Knopfs öffn
 #: src/kcm/config.ui
 msgid "Tiling popup hover delay"
 msgstr "Verzögerung beim Öffnen des Popups zur Fensteraufteilung"
+
+#: src/TilingPopup.cc
+msgid "Custom tiling layout (Meta+T)"
+msgstr "Benutzerdefiniertes Kachellayout (Meta+T)"
+
+#: src/TilingPopup.cc
+msgid "Custom layout unavailable"
+msgstr "Benutzerdefiniertes Layout nicht verfügbar"
+
+#: src/TilingPopup.cc
+msgid "Custom tile %1"
+msgstr "Benutzerdefinierte Kachel %1"
+
+#: src/Decoration.cc
+msgid "The custom tile is unavailable. Open the popup again."
+msgstr "Die benutzerdefinierte Kachel ist nicht verfügbar. Öffnen Sie das Popup erneut."

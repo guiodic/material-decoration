@@ -431,3 +431,19 @@ msgstr "鼠标悬停在最大化按钮上时打开平铺弹出菜单"
 #: src/kcm/config.ui
 msgid "Tiling popup hover delay"
 msgstr "平铺弹出菜单悬停延迟"
+
+#: src/TilingPopup.cc
+msgid "Custom tiling layout (Meta+T)"
+msgstr "自定义平铺布局（Meta+T）"
+
+#: src/TilingPopup.cc
+msgid "Custom layout unavailable"
+msgstr "自定义布局不可用"
+
+#: src/TilingPopup.cc
+msgid "Custom tile %1"
+msgstr "自定义平铺区域 %1"
+
+#: src/Decoration.cc
+msgid "The custom tile is unavailable. Open the popup again."
+msgstr "自定义平铺区域不可用。请重新打开弹出菜单。"

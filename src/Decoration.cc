@@ -240,7 +240,7 @@ bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
     m_tilingPopupOpening = true;
     const auto request = ++m_tilingPopupRequest;
     Q_EMIT tilingPopupVisibilityChanged(true);
-    const auto showPopup = [this, anchor, request](bool available) {
+    const auto showPopup = [this, anchor, request](bool available, const CustomTilingLayout &layout) {
         if (request != m_tilingPopupRequest) return;
         m_tilingPopupOpening = false;
         if (!available) {
@@ -259,11 +259,19 @@ bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
             connect(m_tilingPopup.get(), &TilingPopup::keyboardNavigationStarted, this, [this] {
                 m_tilingPopupHoverMonitor.stop();
             });
+            connect(m_tilingPopup.get(), &TilingPopup::customZoneSelected, this, [this](const QString &id) {
+                QTimer::singleShot(0, this, [this, id] {
+                    tileCustomWindow(this, id, [](bool success) {
+                        if (!success) QToolTip::showText(QCursor::pos(), i18nd("materialdecoration", "The custom tile is unavailable. Open the popup again."));
+                    });
+                });
+            });
             connect(m_tilingPopup.get(), &TilingPopup::zoneSelected, this, [this](Qt::Edges edges) {
                 // Defer the geometry change until the menu has released its grab.
                 QTimer::singleShot(0, this, [this, edges] { tileWindow(this, edges); });
             });
         }
+        m_tilingPopup->setCustomLayout(layout);
         m_tilingPopup->setZoneCornerRadius(m_internalSettings->cornerRadius());
         m_tilingPopup->setSquareCornersTiled(m_internalSettings->squareCornersTiled());
         m_tilingPopup->setAnimationSettings(animationsEnabled(), animationsDuration());
@@ -274,8 +282,8 @@ bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
     checkLongPressAction(this, QStringLiteral("MaterialTilingPopupDispatch"), QStringLiteral("material-tiling"),
                          [this, showPopup, request](bool loaded) {
         if (request != m_tilingPopupRequest) return;
-        if (loaded) checkTilingScript(this, showPopup);
-        else showPopup(false);
+        if (loaded) fetchTilingLayout(this, showPopup);
+        else showPopup(false, {});
     });
     return true;
 }
