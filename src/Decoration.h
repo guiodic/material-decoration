@@ -75,6 +75,7 @@ public slots:
 private slots:
     void onTabletModeChanged(bool mode);
     void closeTilingPopup();
+    void cancelButtonActionsForDrag();
 
 protected:
     void hoverEnterEvent(QHoverEvent *event) override;

@@ -90,6 +90,7 @@ private:
     void setTilingPopupOpen(bool open);
     bool isVisuallyHovered() const;
     void handleHoldTimeout();
+    void cancelLongPress();
     void refreshLongPressToolTip();
     QString normalToolTip() const;
 
