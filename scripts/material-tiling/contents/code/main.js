@@ -3,6 +3,14 @@
     "use strict";
     const service = "com.github.guiodic.MaterialTiling";
     const path = "/Tiling";
+    function excludeDecorationPopup(window) {
+        // Older KWin versions include internal QMenus in Overview and Grid.
+        if (window.popupWindow && window.caption === "com.github.guiodic.material-decoration.popup") {
+            window.skipSwitcher = true;
+        }
+    }
+    workspace.windowAdded.connect(excludeDecorationPopup);
+    workspace.windowList().forEach(excludeDecorationPopup);
     const tileActions = {
         2: "slotWindowQuickTileLeft",
         4: "slotWindowQuickTileRight",

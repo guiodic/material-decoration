@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '../scripts/material-tiling/contents/code/main.js'), 'utf8');
 let assertions = 0;
-function fixture() {
+function fixture(extraWindows = []) {
     const output = {};
     const other = {internalId: '{other}', caption: 'other'};
     const target = {internalId: '{target}', resizeable: true, specialWindow: false, output, tile: null};
@@ -16,7 +16,8 @@ function fixture() {
     const root = {tiles: [leaf(0, 0, 1 / 3, 1), leaf(1 / 3, 0, 1 / 3, 1), leaf(2 / 3, 0, 1 / 3, 1)]};
     const workspace = {activeWindow: other, layoutRoot: root,
         tilingForScreen() { return {rootTile: this.layoutRoot}; },
-        windows: [target, other], windowList() { return this.windows; },
+        windows: [target, other, ...extraWindows], windowList() { return this.windows; },
+        windowAdded: {connect(callback) { this.callback = callback; }},
         windowRemoved: {connect(callback) { this.callback = callback; }},
         sendClientToScreen(window, screen) { window.output = screen; }};
     let shortcut, request, result;
@@ -39,6 +40,25 @@ function fixture() {
             request = {id: String(++assertions), uuid, edges, operation, ...extra}; result = undefined;
             shortcut(); assert.ok(result); assert.equal(result.id, request.id); return result;
         }};
+}
+{
+    const caption = 'com.github.guiodic.material-decoration.popup';
+    const existing = {caption, popupWindow: true, skipSwitcher: false};
+    const unrelated = {caption: 'Another popup', popupWindow: true, skipSwitcher: false};
+    const normal = {caption, popupWindow: false, skipSwitcher: false};
+    const f = fixture([existing, unrelated, normal]);
+    assert.equal(existing.skipSwitcher, true, 'handle menus already open when the script starts');
+    assert.equal(unrelated.skipSwitcher, false);
+    assert.equal(normal.skipSwitcher, false);
+    const added = {caption, popupWindow: true, skipSwitcher: false};
+    f.workspace.windowAdded.callback(added);
+    assert.equal(added.skipSwitcher, true, 'exclude newly opened Material popups');
+    f.workspace.windowAdded.callback(unrelated);
+    f.workspace.windowAdded.callback(normal);
+    assert.equal(unrelated.skipSwitcher, false);
+    assert.equal(normal.skipSwitcher, false);
+    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(f.calls.length, 0);
 }
 for (const [edges, expected] of [[2,'Left'],[4,'Right'],[1,'Top'],[8,'Bottom'],[3,'TopLeft'],[5,'TopRight'],[10,'BottomLeft'],[12,'BottomRight']]) {
     const f = fixture();
