@@ -1012,6 +1012,7 @@ void Button::onMaximizeHold()
     if (!deco || !deco->showTilingPopup(geometry())) {
         // Preserve the normal click if this host cannot perform native tiling.
         m_longPressTriggered = false;
+        m_longPressToolTipSuspended = false;
     } else {
         // The popup takes the mouse grab, so the release may never reach us.
         forceUnpress();
