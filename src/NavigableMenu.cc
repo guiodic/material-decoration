@@ -31,6 +31,8 @@ namespace Material
 NavigableMenu::NavigableMenu(QWidget *parent)
     : QMenu(parent)
 {
+    // Submenus are windows too; let them inherit their parent menu's palette.
+    setAttribute(Qt::WA_WindowPropagation);
     // KWin exposes the Qt window title as caption to the companion script.
     setWindowTitle(QStringLiteral("com.github.guiodic.material-decoration.popup"));
 }
