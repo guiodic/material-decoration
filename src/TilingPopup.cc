@@ -73,7 +73,8 @@ TilingZoneButton *TilingPopup::createZone(QWidget *preview, const TilingZone &zo
                         zone.rect.width() * preview->width(), zone.rect.height() * preview->height());
     button->setGeometry(bounds.toAlignedRect().adjusted(gap / 2, gap / 2, -gap / 2, -gap / 2));
     button->setAccessibleName(zone.label);
-    button->setToolTip(zone.label);
+    button->setToolTip(zone.customTileId.isEmpty() ? zone.label
+        : zone.label + QLatin1Char('\n') + i18nd("materialdecoration", "Meta+T to edit snapping zones"));
     button->setCornerRadius(m_zoneCornerRadius);
     button->setSquareCornersTiled(m_squareCornersTiled);
     button->setAnimationSettings(m_animationsEnabled, m_animationDuration);

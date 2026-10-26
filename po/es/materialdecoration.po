@@ -447,3 +447,19 @@ msgstr "Mosaico personalizado %1"
 #: src/Decoration.cc
 msgid "The custom tile is unavailable. Open the popup again."
 msgstr "El mosaico personalizado no está disponible. Vuelva a abrir el menú emergente."
+
+#: src/Button.cc
+msgid "Press and hold to minimize other windows"
+msgstr "Mantenga pulsado para minimizar las demás ventanas"
+
+#: src/Button.cc
+msgid "Press and hold to show snapping zones"
+msgstr "Mantenga pulsado para mostrar las zonas de ajuste"
+
+#: src/Button.cc
+msgid "Press and hold to minimize to the notification area"
+msgstr "Mantenga pulsado para minimizar en el área de notificación"
+
+#: src/TilingPopup.cc
+msgid "Meta+T to edit snapping zones"
+msgstr "Meta+T para editar las zonas de ajuste"

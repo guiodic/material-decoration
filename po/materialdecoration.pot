@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: materialdecoration\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 18:20+0000\n"
+"POT-Creation-Date: 2026-10-26 18:58+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,14 +16,29 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/Button.cc:886
+#: src/Button.cc:905
+#, kde-format
+msgid "Press and hold to minimize other windows"
+msgstr ""
+
+#: src/Button.cc:908
+#, kde-format
+msgid "Press and hold to show snapping zones"
+msgstr ""
+
+#: src/Button.cc:911
+#, kde-format
+msgid "Press and hold to minimize to the notification area"
+msgstr ""
+
+#: src/Button.cc:982
 #, kde-format
 msgid ""
 "Install kwin-minimize2tray and enable Minimize to Tray in System Settings > "
 "Window Management > KWin Scripts."
 msgstr ""
 
-#: src/Button.cc:892
+#: src/Button.cc:988
 #, kde-format
 msgid ""
 "The action to minimize all other windows is unavailable. It requires Plasma "
@@ -97,7 +112,12 @@ msgstr ""
 msgid "Custom layout unavailable"
 msgstr ""
 
-#: src/TilingPopup.cc:99
+#: src/TilingPopup.cc:77
+#, kde-format
+msgid "Meta+T to edit snapping zones"
+msgstr ""
+
+#: src/TilingPopup.cc:100
 #, kde-format
 msgid "Custom tile %1"
 msgstr ""

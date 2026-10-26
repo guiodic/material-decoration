@@ -447,3 +447,19 @@ msgstr "Tuile personnalisée %1"
 #: src/Decoration.cc
 msgid "The custom tile is unavailable. Open the popup again."
 msgstr "La tuile personnalisée est indisponible. Rouvrez le menu contextuel."
+
+#: src/Button.cc
+msgid "Press and hold to minimize other windows"
+msgstr "Maintenir enfoncé pour réduire les autres fenêtres"
+
+#: src/Button.cc
+msgid "Press and hold to show snapping zones"
+msgstr "Maintenir enfoncé pour afficher les zones d’ancrage"
+
+#: src/Button.cc
+msgid "Press and hold to minimize to the notification area"
+msgstr "Maintenir enfoncé pour réduire dans la zone de notification"
+
+#: src/TilingPopup.cc
+msgid "Meta+T to edit snapping zones"
+msgstr "Meta+T pour modifier les zones d’ancrage"

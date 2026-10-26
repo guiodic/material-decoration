@@ -22,6 +22,7 @@
 #include "Button.h"
 #include "DrawHelper.h"
 #include "LongPressAction.h"
+#include "TilingController.h"
 #include "Material.h"
 #include "Decoration.h"
 
@@ -154,6 +155,26 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
         });
         connect(decoration, &Decoration::tilingPopupVisibilityChanged, this, &Button::setTilingPopupOpen);
         setTilingPopupOpen(decoration->isTilingPopupVisible());
+    }
+
+    if (type == KDecoration3::DecorationButtonType::Minimize ||
+        type == KDecoration3::DecorationButtonType::Maximize ||
+        type == KDecoration3::DecorationButtonType::Close) {
+        m_toolTipTimer = new QTimer(this);
+        m_toolTipTimer->setSingleShot(true);
+        connect(m_toolTipTimer, &QTimer::timeout, this, &Button::refreshLongPressToolTip);
+        connect(this, &Button::hoveredChanged, this, [this](bool hovered) {
+            m_toolTipText.clear();
+            ++m_toolTipGeneration;
+            // Another button's leave event can hide the tooltip later in the
+            // same dispatch. Refresh after the group's hover events finish.
+            if (hovered) m_toolTipTimer->start(0);
+            else refreshLongPressToolTip();
+        });
+        connect(this, &Button::pressedChanged, this, &Button::refreshLongPressToolTip);
+        connect(this, &Button::checkedChanged, this, &Button::refreshLongPressToolTip);
+        connect(this, &Button::enabledChanged, this, &Button::refreshLongPressToolTip);
+        connect(this, &Button::visibilityChanged, this, &Button::refreshLongPressToolTip);
     }
 
     connect(this, &Button::hoveredChanged, this, &Button::updateAnimationState);
@@ -792,6 +813,7 @@ void Button::setTilingPopupOpen(bool open)
 {
     if (m_tilingPopupOpen == open) return;
     m_tilingPopupOpen = open;
+    refreshLongPressToolTip();
     updateAnimationState(isHovered());
     UPDATE_GEOM();
 }
@@ -835,6 +857,80 @@ void Button::forceUnpress()
     const bool wasEnabled = isEnabled();
     setEnabled(!wasEnabled);
     setEnabled(wasEnabled);
+}
+
+QString Button::normalToolTip() const
+{
+    switch (type()) {
+    case KDecoration3::DecorationButtonType::Minimize: return i18nd("kdecoration", "Minimize");
+    case KDecoration3::DecorationButtonType::Maximize:
+        return isChecked() ? i18nd("kdecoration", "Restore") : i18nd("kdecoration", "Maximize");
+    case KDecoration3::DecorationButtonType::Close: return i18nd("kdecoration", "Close");
+    default: return {};
+    }
+}
+
+void Button::refreshLongPressToolTip()
+{
+    if (!m_toolTipTimer) return;
+    m_toolTipTimer->stop();
+    const auto generation = ++m_toolTipGeneration;
+    auto *deco = qobject_cast<Decoration *>(decoration());
+    if (!deco || m_isGtkButton || !isHovered() || isPressed() || !isVisible() || !isEnabled() || m_tilingPopupOpen) {
+        m_toolTipText.clear();
+        return;
+    }
+    if (type() == KDecoration3::DecorationButtonType::Maximize && deco->m_internalSettings->tilingPopupHoverEnabled()) {
+        deco->requestHideToolTip();
+        m_toolTipText.clear();
+        return;
+    }
+    if (m_toolTipText.isEmpty()) {
+        m_toolTipText = normalToolTip();
+        deco->requestShowToolTip(m_toolTipText);
+    }
+    const auto update = [this, generation](bool available) {
+        if (generation != m_toolTipGeneration || !isHovered() || isPressed() || !isVisible() || !isEnabled() || m_tilingPopupOpen) return;
+        auto *deco = qobject_cast<Decoration *>(decoration());
+        if (!deco) return;
+        if (type() == KDecoration3::DecorationButtonType::Maximize && deco->m_internalSettings->tilingPopupHoverEnabled()) {
+            deco->requestHideToolTip();
+            m_toolTipText.clear();
+            return;
+        }
+        QString text = normalToolTip();
+        if (available && deco->m_internalSettings->longPressEnabled()) {
+            switch (type()) {
+            case KDecoration3::DecorationButtonType::Minimize:
+                text += QLatin1Char('\n') + i18nd("materialdecoration", "Press and hold to minimize other windows");
+                break;
+            case KDecoration3::DecorationButtonType::Maximize:
+                text += QLatin1Char('\n') + i18nd("materialdecoration", "Press and hold to show snapping zones");
+                break;
+            case KDecoration3::DecorationButtonType::Close:
+                text += QLatin1Char('\n') + i18nd("materialdecoration", "Press and hold to minimize to the notification area");
+                break;
+            default: break;
+            }
+        }
+        if (text != m_toolTipText) {
+            m_toolTipText = text;
+            deco->requestShowToolTip(text);
+        }
+        // Refresh only while hovered, without restarting an unchanged tooltip.
+        m_toolTipTimer->start(2000);
+    };
+    if (!deco->m_internalSettings->longPressEnabled()) {
+        update(false);
+    } else if (type() == KDecoration3::DecorationButtonType::Minimize) {
+        checkLongPressAction(this, QStringLiteral("minimizeAllOthersActiveScreen"), QStringLiteral("minimizeall"), update);
+    } else if (type() == KDecoration3::DecorationButtonType::Close) {
+        checkLongPressAction(this, QStringLiteral("Minimize to tray"), QStringLiteral("com.github.luisbocanegra.minimize2tray"), update);
+    } else if (canTileWindow(deco)) {
+        checkLongPressAction(this, QStringLiteral("MaterialTilingPopupDispatch"), QStringLiteral("material-tiling"), update);
+    } else {
+        update(false);
+    }
 }
 
 void Button::handleHoldTimeout()

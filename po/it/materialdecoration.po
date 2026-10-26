@@ -447,3 +447,19 @@ msgstr "Area personalizzata %1"
 #: src/Decoration.cc
 msgid "The custom tile is unavailable. Open the popup again."
 msgstr "L’area personalizzata non è disponibile. Riapri il popup."
+
+#: src/Button.cc
+msgid "Press and hold to minimize other windows"
+msgstr "Tieni premuto per minimizzare le altre finestre"
+
+#: src/Button.cc
+msgid "Press and hold to show snapping zones"
+msgstr "Tieni premuto per mostrare le aree di aggancio"
+
+#: src/Button.cc
+msgid "Press and hold to minimize to the notification area"
+msgstr "Tieni premuto per minimizzare nell’area di notifica"
+
+#: src/TilingPopup.cc
+msgid "Meta+T to edit snapping zones"
+msgstr "Meta+T per modificare le aree di aggancio"

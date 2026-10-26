@@ -447,3 +447,19 @@ msgstr "Benutzerdefinierte Kachel %1"
 #: src/Decoration.cc
 msgid "The custom tile is unavailable. Open the popup again."
 msgstr "Die benutzerdefinierte Kachel ist nicht verfügbar. Öffnen Sie das Popup erneut."
+
+#: src/Button.cc
+msgid "Press and hold to minimize other windows"
+msgstr "Gedrückt halten, um die anderen Fenster zu minimieren"
+
+#: src/Button.cc
+msgid "Press and hold to show snapping zones"
+msgstr "Gedrückt halten, um die Andockbereiche anzuzeigen"
+
+#: src/Button.cc
+msgid "Press and hold to minimize to the notification area"
+msgstr "Gedrückt halten, um in den Systemabschnitt der Kontrollleiste zu minimieren"
+
+#: src/TilingPopup.cc
+msgid "Meta+T to edit snapping zones"
+msgstr "Meta+T zum Bearbeiten der Andockbereiche"
