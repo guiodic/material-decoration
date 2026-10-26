@@ -191,7 +191,10 @@ bool tileWindow(QObject *decoration, Qt::Edges edges)
 
 bool tileCustomWindow(QObject *decoration, const QString &tileId, std::function<void(bool)> callback)
 {
-    if (tileId.isEmpty()) return false;
+    if (tileId.isEmpty()) {
+        if (callback) QTimer::singleShot(0, decoration, [callback = std::move(callback)] { callback(false); });
+        return false;
+    }
     return bridge()->enqueue(decoration, {{QStringLiteral("operation"), QStringLiteral("tileCustom")}, {QStringLiteral("tileId"), tileId}},
                              [callback = std::move(callback)](bool success, const QString &) { callback(success); });
 }

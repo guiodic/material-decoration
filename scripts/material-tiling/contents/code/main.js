@@ -33,6 +33,8 @@
         }
         visit(root);
         return {root: root, output: target.output, tiles: tiles, geometry: tiles.map(function (tile) {
+            // KWin normalizes relativeGeometry to the screen, even for nested
+            // tiles. Composing it with ancestor geometry would transform it twice.
             const g = tile.relativeGeometry;
             return {x: g.x, y: g.y, width: g.width, height: g.height};
         })};

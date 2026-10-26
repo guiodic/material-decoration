@@ -104,15 +104,38 @@ private slots:
         QTRY_VERIFY(finished);
         QCOMPARE(action.requests.last().value(QStringLiteral("operation")).toString(), QStringLiteral("tileCustom"));
         QCOMPARE(action.requests.last().value(QStringLiteral("tileId")).toString(), layout[0].id);
-        QVERIFY(!Material::tileCustomWindow(&valid, {}, [](bool) {}));
         action.layoutJson = QStringLiteral("[]");
+    }
+    void emptyCustomTileReportsFailureWithoutDispatch() {
+        QObject valid(&window);
+        const auto requests = action.requests.size();
+        int callbacks = 0;
+        bool succeeded = true;
+        QVERIFY(!Material::tileCustomWindow(&valid, {}, [&](bool success) {
+            ++callbacks;
+            succeeded = success;
+        }));
+        QCOMPARE(callbacks, 0);
+        QTRY_COMPARE(callbacks, 1);
+        QVERIFY(!succeeded);
+        QCoreApplication::processEvents();
+        QCOMPARE(callbacks, 1);
+        QCOMPARE(action.requests.size(), requests);
+
+        auto *decoration = new QObject(&window);
+        bool called = false;
+        QVERIFY(!Material::tileCustomWindow(decoration, {}, [&](bool) { called = true; }));
+        delete decoration;
+        QCoreApplication::processEvents();
+        QVERIFY(!called);
+        QCOMPARE(action.requests.size(), requests);
     }
     void ignoresMalformedLayoutAndSupportsOlderScript() {
         QObject valid(&window);
         for (const auto &json : {QStringLiteral("not json"),
              QStringLiteral(R"([{"id":"missing-coordinates","width":0.5,"height":1}])"),
              QStringLiteral(R"([{"id":"bad","x":0,"y":0,"width":2,"height":1}])"),
-             QStringLiteral(R"([{"id":"same","width":0.5,"height":1},{"id":"same","x":0.5,"width":0.5,"height":1}])")}) {
+             QStringLiteral(R"([{"id":"same","x":0,"y":0,"width":0.5,"height":1},{"id":"same","x":0.5,"y":0,"width":0.5,"height":1}])")}) {
             action.layoutJson = json;
             bool finished = false;
             Material::fetchTilingLayout(&valid, [&](bool success, const Material::CustomTilingLayout &layout) {
