@@ -21,6 +21,9 @@
  */
 
 #include "NavigableMenu.h"
+#include "Decoration.h"
+
+#include <KDecoration3/DecoratedWindow>
 
 #include <QGuiApplication>
 #include <QKeyEvent>
@@ -28,13 +31,21 @@
 namespace Material
 {
 
-NavigableMenu::NavigableMenu(QWidget *parent)
+NavigableMenu::NavigableMenu(Decoration *decoration, QWidget *parent)
     : QMenu(parent)
+    , m_decoration(decoration)
 {
-    // Submenus are windows too; let them inherit their parent menu's palette.
-    setAttribute(Qt::WA_WindowPropagation);
     // KWin exposes the Qt window title as caption to the companion script.
     setWindowTitle(QStringLiteral("com.github.guiodic.material-decoration.popup"));
+}
+
+void NavigableMenu::showEvent(QShowEvent *event)
+{
+    // An overflow action can present a submenu owned by a different menu.
+    // Read the decoration palette directly instead of inheriting its parent.
+    setPalette(m_decoration && m_decoration->m_internalSettings->menusFollowDecorationColors()
+        ? m_decoration->window()->palette() : QPalette());
+    QMenu::showEvent(event);
 }
 
 void NavigableMenu::keyPressEvent(QKeyEvent *event)

@@ -233,6 +233,7 @@ private:
     bool m_tabletMode = false;
 
     friend class AppMenuButtonGroup;
+    friend class NavigableMenu;
     friend class Button;
     friend class AppIconButton;
     friend class AppMenuButton;

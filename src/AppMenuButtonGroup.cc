@@ -58,7 +58,7 @@ namespace Material
 
 AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
     : KDecoration3::DecorationButtonGroup(decoration)
-    , m_appMenuModel(new AppMenuModel(this))
+    , m_appMenuModel(new AppMenuModel(decoration, this))
     , m_currentIndex(-1)
     , m_overflowIndex(-1)
     , m_searchIndex(-1)
@@ -181,7 +181,7 @@ AppMenuButtonGroup::~AppMenuButtonGroup()
 
 void AppMenuButtonGroup::setupSearchMenu()
 {
-    m_searchMenu = new NavigableMenu(nullptr);
+    m_searchMenu = new NavigableMenu(qobject_cast<Decoration *>(decoration()));
     m_searchLineEdit = new QLineEdit(m_searchMenu);
     m_searchLineEdit->setMinimumWidth(200);
 
@@ -234,7 +234,6 @@ void AppMenuButtonGroup::repositionSearchMenu()
 
     KDecoration3::Positioner positioner;
     positioner.setAnchorRect(button->geometry());
-    m_searchMenu->setPalette(deco->m_internalSettings->menusFollowDecorationColors() ? deco->window()->palette() : QPalette());
     deco->popup(positioner, m_searchMenu);
     m_searchMenu->popup(m_searchMenu->pos()); //HACK without this the scrollbar remain even if not necessary
 }
@@ -841,7 +840,6 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
 
     KDecoration3::Positioner positioner;
     positioner.setAnchorRect(button->geometry());
-    menu->setPalette(deco->m_internalSettings->menusFollowDecorationColors() ? deco->window()->palette() : QPalette());
     deco->popup(positioner, menu);
     
 
@@ -933,7 +931,7 @@ void AppMenuButtonGroup::handleOverflowTrigger()
         m_overflowMenu = nullptr;
     }
 
-    auto *actionMenu = new NavigableMenu();
+    auto *actionMenu = new NavigableMenu(qobject_cast<Decoration *>(decoration()));
     actionMenu->setAttribute(Qt::WA_DeleteOnClose);
     m_overflowMenu = actionMenu;
 
