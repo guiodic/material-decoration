@@ -463,3 +463,19 @@ msgstr "按住以最小化到通知区域"
 #: src/TilingPopup.cc
 msgid "Meta+T to edit snapping zones"
 msgstr "按 Meta+T 编辑贴靠区域"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Menus follow decoration colors"
+msgstr "菜单跟随窗口装饰配色"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Use global setting"
+msgstr "使用全局设置"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Enabled"
+msgstr "启用"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Disabled"
+msgstr "禁用"

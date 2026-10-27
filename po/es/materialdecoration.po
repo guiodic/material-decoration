@@ -463,3 +463,19 @@ msgstr "Mantenga pulsado para minimizar en el área de notificación"
 #: src/TilingPopup.cc
 msgid "Meta+T to edit snapping zones"
 msgstr "Meta+T para editar las zonas de ajuste"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Menus follow decoration colors"
+msgstr "Los menús siguen los colores de la decoración"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Use global setting"
+msgstr "Usar la configuración global"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Enabled"
+msgstr "Activado"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Disabled"
+msgstr "Desactivado"

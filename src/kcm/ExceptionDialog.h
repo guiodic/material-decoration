@@ -58,6 +58,7 @@ private:
     QCheckBox *m_hideShadowCheckBox = nullptr;
     QCheckBox *m_squareCornersCheckBox = nullptr;
     QCheckBox *m_outlineActiveCheckBox = nullptr;
+    QComboBox *m_menuColorsCombo = nullptr;
 };
 
 } // namespace Material

@@ -37,6 +37,7 @@ void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettings
     dst->setSquareCornersTiled(src->squareCornersTiled());
     dst->setOutlineActive(src->outlineActive());
     dst->setUseSystemColors(src->useSystemColors());
+    dst->setMenusFollowDecorationColors(src->menusFollowDecorationColors());
     dst->setUseCustomBorderColors(src->useCustomBorderColors());
     dst->setActiveBorderColor(src->activeBorderColor());
     dst->setInactiveBorderColor(src->inactiveBorderColor());
@@ -134,6 +135,7 @@ void ExceptionList::readConfig(const KSharedConfig::Ptr &config)
         exception->setHideShadow(group.readEntry("HideShadow", exception->hideShadow()));
         exception->setSquareCorners(group.readEntry("SquareCorners", exception->squareCorners()));
         exception->setOutlineActive(group.readEntry("OutlineActive", exception->outlineActive()));
+        exception->setMenusFollowDecorationColors(group.readEntry("MenusFollowDecorationColors", exception->menusFollowDecorationColors()));
 
         m_exceptions.append(exception);
     }
@@ -171,6 +173,7 @@ void ExceptionList::writeConfig(KSharedConfig::Ptr config)
         group.writeEntry("HideShadow", exception->hideShadow());
         group.writeEntry("SquareCorners", exception->squareCorners());
         group.writeEntry("OutlineActive", exception->outlineActive());
+        group.writeEntry("MenusFollowDecorationColors", exception->menusFollowDecorationColors());
     }
 
     config->sync();

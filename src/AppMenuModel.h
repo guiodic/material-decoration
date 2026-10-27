@@ -36,13 +36,14 @@ namespace Material
 {
 
 class KDBusMenuImporter;
+class Decoration;
 
 class AppMenuModel : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit AppMenuModel(QObject *parent = nullptr);
+    explicit AppMenuModel(Decoration *decoration, QObject *parent = nullptr);
     ~AppMenuModel() override;
 
 public:
@@ -86,6 +87,7 @@ private:
     bool m_updatePending = false;
 
     QPointer<QMenu> m_menu;
+    QPointer<Decoration> m_decoration;
 
     QDBusServiceWatcher *m_serviceWatcher;
     QString m_serviceName;

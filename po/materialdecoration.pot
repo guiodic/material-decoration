@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: materialdecoration\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 19:36+0000\n"
+"POT-Creation-Date: 2026-10-27 00:03+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,29 +16,29 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/Button.cc:917
+#: src/Button.cc:929
 #, kde-format
 msgid "Press and hold to minimize other windows"
 msgstr ""
 
-#: src/Button.cc:920
+#: src/Button.cc:932
 #, kde-format
 msgid "Press and hold to show snapping zones"
 msgstr ""
 
-#: src/Button.cc:923
+#: src/Button.cc:935
 #, kde-format
 msgid "Press and hold to minimize to the notification area"
 msgstr ""
 
-#: src/Button.cc:1000
+#: src/Button.cc:1012
 #, kde-format
 msgid ""
 "Install kwin-minimize2tray and enable Minimize to Tray in System Settings > "
 "Window Management > KWin Scripts."
 msgstr ""
 
-#: src/Button.cc:1006
+#: src/Button.cc:1018
 #, kde-format
 msgid ""
 "The action to minimize all other windows is unavailable. It requires Plasma "
@@ -97,27 +97,27 @@ msgstr ""
 msgid "Bottom right quarter"
 msgstr ""
 
-#: src/TilingPopup.cc:34
+#: src/TilingPopup.cc:36
 #, kde-format
 msgid "Window tiling layouts"
 msgstr ""
 
-#: src/TilingPopup.cc:48
+#: src/TilingPopup.cc:50
 #, kde-format
 msgid "Custom tiling layout (Meta+T)"
 msgstr ""
 
-#: src/TilingPopup.cc:49
+#: src/TilingPopup.cc:51
 #, kde-format
 msgid "Custom layout unavailable"
 msgstr ""
 
-#: src/TilingPopup.cc:77
+#: src/TilingPopup.cc:79
 #, kde-format
 msgid "Meta+T to edit snapping zones"
 msgstr ""
 
-#: src/TilingPopup.cc:100
+#: src/TilingPopup.cc:102
 #, kde-format
 msgid "Custom tile %1"
 msgstr ""
@@ -245,12 +245,32 @@ msgstr ""
 msgid "Paint a thin line around the window"
 msgstr ""
 
-#: src/kcm/ExceptionDialog.cc:100
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Disabled"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Enabled"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Use global setting"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:89 src/kcm/config.ui:328
+#, kde-format
+msgid "Menus follow decoration colors"
+msgstr ""
+
+#: src/kcm/ExceptionDialog.cc:106
 #, kde-format
 msgid "Pattern cannot be empty."
 msgstr ""
 
-#: src/kcm/ExceptionDialog.cc:100
+#: src/kcm/ExceptionDialog.cc:106
 #, kde-format
 msgid "Warning"
 msgstr ""
@@ -467,37 +487,37 @@ msgstr ""
 msgid "Use system colors"
 msgstr ""
 
-#: src/kcm/config.ui:329
+#: src/kcm/config.ui:336
 #, kde-format
 msgid "Shadows"
 msgstr ""
 
-#: src/kcm/config.ui:335
+#: src/kcm/config.ui:342
 #, kde-format
 msgid "Shadow size"
 msgstr ""
 
-#: src/kcm/config.ui:345
+#: src/kcm/config.ui:352
 #, kde-format
 msgid "Shadow color"
 msgstr ""
 
-#: src/kcm/config.ui:355
+#: src/kcm/config.ui:362
 #, kde-format
 msgid "Shadow strength"
 msgstr ""
 
-#: src/kcm/config.ui:384
+#: src/kcm/config.ui:391
 #, kde-format
 msgid "Button Options"
 msgstr ""
 
-#: src/kcm/config.ui:392
+#: src/kcm/config.ui:399
 #, kde-format
 msgid "Enable long-press actions on window buttons"
 msgstr ""
 
-#: src/kcm/config.ui:405
+#: src/kcm/config.ui:412
 #, kde-format
 msgid ""
 "<html><body><div style=\"width: 350px;\">\n"
@@ -511,32 +531,32 @@ msgid ""
 "</div></body></html>"
 msgstr ""
 
-#: src/kcm/config.ui:430
+#: src/kcm/config.ui:437
 #, kde-format
 msgid "Long-press duration"
 msgstr ""
 
-#: src/kcm/config.ui:437 src/kcm/config.ui:459
+#: src/kcm/config.ui:444 src/kcm/config.ui:466
 #, kde-format
 msgid " ms"
 msgstr ""
 
-#: src/kcm/config.ui:449
+#: src/kcm/config.ui:456
 #, kde-format
 msgid "Open tiling popup when hovering over maximize"
 msgstr ""
 
-#: src/kcm/config.ui:454
+#: src/kcm/config.ui:461
 #, kde-format
 msgid "Tiling popup hover delay"
 msgstr ""
 
-#: src/kcm/config.ui:467
+#: src/kcm/config.ui:474
 #, kde-format
 msgid "Allow window dragging from buttons"
 msgstr ""
 
-#: src/kcm/config.ui:475
+#: src/kcm/config.ui:482
 #, kde-format
 msgid "Window-Specific Overrides"
 msgstr ""

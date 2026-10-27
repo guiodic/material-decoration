@@ -131,6 +131,10 @@ InternalSettingsPtr SettingsProvider::createMergedSettings(const InternalSetting
         merged->setOutlineActive(exceptionSettings->outlineActive());
     }
 
+    if (mask & ExceptionMask::MenusFollowDecorationColors) {
+        merged->setMenusFollowDecorationColors(exceptionSettings->menusFollowDecorationColors());
+    }
+
     return merged;
 }
 

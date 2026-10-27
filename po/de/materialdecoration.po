@@ -463,3 +463,19 @@ msgstr "Gedrückt halten, um in den Systemabschnitt der Kontrollleiste zu minimi
 #: src/TilingPopup.cc
 msgid "Meta+T to edit snapping zones"
 msgstr "Meta+T zum Bearbeiten der Andockbereiche"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Menus follow decoration colors"
+msgstr "Menüs folgen den Farben der Fensterdekoration"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Use global setting"
+msgstr "Globale Einstellung verwenden"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Enabled"
+msgstr "Aktiviert"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Disabled"
+msgstr "Deaktiviert"
