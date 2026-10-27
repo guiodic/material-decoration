@@ -277,7 +277,7 @@ bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
         m_tilingPopup->setZoneCornerRadius(m_internalSettings->cornerRadius());
         m_tilingPopup->setSquareCornersTiled(m_internalSettings->squareCornersTiled());
         m_tilingPopup->setAnimationSettings(animationsEnabled(), animationsDuration());
-        m_tilingPopup->setPalette(window()->palette());
+        m_tilingPopup->setPalette(m_internalSettings->menusFollowDecorationColors() ? window()->palette() : QPalette());
         KDecoration3::Positioner positioner;
         positioner.setAnchorRect(anchor);
         popup(positioner, m_tilingPopup.get());

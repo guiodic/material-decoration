@@ -47,6 +47,7 @@ enum ExceptionMask {
     HideShadow = 1 << 3,
     SquareCorners = 1 << 4,
     OutlineActive = 1 << 5,
+    MenusFollowDecorationColors = 1 << 6,
 };
 
 void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettingsPtr &dst);

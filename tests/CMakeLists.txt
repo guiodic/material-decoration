@@ -8,6 +8,13 @@ set_tests_properties(tilingpopup PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscre
 
 find_program(DBUS_RUN_SESSION dbus-run-session)
 if(DBUS_RUN_SESSION)
+    add_executable(menucolorssettings_test MenuColorsSettingsTest.cc)
+    set_target_properties(menucolorssettings_test PROPERTIES AUTOMOC ON)
+    target_include_directories(menucolorssettings_test PRIVATE ../src ${PROJECT_BINARY_DIR}/src ${PROJECT_BINARY_DIR})
+    target_link_libraries(menucolorssettings_test PRIVATE materialdecoration_core Qt6::Widgets Qt6::Test)
+    add_test(NAME menucolorssettings COMMAND ${DBUS_RUN_SESSION} -- $<TARGET_FILE:menucolorssettings_test>)
+    set_tests_properties(menucolorssettings PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
     add_executable(longpressaction_test LongPressActionTest.cc ../src/LongPressAction.cc)
     set_target_properties(longpressaction_test PROPERTIES AUTOMOC ON)
     target_include_directories(longpressaction_test PRIVATE ../src)

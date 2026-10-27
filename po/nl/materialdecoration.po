@@ -463,3 +463,19 @@ msgstr "Ingedrukt houden om naar het systeemvak te minimaliseren"
 #: src/TilingPopup.cc
 msgid "Meta+T to edit snapping zones"
 msgstr "Meta+T om de uitlijningsgebieden te bewerken"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Menus follow decoration colors"
+msgstr "Menu’s volgen de kleuren van de vensterdecoratie"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Use global setting"
+msgstr "Algemene instelling gebruiken"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Enabled"
+msgstr "Ingeschakeld"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Disabled"
+msgstr "Uitgeschakeld"

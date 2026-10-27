@@ -463,3 +463,19 @@ msgstr "Maintenir enfoncé pour réduire dans la zone de notification"
 #: src/TilingPopup.cc
 msgid "Meta+T to edit snapping zones"
 msgstr "Meta+T pour modifier les zones d’ancrage"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Menus follow decoration colors"
+msgstr "Les menus suivent les couleurs de la décoration"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Use global setting"
+msgstr "Utiliser le réglage global"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Enabled"
+msgstr "Activé"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Disabled"
+msgstr "Désactivé"

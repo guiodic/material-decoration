@@ -234,7 +234,7 @@ void AppMenuButtonGroup::repositionSearchMenu()
 
     KDecoration3::Positioner positioner;
     positioner.setAnchorRect(button->geometry());
-    m_searchMenu->setPalette(deco->window()->palette());
+    m_searchMenu->setPalette(deco->m_internalSettings->menusFollowDecorationColors() ? deco->window()->palette() : QPalette());
     deco->popup(positioner, m_searchMenu);
     m_searchMenu->popup(m_searchMenu->pos()); //HACK without this the scrollbar remain even if not necessary
 }
@@ -841,7 +841,7 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
 
     KDecoration3::Positioner positioner;
     positioner.setAnchorRect(button->geometry());
-    menu->setPalette(deco->window()->palette());
+    menu->setPalette(deco->m_internalSettings->menusFollowDecorationColors() ? deco->window()->palette() : QPalette());
     deco->popup(positioner, menu);
     
 

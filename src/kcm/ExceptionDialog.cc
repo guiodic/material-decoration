@@ -83,6 +83,12 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
     optionsLayout->addWidget(m_squareCornersCheckBox);
     optionsLayout->addWidget(m_outlineActiveCheckBox);
 
+    auto menuColorsLayout = new QFormLayout();
+    m_menuColorsCombo = new QComboBox(this);
+    m_menuColorsCombo->addItems({i18n("Use global setting"), i18n("Enabled"), i18n("Disabled")});
+    menuColorsLayout->addRow(i18n("Menus follow decoration colors"), m_menuColorsCombo);
+    optionsLayout->addLayout(menuColorsLayout);
+
     mainLayout->addWidget(optionsGroup);
 
     auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
@@ -145,6 +151,8 @@ void ExceptionDialog::setException(const InternalSettingsPtr &exception)
     m_hideShadowCheckBox->setChecked(exception->hideShadow());
     m_squareCornersCheckBox->setChecked(exception->squareCorners());
     m_outlineActiveCheckBox->setChecked(exception->outlineActive());
+    m_menuColorsCombo->setCurrentIndex((exception->mask() & ExceptionMask::MenusFollowDecorationColors)
+        ? (exception->menusFollowDecorationColors() ? 1 : 2) : 0);
 
     onHideTitleBarToggled(exception->hideTitleBar());
 }
@@ -173,6 +181,10 @@ void ExceptionDialog::applyToException(InternalSettingsPtr &exception)
     exception->setSquareCorners(m_squareCornersCheckBox->isChecked());
     exception->setOutlineActive(m_outlineActiveCheckBox->isChecked());
 
+    if (m_menuColorsCombo->currentIndex() != 0) {
+        mask |= ExceptionMask::MenusFollowDecorationColors;
+    }
+    exception->setMenusFollowDecorationColors(m_menuColorsCombo->currentIndex() == 1);
     exception->setMask(mask);
 }
 
