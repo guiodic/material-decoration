@@ -87,5 +87,4 @@ NOTE 2: After 5 August 2026 the Decoration Id changed, please select again Mater
 
 TODO/Bugs ([Issue #1](https://github.com/Zren/material-decoration/issues/1)):
 
-* Open Submenu on Shortcut (eg: `Alt+F`)
 * Display mnemonics when holding `Alt`

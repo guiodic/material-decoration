@@ -157,6 +157,11 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     QMetaObject::invokeMethod(m_importer.data(), qOverload<>(&DBusMenuImporter::updateMenu), Qt::QueuedConnection);
 
     connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, &AppMenuModel::onMenuUpdated);
+    connect(m_importer.data(), &DBusMenuImporter::actionActivationRequested, this, [this](QAction *action) {
+        if (sender() == m_importer.data()) {
+            Q_EMIT actionActivationRequested(action);
+        }
+    });
 
     Q_EMIT modelNeedsUpdate();
 }

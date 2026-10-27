@@ -151,6 +151,18 @@ AppMenuButtonGroup::AppMenuButtonGroup(Decoration *decoration)
         this, &AppMenuButtonGroup::onMenuReadyForSearch);
     connect(m_appMenuModel, &AppMenuModel::subMenuReady,
         this, &AppMenuButtonGroup::onSubMenuReady);
+    connect(m_appMenuModel, &AppMenuModel::actionActivationRequested, this, [this](QAction *action) {
+        const auto *deco = qobject_cast<Decoration *>(this->decoration());
+        if (!deco || !deco->window()->isActive() || !action || !action->isEnabled() || !action->isVisible()) {
+            return;
+        }
+        const auto *menu = m_appMenuModel->menu();
+        const int index = menu ? menu->actions().indexOf(action) : -1;
+        if (index >= 0) {
+            // Applications request their exported menu through D-Bus for mnemonics such as Alt+F.
+            handleMenuButtonTrigger(index);
+        }
+    });
 
     if (decoratedClient->hasApplicationMenu()) {
         onHasApplicationMenuChanged(true);
@@ -839,7 +851,10 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
     }
 
     KDecoration3::Positioner positioner;
-    positioner.setAnchorRect(button->geometry());
+    // Keyboard activation can target an item hidden in the overflow/hamburger menu.
+    const auto *anchorButton = !button->isVisible() && m_overflowButton && m_overflowButton->isVisible()
+        ? m_overflowButton.data() : button;
+    positioner.setAnchorRect(anchorButton->geometry());
     deco->popup(positioner, menu);
     
 
