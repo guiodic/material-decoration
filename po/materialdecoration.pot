@@ -260,7 +260,7 @@ msgstr ""
 msgid "Use global setting"
 msgstr ""
 
-#: src/kcm/ExceptionDialog.cc:89 src/kcm/config.ui:248
+#: src/kcm/ExceptionDialog.cc:89 src/kcm/config.ui:328
 #, kde-format
 msgid "Menus follow decoration colors"
 msgstr ""
@@ -432,57 +432,57 @@ msgstr ""
 msgid "ms"
 msgstr ""
 
-#: src/kcm/config.ui:256
+#: src/kcm/config.ui:249
 #, kde-format
 msgid "Menu and Search"
 msgstr ""
 
-#: src/kcm/config.ui:262
+#: src/kcm/config.ui:255
 #, kde-format
 msgid "Always show application menu"
 msgstr ""
 
-#: src/kcm/config.ui:269
+#: src/kcm/config.ui:262
 #, kde-format
 msgid "Enable search button"
 msgstr ""
 
-#: src/kcm/config.ui:276
+#: src/kcm/config.ui:269
 #, kde-format
 msgid "Show disabled menu actions"
 msgstr ""
 
-#: src/kcm/config.ui:283
+#: src/kcm/config.ui:276
 #, kde-format
 msgid "Ignore top-level menu labels"
 msgstr ""
 
-#: src/kcm/config.ui:290
+#: src/kcm/config.ui:283
 #, kde-format
 msgid "Also ignore submenu labels"
 msgstr ""
 
-#: src/kcm/config.ui:297
+#: src/kcm/config.ui:290
 #, kde-format
 msgid "Enable fuzzy search"
 msgstr ""
 
-#: src/kcm/config.ui:304
+#: src/kcm/config.ui:297
 #, kde-format
 msgid "Use hamburger menu"
 msgstr ""
 
-#: src/kcm/config.ui:311
+#: src/kcm/config.ui:304
 #, kde-format
 msgid "Menu button horizontal padding"
 msgstr ""
 
-#: src/kcm/config.ui:321
+#: src/kcm/config.ui:314
 #, kde-format
 msgid "Use system menu font"
 msgstr ""
 
-#: src/kcm/config.ui:328
+#: src/kcm/config.ui:321
 #, kde-format
 msgid "Use system colors"
 msgstr ""
