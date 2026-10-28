@@ -6,7 +6,7 @@
 #include <QGuiApplication>
 #include <QPointer>
 
-#if HAVE_WAYLAND
+#if HAVE_WAYLAND_KEYSTATE
 #include <QSocketNotifier>
 #include <cerrno>
 #include <cstring>
@@ -32,7 +32,7 @@ public:
             q->setAltPressed(keys->isKeyPressed(Qt::Key_Alt));
             return;
         }
-#if HAVE_WAYLAND
+#if HAVE_WAYLAND_KEYSTATE
         // KWin's QPA backend does not deliver the application's modifier events
         // to Qt. Observe the compositor's keystate protocol on a separate connection.
         if (platform != QLatin1String("kwin") && !platform.startsWith(QLatin1String("wayland"))) return;
@@ -59,13 +59,13 @@ public:
 
     ~Private()
     {
-#if HAVE_WAYLAND
+#if HAVE_WAYLAND_KEYSTATE
         disconnectDisplay();
 #endif
     }
 
     AltKeyMonitor *q;
-#if HAVE_WAYLAND
+#if HAVE_WAYLAND_KEYSTATE
     wl_display *display = nullptr;
     wl_registry *registry = nullptr;
     org_kde_kwin_keystate *keys = nullptr;

@@ -53,6 +53,18 @@ else()
     endif()
 endif()
 
+set(HAVE_WAYLAND_KEYSTATE OFF)
+if(HAVE_WAYLAND)
+    find_package(Wayland QUIET COMPONENTS Client)
+    find_package(WaylandScanner QUIET)
+    find_package(PlasmaWaylandProtocols 1.15 CONFIG QUIET)
+    if(Wayland_FOUND AND WaylandScanner_FOUND AND PlasmaWaylandProtocols_FOUND)
+        set(HAVE_WAYLAND_KEYSTATE ON)
+    else()
+        message(STATUS "Wayland Alt key monitoring disabled: optional dependencies unavailable")
+    endif()
+endif()
+
 #set(HAVE_KDecoration3_5_25 ON)
 
 
@@ -81,10 +93,7 @@ set (decoration_SRCS
     plugin.cc
 )
 
-if(HAVE_WAYLAND)
-    find_package(Wayland REQUIRED COMPONENTS Client)
-    find_package(WaylandScanner REQUIRED)
-    find_package(PlasmaWaylandProtocols 1.21 CONFIG REQUIRED)
+if(HAVE_WAYLAND_KEYSTATE)
     ecm_add_wayland_client_protocol(decoration_SRCS
         PROTOCOL ${PLASMA_WAYLAND_PROTOCOLS_DIR}/keystate.xml
         BASENAME material-keystate
@@ -100,7 +109,7 @@ add_library (materialdecoration MODULE
 )
 
 set_target_properties(materialdecoration PROPERTIES AUTOMOC ON)
-if(HAVE_WAYLAND)
+if(HAVE_WAYLAND_KEYSTATE)
     target_link_libraries(materialdecoration PRIVATE Wayland::Client)
 endif()
 
