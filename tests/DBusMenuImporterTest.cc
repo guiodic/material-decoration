@@ -119,6 +119,9 @@ private slots:
         row("numeric-filename", "video_1.txt", "video_1.txt");
         row("recent-file-with-path", "nome_file.txt [/home/user/nome_file.txt]", "nome_file.txt [/home/user/nome_file.txt]");
         row("extensionless-with-path", "nome_file [/home/user/nome_file]", "nome_file [/home/user/nome_file]");
+        row("bracketed-name-with-path", "nome_file [draft] [/home/user/nome_file]", "nome_file [draft] [/home/user/nome_file]");
+        row("bracketed-name-and-path", "nome_file [draft] [/home/user/dir [draft]/nome_file]", "nome_file [draft] [/home/user/dir [draft]/nome_file]");
+        row("multiple-non-path-brackets", "Open_Recent [draft] [Ctrl+O]", "Open&Recent [draft] [Ctrl+O]");
         row("non-path-brackets", "Open_Recent [Ctrl+O]", "Open&Recent [Ctrl+O]");
         row("absolute-path", "/home/user/nome_file", "/home/user/nome_file");
         row("home-path", "~/nome_file", "~/nome_file");

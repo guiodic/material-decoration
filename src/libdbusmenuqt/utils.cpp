@@ -98,9 +98,15 @@ QString menuLabelToQt(const QString &label)
                 || text.startsWith(QLatin1String("\\\\"))
                 || drive.match(text).hasMatch();
         };
-        const qsizetype hint = label.indexOf(QLatin1String(" ["));
-        const bool pathHint = hint >= 0 && label.endsWith(QLatin1Char(']'))
-            && isPath(label.mid(hint + 2, label.size() - hint - 3));
+        qsizetype hint = -1;
+        if (label.endsWith(QLatin1Char(']'))) {
+            hint = label.indexOf(QLatin1String(" ["));
+            // Both the filename and the path may contain bracketed text.
+            while (hint >= 0 && !isPath(label.mid(hint + 2, label.size() - hint - 3))) {
+                hint = label.indexOf(QLatin1String(" ["), hint + 2);
+            }
+        }
+        const bool pathHint = hint >= 0;
         const QString name = (pathHint ? label.left(hint) : label).trimmed();
         static const QRegularExpression extension(QStringLiteral("\\.[\\p{L}\\p{N}]+$"));
         if (isPath(name) || pathHint || extension.match(name).hasMatch()) {
