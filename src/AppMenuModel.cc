@@ -28,6 +28,7 @@
 // own
 #include "AppMenuModel.h"
 #include "NavigableMenu.h"
+#include "MenuMnemonics.h"
 #include "Decoration.h"
 
 // Qt
@@ -67,7 +68,10 @@ protected:
     }
 
     QMenu *createMenu(QWidget *parent) override {
-        return new NavigableMenu(m_decoration, parent);
+        auto *menu = new NavigableMenu(m_decoration, parent);
+        // The application handles top-level Alt shortcuts; keep its labels intact.
+        if (parent) manageMenuMnemonics(menu);
+        return menu;
     }
 
 private:

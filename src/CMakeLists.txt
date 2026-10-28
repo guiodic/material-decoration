@@ -27,6 +27,7 @@ find_package (KF6 REQUIRED COMPONENTS
     I18n
     IconThemes
     WindowSystem
+    WidgetsAddons
     #KCMUtils
 )
 
@@ -60,6 +61,7 @@ configure_file(BuildConfig.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/BuildConfig.h)
 set (decoration_SRCS
     AltKeyMonitor.cc
     AppMenuModel.cc
+    MenuMnemonics.cc
     AppMenuSearch.cc
     NavigableMenu.cc
     AppMenuButton.cc
@@ -121,6 +123,7 @@ target_link_libraries (materialdecoration
         KF6::GuiAddons
         KF6::IconThemes
         KF6::WindowSystem
+        KF6::WidgetsAddons
         # KF6::KCMUtils
         ${X11_LIBRARIES}     
 #        ${Wayland_LIBRARIES}

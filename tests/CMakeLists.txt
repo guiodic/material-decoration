@@ -1,4 +1,12 @@
 find_package(Qt6 REQUIRED COMPONENTS Test)
+find_package(KF6WidgetsAddons REQUIRED)
+add_executable(menumnemonics_test MenuMnemonicsTest.cc ../src/MenuMnemonics.cc)
+set_target_properties(menumnemonics_test PROPERTIES AUTOMOC ON)
+target_include_directories(menumnemonics_test PRIVATE ../src)
+target_link_libraries(menumnemonics_test PRIVATE Qt6::Widgets Qt6::Test KF6::WidgetsAddons)
+add_test(NAME menumnemonics COMMAND menumnemonics_test)
+set_tests_properties(menumnemonics PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
 add_executable(tilingpopup_test TilingPopupTest.cc ../src/TilingPopup.cc ../src/TilingZoneButton.cc ../src/DrawHelper.cc)
 set_target_properties(tilingpopup_test PROPERTIES AUTOMOC ON)
 target_include_directories(tilingpopup_test PRIVATE ../src)
