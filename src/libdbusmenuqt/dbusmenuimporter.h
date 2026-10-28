@@ -40,6 +40,7 @@ public:
      * The menu created from listening to the DBusMenuExporter over DBus
      */
     QMenu *menu() const;
+    void cancelActivationRequest();
 
 public Q_SLOTS:
     /**
@@ -89,6 +90,7 @@ private Q_SLOTS:
     void slotGetLayoutFinished(QDBusPendingCallWatcher *);
 
 private:
+    void retryEmptySubMenu(QMenu *menu);
     Q_DISABLE_COPY(DBusMenuImporter)
     std::unique_ptr<DBusMenuImporterPrivate> const d;
     friend class DBusMenuImporterPrivate;

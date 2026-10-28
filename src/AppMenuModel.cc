@@ -28,6 +28,7 @@
 // own
 #include "AppMenuModel.h"
 #include "NavigableMenu.h"
+#include "MenuMnemonics.h"
 #include "Decoration.h"
 
 // Qt
@@ -67,7 +68,10 @@ protected:
     }
 
     QMenu *createMenu(QWidget *parent) override {
-        return new NavigableMenu(m_decoration, parent);
+        auto *menu = new NavigableMenu(m_decoration, parent);
+        // The application handles top-level Alt shortcuts; keep its labels intact.
+        if (parent) manageMenuMnemonics(menu);
+        return menu;
     }
 
 private:
@@ -157,6 +161,11 @@ void AppMenuModel::updateApplicationMenu(const QString &serviceName, const QStri
     QMetaObject::invokeMethod(m_importer.data(), qOverload<>(&DBusMenuImporter::updateMenu), Qt::QueuedConnection);
 
     connect(m_importer.data(), &DBusMenuImporter::menuUpdated, this, &AppMenuModel::onMenuUpdated);
+    connect(m_importer.data(), &DBusMenuImporter::actionActivationRequested, this, [this](QAction *action) {
+        if (sender() == m_importer.data()) {
+            Q_EMIT actionActivationRequested(action);
+        }
+    });
 
     Q_EMIT modelNeedsUpdate();
 }
@@ -214,6 +223,11 @@ void AppMenuModel::loadSubMenu(QMenu *menu)
     if (m_importer && menu) {
         m_importer->updateMenu(menu);
     }
+}
+
+void AppMenuModel::cancelActivationRequest()
+{
+    if (m_importer) m_importer->cancelActivationRequest();
 }
 
 void AppMenuModel::stopCaching()

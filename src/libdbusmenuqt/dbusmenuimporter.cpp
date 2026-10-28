@@ -10,9 +10,11 @@
 
 // STL
 #include <utility>
+#include <functional>
 
 // Qt
 #include <QActionGroup>
+#include <QApplication>
 #include <QCoreApplication>
 #include <QDBusConnection>
 #include <QDBusInterface>
@@ -21,6 +23,7 @@
 #include <QDebug>
 #include <QFont>
 #include <QMenu>
+#include <QKeyEvent>
 #include <QPointer>
 #include <QSet>
 #include <QTime>
@@ -48,6 +51,7 @@ static QTime sChrono;
     }
 
 static constexpr auto DBUSMENU_PROPERTY_ID = "_dbusmenu_id";
+static constexpr auto DBUSMENU_PROPERTY_LABEL = "_dbusmenu_label";
 static constexpr auto DBUSMENU_PROPERTY_ICON_NAME = "_dbusmenu_icon_name";
 static constexpr auto DBUSMENU_PROPERTY_ICON_DATA_HASH = "_dbusmenu_icon_data_hash";
 
@@ -83,6 +87,7 @@ public:
 
     QSet<int> m_idsRefreshedByAboutToShow;
     QSet<int> m_pendingLayoutUpdates;
+    QPointer<QObject> m_activationRequest;
 
     QDBusPendingCallWatcher *refresh(int id)
     {
@@ -186,6 +191,7 @@ public:
 
     void updateActionLabel(QAction *action, const QVariant &value)
     {
+        action->setProperty(DBUSMENU_PROPERTY_LABEL, value.toString());
         QString text = swapMnemonicChar(value.toString(), '_', '&');
         if (action->menu()) {
             text += QLatin1StringView("  ");
@@ -375,9 +381,68 @@ QAction *DBusMenuImporter::actionForId(int id) const
 
 void DBusMenuImporter::slotItemActivationRequested(int id, uint /*timestamp*/)
 {
+    cancelActivationRequest();
     QAction *action = d->m_actionForId.value(id);
-    DMRETURN_IF_FAIL(action);
-    actionActivationRequested(action);
+    if (action) {
+        Q_EMIT actionActivationRequested(action);
+        return;
+    }
+
+    // The protocol has no parent lookup. Fetch only the ID tree on an explicit
+    // request for an unknown item, then import the menus along its path.
+    auto *request = new QObject(this);
+    d->m_activationRequest = request;
+    QTimer::singleShot(5000, request, &QObject::deleteLater);
+    auto *watcher = new QDBusPendingCallWatcher(d->m_interface->GetLayout(0, -1, {QStringLiteral("children-display")}), request);
+    connect(watcher, &QDBusPendingCallWatcher::finished, request, [this, request, id](QDBusPendingCallWatcher *finished) {
+        const QDBusPendingReply<uint, DBusMenuLayoutItem> reply = *finished;
+        finished->deleteLater();
+        if (reply.isError()) { request->deleteLater(); return; }
+        QList<int> path;
+        int remaining = MAX_TOTAL_ACTIONS;
+        std::function<bool(const DBusMenuLayoutItem &, int)> find = [&](const DBusMenuLayoutItem &item, int depth) {
+            if (--remaining < 0 || depth > 64) return false;
+            path.append(item.id);
+            if (item.id == id) return true;
+            for (const auto &child : item.children) {
+                if (remaining <= 0) break;
+                if (find(child, depth + 1)) return true;
+            }
+            path.removeLast();
+            return false;
+        };
+        if (!find(reply.argumentAt<1>(), 0)) { request->deleteLater(); return; }
+
+        // Each update imports one level, keeping unrelated branches unloaded.
+        auto advance = [this, request, path, id, waiting = QPointer<QMenu>{}, requested = QSet<int>{}](QMenu *updated) mutable {
+            if (waiting && waiting != updated) return;
+            waiting.clear();
+            for (qsizetype i = 0; i < path.size(); ++i) {
+                if (path.at(i) == 0) continue;
+                QAction *item = d->m_actionForId.value(path.at(i));
+                if (item) continue;
+                QMenu *parent = i > 0 ? d->menuForId(path.at(i - 1)) : nullptr;
+                const int parentId = i > 0 ? path.at(i - 1) : 0;
+                if (!parent || requested.contains(parentId)) { request->deleteLater(); return; }
+                requested.insert(parentId);
+                waiting = parent;
+                updateMenu(parent);
+                return;
+            }
+            QAction *target = d->m_actionForId.value(id);
+            disconnect(this, nullptr, request, nullptr);
+            request->deleteLater();
+            if (target) Q_EMIT actionActivationRequested(target);
+        };
+        const QPointer<QObject> lifetime(request);
+        advance(nullptr);
+        if (lifetime) connect(this, &DBusMenuImporter::menuUpdated, lifetime, advance);
+    });
+}
+
+void DBusMenuImporter::cancelActivationRequest()
+{
+    delete d->m_activationRequest.data();
 }
 
 void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
@@ -409,6 +474,17 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     }
 
     menu->setUpdatesEnabled(false);
+
+    const auto actionIdentity = [](const QAction *action) {
+        // Compare exported labels: KDE may have added mnemonic markers locally.
+        return QVariantList{action->property(DBUSMENU_PROPERTY_LABEL),
+                            action->property(DBUSMENU_PROPERTY_ICON_NAME),
+                            action->property(DBUSMENU_PROPERTY_ICON_DATA_HASH),
+                            action->shortcut().toString(QKeySequence::PortableText),
+                            action->isCheckable(), bool(action->menu())};
+    };
+    const QPointer<QAction> selectedAction(menu->activeAction());
+    const QVariantList selectedIdentity = selectedAction ? actionIdentity(selectedAction) : QVariantList();
 
     int childCount = rootItem.children.count();
     if (childCount > MAX_ACTIONS_PER_MENU) {
@@ -496,6 +572,25 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     }
     Q_ASSERT(menu->actions() == finalActions);
 
+    // Some applications rebuild a submenu with fresh IDs while it is opening.
+    // Retain its keyboard selection only if the same command has one clear match.
+    if (!selectedIdentity.isEmpty() && menu->isVisible() && !menu->activeAction()
+        && !finalActions.contains(selectedAction)) {
+        QAction *replacement = nullptr;
+        for (QAction *action : std::as_const(finalActions)) {
+            if (!action->isVisible() || !action->isEnabled() || action->isSeparator()
+                || actionIdentity(action) != selectedIdentity) {
+                continue;
+            }
+            if (replacement) {
+                replacement = nullptr;
+                break;
+            }
+            replacement = action;
+        }
+        if (replacement) menu->setActiveAction(replacement);
+    }
+
     if (ignoredCount > 0) {
         qCWarning(DBUSMENUQT) << "Maximum total actions limit reached (" << MAX_TOTAL_ACTIONS << ")." << ignoredCount << "new actions were ignored.";
     }
@@ -581,7 +676,41 @@ void DBusMenuImporter::slotMenuAboutToShow()
     QMenu *menu = qobject_cast<QMenu *>(sender());
     Q_ASSERT(menu);
 
+    retryEmptySubMenu(menu);
     updateMenu(menu);
+}
+
+void DBusMenuImporter::retryEmptySubMenu(QMenu *menu)
+{
+    auto *parent = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+    QAction *action = parent ? parent->activeAction() : nullptr;
+    if (!menu->actions().isEmpty() || !action || action->menu() != menu || parent == menu) {
+        return;
+    }
+
+    // QMenu cannot open an empty submenu while its D-Bus contents are in flight.
+    auto *request = new QObject(this);
+    const QPointer<QMenu> parentMenu(parent);
+    const QPointer<QAction> requestedAction(action);
+    connect(parent, &QMenu::aboutToHide, request, [request] { request->setProperty("cancelled", true); });
+    connect(parent, &QMenu::hovered, request, [request, requestedAction](QAction *hovered) {
+        if (hovered != requestedAction) request->setProperty("cancelled", true);
+    });
+    connect(this, &DBusMenuImporter::menuUpdated, request, [request, parentMenu, requestedAction, menu](QMenu *updated) {
+        if (updated != menu) return;
+        QTimer::singleShot(0, request, [request, parentMenu, requestedAction] {
+            if (!request->property("cancelled").toBool() && parentMenu && requestedAction
+                && parentMenu->isVisible() && parentMenu->activeAction() == requestedAction
+                && QApplication::activePopupWidget() == parentMenu && requestedAction->menu()
+                && !requestedAction->menu()->isVisible() && !requestedAction->menu()->actions().isEmpty()) {
+                const auto key = parentMenu->layoutDirection() == Qt::RightToLeft ? Qt::Key_Left : Qt::Key_Right;
+                QKeyEvent event(QEvent::KeyPress, key, Qt::NoModifier);
+                QCoreApplication::sendEvent(parentMenu, &event);
+            }
+            request->deleteLater();
+        });
+    });
+    QTimer::singleShot(5000, request, &QObject::deleteLater);
 }
 
 void DBusMenuImporter::slotActionHovered(QAction *action)

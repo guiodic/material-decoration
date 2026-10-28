@@ -59,9 +59,11 @@ signals:
     void modelReset();
     void menuReadyForSearch();
     void subMenuReady(QMenu *menu);
+    void actionActivationRequested(QAction *action);
 
 public:
     void loadSubMenu(QMenu *menu);
+    void cancelActivationRequest();
     void stopCaching();
     void startDeepCaching();
 

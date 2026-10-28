@@ -27,6 +27,7 @@ find_package (KF6 REQUIRED COMPONENTS
     I18n
     IconThemes
     WindowSystem
+    WidgetsAddons
     #KCMUtils
 )
 
@@ -52,13 +53,27 @@ else()
     endif()
 endif()
 
+set(HAVE_WAYLAND_KEYSTATE OFF)
+if(HAVE_WAYLAND)
+    find_package(Wayland QUIET COMPONENTS Client)
+    find_package(WaylandScanner QUIET)
+    find_package(PlasmaWaylandProtocols 1.15 CONFIG QUIET)
+    if(Wayland_FOUND AND WaylandScanner_FOUND AND PlasmaWaylandProtocols_FOUND)
+        set(HAVE_WAYLAND_KEYSTATE ON)
+    else()
+        message(STATUS "Wayland Alt key monitoring disabled: optional dependencies unavailable")
+    endif()
+endif()
+
 #set(HAVE_KDecoration3_5_25 ON)
 
 
 configure_file(BuildConfig.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/BuildConfig.h)
 
 set (decoration_SRCS
+    AltKeyMonitor.cc
     AppMenuModel.cc
+    MenuMnemonics.cc
     AppMenuSearch.cc
     NavigableMenu.cc
     AppMenuButton.cc
@@ -78,6 +93,13 @@ set (decoration_SRCS
     plugin.cc
 )
 
+if(HAVE_WAYLAND_KEYSTATE)
+    ecm_add_wayland_client_protocol(decoration_SRCS
+        PROTOCOL ${PLASMA_WAYLAND_PROTOCOLS_DIR}/keystate.xml
+        BASENAME material-keystate
+        PRIVATE_CODE)
+endif()
+
 kconfig_add_kcfg_files(decoration_SRCS
     InternalSettings.kcfgc
 )
@@ -87,6 +109,9 @@ add_library (materialdecoration MODULE
 )
 
 set_target_properties(materialdecoration PROPERTIES AUTOMOC ON)
+if(HAVE_WAYLAND_KEYSTATE)
+    target_link_libraries(materialdecoration PRIVATE Wayland::Client)
+endif()
 
 target_include_directories(materialdecoration PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -107,6 +132,7 @@ target_link_libraries (materialdecoration
         KF6::GuiAddons
         KF6::IconThemes
         KF6::WindowSystem
+        KF6::WidgetsAddons
         # KF6::KCMUtils
         ${X11_LIBRARIES}     
 #        ${Wayland_LIBRARIES}
