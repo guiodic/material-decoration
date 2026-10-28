@@ -58,6 +58,7 @@ endif()
 configure_file(BuildConfig.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/BuildConfig.h)
 
 set (decoration_SRCS
+    AltKeyMonitor.cc
     AppMenuModel.cc
     AppMenuSearch.cc
     NavigableMenu.cc
@@ -78,6 +79,16 @@ set (decoration_SRCS
     plugin.cc
 )
 
+if(HAVE_WAYLAND)
+    find_package(Wayland REQUIRED COMPONENTS Client)
+    find_package(WaylandScanner REQUIRED)
+    find_package(PlasmaWaylandProtocols 1.21 CONFIG REQUIRED)
+    ecm_add_wayland_client_protocol(decoration_SRCS
+        PROTOCOL ${PLASMA_WAYLAND_PROTOCOLS_DIR}/keystate.xml
+        BASENAME material-keystate
+        PRIVATE_CODE)
+endif()
+
 kconfig_add_kcfg_files(decoration_SRCS
     InternalSettings.kcfgc
 )
@@ -87,6 +98,9 @@ add_library (materialdecoration MODULE
 )
 
 set_target_properties(materialdecoration PROPERTIES AUTOMOC ON)
+if(HAVE_WAYLAND)
+    target_link_libraries(materialdecoration PRIVATE Wayland::Client)
+endif()
 
 target_include_directories(materialdecoration PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 

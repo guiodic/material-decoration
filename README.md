@@ -14,6 +14,8 @@ experimental
 [appmenu-gtk-module-wayland](https://github.com/guiodic/appmenu-gtk-module-wayland)
 (GTK3 only).
 
+Hold `Alt` to show menu mnemonics; press the indicated letter to open a menu.
+
 ### Configuration
 
 Make sure you add the AppMenu button in System Settings > Colors & Themes >
@@ -64,6 +66,8 @@ loads the companion script.
 
 # Build instructions for Plasma 6
 
+Wayland builds require the `libwayland` development files and `plasma-wayland-protocols` ≥ 1.21.
+
 ```
 git clone https://github.com/guiodic/material-decoration.git
 cd material-decoration
@@ -79,12 +83,3 @@ NOTE 1: the master branch is aligned with the latest Plasma version. For earlier
 ones, see the other branches.
 
 NOTE 2: After 5 August 2026 the Decoration Id changed, please select again Material in Systemsettings, if needed.
-
-
-
-
-....
-
-TODO/Bugs ([Issue #1](https://github.com/Zren/material-decoration/issues/1)):
-
-* Display mnemonics when holding `Alt`

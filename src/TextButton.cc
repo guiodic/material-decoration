@@ -20,6 +20,8 @@
 // own
 #include "TextButton.h"
 #include "Decoration.h"
+#include "AltKeyMonitor.h"
+#include <KDecoration3/DecoratedWindow>
 
 // Qt
 #include <QPainter>
@@ -34,6 +36,8 @@ TextButton::TextButton(Decoration *decoration, const int buttonIndex, QObject *p
     , m_text(QStringLiteral("Menu"))
 {
     setVisible(true);
+    connect(AltKeyMonitor::instance(), &AltKeyMonitor::altPressedChanged, this, [this] { update(); });
+    connect(decoration->window(), &KDecoration3::DecoratedWindow::activeChanged, this, [this] { update(); });
 }
 
 TextButton::~TextButton()
@@ -52,8 +56,7 @@ void TextButton::paintIcon(QPainter *painter, const QRectF &iconRect, const Pixe
     // Compute stable, physical-pixel-aligned dimensions to prevent subpixel text blurring
     const QRectF snappedRect = snapper.snap(iconRect);
 
-    // TODO: Use Qt::TextShowMnemonic when Alt is pressed
-    const bool isAltPressed = false;
+    const bool isAltPressed = deco->window()->isActive() && AltKeyMonitor::instance()->isAltPressed();
     const Qt::TextFlag mnemonicFlag = isAltPressed ? Qt::TextShowMnemonic : Qt::TextHideMnemonic;
     painter->drawText(snappedRect, mnemonicFlag | Qt::AlignCenter | Qt::TextSingleLine, m_text); 
 }
