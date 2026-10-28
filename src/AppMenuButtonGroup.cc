@@ -1179,6 +1179,11 @@ void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
         const int buttonIndex = m_buttonIndexWaitingForPopup;
         m_buttonIndexWaitingForPopup = -1;
 
+        const auto *deco = qobject_cast<Decoration *>(decoration());
+        if (!deco || !deco->window()->isActive()) {
+            return;
+        }
+
         if (menu->actions().isEmpty()) {
             popupMenu(menu, buttonIndex);
         } else {
