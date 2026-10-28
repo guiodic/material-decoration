@@ -122,6 +122,9 @@ private slots:
         row("bracketed-name-with-path", "nome_file [draft] [/home/user/nome_file]", "nome_file [draft] [/home/user/nome_file]");
         row("bracketed-name-and-path", "nome_file [draft] [/home/user/dir [draft]/nome_file]", "nome_file [draft] [/home/user/dir [draft]/nome_file]");
         row("multiple-non-path-brackets", "Open_Recent [draft] [Ctrl+O]", "Open&Recent [draft] [Ctrl+O]");
+        row("nested-path-in-description", "Open_Recent [help [/tmp]]", "Open&Recent [help [/tmp]]");
+        row("path-before-final-description", "Open_Recent [/tmp] [help]", "Open&Recent [/tmp] [help]");
+        row("nested-brackets-in-path", "nome_file [/home/user/dir [draft [v1]]/nome_file]", "nome_file [/home/user/dir [draft [v1]]/nome_file]");
         row("non-path-brackets", "Open_Recent [Ctrl+O]", "Open&Recent [Ctrl+O]");
         row("absolute-path", "/home/user/nome_file", "/home/user/nome_file");
         row("home-path", "~/nome_file", "~/nome_file");

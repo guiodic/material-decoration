@@ -8,6 +8,7 @@
 
 // Qt
 #include <QString>
+#include <QStringView>
 #include <QRegularExpression>
 
 // STL
@@ -88,7 +89,7 @@ QString menuLabelToQt(const QString &label)
         && label.at(underscore - 1).isLetterOrNumber()
         && label.at(underscore + 1).isLetterOrNumber()
         && !label.contains(QLatin1String("__"))) {
-        const auto isPath = [](const QString &text) {
+        const auto isPath = [](QStringView text) {
             static const QRegularExpression drive(QStringLiteral("^[A-Za-z]:[\\\\/]"));
             return text.startsWith(QLatin1Char('/'))
                 || text.startsWith(QLatin1String("~/"))
@@ -96,20 +97,32 @@ QString menuLabelToQt(const QString &label)
                 || text.startsWith(QLatin1String("../"))
                 || text.startsWith(QLatin1String("file://"))
                 || text.startsWith(QLatin1String("\\\\"))
-                || drive.match(text).hasMatch();
+                || drive.matchView(text).hasMatch();
         };
+        const QStringView view(label);
         qsizetype hint = -1;
-        if (label.endsWith(QLatin1Char(']'))) {
-            hint = label.indexOf(QLatin1String(" ["));
-            // Both the filename and the path may contain bracketed text.
-            while (hint >= 0 && !isPath(label.mid(hint + 2, label.size() - hint - 3))) {
-                hint = label.indexOf(QLatin1String(" ["), hint + 2);
+        if (view.endsWith(QLatin1Char(']'))) {
+            // Match the whole final bracketed block, not a path nested inside it.
+            qsizetype depth = 0;
+            for (qsizetype i = view.size() - 1; i >= 0; --i) {
+                if (view.at(i) == QLatin1Char(']')) {
+                    ++depth;
+                } else if (view.at(i) == QLatin1Char('[')) {
+                    --depth;
+                    if (depth == 0) {
+                        if (i > 0 && view.at(i - 1) == QLatin1Char(' ')
+                            && isPath(view.sliced(i + 1, view.size() - i - 2))) {
+                            hint = i - 1;
+                        }
+                        break;
+                    }
+                }
             }
         }
         const bool pathHint = hint >= 0;
-        const QString name = (pathHint ? label.left(hint) : label).trimmed();
+        const QStringView name = (pathHint ? view.first(hint) : view).trimmed();
         static const QRegularExpression extension(QStringLiteral("\\.[\\p{L}\\p{N}]+$"));
-        if (isPath(name) || pathHint || extension.match(name).hasMatch()) {
+        if (isPath(name) || pathHint || extension.matchView(name).hasMatch()) {
             QString text = label;
             text.replace(QLatin1Char('&'), QLatin1String("&&"));
             return text;
