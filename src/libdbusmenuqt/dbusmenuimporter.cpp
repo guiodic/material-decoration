@@ -51,6 +51,7 @@ static QTime sChrono;
     }
 
 static constexpr auto DBUSMENU_PROPERTY_ID = "_dbusmenu_id";
+static constexpr auto DBUSMENU_PROPERTY_LABEL = "_dbusmenu_label";
 static constexpr auto DBUSMENU_PROPERTY_ICON_NAME = "_dbusmenu_icon_name";
 static constexpr auto DBUSMENU_PROPERTY_ICON_DATA_HASH = "_dbusmenu_icon_data_hash";
 
@@ -190,6 +191,7 @@ public:
 
     void updateActionLabel(QAction *action, const QVariant &value)
     {
+        action->setProperty(DBUSMENU_PROPERTY_LABEL, value.toString());
         QString text = swapMnemonicChar(value.toString(), '_', '&');
         if (action->menu()) {
             text += QLatin1StringView("  ");
@@ -473,6 +475,17 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
 
     menu->setUpdatesEnabled(false);
 
+    const auto actionIdentity = [](const QAction *action) {
+        // Compare exported labels: KDE may have added mnemonic markers locally.
+        return QVariantList{action->property(DBUSMENU_PROPERTY_LABEL),
+                            action->property(DBUSMENU_PROPERTY_ICON_NAME),
+                            action->property(DBUSMENU_PROPERTY_ICON_DATA_HASH),
+                            action->shortcut().toString(QKeySequence::PortableText),
+                            action->isCheckable(), bool(action->menu())};
+    };
+    const QPointer<QAction> selectedAction(menu->activeAction());
+    const QVariantList selectedIdentity = selectedAction ? actionIdentity(selectedAction) : QVariantList();
+
     int childCount = rootItem.children.count();
     if (childCount > MAX_ACTIONS_PER_MENU) {
         qCWarning(DBUSMENUQT) << "Menu children count" << childCount << "exceeds limit" << MAX_ACTIONS_PER_MENU << ". Truncating.";
@@ -558,6 +571,25 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         usedActions.insert(action);
     }
     Q_ASSERT(menu->actions() == finalActions);
+
+    // Some applications rebuild a submenu with fresh IDs while it is opening.
+    // Retain its keyboard selection only if the same command has one clear match.
+    if (!selectedIdentity.isEmpty() && menu->isVisible() && !menu->activeAction()
+        && !finalActions.contains(selectedAction)) {
+        QAction *replacement = nullptr;
+        for (QAction *action : std::as_const(finalActions)) {
+            if (!action->isVisible() || !action->isEnabled() || action->isSeparator()
+                || actionIdentity(action) != selectedIdentity) {
+                continue;
+            }
+            if (replacement) {
+                replacement = nullptr;
+                break;
+            }
+            replacement = action;
+        }
+        if (replacement) menu->setActiveAction(replacement);
+    }
 
     if (ignoredCount > 0) {
         qCWarning(DBUSMENUQT) << "Maximum total actions limit reached (" << MAX_TOTAL_ACTIONS << ")." << ignoredCount << "new actions were ignored.";
