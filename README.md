@@ -103,6 +103,21 @@ sudo dnf install gcc-c++ make cmake extra-cmake-modules gettext git \
   kf6-kcmutils-devel kf6-kservice-devel kf6-kwidgetsaddons-devel \
   kf6-kwindowsystem-devel libX11-devel libxcb-devel vulkan-headers
 ```
+### Arch and derivatives
+
+Please install the AUR package 
+[material-kwin-decoration-git](https://aur.archlinux.org/packages/material-kwin-decoration-git)
+
+On Arch Linux, the package dependencies are:
+
+- Runtime: `kwin`, plus `wayland` when Wayland Alt monitoring is compiled in.
+- Build: `base-devel`, `cmake`, `extra-cmake-modules`, `git`, `vulkan-headers`;
+  add `plasma-wayland-protocols` ≥ 1.15 and `wayland` for Wayland Alt monitoring.
+  The `wayland` package includes the development files and `wayland-scanner`.
+- Optional: `plasma-x11-session` for X11;
+  `appmenu-gtk-module` for GTK menus on X11 or `appmenu-gtk-module-wayland` on Wayland;
+  `kwin-minimize2tray-git` for the Close button's long-press action;
+  `kwin-effects-better-blur-dx` for translucent titlebars on Wayland.
 
 Optional, for Wayland Alt monitoring:
 
@@ -120,19 +135,7 @@ cmake -B build . # add this for SonicDE: -DFORCE_X11=ON
 cmake --build build -j$(nproc)
 sudo cmake --install build
 ```
-for Arch and derivatives, please install the AUR package 
-[material-kwin-decoration-git](https://aur.archlinux.org/packages/material-kwin-decoration-git)
 
-On Arch Linux, the package dependencies are:
-
-- Runtime: `kwin`, plus `wayland` when Wayland Alt monitoring is compiled in.
-- Build: `base-devel`, `cmake`, `extra-cmake-modules`, `git`, `vulkan-headers`;
-  add `plasma-wayland-protocols` ≥ 1.15 and `wayland` for Wayland Alt monitoring.
-  The `wayland` package includes the development files and `wayland-scanner`.
-- Optional: `plasma-x11-session` for X11;
-  `appmenu-gtk-module` for GTK menus on X11 or `appmenu-gtk-module-wayland` on Wayland;
-  `kwin-minimize2tray-git` for the Close button's long-press action;
-  `kwin-effects-better-blur-dx` for translucent titlebars on Wayland.
 
 NOTE 1: the master branch is aligned with the latest Plasma version. For earlier
 ones, see the other branches.
