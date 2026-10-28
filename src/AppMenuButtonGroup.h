@@ -105,6 +105,8 @@ private:
     void filterMenu(const QString &text);
     void onSearchTimerTimeout();
     void onSubMenuReady(QMenu *menu);
+    void activateMenuAction(QAction *action);
+    void continueMenuActivation();
 
 signals:
     void menuUpdated();
@@ -152,6 +154,12 @@ private:
     void handleMenuButtonTrigger(int buttonIndex);
 
     AppMenuModel *m_appMenuModel;
+    QList<QPointer<QAction>> m_activationPath;
+    QPointer<QMenu> m_activationWaitingMenu;
+    QPointer<QAction> m_activationWaitingAction;
+    QMetaObject::Connection m_activationHoverConnection;
+    QMetaObject::Connection m_activationHideConnection;
+    uint m_activationGeneration = 0;
     int m_currentIndex;
     int m_overflowIndex;
     int m_searchIndex;

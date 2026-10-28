@@ -63,6 +63,7 @@ signals:
 
 public:
     void loadSubMenu(QMenu *menu);
+    void cancelActivationRequest();
     void stopCaching();
     void startDeepCaching();
 

@@ -221,6 +221,11 @@ void AppMenuModel::loadSubMenu(QMenu *menu)
     }
 }
 
+void AppMenuModel::cancelActivationRequest()
+{
+    if (m_importer) m_importer->cancelActivationRequest();
+}
+
 void AppMenuModel::stopCaching()
 {
     for (QMenu *subMenu : std::as_const(m_seenMenus)) {
