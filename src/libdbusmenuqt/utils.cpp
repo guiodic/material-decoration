@@ -8,6 +8,7 @@
 
 // Qt
 #include <QString>
+#include <QRegularExpression>
 
 // STL
 #include <algorithm>
@@ -75,4 +76,38 @@ QString swapMnemonicChar(const QString &in, char src, char dst)
     }
 
     return out;
+}
+
+QString menuLabelToQt(const QString &label)
+{
+    const qsizetype underscore = label.indexOf(QLatin1Char('_'));
+    // Correctly escaped labels and leading mnemonic markers keep protocol decoding.
+    // Qt's exporter leaves literal underscores unescaped, so an internal marker
+    // in a filename is ambiguous. Preserve it rather than hiding part of the name.
+    if (underscore > 0 && underscore + 1 < label.size()
+        && label.at(underscore - 1).isLetterOrNumber()
+        && label.at(underscore + 1).isLetterOrNumber()
+        && !label.contains(QLatin1String("__"))) {
+        const auto isPath = [](const QString &text) {
+            static const QRegularExpression drive(QStringLiteral("^[A-Za-z]:[\\\\/]"));
+            return text.startsWith(QLatin1Char('/'))
+                || text.startsWith(QLatin1String("~/"))
+                || text.startsWith(QLatin1String("./"))
+                || text.startsWith(QLatin1String("../"))
+                || text.startsWith(QLatin1String("file://"))
+                || text.startsWith(QLatin1String("\\\\"))
+                || drive.match(text).hasMatch();
+        };
+        const qsizetype hint = label.indexOf(QLatin1String(" ["));
+        const bool pathHint = hint >= 0 && label.endsWith(QLatin1Char(']'))
+            && isPath(label.mid(hint + 2, label.size() - hint - 3));
+        const QString name = (pathHint ? label.left(hint) : label).trimmed();
+        static const QRegularExpression extension(QStringLiteral("\\.[\\p{L}\\p{N}]+$"));
+        if (isPath(name) || pathHint || extension.match(name).hasMatch()) {
+            QString text = label;
+            text.replace(QLatin1Char('&'), QLatin1String("&&"));
+            return text;
+        }
+    }
+    return swapMnemonicChar(label, '_', '&');
 }

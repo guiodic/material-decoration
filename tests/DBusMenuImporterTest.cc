@@ -14,6 +14,7 @@ class MenuService : public QDBusVirtualObject
 public:
     QDBusConnection bus = QDBusConnection::connectToBus(QDBusConnection::SessionBus, "menu-test-server");
     QList<QPair<int, int>> layouts;
+    QString actionLabel = QStringLiteral("_Save");
     bool missingNested = false;
     bool removeAfterTree = false;
     QStringList treeProperties;
@@ -30,6 +31,7 @@ public:
         item.id = id;
         item.properties = {{"label", id == 1 ? "_File" : id == 2 ? "_Save" : id == 3 ? "_Nested" : "_Run"},
                            {"enabled", true}, {"visible", true}};
+        if (id == 2) item.properties.insert("label", actionLabel);
         if (id == 0 || id == 1 || id == 3 || id == 7) item.properties.insert("children-display", "submenu");
         if (depth == 0) return item;
         const int next = depth < 0 ? -1 : depth - 1;
@@ -94,6 +96,7 @@ private slots:
     void init()
     {
         service.layouts.clear();
+        service.actionLabel = QStringLiteral("_Save");
         service.missingNested = false;
         service.removeAfterTree = false;
         service.treeProperties.clear();
@@ -103,6 +106,50 @@ private slots:
         service.duplicateNestedAction = false;
         service.renameNestedAction = false;
         service.clicked.clear();
+    }
+    void importsFilenameUnderscores_data()
+    {
+        QTest::addColumn<QString>("label");
+        QTest::addColumn<QString>("expected");
+        const auto row = [](const char *name, const char *label, const char *expected) {
+            QTest::newRow(name) << QString::fromUtf8(label) << QString::fromUtf8(expected);
+        };
+        row("filename", "nome_file.txt", "nome_file.txt");
+        row("filename-with-brackets", "nome_file [draft].txt", "nome_file [draft].txt");
+        row("numeric-filename", "video_1.txt", "video_1.txt");
+        row("recent-file-with-path", "nome_file.txt [/home/user/nome_file.txt]", "nome_file.txt [/home/user/nome_file.txt]");
+        row("extensionless-with-path", "nome_file [/home/user/nome_file]", "nome_file [/home/user/nome_file]");
+        row("non-path-brackets", "Open_Recent [Ctrl+O]", "Open&Recent [Ctrl+O]");
+        row("absolute-path", "/home/user/nome_file", "/home/user/nome_file");
+        row("home-path", "~/nome_file", "~/nome_file");
+        row("relative-path", "./nome_file", "./nome_file");
+        row("parent-path", "../nome_file", "../nome_file");
+        row("file-url", "file:///home/user/nome_file", "file:///home/user/nome_file");
+        row("windows-path", R"(C:\Users\nome_file)", R"(C:\Users\nome_file)");
+        row("unc-path", R"(\\server\nome_file)", R"(\\server\nome_file)");
+        row("literal-ampersand", "nome_file&copy.txt", "nome_file&&copy.txt");
+        row("gtk-escaped", "nome__file.txt", "nome_file.txt");
+        row("gtk-mixed-escapes", "nome__file____test__1.svg", "nome_file__test_1.svg");
+        row("gtk-mnemonic-and-escape", "_nome__file.txt", "&nome_file.txt");
+        row("numbered-mnemonic", "_1 nome_file.txt", "&1 nome_file.txt");
+        row("path-mnemonic", "/_home/user/nome_file", "/&home/user/nome_file");
+        row("ordinary-mnemonic", "Open_Recent", "Open&Recent");
+        row("ordinary-ellipsis", "Save_as...", "Save&as...");
+        row("ambiguous-extensionless", "nome_file", "nome&file");
+    }
+    void importsFilenameUnderscores()
+    {
+        QFETCH(QString, label);
+        QFETCH(QString, expected);
+        service.actionLabel = label;
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QTRY_COMPARE(importer.menu()->actions().size(), 2);
+        auto *menu = importer.menu()->actions().first()->menu();
+        importer.updateMenu(menu);
+        QTRY_COMPARE(menu->actions().size(), 2);
+        QAction *action = menu->actions().first();
+        QCOMPARE(action->text(), expected);
+        QCOMPARE(action->property("_dbusmenu_label").toString(), label);
     }
     void refreshedIdsPreserveSelection_data()
     {

@@ -12,3 +12,6 @@ class QString;
  * Swap mnemonic char: Qt uses '&', while dbusmenu uses '_'
  */
 QString swapMnemonicChar(const QString &in, char src, char dst);
+
+// Decode a D-Bus label, preserving likely unescaped filename underscores.
+QString menuLabelToQt(const QString &label);
