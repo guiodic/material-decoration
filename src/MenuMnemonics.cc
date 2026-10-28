@@ -2,7 +2,9 @@
 #include "MenuMnemonics.h"
 
 #include <KAcceleratorManager>
+#include <QCoreApplication>
 #include <QEvent>
+#include <QKeyEvent>
 #include <QMenu>
 #include <QScopedValueRollback>
 #include <QTimer>
@@ -59,5 +61,16 @@ private:
 void manageMenuMnemonics(QMenu *menu)
 {
     new MenuMnemonics(menu);
+}
+
+void synchronizeMenuMnemonicVisibility(bool altPressed)
+{
+    // The initial Alt press goes to the application, before our popup has focus.
+    // Notify the style's application event filter through a passive receiver:
+    // sending Alt to QMenu itself could close it or change keyboard navigation.
+    QObject receiver;
+    QKeyEvent event(altPressed ? QEvent::KeyPress : QEvent::KeyRelease,
+                    Qt::Key_Alt, altPressed ? Qt::AltModifier : Qt::NoModifier);
+    QCoreApplication::sendEvent(&receiver, &event);
 }
 }

@@ -2,12 +2,31 @@
 #include "MenuMnemonics.h"
 #include <QAction>
 #include <QKeySequence>
+#include <QKeyEvent>
 #include <QMenu>
 #include <QPointer>
 #include <QSignalSpy>
 #include <QTest>
 #include <QToolButton>
 #include <QWidgetAction>
+
+class AltObserver : public QObject
+{
+public:
+    QList<QEvent::Type> events;
+    bool receivedByWidget = false;
+
+protected:
+    bool eventFilter(QObject *receiver, QEvent *event) override
+    {
+        if ((event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease)
+            && static_cast<QKeyEvent *>(event)->key() == Qt::Key_Alt) {
+            events.append(event->type());
+            receivedByWidget |= receiver->isWidgetType();
+        }
+        return false;
+    }
+};
 
 class MenuMnemonicsTest : public QObject
 {
@@ -18,6 +37,27 @@ private:
         return !QKeySequence::mnemonic(action->text()).isEmpty();
     }
 private slots:
+    void synchronizesStyleWithoutSendingKeysToMenu()
+    {
+        QMenu menu;
+        QAction *action = menu.addAction(QStringLiteral("&Open"));
+        QSignalSpy triggered(action, &QAction::triggered);
+        QSignalSpy hidden(&menu, &QMenu::aboutToHide);
+        menu.popup(QPoint(10, 10));
+        menu.setActiveAction(action);
+
+        AltObserver observer;
+        qApp->installEventFilter(&observer);
+        Material::synchronizeMenuMnemonicVisibility(true);
+        Material::synchronizeMenuMnemonicVisibility(false);
+        QCOMPARE(observer.events, (QList<QEvent::Type>{QEvent::KeyPress, QEvent::KeyRelease}));
+        QVERIFY(!observer.receivedByWidget);
+        QVERIFY(menu.isVisible());
+        QCOMPARE(menu.activeAction(), action);
+        QVERIFY(triggered.isEmpty());
+        QVERIFY(hidden.isEmpty());
+    }
+
     void assignsPopupMnemonicsWithoutChangingRootOrActions()
     {
         QMenu root;

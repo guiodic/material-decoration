@@ -21,12 +21,15 @@
  */
 
 #include "NavigableMenu.h"
+#include "AltKeyMonitor.h"
 #include "Decoration.h"
+#include "MenuMnemonics.h"
 
 #include <KDecoration3/DecoratedWindow>
 
 #include <QGuiApplication>
 #include <QKeyEvent>
+#include <QTimer>
 
 namespace Material
 {
@@ -37,6 +40,15 @@ NavigableMenu::NavigableMenu(Decoration *decoration, QWidget *parent)
 {
     // KWin exposes the Qt window title as caption to the companion script.
     setWindowTitle(QStringLiteral("com.github.guiodic.material-decoration.popup"));
+    connect(AltKeyMonitor::instance(), &AltKeyMonitor::altPressedChanged, this, [this](bool pressed) {
+        if (isVisible()) synchronizeMenuMnemonicVisibility(pressed);
+    });
+    connect(qGuiApp, &QGuiApplication::applicationStateChanged, this, [this] {
+        // Run after the style handles activation, which can clear its Alt state.
+        QTimer::singleShot(0, this, [this] {
+            if (isVisible()) synchronizeMenuMnemonicVisibility(AltKeyMonitor::instance()->isAltPressed());
+        });
+    });
 }
 
 void NavigableMenu::showEvent(QShowEvent *event)
@@ -46,6 +58,7 @@ void NavigableMenu::showEvent(QShowEvent *event)
     setPalette(m_decoration && m_decoration->m_internalSettings->menusFollowDecorationColors()
         ? m_decoration->window()->palette() : QPalette());
     QMenu::showEvent(event);
+    synchronizeMenuMnemonicVisibility(AltKeyMonitor::instance()->isAltPressed());
 }
 
 void NavigableMenu::keyPressEvent(QKeyEvent *event)
