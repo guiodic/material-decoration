@@ -103,6 +103,13 @@ sudo dnf install gcc-c++ make cmake extra-cmake-modules gettext git \
   kf6-kcmutils-devel kf6-kservice-devel kf6-kwidgetsaddons-devel \
   kf6-kwindowsystem-devel libX11-devel libxcb-devel vulkan-headers
 ```
+
+Optional, for Wayland Alt monitoring:
+
+```sh
+sudo dnf install wayland-devel plasma-wayland-protocols
+```
+
 ### Arch and derivatives
 
 Please install the AUR package 
@@ -118,12 +125,6 @@ On Arch Linux, the package dependencies are:
   `appmenu-gtk-module` for GTK menus on X11 or `appmenu-gtk-module-wayland` on Wayland;
   `kwin-minimize2tray-git` for the Close button's long-press action;
   `kwin-effects-better-blur-dx` for translucent titlebars on Wayland.
-
-Optional, for Wayland Alt monitoring:
-
-```sh
-sudo dnf install wayland-devel plasma-wayland-protocols
-```
 
 ### Compile and install
 
