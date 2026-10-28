@@ -105,6 +105,7 @@ private:
     void filterMenu(const QString &text);
     void onSearchTimerTimeout();
     void onSubMenuReady(QMenu *menu);
+    void cancelMenuActivation();
     void activateMenuAction(QAction *action);
     void continueMenuActivation();
 

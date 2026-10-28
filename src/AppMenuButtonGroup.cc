@@ -52,8 +52,8 @@
 #include <QVariantAnimation>
 #include <QWidgetAction>
 
-#include <utility>
 #include <functional>
+#include <utility>
 
 namespace Material
 {
@@ -965,7 +965,7 @@ void AppMenuButtonGroup::handleOverflowTrigger()
 void AppMenuButtonGroup::trigger(int buttonIndex)
 {
     m_appMenuModel->cancelActivationRequest();
-    m_activationPath.clear();
+    cancelMenuActivation();
     // The button is checked in popupMenu, but we need to check it here
     // for the case where the menu is not yet loaded.
     AppMenuButton *button = getAppMenuButton(buttonIndex);
@@ -1071,7 +1071,7 @@ void AppMenuButtonGroup::updateShowing()
 
 void AppMenuButtonGroup::onMenuAboutToHide()
 {
-    m_activationPath.clear();
+    cancelMenuActivation();
     m_buttonIndexWaitingForPopup = -1;
     QMenu *menu = qobject_cast<QMenu *>(sender());
     if (!menu) {
@@ -1152,7 +1152,8 @@ void AppMenuButtonGroup::filterMenu(const QString &text)
 
 void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
 {
-    if (!m_activationWaitingAction || m_activationWaitingAction->menu() == menu) {
+    if (!m_activationPath.isEmpty()
+        && (!m_activationWaitingAction || m_activationWaitingAction->menu() == menu)) {
         QTimer::singleShot(0, this, &AppMenuButtonGroup::continueMenuActivation);
     }
     m_search->invalidateCandidates();
@@ -1192,13 +1193,19 @@ void AppMenuButtonGroup::onSubMenuReady(QMenu *menu)
     }
 }
 
-void AppMenuButtonGroup::activateMenuAction(QAction *action)
+void AppMenuButtonGroup::cancelMenuActivation()
 {
+    ++m_activationGeneration;
     disconnect(m_activationHoverConnection);
     disconnect(m_activationHideConnection);
     m_activationPath.clear();
     m_activationWaitingMenu.clear();
     m_activationWaitingAction.clear();
+}
+
+void AppMenuButtonGroup::activateMenuAction(QAction *action)
+{
+    cancelMenuActivation();
     auto *deco = qobject_cast<Decoration *>(decoration());
     if (!deco || !deco->window()->isActive() || !action) return;
 
@@ -1216,15 +1223,15 @@ void AppMenuButtonGroup::activateMenuAction(QAction *action)
     };
     if (!find(m_appMenuModel->menu())) return;
 
-    const uint generation = ++m_activationGeneration;
+    const uint generation = m_activationGeneration;
     QTimer::singleShot(5000, this, [this, generation] {
-        if (generation == m_activationGeneration) m_activationPath.clear();
+        if (generation == m_activationGeneration) cancelMenuActivation();
     });
     if (m_activationPath.size() == 1 && !action->menu()) {
         // Activation requests reveal an item; they do not execute its command.
         popupMenu(m_appMenuModel->menu(), m_appMenuModel->menu()->actions().indexOf(action));
         if (m_currentMenu) m_currentMenu->setActiveAction(action);
-        m_activationPath.clear();
+        cancelMenuActivation();
         return;
     }
     const int index = m_appMenuModel->menu()->actions().indexOf(m_activationPath.first());
@@ -1239,7 +1246,7 @@ void AppMenuButtonGroup::continueMenuActivation()
     if (!deco || !deco->window()->isActive()
         || (m_activationWaitingMenu && (!m_activationWaitingMenu->isVisible()
             || m_activationWaitingMenu->activeAction() != m_activationWaitingAction))) {
-        m_activationPath.clear();
+        cancelMenuActivation();
         return;
     }
     QMenu *parent = m_activationPath.first() ? m_activationPath.first()->menu() : nullptr;
@@ -1252,7 +1259,7 @@ void AppMenuButtonGroup::continueMenuActivation()
     for (qsizetype i = 1; i < m_activationPath.size(); ++i) {
         auto *action = m_activationPath.at(i).data();
         if (!action || !parent->actions().contains(action) || !action->isVisible() || !action->isEnabled()) {
-            m_activationPath.clear();
+            cancelMenuActivation();
             return;
         }
         parent->setActiveAction(action);
@@ -1260,17 +1267,15 @@ void AppMenuButtonGroup::continueMenuActivation()
         if (!child) break;
         if (child->actions().isEmpty()) {
             if (completedWait == action) {
-                m_activationPath.clear();
+                cancelMenuActivation();
                 return;
             }
             m_activationWaitingMenu = parent;
             m_activationWaitingAction = action;
-            disconnect(m_activationHoverConnection);
-            disconnect(m_activationHideConnection);
             m_activationHoverConnection = connect(parent, &QMenu::hovered, this, [this, expected = QPointer<QAction>(action)](QAction *hovered) {
-                if (hovered != expected) m_activationPath.clear();
+                if (hovered != expected) cancelMenuActivation();
             });
-            m_activationHideConnection = connect(parent, &QMenu::aboutToHide, this, [this] { m_activationPath.clear(); });
+            m_activationHideConnection = connect(parent, &QMenu::aboutToHide, this, [this] { cancelMenuActivation(); });
             m_appMenuModel->loadSubMenu(child);
             return;
         }
@@ -1279,10 +1284,10 @@ void AppMenuButtonGroup::continueMenuActivation()
             QKeyEvent event(QEvent::KeyPress, key, Qt::NoModifier);
             QApplication::sendEvent(parent, &event);
         }
-        if (!child->isVisible()) { m_activationPath.clear(); return; }
+        if (!child->isVisible()) { cancelMenuActivation(); return; }
         parent = child;
     }
-    m_activationPath.clear();
+    cancelMenuActivation();
 }
 
 void AppMenuButtonGroup::onSearchTimerTimeout()
