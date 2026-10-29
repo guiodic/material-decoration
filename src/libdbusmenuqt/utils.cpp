@@ -85,11 +85,15 @@ bool hasFileExtension(QStringView label, qsizetype underscore)
 {
     static const QRegularExpression extension(QStringLiteral("\\.[^\\s./\\\\\\[\\]]+$"));
     const auto matchesFilename = [underscore](QStringView candidate) {
+        const QStringView text = candidate.trimmed();
+        static const QRegularExpression drive(QStringLiteral("^[A-Za-z]:[\\\\/]"));
+        const bool absolutePath = text.startsWith(QLatin1Char('/'))
+            || text.startsWith(QLatin1String("\\\\")) || drive.matchView(text).hasMatch();
         const qsizetype separator = qMax(candidate.lastIndexOf(QLatin1Char('/')),
                                         candidate.lastIndexOf(QLatin1Char('\\')));
-        // An extension in a separate path must not hide a preceding mnemonic.
-        return underscore > separator && underscore < candidate.size()
-            && extension.matchView(candidate.trimmed()).hasMatch();
+        // Preserve directory underscores only when the candidate itself is an absolute path.
+        return (absolutePath || underscore > separator) && underscore < candidate.size()
+            && extension.matchView(text).hasMatch();
     };
     // Recent-file entries can append a path or other details after " [".
     const qsizetype details = label.indexOf(QLatin1String(" ["));

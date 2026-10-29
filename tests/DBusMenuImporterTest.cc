@@ -133,6 +133,11 @@ private slots:
         row("filename-with-spaces", "nome_file di prova.txt", "nome_file di prova.txt");
         row("filename-in-path", "/tmp/nome_file.txt", "/tmp/nome_file.txt");
         row("filename-in-windows-path", R"(C:\tmp\nome_file.txt)", R"(C:\tmp\nome_file.txt)");
+        row("absolute-path-directory-underscore", "/home/my_folder/report_final.txt", "/home/my_folder/report_final.txt");
+        row("absolute-path-with-spaces", "/home/my_folder/other folder/report_final.txt", "/home/my_folder/other folder/report_final.txt");
+        row("windows-directory-underscore", R"(C:\my_folder\report_final.txt)", R"(C:\my_folder\report_final.txt)");
+        row("unc-directory-underscore", R"(\\server\my_folder\report_final.txt)", R"(\\server\my_folder\report_final.txt)");
+        row("extensionless-absolute-directory", "/home/my_folder/report_final", "/home/my&folder/report_final");
         row("literal-ampersand", "nome_file&copy.txt", "nome_file&&copy.txt");
         row("gtk-escaped", "nome__file.txt", "nome_file.txt");
         row("gtk-mixed-escapes", "nome__file____test__1.svg", "nome_file__test_1.svg");
