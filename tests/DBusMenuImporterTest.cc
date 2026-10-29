@@ -29,9 +29,8 @@ public:
     {
         DBusMenuLayoutItem item;
         item.id = id;
-        item.properties = {{"label", id == 1 ? "_File" : id == 2 ? "_Save" : id == 3 ? "_Nested" : "_Run"},
+        item.properties = {{"label", id == 1 ? "_File" : id == 2 ? actionLabel : id == 3 ? "_Nested" : "_Run"},
                            {"enabled", true}, {"visible", true}};
-        if (id == 2) item.properties.insert("label", actionLabel);
         if (id == 0 || id == 1 || id == 3 || id == 7) item.properties.insert("children-display", "submenu");
         if (depth == 0) return item;
         const int next = depth < 0 ? -1 : depth - 1;
