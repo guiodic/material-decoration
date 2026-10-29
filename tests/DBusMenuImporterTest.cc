@@ -14,6 +14,7 @@ class MenuService : public QDBusVirtualObject
 public:
     QDBusConnection bus = QDBusConnection::connectToBus(QDBusConnection::SessionBus, "menu-test-server");
     QList<QPair<int, int>> layouts;
+    QString actionLabel = QStringLiteral("_Save");
     bool missingNested = false;
     bool removeAfterTree = false;
     QStringList treeProperties;
@@ -30,6 +31,7 @@ public:
         item.id = id;
         item.properties = {{"label", id == 1 ? "_File" : id == 2 ? "_Save" : id == 3 ? "_Nested" : "_Run"},
                            {"enabled", true}, {"visible", true}};
+        if (id == 2) item.properties.insert("label", actionLabel);
         if (id == 0 || id == 1 || id == 3 || id == 7) item.properties.insert("children-display", "submenu");
         if (depth == 0) return item;
         const int next = depth < 0 ? -1 : depth - 1;
@@ -94,6 +96,7 @@ private slots:
     void init()
     {
         service.layouts.clear();
+        service.actionLabel = QStringLiteral("_Save");
         service.missingNested = false;
         service.removeAfterTree = false;
         service.treeProperties.clear();
@@ -103,6 +106,61 @@ private slots:
         service.duplicateNestedAction = false;
         service.renameNestedAction = false;
         service.clicked.clear();
+    }
+    void importsFilenameUnderscores_data()
+    {
+        QTest::addColumn<QString>("label");
+        QTest::addColumn<QString>("expected");
+        const auto row = [](const char *name, const char *label, const char *expected) {
+            QTest::newRow(name) << QString::fromUtf8(label) << QString::fromUtf8(expected);
+        };
+        row("filename", "nome_file.txt", "nome_file.txt");
+        row("unlisted-extension", "nome_file.custom-format", "nome_file.custom-format");
+        row("extension-with-symbols", "nome_file.c++", "nome_file.c++");
+        row("numeric-extension", "nome_file.7z", "nome_file.7z");
+        row("filename-with-brackets", "nome_file [draft].txt", "nome_file [draft].txt");
+        row("numeric-filename", "video_1.txt", "video_1.txt");
+        row("recent-file-with-path", "nome_file.txt [/home/user/nome_file.txt]", "nome_file.txt [/home/user/nome_file.txt]");
+        row("filename-before-annotations", "nome_file.txt [/home/user/nome_file.txt] [modified]", "nome_file.txt [/home/user/nome_file.txt] [modified]");
+        row("extensionless-with-path", "nome_file [/home/user/nome_file]", "nome&file [/home/user/nome_file]");
+        row("extensionless-path", "/home/user/nome_file", "/home/user/nome&file");
+        row("non-path-brackets", "Open_Recent [Ctrl+O]", "Open&Recent [Ctrl+O]");
+        row("nested-path-in-description", "Open_Recent [help [/tmp]]", "Open&Recent [help [/tmp]]");
+        row("extension-inside-description", "Open_Recent [help.txt [notes]]", "Open&Recent [help.txt [notes]]");
+        row("command-with-path-suffix", "Open_Recent /tmp/file.txt", "Open&Recent /tmp/file.txt");
+        row("command-with-underscore-path", "Open_Recent /tmp/file_name.txt", "Open&Recent /tmp/file_name.txt");
+        row("command-with-windows-path", R"(Open_Recent C:\tmp\file.txt)", R"(Open&Recent C:\tmp\file.txt)");
+        row("filename-with-spaces", "nome_file di prova.txt", "nome_file di prova.txt");
+        row("filename-in-path", "/tmp/nome_file.txt", "/tmp/nome_file.txt");
+        row("filename-in-windows-path", R"(C:\tmp\nome_file.txt)", R"(C:\tmp\nome_file.txt)");
+        row("absolute-path-directory-underscore", "/home/my_folder/report_final.txt", "/home/my_folder/report_final.txt");
+        row("absolute-path-with-spaces", "/home/my_folder/other folder/report_final.txt", "/home/my_folder/other folder/report_final.txt");
+        row("windows-directory-underscore", R"(C:\my_folder\report_final.txt)", R"(C:\my_folder\report_final.txt)");
+        row("unc-directory-underscore", R"(\\server\my_folder\report_final.txt)", R"(\\server\my_folder\report_final.txt)");
+        row("extensionless-absolute-directory", "/home/my_folder/report_final", "/home/my&folder/report_final");
+        row("literal-ampersand", "nome_file&copy.txt", "nome_file&&copy.txt");
+        row("gtk-escaped", "nome__file.txt", "nome_file.txt");
+        row("gtk-mixed-escapes", "nome__file____test__1.svg", "nome_file__test_1.svg");
+        row("gtk-mnemonic-and-escape", "_nome__file.txt", "&nome_file.txt");
+        row("numbered-mnemonic", "_1 nome_file.txt", "&1 nome_file.txt");
+        row("path-mnemonic", "/_home/user/nome_file", "/&home/user/nome_file");
+        row("ordinary-mnemonic", "Open_Recent", "Open&Recent");
+        row("ordinary-ellipsis", "Save_as...", "Save&as...");
+        row("ambiguous-extensionless", "nome_file", "nome&file");
+    }
+    void importsFilenameUnderscores()
+    {
+        QFETCH(QString, label);
+        QFETCH(QString, expected);
+        service.actionLabel = label;
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QTRY_COMPARE(importer.menu()->actions().size(), 2);
+        auto *menu = importer.menu()->actions().first()->menu();
+        importer.updateMenu(menu);
+        QTRY_COMPARE(menu->actions().size(), 2);
+        QAction *action = menu->actions().first();
+        QCOMPARE(action->text(), expected);
+        QCOMPARE(action->property("_dbusmenu_label").toString(), label);
     }
     void refreshedIdsPreserveSelection_data()
     {

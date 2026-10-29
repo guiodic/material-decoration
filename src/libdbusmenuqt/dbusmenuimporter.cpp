@@ -192,7 +192,7 @@ public:
     void updateActionLabel(QAction *action, const QVariant &value)
     {
         action->setProperty(DBUSMENU_PROPERTY_LABEL, value.toString());
-        QString text = swapMnemonicChar(value.toString(), '_', '&');
+        QString text = menuLabelToQt(value.toString());
         if (action->menu()) {
             text += QLatin1StringView("  ");
         }
