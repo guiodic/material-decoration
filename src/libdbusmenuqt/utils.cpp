@@ -79,6 +79,18 @@ QString swapMnemonicChar(const QString &in, char src, char dst)
     return out;
 }
 
+namespace
+{
+bool hasFileExtension(QStringView label)
+{
+    static const QRegularExpression extension(QStringLiteral("\\.[^\\s./\\\\\\[\\]]+$"));
+    // Recent-file entries can append a path or other details after " [".
+    const qsizetype details = label.indexOf(QLatin1String(" ["));
+    return extension.matchView(label.trimmed()).hasMatch()
+        || (details > 0 && extension.matchView(label.first(details).trimmed()).hasMatch());
+}
+}
+
 QString menuLabelToQt(const QString &label)
 {
     const qsizetype underscore = label.indexOf(QLatin1Char('_'));
@@ -88,45 +100,11 @@ QString menuLabelToQt(const QString &label)
     if (underscore > 0 && underscore + 1 < label.size()
         && label.at(underscore - 1).isLetterOrNumber()
         && label.at(underscore + 1).isLetterOrNumber()
-        && !label.contains(QLatin1String("__"))) {
-        const auto isPath = [](QStringView text) {
-            static const QRegularExpression drive(QStringLiteral("^[A-Za-z]:[\\\\/]"));
-            return text.startsWith(QLatin1Char('/'))
-                || text.startsWith(QLatin1String("~/"))
-                || text.startsWith(QLatin1String("./"))
-                || text.startsWith(QLatin1String("../"))
-                || text.startsWith(QLatin1String("file://"))
-                || text.startsWith(QLatin1String("\\\\"))
-                || drive.matchView(text).hasMatch();
-        };
-        const QStringView view(label);
-        qsizetype hint = -1;
-        if (view.endsWith(QLatin1Char(']'))) {
-            // Match the whole final bracketed block, not a path nested inside it.
-            qsizetype depth = 0;
-            for (qsizetype i = view.size() - 1; i >= 0; --i) {
-                if (view.at(i) == QLatin1Char(']')) {
-                    ++depth;
-                } else if (view.at(i) == QLatin1Char('[')) {
-                    --depth;
-                    if (depth == 0) {
-                        if (i > 0 && view.at(i - 1) == QLatin1Char(' ')
-                            && isPath(view.sliced(i + 1, view.size() - i - 2))) {
-                            hint = i - 1;
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-        const bool pathHint = hint >= 0;
-        const QStringView name = (pathHint ? view.first(hint) : view).trimmed();
-        static const QRegularExpression extension(QStringLiteral("\\.[\\p{L}\\p{N}]+$"));
-        if (isPath(name) || pathHint || extension.matchView(name).hasMatch()) {
-            QString text = label;
-            text.replace(QLatin1Char('&'), QLatin1String("&&"));
-            return text;
-        }
+        && !label.contains(QLatin1String("__"))
+        && hasFileExtension(QStringView(label))) {
+        QString text = label;
+        text.replace(QLatin1Char('&'), QLatin1String("&&"));
+        return text;
     }
     return swapMnemonicChar(label, '_', '&');
 }
