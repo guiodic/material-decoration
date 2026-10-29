@@ -127,6 +127,12 @@ private slots:
         row("non-path-brackets", "Open_Recent [Ctrl+O]", "Open&Recent [Ctrl+O]");
         row("nested-path-in-description", "Open_Recent [help [/tmp]]", "Open&Recent [help [/tmp]]");
         row("extension-inside-description", "Open_Recent [help.txt [notes]]", "Open&Recent [help.txt [notes]]");
+        row("command-with-path-suffix", "Open_Recent /tmp/file.txt", "Open&Recent /tmp/file.txt");
+        row("command-with-underscore-path", "Open_Recent /tmp/file_name.txt", "Open&Recent /tmp/file_name.txt");
+        row("command-with-windows-path", R"(Open_Recent C:\tmp\file.txt)", R"(Open&Recent C:\tmp\file.txt)");
+        row("filename-with-spaces", "nome_file di prova.txt", "nome_file di prova.txt");
+        row("filename-in-path", "/tmp/nome_file.txt", "/tmp/nome_file.txt");
+        row("filename-in-windows-path", R"(C:\tmp\nome_file.txt)", R"(C:\tmp\nome_file.txt)");
         row("literal-ampersand", "nome_file&copy.txt", "nome_file&&copy.txt");
         row("gtk-escaped", "nome__file.txt", "nome_file.txt");
         row("gtk-mixed-escapes", "nome__file____test__1.svg", "nome_file__test_1.svg");

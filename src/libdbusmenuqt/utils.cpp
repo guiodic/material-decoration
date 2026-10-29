@@ -81,13 +81,20 @@ QString swapMnemonicChar(const QString &in, char src, char dst)
 
 namespace
 {
-bool hasFileExtension(QStringView label)
+bool hasFileExtension(QStringView label, qsizetype underscore)
 {
     static const QRegularExpression extension(QStringLiteral("\\.[^\\s./\\\\\\[\\]]+$"));
+    const auto matchesFilename = [underscore](QStringView candidate) {
+        const qsizetype separator = qMax(candidate.lastIndexOf(QLatin1Char('/')),
+                                        candidate.lastIndexOf(QLatin1Char('\\')));
+        // An extension in a separate path must not hide a preceding mnemonic.
+        return underscore > separator && underscore < candidate.size()
+            && extension.matchView(candidate.trimmed()).hasMatch();
+    };
     // Recent-file entries can append a path or other details after " [".
     const qsizetype details = label.indexOf(QLatin1String(" ["));
-    return extension.matchView(label.trimmed()).hasMatch()
-        || (details > 0 && extension.matchView(label.first(details).trimmed()).hasMatch());
+    return matchesFilename(label)
+        || (details > 0 && matchesFilename(label.first(details)));
 }
 }
 
@@ -101,7 +108,7 @@ QString menuLabelToQt(const QString &label)
         && label.at(underscore - 1).isLetterOrNumber()
         && label.at(underscore + 1).isLetterOrNumber()
         && !label.contains(QLatin1String("__"))
-        && hasFileExtension(QStringView(label))) {
+        && hasFileExtension(QStringView(label), underscore)) {
         QString text = label;
         text.replace(QLatin1Char('&'), QLatin1String("&&"));
         return text;
