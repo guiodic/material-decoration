@@ -2,12 +2,10 @@
 
 
 # material-decoration
-
 Material-ish window decoration theme for KWin.
 
 
 ### Locally Integrated Menu & Search
-
 This hides the AppMenu icon button and draws the menu in the titlebar. It also
 includes a search button to find actions. It works on both X11 and Wayland. On
 Wayland, GTK apps don't export the menu in a KDE-friendly way. You need to
@@ -20,7 +18,6 @@ Hold `Alt` to show menu mnemonics; press the indicated letter to open a menu.
 
 
 ### Configuration
-
 Make sure you add the AppMenu button in System Settings > Colors & Themes >
 Window Decorations > Configure Titlebar Buttons….
 
@@ -36,7 +33,6 @@ strongly recommended on Wayland.
 
 
 ### Actions on Press-and-Hold buttons
-
 Pressing and holding the “Close” button will minimize the window to the traybar
 if the [kwin-minimize2tray](https://github.com/luisbocanegra/kwin-minimize2tray)
 script is present and enabled ( 
@@ -50,7 +46,6 @@ directory `/usr/share/kwin-wayland/scripts/minimizeall` to `
 
 
 ### Tiling layout popup
-
 Hold the **Maximize** button with the left mouse button to open the tiling
 selector.
 
@@ -71,7 +66,6 @@ loads the companion script.
 
 
 ### Mnemonics
-
 When you press `Alt`, the widget displays the keyboard shortcuts for opening
 menus, just like in traditional menu bars. For example, pressing `Alt+F` opens
 the “File” menu.
@@ -84,18 +78,14 @@ button) in the application interface associated with that shortcut.
 
 
 # Installation
-
 ## Ubuntu
-
 You can find the Ubuntu deb package in the latest 
 [release page](https://github.com/guiodic/material-decoration/releases/latest).
 
 ## Fedora
-
 The package is in [Terra repository](https://terrapkg.com/).
 
 ## Arch and derivatives
-
 Please install the AUR package 
 [material-kwin-decoration-git](https://aur.archlinux.org/packages/material-kwin-decoration-git).
 
@@ -103,7 +93,6 @@ A pre-built package is present in [chaotic-aur](https://aur.chaotic.cx/).
 
 
 ## Build instructions for Plasma 6
-
 Requires a C++20 compiler, CMake, extra-cmake-modules, Qt 6, KDE Frameworks 6
 and KDecoration3.
 
@@ -114,7 +103,6 @@ are not needed with `-DFORCE_X11=ON`.
 
 
 ### Debian / Ubuntu
-
 Use a release that provides KDecoration3 and the Plasma version supported by
 this branch.
 
@@ -134,7 +122,6 @@ sudo apt install libwayland-dev libwayland-bin plasma-wayland-protocols
 
 
 ### Fedora
-
 ```sh
 sudo dnf install gcc-c++ make cmake extra-cmake-modules gettext git \
   qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qttools-devel kdecoration-devel \
@@ -151,7 +138,6 @@ sudo dnf install wayland-devel plasma-wayland-protocols
 
 
 ### Arch and derivatives
-
 On Arch Linux, the package dependencies are:
 
 - Runtime: `kwin`, plus `wayland` when Wayland Alt monitoring is compiled in.
@@ -166,7 +152,6 @@ On Arch Linux, the package dependencies are:
 
 
 ### Compile and install
-
 ```sh
 git clone https://github.com/guiodic/material-decoration.git
 cd material-decoration
