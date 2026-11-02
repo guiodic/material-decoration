@@ -1,4 +1,3 @@
-
 ![image](data/LIM.png)
 
 
@@ -60,9 +59,7 @@ Maximize/Restore.
 
 The bottom-left preview shows the current monitor's custom layout (`Meta+T`).
 
-
 ![image](data/TilingPopUp.png)
-
 
 The popup uses a companion **Material Tiling Popup** KWin script for native quick
 tiling. The script is enabled by default unless explicitly disabled in **System
@@ -79,9 +76,7 @@ When you press `Alt`, the widget displays the keyboard shortcuts for opening
 menus, just like in traditional menu bars. For example, pressing `Alt+F` opens
 the “File” menu.
 
-
 ![image](data/Mnemonics.png)
-
 
 Limitations: due to the way the Qt toolkit works, you may need to press the key
 combination (e.g., `Alt+F`) twice if there is already an element (e.g., a
@@ -95,11 +90,9 @@ button) in the application interface associated with that shortcut.
 You can find the Ubuntu deb package in the latest 
 [release page](https://github.com/guiodic/material-decoration/releases/latest).
 
-
 ## Fedora
 
 The package is in [Terra repository](https://terrapkg.com/).
-
 
 ## Arch and derivatives
 
@@ -189,4 +182,3 @@ branches.
 
 NOTE 2: After 5 August 2026 the Decoration Id changed, please select again
 Material in Systemsettings, if needed.
-
