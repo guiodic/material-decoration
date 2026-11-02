@@ -78,14 +78,14 @@ button) in the application interface associated with that shortcut.
 
 
 # Installation
-## Ubuntu
+### Ubuntu
 You can find the Ubuntu deb package in the latest 
 [release page](https://github.com/guiodic/material-decoration/releases/latest).
 
-## Fedora
+### Fedora
 The package is in [Terra repository](https://terrapkg.com/).
 
-## Arch and derivatives
+### Arch and derivatives
 Please install the AUR package 
 [material-kwin-decoration-git](https://aur.archlinux.org/packages/material-kwin-decoration-git).
 
