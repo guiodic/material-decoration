@@ -1,5 +1,12 @@
 find_package(Qt6 REQUIRED COMPONENTS Test)
 find_package(KF6WidgetsAddons REQUIRED)
+add_executable(appmenusearch_test AppMenuSearchTest.cc ../src/AppMenuSearch.h ../src/AppMenuModel.h)
+set_target_properties(appmenusearch_test PROPERTIES AUTOMOC ON)
+target_include_directories(appmenusearch_test PRIVATE ../src)
+target_link_libraries(appmenusearch_test PRIVATE Qt6::Widgets Qt6::Test Qt6::DBus KF6::I18n)
+add_test(NAME appmenusearch COMMAND appmenusearch_test)
+set_tests_properties(appmenusearch PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
+
 add_executable(menumnemonics_test MenuMnemonicsTest.cc ../src/MenuMnemonics.cc)
 set_target_properties(menumnemonics_test PROPERTIES AUTOMOC ON)
 target_include_directories(menumnemonics_test PRIVATE ../src)
