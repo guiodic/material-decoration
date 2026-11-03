@@ -12,6 +12,9 @@
 
 #include <QDBusConnection>
 #include <QDBusMessage>
+#include <QDBusPendingCallWatcher>
+#include <QDBusPendingReply>
+#include <QDebug>
 #include <QIcon>
 #include <QLabel>
 #include <QTabBar>
@@ -247,10 +250,23 @@ void MaterialDecorationKCM::save()
     m_settings->setDragFromButtonsEnabled(m_ui->kcfg_DragFromButtonsEnabled->isChecked());
 
     m_settings->save();
-    QDBusConnection::sessionBus().call(QDBusMessage::createMethodCall(QStringLiteral("org.kde.KWin"),
-                                                                     QStringLiteral("/KWin"),
-                                                                     QStringLiteral("org.kde.KWin"),
-                                                                     QStringLiteral("reconfigure")));
+    const auto message = QDBusMessage::createMethodCall(
+        QStringLiteral("org.kde.KWin"),
+        QStringLiteral("/KWin"),
+        QStringLiteral("org.kde.KWin"),
+        QStringLiteral("reconfigure"));
+    auto *watcher = new QDBusPendingCallWatcher(
+        QDBusConnection::sessionBus().asyncCall(message), this);
+    connect(watcher, &QDBusPendingCallWatcher::finished,
+            this, [](QDBusPendingCallWatcher *finished) {
+        const QDBusPendingReply<> reply = *finished;
+        if (reply.isError()) {
+            qWarning() << "Material Decoration: failed to notify KWin to reconfigure:"
+                       << reply.error().name()
+                       << reply.error().message();
+        }
+        finished->deleteLater();
+    });
     updateChanged();
 }
 
