@@ -140,14 +140,13 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
     const QString simplifiedText = text.simplified();
 
     m_lastSearchQuery = simplifiedText;
-    // Cache preparation consumes the same budget as matching. Rendering and
-    // non-interruptible Qt operations may still take the call beyond 17 ms.
-    QElapsedTimer searchTimer;
-    searchTimer.start();
-
     {
         // Find results
         rebuildSearchCandidatesIfNeeded();
+        // A cold cache must not exhaust the matching budget before any action
+        // is examined. Cache preparation and rendering are outside this budget.
+        QElapsedTimer searchTimer;
+        searchTimer.start();
         QStringMatcher matcher(simplifiedText, Qt::CaseInsensitive);
         QList<SearchResult> results = matchSearchCandidates(matcher, options, simplifiedText, searchTimer);
 
@@ -607,7 +606,9 @@ static inline int maxAllowedDistance(int tokenLength)
 
 static bool searchExpired(const QElapsedTimer &timer)
 {
-    return timer.nsecsElapsed() >= FUZZY_SEARCH_BUDGET_NS;
+    // An unstarted timer explicitly requests unbounded scoring, e.g. when
+    // checking scores independently of wall-clock scheduling in unit tests.
+    return timer.isValid() && timer.nsecsElapsed() >= FUZZY_SEARCH_BUDGET_NS;
 }
 
 /**

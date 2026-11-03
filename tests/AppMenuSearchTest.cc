@@ -35,23 +35,26 @@ private slots:
         QFETCH(QString, query);
         QFETCH(QString, label);
         QFETCH(int, expected);
-        QElapsedTimer timer;
-        timer.start();
+        // An unstarted timer disables the deadline for score assertions.
+        const QElapsedTimer noDeadline;
         QCOMPARE(Material::calculateFuzzyScore(query, Material::tokenizeText(query), label,
-                                               Material::tokenizeText(label), timer), expected);
+                                               Material::tokenizeText(label), noDeadline), expected);
     }
     void respectsSharedDeadline()
     {
         const QString query = QStringLiteral("save");
         const QString label = QStringLiteral("File Save As");
+        const auto queryTokens = Material::tokenizeText(query);
+        const auto labelTokens = Material::tokenizeText(label);
+        const QElapsedTimer noDeadline;
+        QVERIFY(Material::calculateFuzzyScore(query, queryTokens, label, labelTokens, noDeadline) > 0);
+
         QElapsedTimer timer;
         timer.start();
-        QVERIFY(Material::calculateFuzzyScore(query, Material::tokenizeText(query), label,
-                                              Material::tokenizeText(label), timer) > 0);
         QTest::qWait(20);
-        // A new comparison must use the original deadline, not restart it.
-        QCOMPARE(Material::calculateFuzzyScore(query, Material::tokenizeText(query), label,
-                                               Material::tokenizeText(label), timer), 0);
+        // Repeated comparisons must use the original deadline, not restart it.
+        QCOMPARE(Material::calculateFuzzyScore(query, queryTokens, label, labelTokens, timer), 0);
+        QCOMPARE(Material::calculateFuzzyScore(query, queryTokens, label, labelTokens, timer), 0);
     }
     void boundsImpossibleAssignment()
     {
