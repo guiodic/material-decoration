@@ -854,6 +854,8 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
     const auto *anchorButton = !button->isVisible() && m_overflowButton && m_overflowButton->isVisible()
         ? m_overflowButton.data() : button;
     positioner.setAnchorRect(anchorButton->geometry());
+    // KWin uses the current width to align RTL popups before QMenu lays them out.
+    menu->adjustSize();
     deco->popup(positioner, menu);
     
 
