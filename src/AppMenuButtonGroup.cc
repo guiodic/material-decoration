@@ -47,6 +47,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QScreen>
+#include <QScopedValueRollback>
 #include <QSet>
 #include <QTimer>
 #include <QVariantAnimation>
@@ -716,6 +717,12 @@ void AppMenuButtonGroup::setHamburgerMenu(bool value)
 
 void AppMenuButtonGroup::updateOverflow(QRectF availableRect)
 {
+    if (m_inUpdateOverflow) {
+        return;
+    }
+    // menuUpdated can synchronously trigger another geometry update.
+    const QScopedValueRollback<bool> guard(m_inUpdateOverflow, true);
+
     const qreal availableWidth = availableRect.width();
 
     qreal fixedWidth = 0;
