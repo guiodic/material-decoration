@@ -544,8 +544,13 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
             action = d->createAction(id, dbusMenuItem.properties, menu);
             d->m_actionForId.insert(id, action);
 
-            connect(action, &QObject::destroyed, this, [this, id]() {
-                d->m_actionForId.remove(id);
+            connect(action, &QObject::destroyed, this, [this, id](QObject *destroyedAction) {
+                // A later layout can reuse the ID before deleteLater() runs.
+                // Do not remove the replacement when the old action is destroyed.
+                auto it = d->m_actionForId.find(id);
+                if (it != d->m_actionForId.end() && it.value() == destroyedAction) {
+                    d->m_actionForId.erase(it);
+                }
             });
 
             connect(action, &QAction::triggered, this, [id, this]() {

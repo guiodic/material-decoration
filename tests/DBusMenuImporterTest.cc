@@ -4,6 +4,7 @@
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusVirtualObject>
+#include <QDBusPendingCallWatcher>
 #include <QSignalSpy>
 #include <QTest>
 #include <QTimer>
@@ -15,6 +16,7 @@ public:
     QDBusConnection bus = QDBusConnection::connectToBus(QDBusConnection::SessionBus, "menu-test-server");
     QList<QPair<int, int>> layouts;
     QString actionLabel = QStringLiteral("_Save");
+    bool emptyRoot = false;
     bool missingNested = false;
     bool removeAfterTree = false;
     QStringList treeProperties;
@@ -34,7 +36,7 @@ public:
         if (id == 0 || id == 1 || id == 3 || id == 7) item.properties.insert("children-display", "submenu");
         if (depth == 0) return item;
         const int next = depth < 0 ? -1 : depth - 1;
-        if (id == 0) item.children = {tree(1, next), tree(7, next)};
+        if (id == 0 && !emptyRoot) item.children = {tree(1, next), tree(7, next)};
         if (id == 1) {
             item.children = {tree(2, next)};
             if (!missingNested) item.children.append(tree(3, next));
@@ -96,6 +98,7 @@ private slots:
     {
         service.layouts.clear();
         service.actionLabel = QStringLiteral("_Save");
+        service.emptyRoot = false;
         service.missingNested = false;
         service.removeAfterTree = false;
         service.treeProperties.clear();
@@ -106,6 +109,54 @@ private slots:
         service.renameNestedAction = false;
         service.clicked.clear();
     }
+    void reusedIdSurvivesDeferredDestruction()
+    {
+        // Obtain real, serialized replies before constructing the importer, so
+        // their delivery can be controlled without processing deferred deletes.
+        QList<QDBusMessage> replies;
+        for (bool empty : {false, true}) {
+            service.emptyRoot = empty;
+            auto message = QDBusMessage::createMethodCall(service.bus.baseService(), "/Menu",
+                                                         "com.canonical.dbusmenu", "GetLayout");
+            message << 0 << 1 << QStringList{};
+            QDBusPendingCallWatcher watcher(QDBusConnection::sessionBus().asyncCall(message));
+            QSignalSpy finished(&watcher, &QDBusPendingCallWatcher::finished);
+            if (!watcher.isFinished()) QVERIFY(finished.wait(5000));
+            QCOMPARE(watcher.reply().type(), QDBusMessage::ReplyMessage);
+            replies.append(watcher.reply());
+        }
+        service.emptyRoot = false;
+
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        const auto deliver = [&importer](const QDBusMessage &reply) {
+            auto *watcher = new QDBusPendingCallWatcher(QDBusPendingCall::fromCompletedCall(reply), &importer);
+            watcher->setProperty("_dbusmenu_id", 0);
+            return QMetaObject::invokeMethod(&importer, "slotGetLayoutFinished", Qt::DirectConnection,
+                                             Q_ARG(QDBusPendingCallWatcher *, watcher));
+        };
+        QVERIFY(deliver(replies.at(0)));
+        const QPointer<QAction> original(importer.actionForId(1));
+        QVERIFY(original);
+        QVERIFY(deliver(replies.at(1)));
+        QVERIFY(deliver(replies.at(0)));
+        const QPointer<QAction> replacement(importer.actionForId(1));
+        QVERIFY(replacement);
+        QVERIFY(replacement != original);
+
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        QVERIFY(original.isNull());
+        QCOMPARE(importer.actionForId(1), replacement.data());
+        QCOMPARE(importer.menu()->actions().size(), 2);
+
+        // A subsequent refresh must retain the same action, without creating a
+        // duplicate or hitting the importer's layout consistency assertion.
+        QVERIFY(deliver(replies.at(0)));
+        QCOMPARE(importer.actionForId(1), replacement.data());
+        QCOMPARE(importer.menu()->actions().size(), 2);
+        replacement->trigger();
+        QTRY_COMPARE(service.clicked, QList<int>{1});
+    }
+
     void importsFilenameUnderscores_data()
     {
         QTest::addColumn<QString>("label");
