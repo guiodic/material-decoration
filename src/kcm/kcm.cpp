@@ -12,6 +12,7 @@
 
 #include <QDBusConnection>
 #include <QDBusMessage>
+#include <QDebug>
 #include <QIcon>
 #include <QLabel>
 #include <QTabBar>
@@ -247,10 +248,13 @@ void MaterialDecorationKCM::save()
     m_settings->setDragFromButtonsEnabled(m_ui->kcfg_DragFromButtonsEnabled->isChecked());
 
     m_settings->save();
-    QDBusConnection::sessionBus().call(QDBusMessage::createMethodCall(QStringLiteral("org.kde.KWin"),
-                                                                     QStringLiteral("/KWin"),
-                                                                     QStringLiteral("org.kde.KWin"),
-                                                                     QStringLiteral("reconfigure")));
+    const auto reply = QDBusConnection::sessionBus().call(QDBusMessage::createMethodCall(QStringLiteral("org.kde.KWin"),
+                                                                                         QStringLiteral("/KWin"),
+                                                                                         QStringLiteral("org.kde.KWin"),
+                                                                                         QStringLiteral("reconfigure")));
+    if (reply.type() == QDBusMessage::ErrorMessage) {
+        qWarning() << "Material Decoration: failed to notify KWin to reconfigure:" << reply.errorName() << reply.errorMessage();
+    }
     updateChanged();
 }
 
