@@ -155,6 +155,11 @@ private slots:
         QCOMPARE(importer.menu()->actions().size(), 2);
         replacement->trigger();
         QTRY_COMPARE(service.clicked, QList<int>{1});
+
+        // Destruction outside layout removal must still clear the mapped ID.
+        delete replacement.data();
+        QVERIFY(replacement.isNull());
+        QVERIFY(!importer.actionForId(1));
     }
 
     void importsFilenameUnderscores_data()
