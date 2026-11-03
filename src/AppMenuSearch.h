@@ -30,6 +30,8 @@
 #include <QStringMatcher>
 #include <QEvent>
 
+class QElapsedTimer;
+
 namespace Material
 {
 
@@ -224,14 +226,16 @@ private:
      * Iterates through search candidates, checks if each matches based on filter options
      * (substring or fuzzy matching, top-level/submenu filtering, disabled action handling),
      * and builds a list of SearchResult objects. For fuzzy matching, results are sorted by
-     * score and limited to MAX_SEARCH_RESULTS.
+     * score and limited to MAX_SEARCH_RESULTS. On expiry only results found so far
+     * are returned; the deadline is cooperative and excludes cache preparation and rendering.
      *
      * @param matcher String matcher for substring search (used in non-fuzzy mode)
      * @param options Filter options controlling search behavior
      * @param query The search query string (used in fuzzy mode)
+     * @param searchTimer Shared fuzzy-matching budget, started after candidate preparation
      * @return List of matching search results, sorted by score if fuzzy matching is enabled
      */
-    QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, const FilterOptions &options, const QString &query) const;
+    QList<SearchResult> matchSearchCandidates(const QStringMatcher &matcher, const FilterOptions &options, const QString &query, const QElapsedTimer &searchTimer) const;
 
     /**
      * @brief Gets the cleaned display text for an action with caching.

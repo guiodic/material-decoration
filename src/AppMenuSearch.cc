@@ -23,6 +23,7 @@
 
 // Qt
 #include <QDebug>
+#include <QElapsedTimer>
 #include <QScopeGuard>
 #include <QStringBuilder>
 #include <algorithm>
@@ -34,6 +35,7 @@ static constexpr int MAX_SEARCH_RESULTS = 100;
 static constexpr int MAX_SEARCH_CANDIDATES = 5000;
 static constexpr int MAX_MENU_DEPTH = 20;
 static constexpr int MAX_QUERY_TOKENS = 6;
+static constexpr qint64 FUZZY_SEARCH_BUDGET_NS = 17'000'000;
 
 namespace Material
 {
@@ -138,12 +140,15 @@ void AppMenuSearch::filter(const QString &text, const FilterOptions &options)
     const QString simplifiedText = text.simplified();
 
     m_lastSearchQuery = simplifiedText;
-
     {
         // Find results
         rebuildSearchCandidatesIfNeeded();
+        // A cold cache must not exhaust the matching budget before any action
+        // is examined. Cache preparation and rendering are outside this budget.
+        QElapsedTimer searchTimer;
+        searchTimer.start();
         QStringMatcher matcher(simplifiedText, Qt::CaseInsensitive);
-        QList<SearchResult> results = matchSearchCandidates(matcher, options, simplifiedText);
+        QList<SearchResult> results = matchSearchCandidates(matcher, options, simplifiedText, searchTimer);
 
         // If results and options are the same as last time, do nothing to prevent the freeze.
         if (m_menuIsRendered && m_lastProcessedMenu == m_searchMenu && m_lastResults == results && m_lastOptions == options) {
@@ -599,11 +604,18 @@ static inline int maxAllowedDistance(int tokenLength)
     return 2; // 5+ char tokens allow up to 2 edits (e.g., "colowr" -> "colori")
 }
 
+static bool searchExpired(const QElapsedTimer &timer)
+{
+    // An unstarted timer explicitly requests unbounded scoring, e.g. when
+    // checking scores independently of wall-clock scheduling in unit tests.
+    return timer.isValid() && timer.nsecsElapsed() >= FUZZY_SEARCH_BUDGET_NS;
+}
+
 /**
  * @brief Bounded Damerau-Levenshtein distance calculation (insertions, deletions, substitutions, transpositions).
  * Returns distance if <= maxDistance, otherwise returns maxDistance + 1.
  */
-static int damerauLevenshteinDistance(const QString &s1, const QString &s2, int maxDistance)
+static int damerauLevenshteinDistance(const QString &s1, const QString &s2, int maxDistance, const QElapsedTimer &searchTimer)
 {
     const int len1 = s1.length();
     const int len2 = s2.length();
@@ -632,12 +644,15 @@ static int damerauLevenshteinDistance(const QString &s1, const QString &s2, int 
     }
 
     for (int i = 1; i <= len1; ++i) {
+        // Poll sparsely using the existing indices; time is the only work limit.
+        if ((i & 15) == 1 && searchExpired(searchTimer)) return maxDistance + 1;
         row0[0] = i;
         int minRowVal = row0[0];
 
         const QChar char1 = s1.at(i - 1);
 
         for (int j = 1; j <= len2; ++j) {
+            if ((j & 255) == 0 && searchExpired(searchTimer)) return maxDistance + 1;
             const QChar char2 = s2.at(j - 1);
             const int cost = (char1 == char2) ? 0 : 1;
 
@@ -685,8 +700,9 @@ static int damerauLevenshteinDistance(const QString &s1, const QString &s2, int 
  * @param targetTokens Pre-tokenized target words extracted from text/path
  * @return Score value (higher is better), or 0 if pattern does not match
  */
-static int calculateFuzzyScore(const QString &pattern, const QStringList &queryTokens, const QString &text, const QStringList &targetTokens)
+static int calculateFuzzyScore(const QString &pattern, const QStringList &queryTokens, const QString &text, const QStringList &targetTokens, const QElapsedTimer &searchTimer)
 {
+    if (searchExpired(searchTimer)) return 0;
     if (pattern.isEmpty() || text.isEmpty() || queryTokens.isEmpty()) {
         return 0;
     }
@@ -723,6 +739,7 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
 
         int bestScoreForQ = 0;
         for (int tIdx = 0; tIdx < numT; ++tIdx) {
+            if ((tIdx & 31) == 0 && searchExpired(searchTimer)) return 0;
             const QString &tToken = targetTokens.at(tIdx);
             int tokenScore = 0;
 
@@ -740,7 +757,7 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
 
                 int minDist = maxDist + 1;
                 for (int compLen = minCompLen; compLen <= maxCompLen; ++compLen) {
-                    const int dist = damerauLevenshteinDistance(qToken, tToken.left(compLen), maxDist);
+                    const int dist = damerauLevenshteinDistance(qToken, tToken.left(compLen), maxDist, searchTimer);
                     if (dist < minDist) {
                         minDist = dist;
                     }
@@ -776,6 +793,7 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     std::array<std::vector<TargetCandidate>, MAX_QUERY_TOKENS> sortedCandidates;
     for (int qIdx = 0; qIdx < numQ; ++qIdx) {
         for (int tIdx = 0; tIdx < numT; ++tIdx) {
+            if ((tIdx & 31) == 0 && searchExpired(searchTimer)) return 0;
             const std::size_t flatIdx = static_cast<std::size_t>(qIdx) * static_cast<std::size_t>(numT) + static_cast<std::size_t>(tIdx);
             int score = pairwiseScores[flatIdx];
             if (score > 0) {
@@ -811,6 +829,7 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
         }
 
         for (const auto &cand : sortedCandidates[qIdx]) {
+            if (searchExpired(searchTimer)) return;
             const auto assignedEnd = currentAssignment.begin() + qIdx;
             if (std::find(currentAssignment.begin(), assignedEnd, cand.targetIdx) == assignedEnd) {
                 currentAssignment[qIdx] = cand.targetIdx;
@@ -832,7 +851,7 @@ static int calculateFuzzyScore(const QString &pattern, const QStringList &queryT
     return std::max(1, maxTotalScore);
 }
 
-QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, const FilterOptions &options, const QString &query) const
+QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QStringMatcher &matcher, const FilterOptions &options, const QString &query, const QElapsedTimer &searchTimer) const
 {
     QList<SearchResult> results;
     QHash<QAction *, bool> matchCache;
@@ -846,6 +865,7 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
     const QStringList queryTokens = fuzzyMatching ? tokenizeText(query) : QStringList();
 
     for (const SearchCandidate &candidate : std::as_const(m_searchCandidates)) {
+        if (fuzzyMatching && searchExpired(searchTimer)) break;
         if (!fuzzyMatching && results.size() >= MAX_SEARCH_RESULTS) {
             break;
         }
@@ -889,15 +909,15 @@ QList<AppMenuSearch::SearchResult> AppMenuSearch::matchSearchCandidates(const QS
             if (ignoreTopLevel && !candidate.hasNamedAncestor) {
                 match = false;
             } else if (ignoreSubMenus) {
-                candidateScore = calculateFuzzyScore(query, queryTokens, itemText, candidate.itemTokens);
+                candidateScore = calculateFuzzyScore(query, queryTokens, itemText, candidate.itemTokens, searchTimer);
                 match = (candidateScore > 0);
             } else {
-                const int itemScore = calculateFuzzyScore(query, queryTokens, itemText, candidate.itemTokens);
+                const int itemScore = calculateFuzzyScore(query, queryTokens, itemText, candidate.itemTokens, searchTimer);
                 const int itemScoreWithBonus = (itemScore > 0) ? (itemScore + 500) : 0;
 
                 const QString &evalPath = ignoreTopLevel ? candidate.evalPath : candidate.fullPath;
                 const QStringList &evalTokens = ignoreTopLevel ? candidate.evalTokens : candidate.fullTokens;
-                const int pathScore = calculateFuzzyScore(query, queryTokens, evalPath, evalTokens);
+                const int pathScore = calculateFuzzyScore(query, queryTokens, evalPath, evalTokens, searchTimer);
 
                 candidateScore = std::max(itemScoreWithBonus, pathScore);
                 match = (candidateScore > 0);
