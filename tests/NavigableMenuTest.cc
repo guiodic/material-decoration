@@ -68,6 +68,9 @@ private slots:
         QTRY_VERIFY(child->isVisible());
         QVERIFY(left.isEmpty());
         QVERIFY(right.isEmpty());
+        QTest::keyClick(&menu, closeKey);
+        QVERIFY(left.isEmpty());
+        QVERIFY(right.isEmpty());
         QTest::keyClick(child, closeKey);
         QTRY_VERIFY(!child->isVisible());
         QVERIFY(menu.isVisible());
