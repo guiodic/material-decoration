@@ -190,6 +190,7 @@ private:
 
     bool m_isMenuUpdateThrottled = false;
     bool m_pendingMenuUpdate = false;
+    bool m_inUpdateOverflow = false;
     bool m_menuLoadedOnce = false;
 
     AppMenuSearch *m_search;
