@@ -1,5 +1,6 @@
 find_package(Qt6 REQUIRED COMPONENTS Test)
 find_package(KF6WidgetsAddons REQUIRED)
+find_package(KF6GuiAddons REQUIRED)
 add_executable(appmenusearch_test AppMenuSearchTest.cc ../src/AppMenuSearch.h ../src/AppMenuModel.h)
 set_target_properties(appmenusearch_test PROPERTIES AUTOMOC ON)
 target_include_directories(appmenusearch_test PRIVATE ../src)
@@ -23,6 +24,24 @@ set_tests_properties(tilingpopup PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscre
 
 find_program(DBUS_RUN_SESSION dbus-run-session)
 if(DBUS_RUN_SESSION)
+    add_executable(navigablemenu_test NavigableMenuTest.cc ../src/NavigableMenu.cc
+        ../src/AltKeyMonitor.cc ../src/MenuMnemonics.cc)
+    set_target_properties(navigablemenu_test PROPERTIES AUTOMOC ON)
+    target_include_directories(navigablemenu_test PRIVATE ../src ${PROJECT_BINARY_DIR}/src ${PROJECT_BINARY_DIR})
+    target_link_libraries(navigablemenu_test PRIVATE materialdecoration_core Qt6::Widgets Qt6::Test
+        KF6::WidgetsAddons KF6::GuiAddons)
+    # Reuse the optional protocol generated for AltKeyMonitor in the plugin.
+    get_target_property(decoration_sources materialdecoration SOURCES)
+    foreach(source IN LISTS decoration_sources)
+        if(source MATCHES "wayland-material-keystate-protocol\\.c$")
+            find_package(Wayland REQUIRED COMPONENTS Client)
+            target_sources(navigablemenu_test PRIVATE ${source})
+            target_link_libraries(navigablemenu_test PRIVATE Wayland::Client)
+        endif()
+    endforeach()
+    add_test(NAME navigablemenu COMMAND ${DBUS_RUN_SESSION} -- $<TARGET_FILE:navigablemenu_test>)
+    set_tests_properties(navigablemenu PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
+
     add_executable(dbusmenuimporter_test DBusMenuImporterTest.cc)
     set_target_properties(dbusmenuimporter_test PROPERTIES AUTOMOC ON)
     target_include_directories(dbusmenuimporter_test PRIVATE ../src/libdbusmenuqt)

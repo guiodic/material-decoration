@@ -68,12 +68,9 @@ void NavigableMenu::keyPressEvent(QKeyEvent *event)
 
     // If the event was not accepted by the base class, check for our custom keys.
     if (!event->isAccepted()) {
-        bool isRtl = QGuiApplication::layoutDirection() == Qt::RightToLeft;
-        const Qt::Key leftKey = isRtl ? Qt::Key_Right : Qt::Key_Left;
-        const Qt::Key rightKey = isRtl ? Qt::Key_Left : Qt::Key_Right;
-
-        const bool isLeft = (event->key() == leftKey);
-        const bool isRight = (event->key() == rightKey);
+        // Emit physical directions; the button group maps them to RTL/LTR indices.
+        const bool isLeft = (event->key() == Qt::Key_Left);
+        const bool isRight = (event->key() == Qt::Key_Right);
 
         if ((isLeft || isRight) && event->modifiers() == Qt::NoModifier) {
             // Do not navigate away if a submenu is open
