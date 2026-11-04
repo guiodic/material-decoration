@@ -35,6 +35,7 @@ private slots:
         renderer.addShadow(QPointF(), radius, QColor(33, 33, 33));
         const QImage image = renderer.render();
         QVERIFY(!image.isNull());
+        QVERIFY(qAlpha(image.pixel(image.width() / 2, image.height() / 2)) > 0);
         // A shadow without an offset must share the texture's geometric center.
         // A half-pixel displacement makes opposing edge samples differ.
         for (int y = 0; y < image.height(); ++y) {
