@@ -32,6 +32,7 @@
 #include "BoxShadowHelper.h"
 #include "BuildConfig.h"
 #include "Button.h"
+#include "ButtonCornerEdges.h"
 #include "TextButton.h"
 #include "InternalSettings.h"
 #include "SettingsProvider.h"
@@ -812,35 +813,22 @@ void Decoration::updateButtonsGeometry()
         m_menuButtons->setSpacing(0);
     }
     
-    // Update leftmost/rightmost state for buttons across all groups
-    Button *leftmostButton = nullptr;
-    Button *rightmostButton = nullptr;
-
+    // Round only buttons that actually reach a usable titlebar edge.
+    const qreal scale = window()->nextScale();
+    const qreal rightEdge = size().width() - right;
     auto updateGroupFlags = [&](KDecoration3::DecorationButtonGroup *group) {
         forEachButton<Button>(group, [&](Button *button) {
-            button->setIsLeftmost(false);
-            button->setIsRightmost(false);
-            if (button->isVisible()) {
-                if (!leftmostButton || button->geometry().x() < leftmostButton->geometry().x()) {
-                    leftmostButton = button;
-                }
-                if (!rightmostButton || button->geometry().right() > rightmostButton->geometry().right()) {
-                    rightmostButton = button;
-                }
-            }
+            const auto edges = button->isVisible()
+                ? buttonCornerEdges(button->geometry(), left, rightEdge, scale)
+                : Qt::Edges();
+            button->setIsLeftmost(edges.testFlag(Qt::LeftEdge));
+            button->setIsRightmost(edges.testFlag(Qt::RightEdge));
         });
     };
 
     updateGroupFlags(m_leftButtons);
     updateGroupFlags(m_rightButtons);
     updateGroupFlags(m_menuButtons);
-
-    if (leftmostButton) {
-        leftmostButton->setIsLeftmost(true);
-    }
-    if (rightmostButton) {
-        rightmostButton->setIsRightmost(true);
-    }
 
     updatePaths();
     updateBlur();

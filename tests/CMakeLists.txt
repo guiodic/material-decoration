@@ -1,6 +1,12 @@
 find_package(Qt6 REQUIRED COMPONENTS Test)
 find_package(KF6WidgetsAddons REQUIRED)
 find_package(KF6GuiAddons REQUIRED)
+add_executable(buttoncorneredges_test ButtonCornerEdgesTest.cc)
+set_target_properties(buttoncorneredges_test PROPERTIES AUTOMOC ON)
+target_include_directories(buttoncorneredges_test PRIVATE ../src)
+target_link_libraries(buttoncorneredges_test PRIVATE Qt6::Test)
+add_test(NAME buttoncorneredges COMMAND buttoncorneredges_test)
+
 add_executable(appmenusearch_test AppMenuSearchTest.cc ../src/AppMenuSearch.h ../src/AppMenuModel.h)
 set_target_properties(appmenusearch_test PROPERTIES AUTOMOC ON)
 target_include_directories(appmenusearch_test PRIVATE ../src)
