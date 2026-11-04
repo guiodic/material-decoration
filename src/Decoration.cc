@@ -936,11 +936,9 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
                                         outerRect.right() - boxRect.right() + params.offset.x(),
                                         outerRect.bottom() - boxRect.bottom() + params.offset.y());
     QRectF innerRect = outerRect - padding;
-    if (property("visualParent").isValid()) {
-        // Like Breeze, keep shadow pixels under the frame to avoid visible
-        // seams where the preview stitches the shadow tiles together.
-        innerRect.adjust(2, 2, -2, -2);
-    }
+    // Keep shadow pixels under the frame, as in Breeze. Cutting exactly at
+    // the window edge can expose a light seam when the texture is filtered.
+    innerRect.adjust(2, 2, -2, -2);
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
