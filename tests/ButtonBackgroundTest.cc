@@ -104,6 +104,55 @@ private slots:
         }
     }
 
+    void matchesNativePixelCoverage_data()
+    {
+        QTest::addColumn<qreal>("scale");
+        QTest::addColumn<qreal>("edge");
+        QTest::addColumn<bool>("right");
+        for (qreal scale : {1.0, 1.25, 1.5, 2.0}) {
+            for (qreal edge : {83.1, 83.3, 83.5, 83.7, 83.9}) {
+                for (bool right : {false, true}) {
+                    const QByteArray name = QStringLiteral("%1-%2-%3")
+                        .arg(scale).arg(edge).arg(right ? "right" : "left").toLatin1();
+                    QTest::newRow(name.constData()) << scale << edge << right;
+                }
+            }
+        }
+    }
+
+    void matchesNativePixelCoverage()
+    {
+        QFETCH(qreal, scale);
+        QFETCH(qreal, edge);
+        QFETCH(bool, right);
+        const QColor base(39, 43, 46);
+        const QColor overlay(218, 68, 83);
+        QImage image(QSize(qRound(120 * scale), qRound(80 * scale)), QImage::Format_ARGB32_Premultiplied);
+        image.setDevicePixelRatio(scale);
+        image.fill(Qt::transparent);
+        QPainterPath border, title;
+        scene(image, 0, base, border, title);
+        QImage expected = image;
+        const QRectF geometry = right ? QRectF(edge, 0, 120 - edge, 33)
+                                      : QRectF(0, 0, 120 - edge, 33);
+        {
+            QPainter p(&image);
+            Material::paintRoundedButtonBackground(&p, geometry, border, title,
+                Qt::black, base, overlay, 1.0);
+        }
+        {
+            QPainter p(&expected);
+            p.setRenderHint(QPainter::Antialiasing, false);
+            p.fillRect(geometry, overlay);
+        }
+        // Compare the entire scanline below the rounded corners: snapping must
+        // color exactly the pixels selected by Qt's native rectangle rasterizer.
+        const int y = qRound(20 * scale);
+        for (int x = 0; x < image.width(); ++x) {
+            QCOMPARE(image.pixel(x, y), expected.pixel(x, y));
+        }
+    }
+
     void translucentColors()
     {
         for (int baseAlpha : {0, 128, 255}) {
