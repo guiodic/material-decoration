@@ -394,11 +394,29 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->setRenderHints(QPainter::Antialiasing, m_isRightmost || m_isLeftmost);
     painter->setPen(Qt::NoPen);
     painter->setBrush(bgColor);
-    const qreal radius = deco->cornerRadius();
+    const QRectF backgroundGeometry = geometry();
+    const qreal radius = deco->cornerRadius() - Material::cornerRadiusAdjustment;
+    const bool roundTopLeft = m_isLeftmost && deco->leftBorderVisible();
+    const bool roundTopRight = m_isRightmost && deco->rightBorderVisible();
 
-    painter->drawPath(DrawHelper::getRoundedPath(
-        geometry(), radius - Material::cornerRadiusAdjustment,
-        m_isLeftmost && deco->leftBorderVisible(), m_isRightmost && deco->rightBorderVisible(), false, false));
+    // QRectF equality is fuzzy; compare coordinates directly to retain the exact shape.
+    if (!m_backgroundPathValid
+        || m_backgroundPathGeometry.x() != backgroundGeometry.x()
+        || m_backgroundPathGeometry.y() != backgroundGeometry.y()
+        || m_backgroundPathGeometry.width() != backgroundGeometry.width()
+        || m_backgroundPathGeometry.height() != backgroundGeometry.height()
+        || m_backgroundPathRadius != radius
+        || m_backgroundPathRoundTopLeft != roundTopLeft
+        || m_backgroundPathRoundTopRight != roundTopRight) {
+        m_backgroundPath = DrawHelper::getRoundedPath(
+            backgroundGeometry, radius, roundTopLeft, roundTopRight, false, false);
+        m_backgroundPathGeometry = backgroundGeometry;
+        m_backgroundPathRadius = radius;
+        m_backgroundPathRoundTopLeft = roundTopLeft;
+        m_backgroundPathRoundTopRight = roundTopRight;
+        m_backgroundPathValid = true;
+    }
+    painter->drawPath(m_backgroundPath);
 
     // Foreground.
     painter->setRenderHint(QPainter::Antialiasing, true);

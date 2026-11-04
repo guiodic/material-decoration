@@ -25,6 +25,7 @@
 // Qt
 #include <QMarginsF>
 #include <QMouseEvent>
+#include <QPainterPath>
 #include <QRectF>
 #include <QVariantAnimation>
 #include <QTransform>
@@ -142,6 +143,14 @@ protected:
     quint64 m_pressGeneration = 0;
     bool m_tilingPopupOpen = false;
     qreal m_penScale = 1.0;
+
+private:
+    QPainterPath m_backgroundPath;
+    QRectF m_backgroundPathGeometry;
+    qreal m_backgroundPathRadius = 0.0;
+    bool m_backgroundPathRoundTopLeft = false;
+    bool m_backgroundPathRoundTopRight = false;
+    bool m_backgroundPathValid = false;
 
     friend class Decoration;
 };
