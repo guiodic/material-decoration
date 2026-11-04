@@ -20,6 +20,7 @@
 // own
 #include "BuildConfig.h"
 #include "Button.h"
+#include "ButtonBackground.h"
 #include "DrawHelper.h"
 #include "LongPressAction.h"
 #include "TilingController.h"
@@ -418,29 +419,11 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         m_backgroundPathRoundTopRight = roundTopRight;
         m_backgroundPathValid = true;
     }
-    if (roundedBackground) {
-        // Compose the colors before applying corner coverage. Painting two
-        // antialiased edges on top of each other leaves a dark titlebar fringe.
-        const QColor base = deco->titleBarBackgroundColor();
-        const qreal overlayAlpha = bgColor.alphaF() * m_opacity;
-        const qreal baseAlpha = base.alphaF() * (1.0 - overlayAlpha);
-        const qreal alpha = overlayAlpha + baseAlpha;
-        QColor composed(Qt::transparent);
-        if (alpha > 0) {
-            composed = QColor::fromRgbF(
-                (bgColor.redF() * overlayAlpha + base.redF() * baseAlpha) / alpha,
-                (bgColor.greenF() * overlayAlpha + base.greenF() * baseAlpha) / alpha,
-                (bgColor.blueF() * overlayAlpha + base.blueF() * baseAlpha) / alpha,
-                alpha);
-        }
-        painter->save();
-        painter->setOpacity(1.0);
-        painter->setCompositionMode(QPainter::CompositionMode_Source);
-        painter->fillRect(backgroundGeometry, Qt::transparent);
-        painter->setCompositionMode(QPainter::CompositionMode_SourceOver);
-        painter->setBrush(composed);
-        painter->drawPath(m_backgroundPath);
-        painter->restore();
+    if (roundedBackground && bgColor.alpha() > 0 && m_opacity > 0) {
+        const bool hasFrameBackground = !deco->hasNoBorders() && !deco->window()->isShaded();
+        paintRoundedButtonBackground(painter, backgroundGeometry,
+            hasFrameBackground ? deco->m_framePath.subtracted(deco->m_titleBarPath) : QPainterPath(),
+            deco->m_titleBarPath, deco->borderColor(), deco->titleBarBackgroundColor(), bgColor, m_opacity);
     } else {
         painter->drawPath(m_backgroundPath);
     }
