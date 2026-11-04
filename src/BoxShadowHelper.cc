@@ -369,11 +369,15 @@ QImage BoxShadowRenderer::render() const
         canvasSize = canvasSize.expandedTo(calculateMinimumShadowTextureSize(m_boxSize, shadow.radius, shadow.offset));
     }
 
-    QImage canvas(canvasSize.toSize(), QImage::Format_ARGB32_Premultiplied);
+    // Fractional offsets must not round the required texture extent down.
+    const QSize pixelSize(qCeil(canvasSize.width()), qCeil(canvasSize.height()));
+    QImage canvas(pixelSize, QImage::Format_ARGB32_Premultiplied);
     canvas.fill(Qt::transparent);
 
     QRectF boxRect(QPoint(0, 0), m_boxSize);
-    boxRect.moveCenter(QRect(QPoint(0, 0), canvas.size()).center());
+    // Match the floating-point center used by the decoration's shadow mask.
+    // QRect::center() shifts odd-sized textures half a pixel up and left.
+    boxRect.moveCenter(QRectF(canvas.rect()).center());
 
     QPainter painter(&canvas);
     for (const Shadow &shadow : std::as_const(m_shadows)) {
@@ -392,7 +396,8 @@ QSize BoxShadowRenderer::calculateMinimumBoxSize(int radius)
 
 QSizeF BoxShadowRenderer::calculateMinimumShadowTextureSize(const QSizeF &boxSize, double radius, const QPointF &offset)
 {
-    return boxSize + 2 * calculateBlurExtent(radius) + QSizeF(std::abs(offset.x()), std::abs(offset.y()));
+    // The box stays centered, so reserve the displacement on both sides.
+    return boxSize + 2 * calculateBlurExtent(radius) + QSizeF(2 * std::abs(offset.x()), 2 * std::abs(offset.y()));
 }
 
 } // namespace Material
