@@ -373,7 +373,9 @@ QImage BoxShadowRenderer::render() const
     canvas.fill(Qt::transparent);
 
     QRectF boxRect(QPoint(0, 0), m_boxSize);
-    boxRect.moveCenter(QRect(QPoint(0, 0), canvas.size()).center());
+    // Match the floating-point center used by the decoration's shadow mask.
+    // QRect::center() shifts odd-sized textures half a pixel up and left.
+    boxRect.moveCenter(QRectF(canvas.rect()).center());
 
     QPainter painter(&canvas);
     for (const Shadow &shadow : std::as_const(m_shadows)) {
