@@ -7,6 +7,12 @@ target_include_directories(boxshadowhelper_test PRIVATE ../src)
 target_link_libraries(boxshadowhelper_test PRIVATE Qt6::Gui Qt6::Test)
 add_test(NAME boxshadowhelper COMMAND boxshadowhelper_test)
 
+add_executable(boxshadowoffset_test BoxShadowOffsetTest.cc ../src/BoxShadowHelper.cc)
+set_target_properties(boxshadowoffset_test PROPERTIES AUTOMOC ON)
+target_include_directories(boxshadowoffset_test PRIVATE ../src)
+target_link_libraries(boxshadowoffset_test PRIVATE Qt6::Gui Qt6::Test)
+add_test(NAME boxshadowoffset COMMAND boxshadowoffset_test)
+
 add_executable(buttoncorneredges_test ButtonCornerEdgesTest.cc)
 set_target_properties(buttoncorneredges_test PROPERTIES AUTOMOC ON)
 target_include_directories(buttoncorneredges_test PRIVATE ../src)

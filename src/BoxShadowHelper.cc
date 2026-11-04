@@ -394,7 +394,8 @@ QSize BoxShadowRenderer::calculateMinimumBoxSize(int radius)
 
 QSizeF BoxShadowRenderer::calculateMinimumShadowTextureSize(const QSizeF &boxSize, double radius, const QPointF &offset)
 {
-    return boxSize + 2 * calculateBlurExtent(radius) + QSizeF(std::abs(offset.x()), std::abs(offset.y()));
+    // The box stays centered, so reserve the displacement on both sides.
+    return boxSize + 2 * calculateBlurExtent(radius) + QSizeF(2 * std::abs(offset.x()), 2 * std::abs(offset.y()));
 }
 
 } // namespace Material
