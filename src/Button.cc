@@ -395,9 +395,11 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->setPen(Qt::NoPen);
     painter->setBrush(bgColor);
     const QRectF backgroundGeometry = geometry();
-    const qreal radius = deco->cornerRadius() - Material::cornerRadiusAdjustment;
     const bool roundTopLeft = m_isLeftmost && deco->leftBorderVisible();
     const bool roundTopRight = m_isRightmost && deco->rightBorderVisible();
+    const bool roundedBackground = roundTopLeft || roundTopRight;
+    const qreal radius = roundedBackground ? deco->cornerRadius()
+                                          : deco->cornerRadius() - Material::cornerRadiusAdjustment;
 
     // QRectF equality is fuzzy; compare coordinates directly to retain the exact shape.
     if (!m_backgroundPathValid
@@ -416,7 +418,32 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         m_backgroundPathRoundTopRight = roundTopRight;
         m_backgroundPathValid = true;
     }
-    painter->drawPath(m_backgroundPath);
+    if (roundedBackground) {
+        // Compose the colors before applying corner coverage. Painting two
+        // antialiased edges on top of each other leaves a dark titlebar fringe.
+        const QColor base = deco->titleBarBackgroundColor();
+        const qreal overlayAlpha = bgColor.alphaF() * m_opacity;
+        const qreal baseAlpha = base.alphaF() * (1.0 - overlayAlpha);
+        const qreal alpha = overlayAlpha + baseAlpha;
+        QColor composed(Qt::transparent);
+        if (alpha > 0) {
+            composed = QColor::fromRgbF(
+                (bgColor.redF() * overlayAlpha + base.redF() * baseAlpha) / alpha,
+                (bgColor.greenF() * overlayAlpha + base.greenF() * baseAlpha) / alpha,
+                (bgColor.blueF() * overlayAlpha + base.blueF() * baseAlpha) / alpha,
+                alpha);
+        }
+        painter->save();
+        painter->setOpacity(1.0);
+        painter->setCompositionMode(QPainter::CompositionMode_Source);
+        painter->fillRect(backgroundGeometry, Qt::transparent);
+        painter->setCompositionMode(QPainter::CompositionMode_SourceOver);
+        painter->setBrush(composed);
+        painter->drawPath(m_backgroundPath);
+        painter->restore();
+    } else {
+        painter->drawPath(m_backgroundPath);
+    }
 
     // Foreground.
     painter->setRenderHint(QPainter::Antialiasing, true);
