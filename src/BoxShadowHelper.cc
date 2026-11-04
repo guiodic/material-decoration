@@ -369,7 +369,9 @@ QImage BoxShadowRenderer::render() const
         canvasSize = canvasSize.expandedTo(calculateMinimumShadowTextureSize(m_boxSize, shadow.radius, shadow.offset));
     }
 
-    QImage canvas(canvasSize.toSize(), QImage::Format_ARGB32_Premultiplied);
+    // Fractional offsets must not round the required texture extent down.
+    const QSize pixelSize(qCeil(canvasSize.width()), qCeil(canvasSize.height()));
+    QImage canvas(pixelSize, QImage::Format_ARGB32_Premultiplied);
     canvas.fill(Qt::transparent);
 
     QRectF boxRect(QPoint(0, 0), m_boxSize);
