@@ -94,10 +94,14 @@ set (decoration_SRCS
 )
 
 if(HAVE_WAYLAND_KEYSTATE)
-    ecm_add_wayland_client_protocol(decoration_SRCS
+    ecm_add_wayland_client_protocol(keystate_SRCS
         PROTOCOL ${PLASMA_WAYLAND_PROTOCOLS_DIR}/keystate.xml
         BASENAME material-keystate
         PRIVATE_CODE)
+    add_library(material_keystate OBJECT ${keystate_SRCS})
+    set_target_properties(material_keystate PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    target_include_directories(material_keystate PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+    target_link_libraries(material_keystate PUBLIC Wayland::Client)
 endif()
 
 kconfig_add_kcfg_files(decoration_SRCS
@@ -110,7 +114,7 @@ add_library (materialdecoration MODULE
 
 set_target_properties(materialdecoration PROPERTIES AUTOMOC ON)
 if(HAVE_WAYLAND_KEYSTATE)
-    target_link_libraries(materialdecoration PRIVATE Wayland::Client)
+    target_link_libraries(materialdecoration PRIVATE material_keystate)
 endif()
 
 target_include_directories(materialdecoration PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
