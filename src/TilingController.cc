@@ -64,6 +64,13 @@ public:
         request.data = std::move(data);
         request.data.insert(QStringLiteral("id"), QUuid::createUuid().toString(QUuid::WithoutBraces));
         request.data.insert(QStringLiteral("uuid"), windowId(decoration).toString(QUuid::WithoutBraces));
+        const auto cancelUnavailable = [this, id = request.data.value(QStringLiteral("id")).toString()] {
+            cancelUnavailableRequest(id);
+        };
+        request.resizeableConnection = connect(decoration->window(), &KDecoration3::DecoratedWindow::resizeableChanged,
+                                              this, cancelUnavailable);
+        request.maximizeableConnection = connect(decoration->window(), &KDecoration3::DecoratedWindow::maximizeableChanged,
+                                                this, cancelUnavailable);
         m_pending.enqueue(std::move(request));
         if (m_pending.size() == 1) dispatch();
         return true;
@@ -94,6 +101,8 @@ private:
         QPointer<KDecoration3::Decoration> context;
         QVariantMap data;
         std::function<void(bool, const QString &)> callback;
+        QMetaObject::Connection resizeableConnection;
+        QMetaObject::Connection maximizeableConnection;
     };
     bool trustedCaller() const
     {
@@ -102,10 +111,30 @@ private:
         // Sharing a process alone would not guarantee the same connection.
         return calledFromDBus() && message().service() == QDBusConnection::sessionBus().baseService();
     }
+    void completeRequest(Request request, bool success, const QString &layout = {})
+    {
+        disconnect(request.resizeableConnection);
+        disconnect(request.maximizeableConnection);
+        if (request.context && request.callback) {
+            QTimer::singleShot(0, request.context, [callback = std::move(request.callback), success, layout] { callback(success, layout); });
+        }
+    }
+    void cancelUnavailableRequest(const QString &id)
+    {
+        // Leave the in-flight request in place until the script acknowledges it.
+        for (qsizetype i = m_inFlight ? 1 : 0; i < m_pending.size(); ++i) {
+            const auto &request = m_pending[i];
+            if (request.data.value(QStringLiteral("id")).toString() != id) continue;
+            if (request.context && canTileWindow(request.context)) return;
+            completeRequest(m_pending.takeAt(i), false);
+            if (!m_inFlight) QTimer::singleShot(0, this, [this] { dispatch(); });
+            return;
+        }
+    }
     void dispatch()
     {
         if (m_inFlight) return;
-        while (!m_pending.isEmpty() && !m_pending.head().context) m_pending.dequeue();
+        while (!m_pending.isEmpty() && !m_pending.head().context) completeRequest(m_pending.dequeue(), false);
         if (m_pending.isEmpty()) return;
         if (!canTileWindow(m_pending.head().context)) {
             finish(false, QStringLiteral("Window can no longer be tiled"));
@@ -135,9 +164,7 @@ private:
         m_inFlight = false;
         auto request = m_pending.dequeue();
         if (!success) qWarning() << "Material tiling:" << reason;
-        if (request.context && request.callback) {
-            QTimer::singleShot(0, request.context, [callback = std::move(request.callback), success, layout] { callback(success, layout); });
-        }
+        completeRequest(std::move(request), success, layout);
         // Let the script finish its acknowledgement before delivering another request.
         QTimer::singleShot(0, this, [this] { dispatch(); });
     }

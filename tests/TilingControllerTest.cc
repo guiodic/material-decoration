@@ -139,6 +139,7 @@ private slots:
         window.setProperty("resizeable", true);
     }
     void identifiesOwnerAndRejectsInvalidTargets() {
+        const auto requests = action.requests.size();
         TestDecoration valid(&window, &bridge);
         QVERIFY(Material::canTileWindow(&valid));
         QVERIFY(!Material::canTileWindow(nullptr));
@@ -157,22 +158,87 @@ private slots:
         window.setProperty("specialWindow", false);
         window.setProperty("resizeable", false);
         QVERIFY(Material::canTileWindow(&valid));
+        // A successful round trip drains earlier requests without a fixed wait.
+        bool finished = false;
+        Material::fetchTilingLayout(&valid, [&](bool success, const Material::CustomTilingLayout &) {
+            QVERIFY(success);
+            finished = true;
+        });
+        QTRY_VERIFY(finished);
+        QCOMPARE(action.requests.size(), requests + 1);
+        QCOMPARE(action.requests.last().value(QStringLiteral("operation")).toString(), QStringLiteral("ping"));
+    }
+    void rejectsQueuedRequestAfterCapabilityLoss_data() {
+        QTest::addColumn<int>("notification");
+        QTest::newRow("resizeableChanged") << 0;
+        QTest::newRow("maximizeableChanged") << 1;
+        QTest::newRow("dispatch-check-without-signal") << 2;
     }
     void rejectsQueuedRequestAfterCapabilityLoss() {
+        QFETCH(int, notification);
         TestDecoration valid(&window, &bridge);
+        QObject otherWindow;
+        otherWindow.setProperty("internalId", QUuid::createUuid());
+        TestBridge otherBridge;
+        TestDecoration other(&otherWindow, &otherBridge);
         const auto requests = action.requests.size();
-        QList<bool> results;
-        for (int i = 0; i < 2; ++i) {
-            Material::fetchTilingLayout(&valid, [&](bool success, const Material::CustomTilingLayout &) {
-                results.append(success);
-            });
+        int replies = 0;
+        bool firstSucceeded = false;
+        bool cancelledSucceeded = true;
+        bool otherSucceeded = false;
+        Material::fetchTilingLayout(&valid, [&](bool success, const Material::CustomTilingLayout &) {
+            firstSucceeded = success;
+            ++replies;
+        });
+        QVERIFY(Material::tileCustomWindow(&valid, QStringLiteral("obsolete"), [&](bool success) {
+            cancelledSucceeded = success;
+            ++replies;
+        }));
+        Material::fetchTilingLayout(&other, [&](bool success, const Material::CustomTilingLayout &) {
+            otherSucceeded = success;
+            ++replies;
+        });
+        // Keep the first request in flight, but invalidate the queued request
+        // permanently even if the window becomes resizeable before dispatch.
+        if (notification == 2) {
+            bridge.client->resizeable = false;
+        } else if (notification == 1) {
+            bridge.client->resizeable = false;
+            Q_EMIT valid.window()->maximizeableChanged(false);
+            bridge.client->resizeable = true;
+            Q_EMIT valid.window()->maximizeableChanged(true);
+        } else {
+            bridge.client->setResizeable(false);
+            bridge.client->setResizeable(true);
         }
-        // The first request is already dispatched; the second is still queued.
+        QTRY_COMPARE(replies, 3);
+        QVERIFY(firstSucceeded);
+        QVERIFY(!cancelledSucceeded);
+        QVERIFY(otherSucceeded);
+        QCOMPARE(action.requests.size(), requests + 2);
+        QCOMPARE(action.requests[requests].value(QStringLiteral("uuid")).toString(),
+                 window.property("internalId").toUuid().toString(QUuid::WithoutBraces));
+        QCOMPARE(action.requests.last().value(QStringLiteral("uuid")).toString(),
+                 otherWindow.property("internalId").toUuid().toString(QUuid::WithoutBraces));
+    }
+    void capabilityLossReleasesQueueCapacity() {
+        TestDecoration valid(&window, &bridge);
+        QObject otherWindow;
+        otherWindow.setProperty("internalId", QUuid::createUuid());
+        TestBridge otherBridge;
+        TestDecoration other(&otherWindow, &otherBridge);
+        int replies = 0;
+        int successes = 0;
+        const auto complete = [&](bool success) { ++replies; successes += success; };
+        for (int i = 0; i < 8; ++i) {
+            QVERIFY(Material::tileCustomWindow(&valid, QStringLiteral("old"), complete));
+        }
         bridge.client->setResizeable(false);
-        QTRY_COMPARE(results.size(), 2);
-        QVERIFY(results[0]);
-        QVERIFY(!results[1]);
-        QCOMPARE(action.requests.size(), requests + 1);
+        for (int i = 0; i < 7; ++i) {
+            QVERIFY(Material::tileCustomWindow(&other, QStringLiteral("new"), complete));
+        }
+        QTRY_COMPARE(replies, 15);
+        QCOMPARE(successes, 8); // One request in flight, then seven for the other window.
     }
     void correlatesAndSerializesRequests() {
         TestDecoration valid(&window, &bridge);
