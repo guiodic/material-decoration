@@ -85,6 +85,7 @@ private slots:
         image.fill(Qt::transparent);
         QPainterPath border, title;
         scene(image, 0, QColor(39, 43, 46), border, title);
+        const QImage originalCoverage = image;
         {
             QPainter p(&image);
             Material::paintRoundedButtonBackground(&p, QRectF(83.3, 0, 36.7, 33), border, title,
@@ -93,15 +94,21 @@ private slots:
         for (int x = qRound(80 * scale); x < qRound(88 * scale); ++x) {
             QCOMPARE(qAlpha(image.pixel(x, qRound(20 * scale))), 255);
         }
-        // The outer antialiased red edge must not contain dark titlebar color.
+        // Preserve the rounded silhouette as well as its edge color. A square
+        // red fill must not pass by making the transparent corner opaque.
+        bool hasAntialiasedPixels = false;
         for (int y = 0; y < qRound(6 * scale); ++y) {
             for (int x = qRound(114 * scale); x < image.width(); ++x) {
                 const auto c = image.pixelColor(x, y);
+                QCOMPARE(c.alpha(), qAlpha(originalCoverage.pixel(x, y)));
+                hasAntialiasedPixels |= c.alpha() > 0 && c.alpha() < 255;
                 if (c.alpha() >= 32) {
                     QVERIFY(c.red() > 205);
                 }
             }
         }
+        QCOMPARE(qAlpha(image.pixel(image.width() - 1, 0)), 0);
+        QVERIFY(hasAntialiasedPixels);
     }
 
     void matchesNativePixelCoverage_data()
