@@ -1,6 +1,12 @@
 find_package(Qt6 REQUIRED COMPONENTS Test)
 find_package(KF6WidgetsAddons REQUIRED)
 find_package(KF6GuiAddons REQUIRED)
+add_executable(buttonbackground_test ButtonBackgroundTest.cc ../src/ButtonBackground.cc ../src/DrawHelper.cc ../src/PixelSnapper.cc)
+set_target_properties(buttonbackground_test PROPERTIES AUTOMOC ON)
+target_include_directories(buttonbackground_test PRIVATE ../src)
+target_link_libraries(buttonbackground_test PRIVATE Qt6::Gui Qt6::Test)
+add_test(NAME buttonbackground COMMAND buttonbackground_test)
+
 add_executable(boxshadowhelper_test BoxShadowHelperTest.cc ../src/BoxShadowHelper.cc)
 set_target_properties(boxshadowhelper_test PROPERTIES AUTOMOC ON)
 target_include_directories(boxshadowhelper_test PRIVATE ../src)

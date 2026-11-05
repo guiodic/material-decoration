@@ -80,6 +80,7 @@ set (decoration_SRCS
     AppMenuButtonGroup.cc
     BoxShadowHelper.cc
     Button.cc
+    ButtonBackground.cc
     Decoration.cc
     MenuOverflowButton.cc
     PixelSnapper.cc
