@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "TilingController.h"
+#include "DecorationTestBackend.h"
 #include <KDecoration3/Decoration>
 #include <KDecoration3/DecoratedWindow>
-#include <KDecoration3/Private/DecorationBridge>
-#include <KDecoration3/Private/DecoratedWindowPrivate>
-#include <KDecoration3/Private/DecorationSettingsPrivate>
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusPendingCallWatcher>
@@ -15,73 +13,7 @@
 #include <QUuid>
 #include <QVariantMap>
 
-// A real DecoratedWindow backed by the compositor interface, so capability
-// checks exercise KDecoration's public API rather than dynamic properties.
-class TestWindow : public KDecoration3::DecoratedWindowPrivate {
-public:
-    TestWindow(KDecoration3::DecoratedWindow *window, KDecoration3::Decoration *decoration)
-        : DecoratedWindowPrivate(window, decoration) {}
-    bool resizeable = true;
-    void setResizeable(bool value) {
-        resizeable = value;
-        Q_EMIT window()->resizeableChanged(value);
-    }
-    bool isResizeable() const override { return resizeable; }
-    bool isActive() const override { return true; }
-    QString caption() const override { return {}; }
-    bool isOnAllDesktops() const override { return false; }
-    bool isShaded() const override { return false; }
-    QIcon icon() const override { return {}; }
-    bool isMaximized() const override { return false; }
-    bool isMaximizedHorizontally() const override { return false; }
-    bool isMaximizedVertically() const override { return false; }
-    bool isKeepAbove() const override { return false; }
-    bool isKeepBelow() const override { return false; }
-    bool isCloseable() const override { return true; }
-    bool isMaximizeable() const override { return true; }
-    bool isMinimizeable() const override { return true; }
-    bool providesContextHelp() const override { return false; }
-    bool isModal() const override { return false; }
-    bool isShadeable() const override { return false; }
-    bool isMoveable() const override { return true; }
-    qreal width() const override { return 640; }
-    qreal height() const override { return 480; }
-    QSizeF size() const override { return {width(), height()}; }
-    QPalette palette() const override { return {}; }
-    Qt::Edges adjacentScreenEdges() const override { return {}; }
-    qreal scale() const override { return 1; }
-    qreal nextScale() const override { return 1; }
-    QString windowClass() const override { return {}; }
-    bool hasApplicationMenu() const override { return false; }
-    bool isApplicationMenuActive() const override { return false; }
-    void requestShowToolTip(const QString &) override {}
-    void requestHideToolTip() override {}
-    void requestClose() override {}
-    void requestToggleMaximization(Qt::MouseButtons) override {}
-    void requestMinimize() override {}
-    void requestContextHelp() override {}
-    void requestToggleOnAllDesktops() override {}
-    void requestToggleShade() override {}
-    void requestToggleKeepAbove() override {}
-    void requestToggleKeepBelow() override {}
-    void requestShowWindowMenu(const QRect &) override {}
-    void showApplicationMenu(int) override {}
-    void requestShowApplicationMenu(const QRect &, int) override {}
-};
-
-class TestBridge : public KDecoration3::DecorationBridge {
-public:
-    TestWindow *client = nullptr;
-    std::unique_ptr<KDecoration3::DecoratedWindowPrivate> createClient(
-        KDecoration3::DecoratedWindow *window, KDecoration3::Decoration *decoration) override {
-        auto backend = std::make_unique<TestWindow>(window, decoration);
-        client = backend.get();
-        return backend;
-    }
-    std::unique_ptr<KDecoration3::DecorationSettingsPrivate> settings(KDecoration3::DecorationSettings *) override {
-        return {};
-    }
-};
+using TestBridge = MaterialTest::Bridge;
 
 class TestDecoration : public KDecoration3::Decoration {
 public:
