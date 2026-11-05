@@ -1,19 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Include the implementation to exercise the private scoring helpers unchanged.
-#include "../src/AppMenuSearch.cc"
+#include "AppMenuSearchMatching.h"
+
+#include <QElapsedTimer>
 #include <QTest>
 
-// Scoring has no model dependency. Supply the only provider method referenced
-// by the implementation, plus its Qt metadata slots, so this test does not
-// need a live KWin or D-Bus menu. No model instance is constructed.
-namespace Material
-{
-AppMenuModel::~AppMenuModel() = default;
-QMenu *AppMenuModel::menu() const { return nullptr; }
-void AppMenuModel::onMenuUpdated(QMenu *) {}
-void AppMenuModel::onActionChanged() {}
-void AppMenuModel::processNext() {}
-}
+namespace Matching = Material::SearchMatching;
 
 class AppMenuSearchTest : public QObject
 {
@@ -37,39 +28,39 @@ private slots:
         QFETCH(int, expected);
         // An unstarted timer disables the deadline for score assertions.
         const QElapsedTimer noDeadline;
-        QCOMPARE(Material::calculateFuzzyScore(query, Material::tokenizeText(query), label,
-                                               Material::tokenizeText(label), noDeadline), expected);
+        QCOMPARE(Matching::calculateFuzzyScore(query, Matching::tokenizeText(query), label,
+                                               Matching::tokenizeText(label), noDeadline), expected);
     }
     void respectsSharedDeadline()
     {
         const QString query = QStringLiteral("save");
         const QString label = QStringLiteral("File Save As");
-        const auto queryTokens = Material::tokenizeText(query);
-        const auto labelTokens = Material::tokenizeText(label);
+        const auto queryTokens = Matching::tokenizeText(query);
+        const auto labelTokens = Matching::tokenizeText(label);
         const QElapsedTimer noDeadline;
-        QVERIFY(Material::calculateFuzzyScore(query, queryTokens, label, labelTokens, noDeadline) > 0);
+        QVERIFY(Matching::calculateFuzzyScore(query, queryTokens, label, labelTokens, noDeadline) > 0);
 
         QElapsedTimer timer;
         timer.start();
         QTest::qWait(20);
         // Repeated comparisons must use the original deadline, not restart it.
-        QCOMPARE(Material::calculateFuzzyScore(query, queryTokens, label, labelTokens, timer), 0);
-        QCOMPARE(Material::calculateFuzzyScore(query, queryTokens, label, labelTokens, timer), 0);
+        QCOMPARE(Matching::calculateFuzzyScore(query, queryTokens, label, labelTokens, timer), 0);
+        QCOMPARE(Matching::calculateFuzzyScore(query, queryTokens, label, labelTokens, timer), 0);
     }
     void boundsImpossibleAssignment()
     {
         const QString query = QStringLiteral("orchid quartz velvet zzz zzz zzz");
         const QString label = QStringLiteral("orchid quartz velvet ").repeated(500) + QStringLiteral("zzz zzz");
-        const auto queryTokens = Material::tokenizeText(query);
-        const auto labelTokens = Material::tokenizeText(label);
+        const auto queryTokens = Matching::tokenizeText(query);
+        const auto labelTokens = Matching::tokenizeText(label);
         QElapsedTimer timer;
         timer.start();
-        QCOMPARE(Material::calculateFuzzyScore(query, queryTokens, label, labelTokens, timer), 0);
+        QCOMPARE(Matching::calculateFuzzyScore(query, queryTokens, label, labelTokens, timer), 0);
         // Generous allowance for instrumented builds and loaded CI machines;
         // the unbounded Release implementation takes several seconds here.
         QVERIFY2(timer.elapsed() < 1000, "Fuzzy scoring did not yield promptly");
     }
 };
 
-QTEST_MAIN(AppMenuSearchTest)
+QTEST_GUILESS_MAIN(AppMenuSearchTest)
 #include "AppMenuSearchTest.moc"
