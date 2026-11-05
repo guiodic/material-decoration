@@ -635,3 +635,7 @@ msgstr ""
 #, kde-format
 msgid "Material Decoration"
 msgstr ""
+
+#: config.ui
+msgid "Use accent color for the active window outline"
+msgstr ""

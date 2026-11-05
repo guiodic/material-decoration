@@ -36,6 +36,10 @@
             <default>false</default>
         </entry>
 
+        <entry name="ActiveOutlineUsesAccent" type="bool">
+            <default>false</default>
+        </entry>
+
         <entry name="UseSystemColors" type="bool">
             <default>true</default>
         </entry>

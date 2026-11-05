@@ -68,6 +68,13 @@ if(DBUS_RUN_SESSION)
     add_test(NAME menucolorssettings COMMAND ${DBUS_RUN_SESSION} -- $<TARGET_FILE:menucolorssettings_test>)
     set_tests_properties(menucolorssettings PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+    add_executable(outlinesettings_test OutlineSettingsTest.cc)
+    set_target_properties(outlinesettings_test PROPERTIES AUTOMOC ON)
+    target_include_directories(outlinesettings_test PRIVATE ../src ${PROJECT_BINARY_DIR}/src ${PROJECT_BINARY_DIR})
+    target_link_libraries(outlinesettings_test PRIVATE materialdecoration_core Qt6::Widgets Qt6::Test)
+    add_test(NAME outlinesettings COMMAND ${DBUS_RUN_SESSION} -- $<TARGET_FILE:outlinesettings_test>)
+    set_tests_properties(outlinesettings PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
     add_executable(longpressaction_test LongPressActionTest.cc ../src/LongPressAction.cc)
     set_target_properties(longpressaction_test PROPERTIES AUTOMOC ON)
     target_include_directories(longpressaction_test PRIVATE ../src)

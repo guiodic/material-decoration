@@ -1549,7 +1549,9 @@ void Decoration::updateDecorationState()
 
     KDecoration3::BorderOutline outline;
     if (m_internalSettings->outlineActive()) {
-        QColor outlineColor = borderColor();
+        QColor outlineColor = m_internalSettings->activeOutlineUsesAccent() && window()->isActive()
+            ? window()->palette().color(QPalette::Active, QPalette::Highlight)
+            : borderColor();
         outlineColor.setAlphaF(1.0);
         const qreal outlineThickness = std::max(KDecoration3::pixelSize(window()->nextScale()), KDecoration3::snapToPixelGrid(1, window()->nextScale()));
         outline = KDecoration3::BorderOutline(outlineThickness, outlineColor, radius);
