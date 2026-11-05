@@ -8,8 +8,17 @@ temporary configuration directory.
 tablet-mode signal, including a signal matching the default value. It requires a
 running Wayland compositor and the Qt Wayland platform plugin. It is built and
 registered only when `FORCE_X11=OFF`, since tablet-mode support is Wayland-only.
-Without an explicit display, CTest marks it as skipped. To run it against an
-existing compositor:
+Install `dbus-run-session` before configuring: CMake registers these integration
+tests only if it finds that executable. Tests are disabled by default; from the
+repository root, configure and build them with:
+
+```sh
+cmake -S . -B build -DBUILD_TESTING=ON -DFORCE_X11=OFF
+cmake --build build
+```
+
+Without an explicit display, CTest marks `tabletreply` as skipped. To run it
+against an existing Wayland compositor:
 
 ```sh
 MATERIAL_TEST_WAYLAND_DISPLAY="$WAYLAND_DISPLAY" ctest --test-dir build -R '^tabletreply$' --output-on-failure
