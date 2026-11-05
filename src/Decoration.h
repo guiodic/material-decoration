@@ -154,7 +154,7 @@ private:
     void updateButtonAnimation();
     void updateShadow();
     std::shared_ptr<KDecoration3::DecorationShadow> createShadowObject(const float strengthScale);
-    void updateCornerRadiusAndOutline();
+    void updateDecorationState();
     void updatePaths();
 
     bool hideTitleBar() const;
