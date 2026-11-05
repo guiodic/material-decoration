@@ -254,6 +254,10 @@ bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
         }
         if (!m_tilingPopup) {
             m_tilingPopup = std::make_unique<TilingPopup>();
+            connect(window(), &KDecoration3::DecoratedWindow::paletteChanged,
+                    m_tilingPopup.get(), [this](const QPalette &palette) {
+                m_tilingPopup->setPalette(m_internalSettings->menusFollowDecorationColors() ? palette : QPalette());
+            });
             connect(m_tilingPopup.get(), &QMenu::aboutToShow, this, [this] { Q_EMIT tilingPopupVisibilityChanged(true); });
             connect(m_tilingPopup.get(), &QMenu::aboutToHide, this, [this] {
                 m_tilingPopupHoverMonitor.stop();
@@ -1596,9 +1600,6 @@ void Decoration::updateColorAppearance()
 {
     updateColors();
     updateCornerRadiusAndOutline();
-    if (m_tilingPopup) {
-        m_tilingPopup->setPalette(m_internalSettings->menusFollowDecorationColors() ? window()->palette() : QPalette());
-    }
     update();
 }
 
