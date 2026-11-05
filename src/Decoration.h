@@ -155,6 +155,7 @@ private:
     void updateShadow();
     std::shared_ptr<KDecoration3::DecorationShadow> createShadowObject(const float strengthScale);
     void updateCornerRadiusAndOutline();
+    void updateOpaqueState();
     void updatePaths();
 
     bool hideTitleBar() const;
