@@ -139,13 +139,13 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
         connect(m_hoverTimer, &QTimer::timeout, this, [this, decoration] {
             if (isHovered() && isEnabled() && isVisible() &&
                 QApplication::mouseButtons() == Qt::NoButton &&
-                decoration->m_internalSettings->tilingPopupHoverEnabled()) {
+                decoration->m_internalSettings->tilingPopupHoverEnabled() && canTileWindow(decoration)) {
                 decoration->showTilingPopup(geometry(), true);
             }
         });
         connect(this, &Button::hoveredChanged, this, [this, decoration](bool hovered) {
             m_hoverTimer->stop();
-            if (hovered && decoration->m_internalSettings->tilingPopupHoverEnabled()) {
+            if (hovered && decoration->m_internalSettings->tilingPopupHoverEnabled() && canTileWindow(decoration)) {
                 // The base button has already requested its tooltip on this signal.
                 decoration->requestHideToolTip();
                 if (!isPressed()) m_hoverTimer->start(decoration->m_internalSettings->tilingPopupHoverDelay());
@@ -159,6 +159,16 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
         });
         connect(decoration, &Decoration::tilingPopupVisibilityChanged, this, &Button::setTilingPopupOpen);
         setTilingPopupOpen(decoration->isTilingPopupVisible());
+        const auto updateTilingAvailability = [this, decoration] {
+            cancelLongPress();
+            refreshLongPressToolTip();
+            if (isHovered() && isEnabled() && isVisible() && !isPressed() &&
+                canTileWindow(decoration) && decoration->m_internalSettings->tilingPopupHoverEnabled()) {
+                m_hoverTimer->start(decoration->m_internalSettings->tilingPopupHoverDelay());
+            }
+        };
+        connect(decoration->window(), &KDecoration3::DecoratedWindow::resizeableChanged, this, updateTilingAvailability);
+        connect(decoration->window(), &KDecoration3::DecoratedWindow::maximizeableChanged, this, updateTilingAvailability);
     }
 
     if (type == KDecoration3::DecorationButtonType::Minimize ||
@@ -913,7 +923,7 @@ void Button::refreshLongPressToolTip()
         m_toolTipText.clear();
         return;
     }
-    if (type() == KDecoration3::DecorationButtonType::Maximize && deco->m_internalSettings->tilingPopupHoverEnabled()) {
+    if (type() == KDecoration3::DecorationButtonType::Maximize && deco->m_internalSettings->tilingPopupHoverEnabled() && canTileWindow(deco)) {
         deco->requestHideToolTip();
         m_toolTipText.clear();
         return;
@@ -926,7 +936,7 @@ void Button::refreshLongPressToolTip()
         if (generation != m_toolTipGeneration || !isHovered() || isPressed() || !isVisible() || !isEnabled() || m_tilingPopupOpen || m_longPressToolTipSuspended) return;
         auto *deco = qobject_cast<Decoration *>(decoration());
         if (!deco) return;
-        if (type() == KDecoration3::DecorationButtonType::Maximize && deco->m_internalSettings->tilingPopupHoverEnabled()) {
+        if (type() == KDecoration3::DecorationButtonType::Maximize && deco->m_internalSettings->tilingPopupHoverEnabled() && canTileWindow(deco)) {
             deco->requestHideToolTip();
             m_toolTipText.clear();
             return;
