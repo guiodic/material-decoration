@@ -180,16 +180,25 @@ private slots:
                 results.append(success);
             });
         }
+        bool customFinished = false;
+        bool customSucceeded = true;
+        QVERIFY(Material::tileCustomWindow(&valid, QStringLiteral("snapshot:0"), [&](bool success) {
+            customSucceeded = success;
+            customFinished = true;
+        }));
+        QVERIFY(Material::tileWindow(&valid, Qt::LeftEdge));
         bool otherFinished = false;
         Material::fetchTilingLayout(&other, [&](bool success, const Material::CustomTilingLayout &) {
             QVERIFY(success);
             otherFinished = true;
         });
-        // The first request is already dispatched; the second is still queued.
+        // Only the first request has been dispatched; the others are queued.
         bridge.client->setResizeable(false);
         QTRY_COMPARE(results.size(), 2);
         QVERIFY(results[0]);
         QVERIFY(!results[1]);
+        QTRY_VERIFY(customFinished);
+        QVERIFY(!customSucceeded);
         QTRY_VERIFY(otherFinished);
         QCOMPARE(action.requests.size(), requests + 2);
         QCOMPARE(action.requests.last().value(QStringLiteral("uuid")).toString(),
