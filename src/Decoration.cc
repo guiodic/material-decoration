@@ -391,6 +391,10 @@ bool Decoration::init()
     }
 
     const auto *decoratedClient = window();
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::resizeableChanged,
+            this, &Decoration::updateResizeBorders);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizeableChanged,
+            this, &Decoration::updateResizeBorders);
 
     // KWin can start an interactive move while the button is still held
     // stationary. Cancel button actions on an actual step, without depending
@@ -465,7 +469,6 @@ bool Decoration::init()
      
     updateColors();
     updateBordersCornersBlurShadow();
-    updateResizeBorders();
     updateTitleBar();
     updateButtonsGeometryDelayed(); // avoid wrong geometry (for example Spectacle)
 
@@ -573,7 +576,6 @@ void Decoration::applySettings()
     updateColors();
     updateButtonAnimation();
     updateBordersCornersBlurShadow();
-    updateResizeBorders();
     updateTitleBar();
     updateButtonsGeometryDelayed();
     updateTitleBarHoverState();
@@ -693,6 +695,7 @@ void Decoration::updateBordersCornersBlurShadow()
     borders.setBottom(bottomOffset());
     setBorders(borders);
     updateCornerRadiusAndOutline();
+    updateResizeBorders();
     updatePaths();
     updateBlur();
     updateShadow();
@@ -702,12 +705,15 @@ void Decoration::updateResizeBorders()
 {
     QMarginsF borders;
 
-    const qreal scale = window()->nextScale();
-    const qreal extender = KDecoration3::snapToPixelGrid(settings()->largeSpacing(), scale);
-    borders.setLeft(extender);
-    borders.setTop(extender);
-    borders.setRight(extender);
-    borders.setBottom(extender);
+    if (window()->isResizeable()) {
+        const qreal scale = window()->nextScale();
+        const qreal spacing = settings()->largeSpacing() * (m_tabletMode ? 2 : 1);
+        const qreal extender = KDecoration3::snapToPixelGrid(spacing, scale);
+        borders = QMarginsF(isLeftEdge() ? 0 : extender,
+                           isTopEdge() ? 0 : extender,
+                           isRightEdge() ? 0 : extender,
+                           isBottomEdge() ? 0 : extender);
+    }
 
     setResizeOnlyBorders(borders);
 }
@@ -1582,7 +1588,6 @@ void Decoration::onSizeChanged()
 void Decoration::onNextScaleChanged()
 {
     updateBordersCornersBlurShadow();
-    updateResizeBorders();
     updateTitleBar();
     updateButtonsGeometry();
 }
@@ -1636,7 +1641,6 @@ void Decoration::onTabletModeChanged(bool mode)
         }
         m_tabletMode = mode;
         updateBordersCornersBlurShadow();
-        updateResizeBorders();
         updateTitleBar();
         updateButtonsGeometryDelayed();
         update();
