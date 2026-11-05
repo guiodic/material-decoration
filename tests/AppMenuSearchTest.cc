@@ -40,6 +40,10 @@ private slots:
         const QElapsedTimer noDeadline;
         QVERIFY(Matching::calculateFuzzyScore(query, queryTokens, label, labelTokens, noDeadline) > 0);
 
+        QElapsedTimer freshTimer;
+        freshTimer.start();
+        QVERIFY(Matching::calculateFuzzyScore(query, queryTokens, label, labelTokens, freshTimer) > 0);
+
         QElapsedTimer timer;
         timer.start();
         QTest::qWait(20);
