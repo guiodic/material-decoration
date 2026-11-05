@@ -21,7 +21,6 @@
 #include "BuildConfig.h"
 #include "Button.h"
 #include "ButtonBackground.h"
-#include "DrawHelper.h"
 #include "LongPressAction.h"
 #include "TilingController.h"
 #include "Material.h"
@@ -399,33 +398,15 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     const bool roundTopLeft = m_isLeftmost && deco->leftBorderVisible();
     const bool roundTopRight = m_isRightmost && deco->rightBorderVisible();
     const bool roundedBackground = roundTopLeft || roundTopRight;
-    const qreal radius = roundedBackground ? deco->cornerRadius()
-                                          : deco->cornerRadius() - Material::cornerRadiusAdjustment;
-
-    // QRectF equality is fuzzy; compare coordinates directly to retain the exact shape.
-    if (!m_backgroundPathValid
-        || m_backgroundPathGeometry.x() != backgroundGeometry.x()
-        || m_backgroundPathGeometry.y() != backgroundGeometry.y()
-        || m_backgroundPathGeometry.width() != backgroundGeometry.width()
-        || m_backgroundPathGeometry.height() != backgroundGeometry.height()
-        || m_backgroundPathRadius != radius
-        || m_backgroundPathRoundTopLeft != roundTopLeft
-        || m_backgroundPathRoundTopRight != roundTopRight) {
-        m_backgroundPath = DrawHelper::getRoundedPath(
-            backgroundGeometry, radius, roundTopLeft, roundTopRight, false, false);
-        m_backgroundPathGeometry = backgroundGeometry;
-        m_backgroundPathRadius = radius;
-        m_backgroundPathRoundTopLeft = roundTopLeft;
-        m_backgroundPathRoundTopRight = roundTopRight;
-        m_backgroundPathValid = true;
-    }
-    if (roundedBackground && bgColor.alpha() > 0 && m_opacity > 0) {
-        const bool hasFrameBackground = !deco->hasNoBorders() && !deco->window()->isShaded();
-        paintRoundedButtonBackground(painter, backgroundGeometry,
-            hasFrameBackground ? deco->m_framePath.subtracted(deco->m_titleBarPath) : QPainterPath(),
-            deco->m_titleBarPath, deco->borderColor(), deco->titleBarBackgroundColor(), bgColor, m_opacity);
-    } else {
-        painter->drawPath(m_backgroundPath);
+    if (bgColor.alpha() > 0 && m_opacity > 0) {
+        if (roundedBackground) {
+            const bool hasFrameBackground = !deco->hasNoBorders() && !deco->window()->isShaded();
+            paintRoundedButtonBackground(painter, backgroundGeometry,
+                hasFrameBackground ? deco->m_framePath.subtracted(deco->m_titleBarPath) : QPainterPath(),
+                deco->m_titleBarPath, deco->borderColor(), deco->titleBarBackgroundColor(), bgColor, m_opacity);
+        } else {
+            painter->fillRect(backgroundGeometry, bgColor);
+        }
     }
 
     // Foreground.
