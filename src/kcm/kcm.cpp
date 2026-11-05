@@ -71,7 +71,6 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_InactiveOpacity, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_CornerRadius, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_OutlineActive, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
-    connect(m_ui->kcfg_OutlineActive, &QCheckBox::toggled, m_ui->kcfg_ActiveOutlineUsesAccent, &QWidget::setEnabled);
     connect(m_ui->kcfg_ActiveOutlineUsesAccent, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_UseSystemColors, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_UseCustomBorderColors, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
@@ -190,7 +189,6 @@ void MaterialDecorationKCM::loadUIFromSettings(const Material::InternalSettings 
     m_ui->kcfg_MenusFollowDecorationColors->setChecked(settings.menusFollowDecorationColors());
     m_ui->kcfg_OutlineActive->setChecked(settings.outlineActive());
     m_ui->kcfg_ActiveOutlineUsesAccent->setChecked(settings.activeOutlineUsesAccent());
-    m_ui->kcfg_ActiveOutlineUsesAccent->setEnabled(settings.outlineActive());
     m_ui->kcfg_HideCaptionWhenLimitedSpace->setChecked(settings.hideCaptionWhenLimitedSpace());
     m_ui->kcfg_MinWidthForCaption->setValue(settings.minWidthForCaption());
     m_ui->kcfg_MinWidthForCaption->setEnabled(settings.hideCaptionWhenLimitedSpace());

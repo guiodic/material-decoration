@@ -68,6 +68,18 @@ if(DBUS_RUN_SESSION)
     add_test(NAME menucolorssettings COMMAND ${DBUS_RUN_SESSION} -- $<TARGET_FILE:menucolorssettings_test>)
     set_tests_properties(menucolorssettings PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+    find_package(KDecoration3 REQUIRED)
+    find_package(KF6CoreAddons REQUIRED)
+    find_package(KF6Config REQUIRED)
+    add_executable(outlinecolor_test OutlineColorTest.cc)
+    set_target_properties(outlinecolor_test PROPERTIES AUTOMOC ON)
+    target_link_libraries(outlinecolor_test PRIVATE Qt6::Widgets Qt6::Test Qt6::DBus
+        KF6::CoreAddons KF6::ConfigCore KDecoration3::KDecoration KDecoration3::KDecoration3Private)
+    target_compile_definitions(outlinecolor_test PRIVATE MATERIAL_DECORATION_PLUGIN="$<TARGET_FILE:materialdecoration>")
+    add_dependencies(outlinecolor_test materialdecoration)
+    add_test(NAME outlinecolor COMMAND ${DBUS_RUN_SESSION} -- $<TARGET_FILE:outlinecolor_test>)
+    set_tests_properties(outlinecolor PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
+
     add_executable(outlinesettings_test OutlineSettingsTest.cc)
     set_target_properties(outlinesettings_test PROPERTIES AUTOMOC ON)
     target_include_directories(outlinesettings_test PRIVATE ../src ${PROJECT_BINARY_DIR}/src ${PROJECT_BINARY_DIR})
