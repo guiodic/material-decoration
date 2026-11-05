@@ -461,6 +461,9 @@ bool Decoration::init()
     connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
             this, &Decoration::onAdjacentScreenEdgesChanged);
     
+    connect(this, &KDecoration3::Decoration::currentStateChanged,
+            this, &Decoration::updateOpaqueState);
+
     connect(this, &KDecoration3::Decoration::bordersChanged, 
             this, &Decoration::updateTitleBar);
     
@@ -691,6 +694,7 @@ void Decoration::updateBordersCornersBlurShadow()
     updateDecorationState();
     updateResizeBorders();
     updatePaths();
+    updateOpaqueState();
     updateBlur();
     updateShadow();
 }
@@ -1563,6 +1567,21 @@ void Decoration::updateDecorationState()
     });
 }
 
+void Decoration::updateOpaqueState()
+{
+    const auto hasOnlyRectangularTitleBar = [](const KDecoration3::DecorationState &state) {
+        const auto borders = state.borders();
+        return borders.top() > 0 && borders.left() == 0 && borders.right() == 0 && borders.bottom() == 0
+            && state.borderRadius() == KDecoration3::BorderRadius();
+    };
+    const auto background = titleBarBackgroundColor();
+    // KWin may not have applied the rectangular geometry yet.
+    setOpaque(window()->isMaximized() && !window()->isShaded() && !hideTitleBar()
+              && background.isValid() && background.alpha() == 255
+              && hasOnlyRectangularTitleBar(*currentState())
+              && hasOnlyRectangularTitleBar(*nextState()));
+}
+
 void Decoration::updatePaths()
 {
     const bool roundTopLeft = roundTopLeftCorners();
@@ -1624,6 +1643,7 @@ void Decoration::updateColorAppearance()
 {
     updateColors();
     updateDecorationState();
+    updateOpaqueState();
     update();
 }
 
