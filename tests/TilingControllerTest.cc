@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "TilingController.h"
-#include <QObject>
+#include <KDecoration3/Decoration>
+#include <KDecoration3/DecoratedWindow>
+#include <KDecoration3/Private/DecorationBridge>
+#include <KDecoration3/Private/DecoratedWindowPrivate>
+#include <KDecoration3/Private/DecorationSettingsPrivate>
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusPendingCallWatcher>
@@ -10,6 +14,83 @@
 #include <QTimer>
 #include <QUuid>
 #include <QVariantMap>
+
+// A real DecoratedWindow backed by the compositor interface, so capability
+// checks exercise KDecoration's public API rather than dynamic properties.
+class TestWindow : public KDecoration3::DecoratedWindowPrivate {
+public:
+    TestWindow(KDecoration3::DecoratedWindow *window, KDecoration3::Decoration *decoration)
+        : DecoratedWindowPrivate(window, decoration) {}
+    bool resizeable = true;
+    void setResizeable(bool value) {
+        resizeable = value;
+        Q_EMIT window()->resizeableChanged(value);
+    }
+    bool isResizeable() const override { return resizeable; }
+    bool isActive() const override { return true; }
+    QString caption() const override { return {}; }
+    bool isOnAllDesktops() const override { return false; }
+    bool isShaded() const override { return false; }
+    QIcon icon() const override { return {}; }
+    bool isMaximized() const override { return false; }
+    bool isMaximizedHorizontally() const override { return false; }
+    bool isMaximizedVertically() const override { return false; }
+    bool isKeepAbove() const override { return false; }
+    bool isKeepBelow() const override { return false; }
+    bool isCloseable() const override { return true; }
+    bool isMaximizeable() const override { return true; }
+    bool isMinimizeable() const override { return true; }
+    bool providesContextHelp() const override { return false; }
+    bool isModal() const override { return false; }
+    bool isShadeable() const override { return false; }
+    bool isMoveable() const override { return true; }
+    qreal width() const override { return 640; }
+    qreal height() const override { return 480; }
+    QSizeF size() const override { return {width(), height()}; }
+    QPalette palette() const override { return {}; }
+    Qt::Edges adjacentScreenEdges() const override { return {}; }
+    qreal scale() const override { return 1; }
+    qreal nextScale() const override { return 1; }
+    QString windowClass() const override { return {}; }
+    bool hasApplicationMenu() const override { return false; }
+    bool isApplicationMenuActive() const override { return false; }
+    void requestShowToolTip(const QString &) override {}
+    void requestHideToolTip() override {}
+    void requestClose() override {}
+    void requestToggleMaximization(Qt::MouseButtons) override {}
+    void requestMinimize() override {}
+    void requestContextHelp() override {}
+    void requestToggleOnAllDesktops() override {}
+    void requestToggleShade() override {}
+    void requestToggleKeepAbove() override {}
+    void requestToggleKeepBelow() override {}
+    void requestShowWindowMenu(const QRect &) override {}
+    void showApplicationMenu(int) override {}
+    void requestShowApplicationMenu(const QRect &, int) override {}
+};
+
+class TestBridge : public KDecoration3::DecorationBridge {
+public:
+    TestWindow *client = nullptr;
+    std::unique_ptr<KDecoration3::DecoratedWindowPrivate> createClient(
+        KDecoration3::DecoratedWindow *window, KDecoration3::Decoration *decoration) override {
+        auto backend = std::make_unique<TestWindow>(window, decoration);
+        client = backend.get();
+        return backend;
+    }
+    std::unique_ptr<KDecoration3::DecorationSettingsPrivate> settings(KDecoration3::DecorationSettings *) override {
+        return {};
+    }
+};
+
+class TestDecoration : public KDecoration3::Decoration {
+public:
+    TestDecoration(QObject *owner, TestBridge *bridge)
+        : Decoration(owner, {QVariantMap{{QStringLiteral("bridge"),
+            QVariant::fromValue<KDecoration3::DecorationBridge *>(bridge)}}}) {}
+    bool init() override { return true; }
+    void paint(QPainter *, const QRectF &) override {}
+};
 
 class ScriptAction : public QObject {
     Q_OBJECT
@@ -48,6 +129,7 @@ class TilingControllerTest : public QObject {
     Q_OBJECT
     ScriptAction action;
     QObject window;
+    TestBridge bridge;
 private slots:
     void initTestCase() {
         auto bus = QDBusConnection::sessionBus();
@@ -57,18 +139,73 @@ private slots:
         window.setProperty("resizeable", true);
     }
     void identifiesOwnerAndRejectsInvalidTargets() {
-        QObject valid(&window);
+        const auto requests = action.requests.size();
+        TestDecoration valid(&window, &bridge);
         QVERIFY(Material::canTileWindow(&valid));
-        QObject unknown(nullptr);
+        QVERIFY(!Material::canTileWindow(nullptr));
+        TestBridge unknownBridge;
+        TestDecoration unknown(nullptr, &unknownBridge);
         QVERIFY(!Material::canTileWindow(&unknown));
         QVERIFY(!Material::tileWindow(&valid, Qt::LeftEdge | Qt::RightEdge));
         QVERIFY(!Material::tileWindow(&unknown, Qt::LeftEdge));
-        window.setProperty("resizeable", false);
+        // The public capability takes precedence over the owner's property.
+        bridge.client->setResizeable(false);
         QVERIFY(!Material::canTileWindow(&valid));
-        window.setProperty("resizeable", true);
+        QVERIFY(!Material::tileWindow(&valid, Qt::LeftEdge));
+        bridge.client->setResizeable(true);
+        window.setProperty("specialWindow", true);
+        QVERIFY(!Material::canTileWindow(&valid));
+        window.setProperty("specialWindow", false);
+        window.setProperty("resizeable", false);
+        QVERIFY(Material::canTileWindow(&valid));
+        bool finished = false;
+        Material::fetchTilingLayout(&valid, [&](bool success, const Material::CustomTilingLayout &) {
+            QVERIFY(success);
+            finished = true;
+        });
+        QTRY_VERIFY(finished);
+        QCOMPARE(action.requests.size(), requests + 1);
+        QCOMPARE(action.requests.last().value(QStringLiteral("operation")).toString(), QStringLiteral("ping"));
+    }
+    void rejectsQueuedRequestAfterCapabilityLoss() {
+        TestDecoration valid(&window, &bridge);
+        QObject otherWindow;
+        otherWindow.setProperty("internalId", QUuid::createUuid());
+        TestBridge otherBridge;
+        TestDecoration other(&otherWindow, &otherBridge);
+        const auto requests = action.requests.size();
+        QList<bool> results;
+        for (int i = 0; i < 2; ++i) {
+            Material::fetchTilingLayout(&valid, [&](bool success, const Material::CustomTilingLayout &) {
+                results.append(success);
+            });
+        }
+        bool customFinished = false;
+        bool customSucceeded = true;
+        QVERIFY(Material::tileCustomWindow(&valid, QStringLiteral("snapshot:0"), [&](bool success) {
+            customSucceeded = success;
+            customFinished = true;
+        }));
+        QVERIFY(Material::tileWindow(&valid, Qt::LeftEdge));
+        bool otherFinished = false;
+        Material::fetchTilingLayout(&other, [&](bool success, const Material::CustomTilingLayout &) {
+            QVERIFY(success);
+            otherFinished = true;
+        });
+        // Only the first request has been dispatched; the others are queued.
+        bridge.client->setResizeable(false);
+        QTRY_COMPARE(results.size(), 2);
+        QVERIFY(results[0]);
+        QVERIFY(!results[1]);
+        QTRY_VERIFY(customFinished);
+        QVERIFY(!customSucceeded);
+        QTRY_VERIFY(otherFinished);
+        QCOMPARE(action.requests.size(), requests + 2);
+        QCOMPARE(action.requests.last().value(QStringLiteral("uuid")).toString(),
+                 otherWindow.property("internalId").toUuid().toString(QUuid::WithoutBraces));
     }
     void correlatesAndSerializesRequests() {
-        QObject valid(&window);
+        TestDecoration valid(&window, &bridge);
         action.requests.clear();
         int replies = 0;
         bool allSucceeded = true;
@@ -86,7 +223,7 @@ private slots:
         QCOMPARE(ids.size(), 3);
     }
     void readsLayoutAndSelectsCustomTile() {
-        QObject valid(&window);
+        TestDecoration valid(&window, &bridge);
         action.layoutJson = QStringLiteral(R"([{"id":"snapshot:0","x":0,"y":0,"width":0.3333333333333333,"height":1}])");
         bool finished = false;
         Material::CustomTilingLayout layout;
@@ -107,7 +244,7 @@ private slots:
         action.layoutJson = QStringLiteral("[]");
     }
     void emptyCustomTileReportsFailureWithoutDispatch() {
-        QObject valid(&window);
+        TestDecoration valid(&window, &bridge);
         const auto requests = action.requests.size();
         int callbacks = 0;
         bool succeeded = true;
@@ -122,7 +259,7 @@ private slots:
         QCOMPARE(callbacks, 1);
         QCOMPARE(action.requests.size(), requests);
 
-        auto *decoration = new QObject(&window);
+        auto *decoration = new TestDecoration(&window, &bridge);
         bool called = false;
         QVERIFY(!Material::tileCustomWindow(decoration, {}, [&](bool) { called = true; }));
         delete decoration;
@@ -131,7 +268,7 @@ private slots:
         QCOMPARE(action.requests.size(), requests);
     }
     void ignoresMalformedLayoutAndSupportsOlderScript() {
-        QObject valid(&window);
+        TestDecoration valid(&window, &bridge);
         for (const auto &json : {QStringLiteral("not json"),
              QStringLiteral(R"([{"id":"missing-coordinates","width":0.5,"height":1}])"),
              QStringLiteral(R"([{"id":"bad","x":0,"y":0,"width":2,"height":1}])"),
@@ -157,7 +294,7 @@ private slots:
         action.layoutJson = QStringLiteral("[]");
     }
     void timesOutAndRecovers() {
-        QObject valid(&window);
+        TestDecoration valid(&window, &bridge);
         action.respond = false;
         bool finished = false;
         bool succeeded = true;
@@ -171,7 +308,7 @@ private slots:
         QVERIFY(succeeded);
     }
     void deletedDecorationDoesNotReceiveCallback() {
-        auto *decoration = new QObject(&window);
+        auto *decoration = new TestDecoration(&window, &bridge);
         bool called = false;
         Material::fetchTilingLayout(decoration, [&](bool, const Material::CustomTilingLayout &) { called = true; });
         delete decoration;

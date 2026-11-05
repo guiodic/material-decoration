@@ -251,6 +251,10 @@ bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
     Q_EMIT tilingPopupVisibilityChanged(true);
     const auto showPopup = [this, anchor, request](bool available, const CustomTilingLayout &layout) {
         if (request != m_tilingPopupRequest) return;
+        if (!canTileWindow(this)) {
+            closeTilingPopup();
+            return;
+        }
         m_tilingPopupOpening = false;
         if (!available) {
             m_tilingPopupHoverMonitor.stop();
@@ -395,6 +399,13 @@ bool Decoration::init()
             this, &Decoration::updateResizeBorders);
     connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizeableChanged,
             this, &Decoration::updateResizeBorders);
+
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::resizeableChanged, this, [this](bool resizeable) {
+        if (!resizeable) closeTilingPopup();
+    });
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizeableChanged, this, [this](bool maximizeable) {
+        if (!maximizeable) closeTilingPopup();
+    });
 
     // KWin can start an interactive move while the button is still held
     // stationary. Cancel button actions on an actual step, without depending
