@@ -479,3 +479,7 @@ msgstr "启用"
 #: src/kcm/ExceptionDialog.cc
 msgid "Disabled"
 msgstr "禁用"
+
+#: config.ui
+msgid "Use accent color for the active window outline"
+msgstr "使用强调色绘制活动窗口的轮廓"
