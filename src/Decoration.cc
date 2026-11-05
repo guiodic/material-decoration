@@ -391,6 +391,10 @@ bool Decoration::init()
     }
 
     const auto *decoratedClient = window();
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::resizeableChanged,
+            this, &Decoration::updateResizeBorders);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::maximizeableChanged,
+            this, &Decoration::updateResizeBorders);
 
     // KWin can start an interactive move while the button is still held
     // stationary. Cancel button actions on an actual step, without depending
@@ -465,7 +469,6 @@ bool Decoration::init()
      
     updateColors();
     updateBordersCornersBlurShadow();
-    updateResizeBorders();
     updateTitleBar();
     updateButtonsGeometryDelayed(); // avoid wrong geometry (for example Spectacle)
 
@@ -493,7 +496,7 @@ bool Decoration::init()
         auto *call = new QDBusPendingCallWatcher(dbus.asyncCall(message), this);
         connect(call, &QDBusPendingCallWatcher::finished, this, [this, call]() {
             QDBusPendingReply<QDBusVariant> reply = *call;
-            if (!reply.isError()) {
+            if (!reply.isError() && !m_tabletModeInitialized) {
                 onTabletModeChanged(reply.value().variant().toBool());
             }
             call->deleteLater();
@@ -573,7 +576,6 @@ void Decoration::applySettings()
     updateColors();
     updateButtonAnimation();
     updateBordersCornersBlurShadow();
-    updateResizeBorders();
     updateTitleBar();
     updateButtonsGeometryDelayed();
     updateTitleBarHoverState();
@@ -687,6 +689,7 @@ void Decoration::updateBlur()
 void Decoration::updateBordersCornersBlurShadow()
 {
     updateDecorationState();
+    updateResizeBorders();
     updatePaths();
     updateBlur();
     updateShadow();
@@ -696,12 +699,17 @@ void Decoration::updateResizeBorders()
 {
     QMarginsF borders;
 
-    const qreal scale = window()->nextScale();
-    const qreal extender = KDecoration3::snapToPixelGrid(settings()->largeSpacing(), scale);
-    borders.setLeft(extender);
-    borders.setTop(extender);
-    borders.setRight(extender);
-    borders.setBottom(extender);
+    if (window()->isResizeable()) {
+        const qreal scale = window()->nextScale();
+        const qreal spacing = settings()->largeSpacing() * (m_tabletMode ? 2 : 1);
+        const qreal extender = KDecoration3::snapToPixelGrid(spacing, scale);
+        const bool extendSides = m_tabletMode || hasNoBorders() || settings()->borderSize() == KDecoration3::BorderSize::NoSides;
+        const bool extendBottom = m_tabletMode || hasNoBorders();
+        const qreal horizontal = !window()->isMaximizedHorizontally() && extendSides ? extender : 0;
+        const qreal top = window()->isMaximizedVertically() ? 0 : extender;
+        const qreal bottom = !window()->isMaximizedVertically() && extendBottom ? extender : 0;
+        borders = QMarginsF(horizontal, top, horizontal, bottom);
+    }
 
     setResizeOnlyBorders(borders);
 }
@@ -1589,7 +1597,6 @@ void Decoration::onSizeChanged()
 void Decoration::onNextScaleChanged()
 {
     updateBordersCornersBlurShadow();
-    updateResizeBorders();
     updateTitleBar();
     updateButtonsGeometry();
 }
@@ -1638,12 +1645,13 @@ void Decoration::onTabletModeChanged(bool mode)
 {
 #if HAVE_WAYLAND
     if (KWindowSystem::isPlatformWayland()) {
+        // A signal takes precedence over a late initial property reply.
+        m_tabletModeInitialized = true;
         if (m_tabletMode == mode) {
             return;
         }
         m_tabletMode = mode;
         updateBordersCornersBlurShadow();
-        updateResizeBorders();
         updateTitleBar();
         updateButtonsGeometryDelayed();
         update();
