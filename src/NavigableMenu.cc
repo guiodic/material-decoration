@@ -40,6 +40,10 @@ NavigableMenu::NavigableMenu(Decoration *decoration, QWidget *parent)
 {
     // KWin exposes the Qt window title as caption to the companion script.
     setWindowTitle(QStringLiteral("com.github.guiodic.material-decoration.popup"));
+    if (m_decoration) {
+        connect(m_decoration->window(), &KDecoration3::DecoratedWindow::paletteChanged,
+                this, &NavigableMenu::updateMenuPalette);
+    }
     connect(AltKeyMonitor::instance(), &AltKeyMonitor::altPressedChanged, this, [this](bool pressed) {
         if (isVisible()) synchronizeMenuMnemonicVisibility(pressed);
     });
@@ -51,12 +55,17 @@ NavigableMenu::NavigableMenu(Decoration *decoration, QWidget *parent)
     });
 }
 
-void NavigableMenu::showEvent(QShowEvent *event)
+void NavigableMenu::updateMenuPalette()
 {
     // An overflow action can present a submenu owned by a different menu.
     // Read the decoration palette directly instead of inheriting its parent.
     setPalette(m_decoration && m_decoration->m_internalSettings->menusFollowDecorationColors()
         ? m_decoration->window()->palette() : QPalette());
+}
+
+void NavigableMenu::showEvent(QShowEvent *event)
+{
+    updateMenuPalette();
     QMenu::showEvent(event);
     synchronizeMenuMnemonicVisibility(AltKeyMonitor::instance()->isAltPressed());
 }

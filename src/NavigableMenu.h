@@ -47,6 +47,7 @@ protected:
     void showEvent(QShowEvent *event) override;
 
 private:
+    void updateMenuPalette();
     QPointer<Decoration> m_decoration;
 };
 

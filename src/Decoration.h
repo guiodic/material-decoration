@@ -98,7 +98,7 @@ private:
     void onWidthChanged();
     void onMaximizedChanged();
     void onShadedChanged();
-    void onActiveChanged();
+    void updateColorAppearance();
     void onAdjacentScreenEdgesChanged();
     void onSpacingChanged();
 

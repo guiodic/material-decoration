@@ -437,7 +437,9 @@ bool Decoration::init()
             });
     
     connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
-        this, &Decoration::onActiveChanged);
+        this, &Decoration::updateColorAppearance);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::paletteChanged,
+        this, &Decoration::updateColorAppearance);
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
             this, &Decoration::onAdjacentScreenEdgesChanged);
@@ -1590,10 +1592,13 @@ void Decoration::onShadedChanged()
     updateButtonsGeometry();
 }
 
-void Decoration::onActiveChanged()
+void Decoration::updateColorAppearance()
 {
     updateColors();
     updateCornerRadiusAndOutline();
+    if (m_tilingPopup) {
+        m_tilingPopup->setPalette(m_internalSettings->menusFollowDecorationColors() ? window()->palette() : QPalette());
+    }
     update();
 }
 
