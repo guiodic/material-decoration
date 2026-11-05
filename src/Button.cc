@@ -159,6 +159,10 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
         });
         connect(decoration, &Decoration::tilingPopupVisibilityChanged, this, &Button::setTilingPopupOpen);
         setTilingPopupOpen(decoration->isTilingPopupVisible());
+        connect(decoration->window(), &KDecoration3::DecoratedWindow::maximizeableChanged,
+                this, [this](bool maximizeable) {
+            if (!maximizeable) cancelLongPress();
+        });
     }
 
     if (type == KDecoration3::DecorationButtonType::Minimize ||

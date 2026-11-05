@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "TilingController.h"
 
-#include <QObject>
+#include <KDecoration3/Decoration>
+#include <KDecoration3/DecoratedWindow>
 #include <QCoreApplication>
 #include <QDBusConnection>
 #include <QDBusContext>
@@ -24,7 +25,7 @@ namespace Material
 {
 namespace
 {
-QUuid windowId(QObject *decoration)
+QUuid windowId(KDecoration3::Decoration *decoration)
 {
     // KWin supplies the owning window as the QObject parent. Inspect its Qt
     // property instead of depending on KWin's private C++ classes or ABI.
@@ -51,7 +52,7 @@ public:
         connect(&m_timeout, &QTimer::timeout, this, [this] { finish(false, QStringLiteral("Script did not respond")); });
     }
 
-    bool enqueue(QObject *decoration, QVariantMap data, std::function<void(bool, const QString &)> callback = {})
+    bool enqueue(KDecoration3::Decoration *decoration, QVariantMap data, std::function<void(bool, const QString &)> callback = {})
     {
         if (!m_registered || m_pending.size() >= 8 || !canTileWindow(decoration)) {
             if (callback) QTimer::singleShot(0, decoration, [callback] { callback(false, {}); });
@@ -90,7 +91,7 @@ public slots:
 
 private:
     struct Request {
-        QPointer<QObject> context;
+        QPointer<KDecoration3::Decoration> context;
         QVariantMap data;
         std::function<void(bool, const QString &)> callback;
     };
@@ -106,6 +107,10 @@ private:
         if (m_inFlight) return;
         while (!m_pending.isEmpty() && !m_pending.head().context) m_pending.dequeue();
         if (m_pending.isEmpty()) return;
+        if (!canTileWindow(m_pending.head().context)) {
+            finish(false, QStringLiteral("Window can no longer be tiled"));
+            return;
+        }
         m_inFlight = true;
         m_taken = false;
         m_timeout.start();
@@ -149,13 +154,13 @@ static TilingBridge *bridge()
     return instance;
 }
 
-bool canTileWindow(QObject *decoration)
+bool canTileWindow(KDecoration3::Decoration *decoration)
 {
-    return !windowId(decoration).isNull() && decoration->parent()->property("resizeable").toBool()
+    return !windowId(decoration).isNull() && decoration->window()->isResizeable()
         && !decoration->parent()->property("specialWindow").toBool();
 }
 
-void fetchTilingLayout(QObject *decoration, std::function<void(bool, const CustomTilingLayout &)> callback)
+void fetchTilingLayout(KDecoration3::Decoration *decoration, std::function<void(bool, const CustomTilingLayout &)> callback)
 {
     bridge()->enqueue(decoration, {{QStringLiteral("operation"), QStringLiteral("ping")}, {QStringLiteral("layout"), true}},
                       [callback = std::move(callback)](bool available, const QString &json) {
@@ -182,14 +187,14 @@ void fetchTilingLayout(QObject *decoration, std::function<void(bool, const Custo
     });
 }
 
-bool tileWindow(QObject *decoration, Qt::Edges edges)
+bool tileWindow(KDecoration3::Decoration *decoration, Qt::Edges edges)
 {
     const int mask = int(edges);
     if (mask != 1 && mask != 2 && mask != 4 && mask != 8 && mask != 3 && mask != 5 && mask != 10 && mask != 12) return false;
     return bridge()->enqueue(decoration, {{QStringLiteral("operation"), QStringLiteral("tile")}, {QStringLiteral("edges"), mask}});
 }
 
-bool tileCustomWindow(QObject *decoration, const QString &tileId, std::function<void(bool)> callback)
+bool tileCustomWindow(KDecoration3::Decoration *decoration, const QString &tileId, std::function<void(bool)> callback)
 {
     if (tileId.isEmpty()) {
         if (callback) QTimer::singleShot(0, decoration, [callback = std::move(callback)] { callback(false); });

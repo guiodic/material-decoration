@@ -4,11 +4,14 @@
 #include <Qt>
 #include <functional>
 
-class QObject;
+namespace KDecoration3
+{
+class Decoration;
+}
 namespace Material
 {
-bool canTileWindow(QObject *decoration);
-void fetchTilingLayout(QObject *decoration, std::function<void(bool, const CustomTilingLayout &)> callback);
-bool tileWindow(QObject *decoration, Qt::Edges edges);
-bool tileCustomWindow(QObject *decoration, const QString &tileId, std::function<void(bool)> callback);
+bool canTileWindow(KDecoration3::Decoration *decoration);
+void fetchTilingLayout(KDecoration3::Decoration *decoration, std::function<void(bool, const CustomTilingLayout &)> callback);
+bool tileWindow(KDecoration3::Decoration *decoration, Qt::Edges edges);
+bool tileCustomWindow(KDecoration3::Decoration *decoration, const QString &tileId, std::function<void(bool)> callback);
 }
