@@ -75,6 +75,7 @@ set (decoration_SRCS
     AppMenuModel.cc
     MenuMnemonics.cc
     AppMenuSearch.cc
+    AppMenuSearchMatching.cc
     NavigableMenu.cc
     AppMenuButton.cc
     AppMenuButtonGroup.cc
