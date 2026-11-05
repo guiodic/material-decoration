@@ -479,3 +479,7 @@ msgstr "Ingeschakeld"
 #: src/kcm/ExceptionDialog.cc
 msgid "Disabled"
 msgstr "Uitgeschakeld"
+
+#: config.ui
+msgid "Use accent color for the active window outline"
+msgstr "Accentkleur gebruiken voor de omtrek van het actieve venster"

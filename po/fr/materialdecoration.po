@@ -479,3 +479,7 @@ msgstr "Activé"
 #: src/kcm/ExceptionDialog.cc
 msgid "Disabled"
 msgstr "Désactivé"
+
+#: config.ui
+msgid "Use accent color for the active window outline"
+msgstr "Utiliser la couleur d’accentuation pour le contour de la fenêtre active"

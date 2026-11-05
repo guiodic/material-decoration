@@ -36,6 +36,7 @@ void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettings
     dst->setBottomCornerRadiusFlag(src->bottomCornerRadiusFlag());
     dst->setSquareCornersTiled(src->squareCornersTiled());
     dst->setOutlineActive(src->outlineActive());
+    dst->setActiveOutlineUsesAccent(src->activeOutlineUsesAccent());
     dst->setUseSystemColors(src->useSystemColors());
     dst->setMenusFollowDecorationColors(src->menusFollowDecorationColors());
     dst->setUseCustomBorderColors(src->useCustomBorderColors());

@@ -71,6 +71,7 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_InactiveOpacity, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_CornerRadius, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_OutlineActive, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_ActiveOutlineUsesAccent, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_UseSystemColors, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_UseCustomBorderColors, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_ActiveBorderColor, &KColorButton::changed, this, &MaterialDecorationKCM::updateChanged);
@@ -187,6 +188,7 @@ void MaterialDecorationKCM::loadUIFromSettings(const Material::InternalSettings 
     m_ui->kcfg_SquareCornersTiled->setChecked(settings.squareCornersTiled());
     m_ui->kcfg_MenusFollowDecorationColors->setChecked(settings.menusFollowDecorationColors());
     m_ui->kcfg_OutlineActive->setChecked(settings.outlineActive());
+    m_ui->kcfg_ActiveOutlineUsesAccent->setChecked(settings.activeOutlineUsesAccent());
     m_ui->kcfg_HideCaptionWhenLimitedSpace->setChecked(settings.hideCaptionWhenLimitedSpace());
     m_ui->kcfg_MinWidthForCaption->setValue(settings.minWidthForCaption());
     m_ui->kcfg_MinWidthForCaption->setEnabled(settings.hideCaptionWhenLimitedSpace());
@@ -239,6 +241,7 @@ void MaterialDecorationKCM::save()
     m_settings->setSquareCornersTiled(m_ui->kcfg_SquareCornersTiled->isChecked());
     m_settings->setMenusFollowDecorationColors(m_ui->kcfg_MenusFollowDecorationColors->isChecked());
     m_settings->setOutlineActive(m_ui->kcfg_OutlineActive->isChecked());
+    m_settings->setActiveOutlineUsesAccent(m_ui->kcfg_ActiveOutlineUsesAccent->isChecked());
     m_settings->setHideCaptionWhenLimitedSpace(m_ui->kcfg_HideCaptionWhenLimitedSpace->isChecked());
     m_settings->setMinWidthForCaption(m_ui->kcfg_MinWidthForCaption->value());
 
@@ -312,6 +315,7 @@ bool MaterialDecorationKCM::isChanged() const
     if (m_ui->kcfg_SquareCornersTiled->isChecked() != m_settings->squareCornersTiled()) return true;
     if (m_ui->kcfg_MenusFollowDecorationColors->isChecked() != m_settings->menusFollowDecorationColors()) return true;
     if (m_ui->kcfg_OutlineActive->isChecked() != m_settings->outlineActive()) return true;
+    if (m_ui->kcfg_ActiveOutlineUsesAccent->isChecked() != m_settings->activeOutlineUsesAccent()) return true;
     if (m_ui->kcfg_HideCaptionWhenLimitedSpace->isChecked() != m_settings->hideCaptionWhenLimitedSpace()) return true;
     if (m_ui->kcfg_MinWidthForCaption->value() != m_settings->minWidthForCaption()) return true;
     if (m_ui->kcfg_TilingPopupHoverEnabled->isChecked() != m_settings->tilingPopupHoverEnabled()) return true;
