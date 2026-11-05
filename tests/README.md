@@ -6,8 +6,10 @@ temporary configuration directory.
 
 `tabletreply` checks that a delayed initial D-Bus reply cannot overwrite a newer
 tablet-mode signal, including a signal matching the default value. It requires a
-running Wayland compositor and the Qt Wayland platform plugin. By default CTest
-marks it as skipped. To run it against an existing compositor:
+running Wayland compositor and the Qt Wayland platform plugin. It is built and
+registered only when `FORCE_X11=OFF`, since tablet-mode support is Wayland-only.
+Without an explicit display, CTest marks it as skipped. To run it against an
+existing compositor:
 
 ```sh
 MATERIAL_TEST_WAYLAND_DISPLAY="$WAYLAND_DISPLAY" ctest --test-dir build -R '^tabletreply$' --output-on-failure
