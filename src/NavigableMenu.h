@@ -47,6 +47,8 @@ protected:
     void showEvent(QShowEvent *event) override;
 
 private:
+    friend class Decoration;
+    void updateMenuPalette();
     QPointer<Decoration> m_decoration;
 };
 

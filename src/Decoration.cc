@@ -32,6 +32,7 @@
 #include "BoxShadowHelper.h"
 #include "BuildConfig.h"
 #include "Button.h"
+#include "NavigableMenu.h"
 #include "ButtonCornerEdges.h"
 #include "TextButton.h"
 #include "InternalSettings.h"
@@ -208,6 +209,13 @@ bool Decoration::isTilingPopupVisible() const
     return m_tilingPopupOpening || (m_tilingPopup && m_tilingPopup->isVisible());
 }
 
+NavigableMenu *Decoration::createNavigableMenu(QWidget *parent)
+{
+    auto *menu = new NavigableMenu(this, parent);
+    connect(this, &Decoration::menuPaletteSettingsChanged, menu, &NavigableMenu::updateMenuPalette);
+    return menu;
+}
+
 bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
 {
     if (!canTileWindow(this)) return false;
@@ -254,6 +262,11 @@ bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
         }
         if (!m_tilingPopup) {
             m_tilingPopup = std::make_unique<TilingPopup>();
+            const auto updatePalette = [this] {
+                m_tilingPopup->setPalette(m_internalSettings->menusFollowDecorationColors() ? window()->palette() : QPalette());
+            };
+            connect(window(), &KDecoration3::DecoratedWindow::paletteChanged, m_tilingPopup.get(), updatePalette);
+            connect(this, &Decoration::menuPaletteSettingsChanged, m_tilingPopup.get(), updatePalette);
             connect(m_tilingPopup.get(), &QMenu::aboutToShow, this, [this] { Q_EMIT tilingPopupVisibilityChanged(true); });
             connect(m_tilingPopup.get(), &QMenu::aboutToHide, this, [this] {
                 m_tilingPopupHoverMonitor.stop();
@@ -437,7 +450,9 @@ bool Decoration::init()
             });
     
     connect(decoratedClient, &KDecoration3::DecoratedWindow::activeChanged,
-        this, &Decoration::onActiveChanged);
+        this, &Decoration::updateColorAppearance);
+    connect(decoratedClient, &KDecoration3::DecoratedWindow::paletteChanged,
+        this, &Decoration::updateColorAppearance);
 
     connect(decoratedClient, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged,
             this, &Decoration::onAdjacentScreenEdgesChanged);
@@ -563,6 +578,7 @@ void Decoration::applySettings()
     updateButtonsGeometryDelayed();
     updateTitleBarHoverState();
     update();
+    Q_EMIT menuPaletteSettingsChanged();
 }
 
 void Decoration::reconfigure()
@@ -1590,7 +1606,7 @@ void Decoration::onShadedChanged()
     updateButtonsGeometry();
 }
 
-void Decoration::onActiveChanged()
+void Decoration::updateColorAppearance()
 {
     updateColors();
     updateCornerRadiusAndOutline();
