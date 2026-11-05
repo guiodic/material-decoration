@@ -50,6 +50,7 @@ namespace Material
 class Button;
 class TextButton;
 class TilingPopup;
+class NavigableMenu;
 class MenuOverflowButton;
 
 class Decoration : public KDecoration3::Decoration
@@ -63,8 +64,10 @@ public:
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
     bool showTilingPopup(const QRectF &anchor, bool fromHover = false);
     bool isTilingPopupVisible() const;
+    NavigableMenu *createNavigableMenu(QWidget *parent = nullptr);
 
 signals:
+    void menuPaletteSettingsChanged();
     void tilingPopupVisibilityChanged(bool visible);
     void tilingPopupUnavailable(const QString &message);
 

@@ -68,7 +68,7 @@ protected:
     }
 
     QMenu *createMenu(QWidget *parent) override {
-        auto *menu = new NavigableMenu(m_decoration, parent);
+        auto *menu = m_decoration ? m_decoration->createNavigableMenu(parent) : new NavigableMenu(nullptr, parent);
         // The application handles top-level Alt shortcuts; keep its labels intact.
         if (parent) manageMenuMnemonics(menu);
         return menu;

@@ -186,7 +186,7 @@ AppMenuButtonGroup::~AppMenuButtonGroup()
 
 void AppMenuButtonGroup::setupSearchMenu()
 {
-    m_searchMenu = new NavigableMenu(qobject_cast<Decoration *>(decoration()));
+    m_searchMenu = qobject_cast<Decoration *>(decoration())->createNavigableMenu();
     m_searchLineEdit = new QLineEdit(m_searchMenu);
     m_searchLineEdit->setMinimumWidth(200);
 
@@ -947,7 +947,7 @@ void AppMenuButtonGroup::handleOverflowTrigger()
         m_overflowMenu = nullptr;
     }
 
-    auto *actionMenu = new NavigableMenu(qobject_cast<Decoration *>(decoration()));
+    auto *actionMenu = qobject_cast<Decoration *>(decoration())->createNavigableMenu();
     actionMenu->setAttribute(Qt::WA_DeleteOnClose);
     m_overflowMenu = actionMenu;
 
