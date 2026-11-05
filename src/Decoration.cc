@@ -689,13 +689,7 @@ void Decoration::updateBlur()
 
 void Decoration::updateBordersCornersBlurShadow()
 {
-    QMarginsF borders;
-    borders.setTop(titleBarHeight() + topOffset());
-    borders.setLeft(leftOffset());
-    borders.setRight(rightOffset());
-    borders.setBottom(bottomOffset());
-    setBorders(borders);
-    updateCornerRadiusAndOutline();
+    updateDecorationState();
     updatePaths();
     updateOpaqueState();
     updateBlur();
@@ -1514,8 +1508,8 @@ void Decoration::paintButtons(QPainter *painter, const QRectF &repaintRegion) co
     }
 }
 
-void Decoration::updateCornerRadiusAndOutline()
-{    
+void Decoration::updateDecorationState()
+{
     if (!m_internalSettings) {
         return;
     }
@@ -1539,17 +1533,30 @@ void Decoration::updateCornerRadiusAndOutline()
                                                    m_bottomCornersFlag ? bottomRightCornerRadius : 0.0, 
                                                    m_bottomCornersFlag ? bottomLeftCornerRadius : 0.0
                                                   );
-    setBorderRadius(radius);
-    
-    //Outline
+    QMarginsF borders;
+    borders.setTop(titleBarHeight() + topOffset());
+    borders.setLeft(leftOffset());
+    borders.setRight(rightOffset());
+    borders.setBottom(bottomOffset());
+
+    KDecoration3::BorderOutline outline;
     if (m_internalSettings->outlineActive()) {
         QColor outlineColor = borderColor();
         outlineColor.setAlphaF(1.0);
         const qreal outlineThickness = std::max(KDecoration3::pixelSize(window()->nextScale()), KDecoration3::snapToPixelGrid(1, window()->nextScale()));
-        setBorderOutline(KDecoration3::BorderOutline(outlineThickness, outlineColor, radius));
-    } else {
-        setBorderOutline(KDecoration3::BorderOutline());
-    }    
+        outline = KDecoration3::BorderOutline(outlineThickness, outlineColor, radius);
+    }
+
+    // setState() emits nextStateChanged() even when the values are unchanged.
+    const auto next = nextState();
+    if (next->borders() == borders && next->borderRadius() == radius && next->borderOutline() == outline) {
+        return;
+    }
+    setState([borders, radius, outline](KDecoration3::DecorationState *state) {
+        state->setBorders(borders);
+        state->setBorderRadius(radius);
+        state->setBorderOutline(outline);
+    });
 }
 
 void Decoration::updateOpaqueState()
@@ -1628,7 +1635,7 @@ void Decoration::onShadedChanged()
 void Decoration::updateColorAppearance()
 {
     updateColors();
-    updateCornerRadiusAndOutline();
+    updateDecorationState();
     updateOpaqueState();
     update();
 }
