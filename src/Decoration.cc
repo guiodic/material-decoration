@@ -496,7 +496,7 @@ bool Decoration::init()
         auto *call = new QDBusPendingCallWatcher(dbus.asyncCall(message), this);
         connect(call, &QDBusPendingCallWatcher::finished, this, [this, call]() {
             QDBusPendingReply<QDBusVariant> reply = *call;
-            if (!reply.isError()) {
+            if (!reply.isError() && !m_tabletModeInitialized) {
                 onTabletModeChanged(reply.value().variant().toBool());
             }
             call->deleteLater();
@@ -1636,6 +1636,8 @@ void Decoration::onTabletModeChanged(bool mode)
 {
 #if HAVE_WAYLAND
     if (KWindowSystem::isPlatformWayland()) {
+        // A signal takes precedence over a late initial property reply.
+        m_tabletModeInitialized = true;
         if (m_tabletMode == mode) {
             return;
         }

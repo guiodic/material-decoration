@@ -234,6 +234,7 @@ private:
     QPointF m_lastHoverPos;
     bool m_titleBarHoverActive = false;
     bool m_tabletMode = false;
+    bool m_tabletModeInitialized = false;
 
     friend class AppMenuButtonGroup;
     friend class NavigableMenu;
