@@ -703,9 +703,12 @@ void Decoration::updateResizeBorders()
         const qreal scale = window()->nextScale();
         const qreal spacing = settings()->largeSpacing() * (m_tabletMode ? 2 : 1);
         const qreal extender = KDecoration3::snapToPixelGrid(spacing, scale);
-        const qreal horizontal = window()->isMaximizedHorizontally() ? 0 : extender;
-        const qreal vertical = window()->isMaximizedVertically() ? 0 : extender;
-        borders = QMarginsF(horizontal, vertical, horizontal, vertical);
+        const bool extendSides = m_tabletMode || hasNoBorders() || settings()->borderSize() == KDecoration3::BorderSize::NoSides;
+        const bool extendBottom = m_tabletMode || hasNoBorders();
+        const qreal horizontal = !window()->isMaximizedHorizontally() && extendSides ? extender : 0;
+        const qreal top = window()->isMaximizedVertically() ? 0 : extender;
+        const qreal bottom = !window()->isMaximizedVertically() && extendBottom ? extender : 0;
+        borders = QMarginsF(horizontal, top, horizontal, bottom);
     }
 
     setResizeOnlyBorders(borders);
