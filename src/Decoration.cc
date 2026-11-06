@@ -186,6 +186,8 @@ Decoration::Decoration(QObject *parent, const QVariantList &args)
     , m_internalSettings(nullptr)
 {
     ++s_decoCount;
+    m_buttonGeometryUpdateTimer.setSingleShot(true);
+    connect(&m_buttonGeometryUpdateTimer, &QTimer::timeout, this, &Decoration::updateButtonsGeometry);
 }
 
 Decoration::~Decoration()
@@ -796,6 +798,7 @@ void Decoration::invalidateCaptionCache() const
 
 void Decoration::updateButtonsGeometry()
 {
+    m_buttonGeometryUpdateTimer.stop();
     invalidateCaptionCache();
     if (m_menuButtons) {
         m_menuButtons->updateShowing();
@@ -870,7 +873,9 @@ void Decoration::updateButtonsGeometry()
 
 void Decoration::updateButtonsGeometryDelayed()
 {
-    QTimer::singleShot(0, this, &Decoration::updateButtonsGeometry);
+    if (!m_buttonGeometryUpdateTimer.isActive()) {
+        m_buttonGeometryUpdateTimer.start(0);
+    }
 }
 
 void Decoration::setButtonGroupAnimation(KDecoration3::DecorationButtonGroup *buttonGroup, bool enabled, int duration)

@@ -233,7 +233,7 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     connect(this, &Button::geometryChanged, this, [this]() {
         UPDATE_GEOM();     
         if (auto *deco = qobject_cast<Decoration *>(this->decoration())) {
-            QTimer::singleShot(0, this, [deco]() { deco->updateButtonsGeometry(); });
+            deco->updateButtonsGeometryDelayed();
         }
     });
     

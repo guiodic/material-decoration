@@ -13,6 +13,7 @@
 #include <QPluginLoader>
 #include <QTemporaryDir>
 #include <QScopeGuard>
+#include <QSignalSpy>
 #include <QTest>
 
 class DecorationStateTest : public QObject
@@ -198,6 +199,47 @@ private slots:
                 QCOMPARE(render(damage, true), expected);
             }
         }
+    }
+
+    void queuedButtonLayout()
+    {
+        MaterialTest::Bridge bridge;
+        auto decoration = create(bridge);
+        QVERIFY(decoration);
+        decoration->create();
+        decoration->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&bridge));
+        bridge.options->rightButtons = {KDecoration3::DecorationButtonType::Minimize,
+            KDecoration3::DecorationButtonType::Maximize, KDecoration3::DecorationButtonType::Close};
+        QVERIFY(decoration->init());
+        decoration->apply(decoration->nextState()->clone());
+        for (int i = 0; i < 3; ++i) QCoreApplication::processEvents();
+
+        const auto buttons = decoration->findChildren<KDecoration3::DecorationButton *>();
+        QCOMPARE(buttons.size(), 3);
+        QSignalSpy damage(decoration.get(), &KDecoration3::Decoration::damaged);
+        const auto notifyGeometry = [&] {
+            for (int i = 0; i < 20; ++i) {
+                auto *button = buttons.at(i % buttons.size());
+                Q_EMIT button->geometryChanged(button->geometry());
+            }
+            damage.clear(); // Ignore each button's immediate damage notification.
+        };
+        notifyGeometry();
+        QCoreApplication::processEvents();
+        QCOMPARE(damage.count(), 1);
+        QCoreApplication::processEvents();
+        QCOMPARE(damage.count(), 1);
+
+        notifyGeometry();
+        // A synchronous layout must consume the pending request as well.
+        Q_EMIT decoration->window()->widthChanged(decoration->window()->width());
+        QCOMPARE(damage.count(), 1);
+        QCoreApplication::processEvents();
+        QCOMPARE(damage.count(), 1);
+
+        notifyGeometry();
+        decoration.reset();
+        QCoreApplication::processEvents(); // Destruction cancels queued layout work.
     }
 
     void opaqueState()
