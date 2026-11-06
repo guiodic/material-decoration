@@ -1607,27 +1607,34 @@ const QPainterPath &Decoration::frameBackgroundPath() const
 
 void Decoration::updatePaths()
 {
-    m_frameBackgroundPathDirty = true;
-    const bool roundTopLeft = roundTopLeftCorners();
-    const bool roundTopRight = roundTopRightCorners();
-
-    m_framePath = DrawHelper::getRoundedPath(
-        rect(), m_cornerRadius, roundTopLeft, roundTopRight,
-        m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
-        m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible());
-
-    if (hideTitleBar()) {
-        m_titleBarPath = QPainterPath();
-        return;
+    const bool titleBarHidden = hideTitleBar();
+    QRectF titleBarBackgroundRect;
+    if (!titleBarHidden) {
+        const qreal left = leftOffset();
+        const qreal top = topOffset();
+        const qreal right = rightOffset();
+        titleBarBackgroundRect = QRectF(left, top, size().width() - left - right, titleBarHeight() + 1);
     }
 
-    const qreal left = leftOffset();
-    const qreal top = topOffset();
-    const qreal right = rightOffset();
-    const QRectF titleBarBackgroundRect(left, top, size().width() - left - right, titleBarHeight() + 1);
-    
-    m_titleBarPath = DrawHelper::getRoundedPath(titleBarBackgroundRect, m_cornerRadius,
-                                               roundTopLeft, roundTopRight, false, false);
+    const PathGeometry geometry{
+        rect(), titleBarBackgroundRect, m_cornerRadius,
+        roundTopLeftCorners(), roundTopRightCorners(),
+        m_bottomCornersFlag && leftBorderVisible() && bottomBorderVisible(),
+        m_bottomCornersFlag && rightBorderVisible() && bottomBorderVisible(),
+        titleBarHidden
+    };
+    if (m_pathGeometry && *m_pathGeometry == geometry) {
+        return;
+    }
+    m_pathGeometry = geometry;
+    m_frameBackgroundPathDirty = true;
+
+    m_framePath = DrawHelper::getRoundedPath(
+        geometry.frameRect, geometry.radius, geometry.roundTopLeft, geometry.roundTopRight,
+        geometry.roundBottomLeft, geometry.roundBottomRight);
+    m_titleBarPath = geometry.hideTitleBar ? QPainterPath()
+        : DrawHelper::getRoundedPath(geometry.titleBarRect, geometry.radius,
+                                     geometry.roundTopLeft, geometry.roundTopRight, false, false);
 }
 
 void Decoration::onSizeChanged()

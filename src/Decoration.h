@@ -34,6 +34,7 @@
 #include <QSharedPointer>
 #include <QWheelEvent>
 #include <memory>
+#include <optional>
 #include <QVariant>
 #include <QPainterPath>
 #include <QTimer>
@@ -215,6 +216,19 @@ private:
 
     QPoint m_pressedPoint;
 
+    struct PathGeometry {
+        QRectF frameRect;
+        QRectF titleBarRect;
+        qreal radius;
+        bool roundTopLeft;
+        bool roundTopRight;
+        bool roundBottomLeft;
+        bool roundBottomRight;
+        bool hideTitleBar;
+
+        bool operator==(const PathGeometry &) const = default;
+    };
+    std::optional<PathGeometry> m_pathGeometry;
     QPainterPath m_framePath;
     QPainterPath m_titleBarPath;
     mutable QPainterPath m_frameBackgroundPath;
