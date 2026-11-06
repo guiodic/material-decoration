@@ -47,7 +47,7 @@ public:
         painter->setRenderHint(QPainter::Antialiasing, false);
 
         const auto penScale = button->penScale();
-        button->setPenWidth(painter, penScale, true); // we have horizontal/vertical drawing, so we snap the pen
+        button->setPenWidth(painter, penScale, snapper, true); // we have horizontal/vertical drawing, so we snap the pen
         const auto penWidth = painter->pen().widthF();
 
         const qreal localToPhys = snapper.localToPhysicalScale();
@@ -119,7 +119,6 @@ public:
             }
         }
         
-        button->setPenWidth(painter, penScale, false); // reset to default
         painter->setRenderHint(QPainter::Antialiasing, wasAntialiased);
     }
 };

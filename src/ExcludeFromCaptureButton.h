@@ -53,7 +53,7 @@ public:
         if (!deco) {
             return;
         }
-        button->setPenWidth(painter, 1.25, false);
+        button->setPenWidth(painter, 1.25, snapper, false);
         auto penWidth = painter->pen().widthF();
 
         // A spy hat (like view-private.svg icon)
@@ -73,9 +73,8 @@ public:
         painter->drawEllipse(QRectF(QPointF(-6.3, 1.5), QPointF(-1.7, 6.1)));
         painter->drawEllipse(QRectF(QPointF(1.7, 1.5), QPointF(6.3, 6.1)));
         
-        const auto penScale = button->penScale();
         // Now we have horizontal/vertical drawing, so we snap the pen        
-        button->setPenWidth(painter, 1.25, true);
+        button->setPenWidth(painter, 1.25, snapper, true);
         penWidth = painter->pen().widthF();
         
         // Hat brim
@@ -84,7 +83,6 @@ public:
         // Bridge between lenses
         painter->drawLine(snapper.snapForPen(QPointF(-1.5, 3.8), penWidth), snapper.snapForPen(QPointF(1.5, 3.8), penWidth));
         
-        button->setPenWidth(painter, penScale, false); // reset to default
     }
 };
 #endif

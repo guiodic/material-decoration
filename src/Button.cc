@@ -475,7 +475,11 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         
         // default pen width, not snapped
         m_penScale = 1.5;
-        setPenWidth(painter, m_penScale, false);       
+        QPen pen(foregroundColor());
+        pen.setCapStyle(Qt::SquareCap);
+        pen.setJoinStyle(Qt::MiterJoin);
+        pen.setWidthF(PenWidth::Symbol * m_penScale);
+        painter->setPen(pen);
         
         PixelSnapper iconSnapper(painter);
 
@@ -555,14 +559,10 @@ void Button::setHeight(qreal buttonHeight)
     updateSize(buttonHeight * 1.1, buttonHeight);
 }
 
-void Button::setPenWidth(QPainter *painter, const qreal scale, bool snapped)
+void Button::setPenWidth(QPainter *painter, qreal scale, const PixelSnapper &snapper, bool snapped)
 {
-    QPen pen(foregroundColor());
-    pen.setCapStyle(Qt::SquareCap);
-    pen.setJoinStyle(Qt::MiterJoin);
-    
+    QPen pen = painter->pen();
     const qreal nominalLocalWidth = PenWidth::Symbol * scale;
-    PixelSnapper snapper(painter);
 
     if (snapped) {
         pen.setWidthF(snapper.snappedPenWidth(nominalLocalWidth));
