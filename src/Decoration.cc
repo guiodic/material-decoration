@@ -1312,7 +1312,7 @@ void Decoration::paintFrameBackground(QPainter *painter, const QRectF &repaintRe
         painter->setRenderHint(QPainter::Antialiasing);
         painter->setPen(Qt::NoPen);        
         painter->setBrush(borderColor());        
-        painter->drawPath(m_framePath.subtracted(m_titleBarPath));
+        painter->drawPath(frameBackgroundPath());
     }
     
     painter->restore();
@@ -1595,8 +1595,19 @@ void Decoration::updateOpaqueState()
               && hasOnlyRectangularTitleBar(*nextState()));
 }
 
+const QPainterPath &Decoration::frameBackgroundPath() const
+{
+    // Borderless decorations never need this subtraction.
+    if (m_frameBackgroundPathDirty) {
+        m_frameBackgroundPath = m_framePath.subtracted(m_titleBarPath);
+        m_frameBackgroundPathDirty = false;
+    }
+    return m_frameBackgroundPath;
+}
+
 void Decoration::updatePaths()
 {
+    m_frameBackgroundPathDirty = true;
     const bool roundTopLeft = roundTopLeftCorners();
     const bool roundTopRight = roundTopRightCorners();
 

@@ -157,6 +157,7 @@ private:
     void updateDecorationState();
     void updateOpaqueState();
     void updatePaths();
+    const QPainterPath &frameBackgroundPath() const;
 
     bool hideTitleBar() const;
     void setInternalSettings(const QSharedPointer<InternalSettings> &settings);
@@ -216,6 +217,8 @@ private:
 
     QPainterPath m_framePath;
     QPainterPath m_titleBarPath;
+    mutable QPainterPath m_frameBackgroundPath;
+    mutable bool m_frameBackgroundPathDirty = true;
 
     QColor m_titleBarBackgroundColor;
     QColor m_titleBarOpaqueBackgroundColor;
