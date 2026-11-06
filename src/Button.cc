@@ -230,10 +230,15 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
         UPDATE_GEOM();
     }); 
     
-    connect(this, &Button::geometryChanged, this, [this]() {
-        UPDATE_GEOM();     
+    connect(this, &Button::geometryChanged, this, [this, lastSize = size()](const QRectF &rect) mutable {
+        const bool sizeChanged = lastSize != rect.size();
+        lastSize = rect.size();
+        UPDATE_GEOM();
         if (auto *deco = qobject_cast<Decoration *>(this->decoration())) {
-            QTimer::singleShot(0, this, [deco]() { deco->updateButtonsGeometry(); });
+            // Layout already handles its own moves; size changes can need another pass.
+            if (!deco->m_updatingButtonsGeometry || sizeChanged) {
+                deco->updateButtonsGeometryDelayed();
+            }
         }
     });
     
@@ -380,14 +385,27 @@ void Button::mouseReleaseEvent(QMouseEvent *event)
 
 void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 {
-    Q_UNUSED(repaintRegion)
-    
+    if (m_opacity <= 0) {
+        return;
+    }
+
     const auto *deco = qobject_cast<Decoration *>(this->decoration());
        
     if (!deco) {
         return;
     }    
     
+    PixelSnapper snapper(painter);
+    // Empty repaint regions mean a full paint for external button renderers.
+    // The GTK SVG renderer can draw icons beyond the button geometry.
+    if (!m_isGtkButton && !repaintRegion.isEmpty()) {
+        const qreal scale = snapper.localToPhysicalScale();
+        const qreal margin = scale > 0 ? qMax(1.0, 1.0 / scale) : 1.0;
+        if (!geometry().adjusted(-margin, -margin, margin, margin).intersects(repaintRegion)) {
+            return;
+        }
+    }
+
     painter->save();
 
     // Opacity
@@ -418,8 +436,6 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->setBrush(Qt::NoBrush);
 
     const QRectF contentRect = contentArea();
-
-    PixelSnapper snapper(painter);
 
     // TextButton and AppIconButton are special, so we don't scale the painter
     if (auto textButton = qobject_cast<TextButton*>(this)) {
@@ -464,7 +480,11 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         
         // default pen width, not snapped
         m_penScale = 1.5;
-        setPenWidth(painter, m_penScale, false);       
+        QPen pen(foregroundColor());
+        pen.setCapStyle(Qt::SquareCap);
+        pen.setJoinStyle(Qt::MiterJoin);
+        pen.setWidthF(PenWidth::Symbol * m_penScale);
+        painter->setPen(pen);
         
         PixelSnapper iconSnapper(painter);
 
@@ -544,14 +564,10 @@ void Button::setHeight(qreal buttonHeight)
     updateSize(buttonHeight * 1.1, buttonHeight);
 }
 
-void Button::setPenWidth(QPainter *painter, const qreal scale, bool snapped)
+void Button::setPenWidth(QPainter *painter, qreal scale, const PixelSnapper &snapper, bool snapped)
 {
-    QPen pen(foregroundColor());
-    pen.setCapStyle(Qt::SquareCap);
-    pen.setJoinStyle(Qt::MiterJoin);
-    
+    QPen pen = painter->pen();
     const qreal nominalLocalWidth = PenWidth::Symbol * scale;
-    PixelSnapper snapper(painter);
 
     if (snapped) {
         pen.setWidthF(snapper.snappedPenWidth(nominalLocalWidth));

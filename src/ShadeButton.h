@@ -45,7 +45,7 @@ public:
 
         const QPointF offset(-5.0, -5.0);
         const auto penScale = button->penScale();
-        button->setPenWidth(painter, penScale, true); // we have horizontal/vertical drawing, so we snap the pen
+        button->setPenWidth(painter, penScale, snapper, true); // we have horizontal/vertical drawing, so we snap the pen
         auto penWidth = painter->pen().widthF();
         
         painter->drawLine( 
@@ -53,7 +53,7 @@ public:
                 snapper.snapForPen(QPointF( 10, 2 ) + offset, penWidth)
         );
         
-        button->setPenWidth(painter, penScale, false); // reset to default
+        button->setPenWidth(painter, penScale, snapper, false); // reset to default
         
         if (button->isChecked()) {
             painter->drawPolyline(  QVector<QPointF> {

@@ -67,7 +67,7 @@ public:
 
     void forceUnpress();
 
-    void setPenWidth(QPainter *painter, const qreal scale, bool snapped = false);
+    void setPenWidth(QPainter *painter, qreal scale, const PixelSnapper &snapper, bool snapped = false);
 
     bool animationEnabled() const;
     void setAnimationEnabled(bool value);

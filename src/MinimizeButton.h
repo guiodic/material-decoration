@@ -43,7 +43,7 @@ public:
         Q_UNUSED(iconRect)
         
         const auto penScale = button->penScale();
-        button->setPenWidth(painter, penScale, true); // we have horizontal/vertical drawing, so we snap the pen
+        button->setPenWidth(painter, penScale, snapper, true); // we have horizontal/vertical drawing, so we snap the pen
         const auto penWidth = painter->pen().widthF();
 
         const QPointF p1 = snapper.snapForPen(QPointF(-5.0, 0.0), penWidth);
@@ -51,7 +51,6 @@ public:
 
         painter->drawLine(p1, p2);
         
-        button->setPenWidth(painter, penScale, false); // reset to default
     }
 };
 

@@ -21,6 +21,8 @@ public:
     bool shaded = false;
     Qt::Edges screenEdges;
     qreal outputScale = 1;
+    QSizeF windowSize{640, 480};
+    bool applicationMenuAvailable = false;
 
     void setResizeable(bool value) {
         resizeable = value;
@@ -46,8 +48,8 @@ public:
     bool isShadeable() const override { return false; }
     bool isMoveable() const override { return true; }
     bool isResizeable() const override { return resizeable; }
-    qreal width() const override { return 640; }
-    qreal height() const override { return 480; }
+    qreal width() const override { return windowSize.width(); }
+    qreal height() const override { return windowSize.height(); }
     QSizeF size() const override { return {width(), height()}; }
     QPalette palette() const override { return colors; }
     QColor color(KDecoration3::ColorGroup group, KDecoration3::ColorRole role) const override {
@@ -58,7 +60,7 @@ public:
     qreal scale() const override { return outputScale; }
     qreal nextScale() const override { return outputScale; }
     QString windowClass() const override { return {}; }
-    bool hasApplicationMenu() const override { return false; }
+    bool hasApplicationMenu() const override { return applicationMenuAvailable; }
     bool isApplicationMenuActive() const override { return false; }
     void requestShowToolTip(const QString &) override {}
     void requestHideToolTip() override {}
@@ -82,8 +84,10 @@ public:
     bool isOnAllDesktopsAvailable() const override { return false; }
     bool isAlphaChannelSupported() const override { return true; }
     bool isCloseOnDoubleClickOnMenu() const override { return false; }
-    QList<KDecoration3::DecorationButtonType> decorationButtonsLeft() const override { return {}; }
-    QList<KDecoration3::DecorationButtonType> decorationButtonsRight() const override { return {}; }
+    QList<KDecoration3::DecorationButtonType> leftButtons;
+    QList<KDecoration3::DecorationButtonType> rightButtons;
+    QList<KDecoration3::DecorationButtonType> decorationButtonsLeft() const override { return leftButtons; }
+    QList<KDecoration3::DecorationButtonType> decorationButtonsRight() const override { return rightButtons; }
     KDecoration3::BorderSize borderMode = KDecoration3::BorderSize::Normal;
     KDecoration3::BorderSize borderSize() const override { return borderMode; }
 };

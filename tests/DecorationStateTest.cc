@@ -3,14 +3,19 @@
 
 #include <KConfigGroup>
 #include <KDecoration3/DecorationSettings>
+#include <KDecoration3/DecorationButton>
 #include <KDecoration3/ScaleHelpers>
 #include <KPluginFactory>
 #include <KSharedConfig>
 #include <QApplication>
 #include <QPainter>
+#include <QHoverEvent>
 #include <QPluginLoader>
 #include <QTemporaryDir>
+#include <QScopeGuard>
+#include <QSignalSpy>
 #include <QTest>
+#include <QMenu>
 
 class DecorationStateTest : public QObject
 {
@@ -102,6 +107,248 @@ private slots:
             Q_EMIT window->maximizeableChanged(true);
             QCOMPARE(decoration->resizeOnlyBorders(), expected);
         }
+    }
+
+    void buttonRepaints_data()
+    {
+        QTest::addColumn<qreal>("scale");
+        QTest::addColumn<bool>("rtl");
+        QTest::addColumn<bool>("gtk");
+        for (qreal scale : {1.0, 1.25, 1.5, 2.0}) {
+            for (bool rtl : {false, true}) {
+                for (bool gtk : {false, true}) {
+                    const auto name = QStringLiteral("%1-%2-%3")
+                        .arg(scale).arg(rtl ? "rtl" : "ltr").arg(gtk ? "gtk" : "native");
+                    QTest::newRow(qPrintable(name)) << scale << rtl << gtk;
+                }
+            }
+        }
+    }
+
+    void buttonRepaints()
+    {
+        QFETCH(qreal, scale);
+        QFETCH(bool, rtl);
+        QFETCH(bool, gtk);
+        auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        config->group(QStringLiteral("Windeco")).writeEntry("AnimationsEnabled", false);
+        QVERIFY(config->sync());
+
+        const auto oldName = QCoreApplication::applicationName();
+        const auto oldDirection = QApplication::layoutDirection();
+        const auto restoreApplication = qScopeGuard([&] {
+            QCoreApplication::setApplicationName(oldName);
+            QApplication::setLayoutDirection(oldDirection);
+        });
+        QCoreApplication::setApplicationName(gtk ? QStringLiteral("kded6") : oldName);
+        QApplication::setLayoutDirection(rtl ? Qt::RightToLeft : Qt::LeftToRight);
+        MaterialTest::Bridge bridge;
+        auto decoration = create(bridge);
+        QVERIFY(decoration);
+        bridge.client->outputScale = scale;
+        decoration->create();
+        decoration->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&bridge));
+        bridge.options->borderMode = KDecoration3::BorderSize::None;
+        bridge.options->rightButtons = {KDecoration3::DecorationButtonType::Minimize,
+            KDecoration3::DecorationButtonType::Maximize, KDecoration3::DecorationButtonType::Close};
+        QVERIFY(decoration->init());
+        Q_EMIT decoration->settings()->reconfigured();
+        decoration->apply(decoration->nextState()->clone());
+        QCoreApplication::processEvents();
+        decoration->apply(decoration->nextState()->clone());
+        QCoreApplication::processEvents();
+
+        const auto buttons = decoration->findChildren<KDecoration3::DecorationButton *>();
+        QCOMPARE(buttons.size(), 3);
+        QImage untouched(qCeil(decoration->rect().width() * scale),
+                         qCeil(decoration->rect().height() * scale), QImage::Format_ARGB32_Premultiplied);
+        untouched.setDevicePixelRatio(scale);
+        untouched.fill(QColor(25, 51, 77));
+        const QRectF fullRegion = decoration->rect();
+        const QRectF outside(-10000, -10000, 1, 1);
+        for (auto *button : buttons) {
+            const auto geometry = button->geometry();
+            QHoverEvent hover(QEvent::HoverEnter, geometry.center(), geometry.center(), QPointF(-1, -1));
+            QCoreApplication::sendEvent(button, &hover);
+            QVERIFY(button->isHovered());
+            const auto render = [&](const QRectF &region, bool clip = false) {
+                QImage image = untouched;
+                QPainter painter(&image);
+                if (clip) painter.setClipRect(region);
+                button->paint(&painter, region);
+                return image;
+            };
+            const auto full = render(fullRegion);
+            QVERIFY(full != untouched);
+            QCOMPARE(render(QRectF()), full);
+            QCOMPARE(render(outside), gtk ? full : untouched);
+            QVERIFY(button->setProperty("opacity", 0.0));
+            QCOMPARE(render(fullRegion), untouched);
+            QVERIFY(button->setProperty("opacity", 1.0));
+
+            // Partial damage, including fractional strips at both button edges.
+            for (const QRectF &damage : {geometry.adjusted(1, 1, -1, -1),
+                     QRectF(geometry.left() - 0.75 / scale, geometry.top(), 1.0 / scale, geometry.height()),
+                     QRectF(geometry.right() - 0.25 / scale, geometry.top(), 1.0 / scale, geometry.height())}) {
+                QImage expected = untouched;
+                {
+                    QPainter painter(&expected);
+                    painter.setClipRect(damage);
+                    painter.setCompositionMode(QPainter::CompositionMode_Source);
+                    painter.drawImage(QPointF(0, 0), full);
+                }
+                QCOMPARE(render(damage, true), expected);
+            }
+        }
+    }
+
+    void queuedButtonLayout()
+    {
+        MaterialTest::Bridge bridge;
+        auto decoration = create(bridge);
+        QVERIFY(decoration);
+        decoration->create();
+        decoration->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&bridge));
+        bridge.options->rightButtons = {KDecoration3::DecorationButtonType::Minimize,
+            KDecoration3::DecorationButtonType::Maximize, KDecoration3::DecorationButtonType::Close};
+        QVERIFY(decoration->init());
+        decoration->apply(decoration->nextState()->clone());
+        for (int i = 0; i < 3; ++i) QCoreApplication::processEvents();
+
+        const auto buttons = decoration->findChildren<KDecoration3::DecorationButton *>();
+        QCOMPARE(buttons.size(), 3);
+        QSignalSpy damage(decoration.get(), &KDecoration3::Decoration::damaged);
+        const auto notifyGeometry = [&] {
+            for (int i = 0; i < 20; ++i) {
+                auto *button = buttons.at(i % buttons.size());
+                Q_EMIT button->geometryChanged(button->geometry());
+            }
+            damage.clear(); // Ignore each button's immediate damage notification.
+        };
+        notifyGeometry();
+        QCoreApplication::processEvents();
+        QCOMPARE(damage.count(), 1);
+        QCoreApplication::processEvents();
+        QCOMPARE(damage.count(), 1);
+
+        notifyGeometry();
+        // A synchronous layout must consume the pending request as well.
+        Q_EMIT decoration->window()->widthChanged(decoration->window()->width());
+        QCOMPARE(damage.count(), 1);
+        QCoreApplication::processEvents();
+        QCOMPARE(damage.count(), 1);
+
+        const auto resizeWindow = [&](qreal width) {
+            bridge.client->windowSize.setWidth(width);
+            Q_EMIT decoration->window()->sizeChanged(bridge.client->windowSize);
+            Q_EMIT decoration->window()->widthChanged(width);
+        };
+        const auto previousGeometry = buttons.first()->geometry();
+        resizeWindow(800);
+        QVERIFY(buttons.first()->geometry() != previousGeometry);
+        const auto damageAfterResize = damage.count();
+        QCoreApplication::processEvents();
+        QCOMPARE(damage.count(), damageAfterResize);
+
+        // A size change arriving during layout must still request a follow-up.
+        auto *target = buttons.last();
+        const QSizeF originalSize = target->size();
+        bool changedSize = false;
+        const auto connection = connect(buttons.first(), &KDecoration3::DecorationButton::geometryChanged,
+            decoration.get(), [&](const QRectF &) {
+                if (!changedSize) {
+                    changedSize = true;
+                    auto geometry = target->geometry();
+                    geometry.setWidth(geometry.width() + 5);
+                    target->setGeometry(geometry);
+                }
+            });
+        resizeWindow(900);
+        QVERIFY(changedSize);
+        QTRY_COMPARE(target->size(), originalSize);
+        disconnect(connection);
+        for (int i = 0; i < 3; ++i) QCoreApplication::processEvents();
+
+        notifyGeometry();
+        decoration.reset();
+        QCoreApplication::processEvents(); // Destruction cancels queued layout work.
+    }
+
+    void hamburgerIcon()
+    {
+        auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        auto group = config->group(QStringLiteral("Windeco"));
+        group.writeEntry("HamburgerMenu", true);
+        group.writeEntry("MenuAlwaysShow", true);
+        group.writeEntry("SearchEnabled", false);
+        group.writeEntry("AnimationsEnabled", false);
+        QVERIFY(config->sync());
+        MaterialTest::Bridge bridge;
+        auto decoration = create(bridge);
+        QVERIFY(decoration);
+        bridge.client->applicationMenuAvailable = true;
+        decoration->create();
+        decoration->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&bridge));
+        QVERIFY(decoration->init());
+        Q_EMIT decoration->settings()->reconfigured();
+        decoration->apply(decoration->nextState()->clone());
+
+        QObject *model = nullptr;
+        for (auto *object : decoration->findChildren<QObject *>()) {
+            if (qstrcmp(object->metaObject()->className(), "Material::AppMenuModel") == 0) model = object;
+        }
+        QVERIFY(model);
+        QMenu menu;
+        for (const auto &title : {"File", "Edit", "View", "Tools", "Settings", "Help"}) {
+            menu.addMenu(QString::fromLatin1(title))->addAction(QStringLiteral("Action"));
+        }
+        // Supply a menu to the real model without requiring an external D-Bus exporter.
+        QVERIFY(QMetaObject::invokeMethod(model, "onMenuUpdated", Qt::DirectConnection, Q_ARG(QMenu *, &menu)));
+        const auto findOverflow = [&]() -> KDecoration3::DecorationButton * {
+            for (auto *button : decoration->findChildren<KDecoration3::DecorationButton *>()) {
+                if (qstrcmp(button->metaObject()->className(), "Material::MenuOverflowButton") == 0) return button;
+            }
+            return nullptr;
+        };
+        QTRY_VERIFY(findOverflow());
+        auto *overflow = findOverflow();
+        QTRY_VERIFY(overflow->isVisible());
+        QVERIFY(overflow->setProperty("opacity", 1.0));
+        for (int i = 0; i < 3; ++i) QCoreApplication::processEvents();
+
+        QImage image(qCeil(decoration->rect().width()), qCeil(decoration->rect().height()),
+                     QImage::Format_ARGB32_Premultiplied);
+        image.fill(Qt::transparent);
+        {
+            QPainter painter(&image);
+            painter.setPen(Qt::NoPen);
+            overflow->paint(&painter, decoration->rect());
+            QCOMPARE(painter.pen().style(), Qt::NoPen);
+        }
+        // An idle hamburger has no background: its three strokes must be visible.
+        int paintedRows = 0;
+        for (int y = 0; y < image.height(); ++y) {
+            bool painted = false;
+            for (int x = 0; x < image.width(); ++x) painted |= qAlpha(image.pixel(x, y)) > 0;
+            paintedRows += painted;
+        }
+        QVERIFY(paintedRows >= 3);
+
+        // The overflow button must still react to real menu-layout changes.
+        group.writeEntry("HamburgerMenu", false);
+        QVERIFY(config->sync());
+        Q_EMIT decoration->settings()->reconfigured();
+        const auto resizeWindow = [&](qreal width) {
+            bridge.client->windowSize.setWidth(width);
+            Q_EMIT decoration->window()->sizeChanged(bridge.client->windowSize);
+            Q_EMIT decoration->window()->widthChanged(width);
+        };
+        resizeWindow(150);
+        QTRY_VERIFY(overflow->isVisible());
+        resizeWindow(900);
+        QTRY_VERIFY(!overflow->isVisible());
+        resizeWindow(150);
+        QTRY_VERIFY(overflow->isVisible());
     }
 
     void opaqueState()
