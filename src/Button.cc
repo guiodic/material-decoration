@@ -230,10 +230,15 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
         UPDATE_GEOM();
     }); 
     
-    connect(this, &Button::geometryChanged, this, [this]() {
-        UPDATE_GEOM();     
+    connect(this, &Button::geometryChanged, this, [this, lastSize = size()](const QRectF &rect) mutable {
+        const bool sizeChanged = lastSize != rect.size();
+        lastSize = rect.size();
+        UPDATE_GEOM();
         if (auto *deco = qobject_cast<Decoration *>(this->decoration())) {
-            deco->updateButtonsGeometryDelayed();
+            // Layout already handles its own moves; size changes can need another pass.
+            if (!deco->m_updatingButtonsGeometry || sizeChanged) {
+                deco->updateButtonsGeometryDelayed();
+            }
         }
     });
     

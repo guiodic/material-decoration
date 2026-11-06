@@ -15,6 +15,7 @@
 #include <QScopeGuard>
 #include <QSignalSpy>
 #include <QTest>
+#include <QMenu>
 
 class DecorationStateTest : public QObject
 {
@@ -237,9 +238,117 @@ private slots:
         QCoreApplication::processEvents();
         QCOMPARE(damage.count(), 1);
 
+        const auto resizeWindow = [&](qreal width) {
+            bridge.client->windowSize.setWidth(width);
+            Q_EMIT decoration->window()->sizeChanged(bridge.client->windowSize);
+            Q_EMIT decoration->window()->widthChanged(width);
+        };
+        const auto previousGeometry = buttons.first()->geometry();
+        resizeWindow(800);
+        QVERIFY(buttons.first()->geometry() != previousGeometry);
+        const auto damageAfterResize = damage.count();
+        QCoreApplication::processEvents();
+        QCOMPARE(damage.count(), damageAfterResize);
+
+        // A size change arriving during layout must still request a follow-up.
+        auto *target = buttons.last();
+        const QSizeF originalSize = target->size();
+        bool changedSize = false;
+        const auto connection = connect(buttons.first(), &KDecoration3::DecorationButton::geometryChanged,
+            decoration.get(), [&](const QRectF &) {
+                if (!changedSize) {
+                    changedSize = true;
+                    auto geometry = target->geometry();
+                    geometry.setWidth(geometry.width() + 5);
+                    target->setGeometry(geometry);
+                }
+            });
+        resizeWindow(900);
+        QVERIFY(changedSize);
+        QTRY_COMPARE(target->size(), originalSize);
+        disconnect(connection);
+        for (int i = 0; i < 3; ++i) QCoreApplication::processEvents();
+
         notifyGeometry();
         decoration.reset();
         QCoreApplication::processEvents(); // Destruction cancels queued layout work.
+    }
+
+    void hamburgerIcon()
+    {
+        auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        auto group = config->group(QStringLiteral("Windeco"));
+        group.writeEntry("HamburgerMenu", true);
+        group.writeEntry("MenuAlwaysShow", true);
+        group.writeEntry("SearchEnabled", false);
+        group.writeEntry("AnimationsEnabled", false);
+        QVERIFY(config->sync());
+        MaterialTest::Bridge bridge;
+        auto decoration = create(bridge);
+        QVERIFY(decoration);
+        bridge.client->applicationMenuAvailable = true;
+        decoration->create();
+        decoration->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&bridge));
+        QVERIFY(decoration->init());
+        Q_EMIT decoration->settings()->reconfigured();
+        decoration->apply(decoration->nextState()->clone());
+
+        QObject *model = nullptr;
+        for (auto *object : decoration->findChildren<QObject *>()) {
+            if (qstrcmp(object->metaObject()->className(), "Material::AppMenuModel") == 0) model = object;
+        }
+        QVERIFY(model);
+        QMenu menu;
+        for (const auto &title : {"File", "Edit", "View", "Tools", "Settings", "Help"}) {
+            menu.addMenu(QString::fromLatin1(title))->addAction(QStringLiteral("Action"));
+        }
+        // Supply a menu to the real model without requiring an external D-Bus exporter.
+        QVERIFY(QMetaObject::invokeMethod(model, "onMenuUpdated", Qt::DirectConnection, Q_ARG(QMenu *, &menu)));
+        const auto findOverflow = [&]() -> KDecoration3::DecorationButton * {
+            for (auto *button : decoration->findChildren<KDecoration3::DecorationButton *>()) {
+                if (qstrcmp(button->metaObject()->className(), "Material::MenuOverflowButton") == 0) return button;
+            }
+            return nullptr;
+        };
+        QTRY_VERIFY(findOverflow());
+        auto *overflow = findOverflow();
+        QTRY_VERIFY(overflow->isVisible());
+        QVERIFY(overflow->setProperty("opacity", 1.0));
+        for (int i = 0; i < 3; ++i) QCoreApplication::processEvents();
+
+        QImage image(qCeil(decoration->rect().width()), qCeil(decoration->rect().height()),
+                     QImage::Format_ARGB32_Premultiplied);
+        image.fill(Qt::transparent);
+        {
+            QPainter painter(&image);
+            painter.setPen(Qt::NoPen);
+            overflow->paint(&painter, decoration->rect());
+            QCOMPARE(painter.pen().style(), Qt::NoPen);
+        }
+        // An idle hamburger has no background: its three strokes must be visible.
+        int paintedRows = 0;
+        for (int y = 0; y < image.height(); ++y) {
+            bool painted = false;
+            for (int x = 0; x < image.width(); ++x) painted |= qAlpha(image.pixel(x, y)) > 0;
+            paintedRows += painted;
+        }
+        QVERIFY(paintedRows >= 3);
+
+        // The overflow button must still react to real menu-layout changes.
+        group.writeEntry("HamburgerMenu", false);
+        QVERIFY(config->sync());
+        Q_EMIT decoration->settings()->reconfigured();
+        const auto resizeWindow = [&](qreal width) {
+            bridge.client->windowSize.setWidth(width);
+            Q_EMIT decoration->window()->sizeChanged(bridge.client->windowSize);
+            Q_EMIT decoration->window()->widthChanged(width);
+        };
+        resizeWindow(150);
+        QTRY_VERIFY(overflow->isVisible());
+        resizeWindow(900);
+        QTRY_VERIFY(!overflow->isVisible());
+        resizeWindow(150);
+        QTRY_VERIFY(overflow->isVisible());
     }
 
     void opaqueState()

@@ -62,6 +62,7 @@
 #include <QPainterPath>
 #include <QRegion>
 #include <QSharedPointer>
+#include <QScopedValueRollback>
 #include <QWheelEvent>
 #include <QTimer>
 #include <QToolTip>
@@ -799,6 +800,7 @@ void Decoration::invalidateCaptionCache() const
 void Decoration::updateButtonsGeometry()
 {
     m_buttonGeometryUpdateTimer.stop();
+    const QScopedValueRollback<bool> updatingGeometry(m_updatingButtonsGeometry, true);
     invalidateCaptionCache();
     if (m_menuButtons) {
         m_menuButtons->updateShowing();

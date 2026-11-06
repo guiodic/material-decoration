@@ -207,6 +207,7 @@ private:
     qreal cornerRadius() const;
 
     QTimer m_buttonGeometryUpdateTimer;
+    bool m_updatingButtonsGeometry = false;
     KDecoration3::DecorationButtonGroup *m_leftButtons = nullptr;
     KDecoration3::DecorationButtonGroup *m_rightButtons = nullptr;
     AppMenuButtonGroup *m_menuButtons = nullptr;
