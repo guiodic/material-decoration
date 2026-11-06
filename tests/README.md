@@ -27,3 +27,8 @@ MATERIAL_TEST_WAYLAND_DISPLAY="$WAYLAND_DISPLAY" ctest --test-dir build -R '^tab
 Keep `XDG_RUNTIME_DIR` set to the compositor's runtime directory. The test starts
 its own D-Bus session with a fake KWin service; it does not change the compositor's
 tablet mode.
+
+`buttonsvg` is registered when Qt SVG development files are available
+(`qt6-svg` on Arch, `libqt6svg6-dev` on Debian). It exports real GTK button
+icons through `QSvgGenerator` and checks their pixel alignment when rendered
+at 18×18. This checks SVG geometry, not GTK image caching or HiDPI behavior.

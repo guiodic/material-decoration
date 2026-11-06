@@ -29,7 +29,8 @@ namespace Material
 class PixelSnapper
 {
 public:
-    explicit PixelSnapper(QPainter *painter);
+    // Vector exports can supply the pixel ratio of their final display size.
+    explicit PixelSnapper(QPainter *painter, qreal devicePixelRatioOverride = 0.0);
 
     QPointF snap(const QPointF &p) const;
     QRectF snap(const QRectF &rect) const;

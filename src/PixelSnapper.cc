@@ -22,9 +22,10 @@
 namespace Material
 {
 
-PixelSnapper::PixelSnapper(QPainter *painter)
+PixelSnapper::PixelSnapper(QPainter *painter, qreal devicePixelRatioOverride)
     : m_trans(painter ? painter->transform() : QTransform())
-    , m_dpr(painter && painter->device() ? painter->device()->devicePixelRatioF() : 1.0)
+    , m_dpr(devicePixelRatioOverride > 0.0 ? devicePixelRatioOverride
+        : (painter && painter->device() ? painter->device()->devicePixelRatioF() : 1.0))
     , m_invertible(false)
 {
     m_inv = m_trans.inverted(&m_invertible);
