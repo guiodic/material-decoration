@@ -59,6 +59,7 @@
 #include <QHoverEvent>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPaintEngine>
 #include <QVariantAnimation>
 #include <QTimer>
 #include <QDBusConnection>
@@ -395,7 +396,12 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         return;
     }    
     
-    PixelSnapper snapper(painter);
+    // Breeze GTK displays KDE's exported 50x50 SVGs at 18x18 logical pixels.
+    // Align to that final grid instead of the SVG's coordinate grid.
+    const qreal svgPixelRatio = m_isGtkButton && geometry().width() > 0
+        && painter->paintEngine() && painter->paintEngine()->type() == QPaintEngine::SVG
+        ? 18.0 / geometry().width() : 0.0;
+    PixelSnapper snapper(painter, svgPixelRatio);
     // Empty repaint regions mean a full paint for external button renderers.
     // The GTK SVG renderer can draw icons beyond the button geometry.
     if (!m_isGtkButton && !repaintRegion.isEmpty()) {
@@ -486,7 +492,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         pen.setWidthF(PenWidth::Symbol * m_penScale);
         painter->setPen(pen);
         
-        PixelSnapper iconSnapper(painter);
+        PixelSnapper iconSnapper(painter, svgPixelRatio);
 
         // Icons
         const QRectF iconRect(-9, -9, 18, 18);
