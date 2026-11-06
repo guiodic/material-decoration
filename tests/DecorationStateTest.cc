@@ -3,13 +3,16 @@
 
 #include <KConfigGroup>
 #include <KDecoration3/DecorationSettings>
+#include <KDecoration3/DecorationButton>
 #include <KDecoration3/ScaleHelpers>
 #include <KPluginFactory>
 #include <KSharedConfig>
 #include <QApplication>
 #include <QPainter>
+#include <QHoverEvent>
 #include <QPluginLoader>
 #include <QTemporaryDir>
+#include <QScopeGuard>
 #include <QTest>
 
 class DecorationStateTest : public QObject
@@ -101,6 +104,99 @@ private slots:
             client->resizeable = true;
             Q_EMIT window->maximizeableChanged(true);
             QCOMPARE(decoration->resizeOnlyBorders(), expected);
+        }
+    }
+
+    void buttonRepaints_data()
+    {
+        QTest::addColumn<qreal>("scale");
+        QTest::addColumn<bool>("rtl");
+        QTest::addColumn<bool>("gtk");
+        for (qreal scale : {1.0, 1.25, 1.5, 2.0}) {
+            for (bool rtl : {false, true}) {
+                for (bool gtk : {false, true}) {
+                    const auto name = QStringLiteral("%1-%2-%3")
+                        .arg(scale).arg(rtl ? "rtl" : "ltr").arg(gtk ? "gtk" : "native");
+                    QTest::newRow(qPrintable(name)) << scale << rtl << gtk;
+                }
+            }
+        }
+    }
+
+    void buttonRepaints()
+    {
+        QFETCH(qreal, scale);
+        QFETCH(bool, rtl);
+        QFETCH(bool, gtk);
+        auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        config->group(QStringLiteral("Windeco")).writeEntry("AnimationsEnabled", false);
+        QVERIFY(config->sync());
+
+        const auto oldName = QCoreApplication::applicationName();
+        const auto oldDirection = QApplication::layoutDirection();
+        const auto restoreApplication = qScopeGuard([&] {
+            QCoreApplication::setApplicationName(oldName);
+            QApplication::setLayoutDirection(oldDirection);
+        });
+        QCoreApplication::setApplicationName(gtk ? QStringLiteral("kded6") : oldName);
+        QApplication::setLayoutDirection(rtl ? Qt::RightToLeft : Qt::LeftToRight);
+        MaterialTest::Bridge bridge;
+        auto decoration = create(bridge);
+        QVERIFY(decoration);
+        bridge.client->outputScale = scale;
+        decoration->create();
+        decoration->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&bridge));
+        bridge.options->borderMode = KDecoration3::BorderSize::None;
+        bridge.options->rightButtons = {KDecoration3::DecorationButtonType::Minimize,
+            KDecoration3::DecorationButtonType::Maximize, KDecoration3::DecorationButtonType::Close};
+        QVERIFY(decoration->init());
+        Q_EMIT decoration->settings()->reconfigured();
+        decoration->apply(decoration->nextState()->clone());
+        QCoreApplication::processEvents();
+        decoration->apply(decoration->nextState()->clone());
+        QCoreApplication::processEvents();
+
+        const auto buttons = decoration->findChildren<KDecoration3::DecorationButton *>();
+        QCOMPARE(buttons.size(), 3);
+        QImage untouched(qCeil(decoration->rect().width() * scale),
+                         qCeil(decoration->rect().height() * scale), QImage::Format_ARGB32_Premultiplied);
+        untouched.setDevicePixelRatio(scale);
+        untouched.fill(QColor(25, 51, 77));
+        const QRectF fullRegion = decoration->rect();
+        const QRectF outside(-10000, -10000, 1, 1);
+        for (auto *button : buttons) {
+            const auto geometry = button->geometry();
+            QHoverEvent hover(QEvent::HoverEnter, geometry.center(), geometry.center(), QPointF(-1, -1));
+            QCoreApplication::sendEvent(button, &hover);
+            QVERIFY(button->isHovered());
+            const auto render = [&](const QRectF &region, bool clip = false) {
+                QImage image = untouched;
+                QPainter painter(&image);
+                if (clip) painter.setClipRect(region);
+                button->paint(&painter, region);
+                return image;
+            };
+            const auto full = render(fullRegion);
+            QVERIFY(full != untouched);
+            QCOMPARE(render(QRectF()), full);
+            QCOMPARE(render(outside), gtk ? full : untouched);
+            QVERIFY(button->setProperty("opacity", 0.0));
+            QCOMPARE(render(fullRegion), untouched);
+            QVERIFY(button->setProperty("opacity", 1.0));
+
+            // Partial damage, including fractional strips at both button edges.
+            for (const QRectF &damage : {geometry.adjusted(1, 1, -1, -1),
+                     QRectF(geometry.left() - 0.75 / scale, geometry.top(), 1.0 / scale, geometry.height()),
+                     QRectF(geometry.right() - 0.25 / scale, geometry.top(), 1.0 / scale, geometry.height())}) {
+                QImage expected = untouched;
+                {
+                    QPainter painter(&expected);
+                    painter.setClipRect(damage);
+                    painter.setCompositionMode(QPainter::CompositionMode_Source);
+                    painter.drawImage(QPointF(0, 0), full);
+                }
+                QCOMPARE(render(damage, true), expected);
+            }
         }
     }
 

@@ -380,14 +380,27 @@ void Button::mouseReleaseEvent(QMouseEvent *event)
 
 void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 {
-    Q_UNUSED(repaintRegion)
-    
+    if (m_opacity <= 0) {
+        return;
+    }
+
     const auto *deco = qobject_cast<Decoration *>(this->decoration());
        
     if (!deco) {
         return;
     }    
     
+    PixelSnapper snapper(painter);
+    // Empty repaint regions mean a full paint for external button renderers.
+    // The GTK SVG renderer can draw icons beyond the button geometry.
+    if (!m_isGtkButton && !repaintRegion.isEmpty()) {
+        const qreal scale = snapper.localToPhysicalScale();
+        const qreal margin = scale > 0 ? qMax(1.0, 1.0 / scale) : 1.0;
+        if (!geometry().adjusted(-margin, -margin, margin, margin).intersects(repaintRegion)) {
+            return;
+        }
+    }
+
     painter->save();
 
     // Opacity
@@ -418,8 +431,6 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->setBrush(Qt::NoBrush);
 
     const QRectF contentRect = contentArea();
-
-    PixelSnapper snapper(painter);
 
     // TextButton and AppIconButton are special, so we don't scale the painter
     if (auto textButton = qobject_cast<TextButton*>(this)) {

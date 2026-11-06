@@ -82,8 +82,10 @@ public:
     bool isOnAllDesktopsAvailable() const override { return false; }
     bool isAlphaChannelSupported() const override { return true; }
     bool isCloseOnDoubleClickOnMenu() const override { return false; }
-    QList<KDecoration3::DecorationButtonType> decorationButtonsLeft() const override { return {}; }
-    QList<KDecoration3::DecorationButtonType> decorationButtonsRight() const override { return {}; }
+    QList<KDecoration3::DecorationButtonType> leftButtons;
+    QList<KDecoration3::DecorationButtonType> rightButtons;
+    QList<KDecoration3::DecorationButtonType> decorationButtonsLeft() const override { return leftButtons; }
+    QList<KDecoration3::DecorationButtonType> decorationButtonsRight() const override { return rightButtons; }
     KDecoration3::BorderSize borderMode = KDecoration3::BorderSize::Normal;
     KDecoration3::BorderSize borderSize() const override { return borderMode; }
 };
