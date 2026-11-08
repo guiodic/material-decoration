@@ -986,25 +986,37 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
     QRect boxRect(QPoint(0, 0), boxSize);
     boxRect.moveCenter(outerRect.center());
 
-    // Preserve the QPainter preview geometry; real windows use Klassy's padding.
+    // Klassy adjusts the padding and derives the cutout directly from it.
     const bool preview = property("visualParent").isValid();
-    const int shadowOverlap = preview ? 0 : 3;
+    constexpr int shadowOverlap = 3;
     const QMargins padding(boxRect.left() - outerRect.left() - shadowOverlap - params.offset.x(),
                            boxRect.top() - outerRect.top() - shadowOverlap - params.offset.y(),
                            outerRect.right() - boxRect.right() - shadowOverlap + params.offset.x(),
                            outerRect.bottom() - boxRect.bottom() - shadowOverlap + params.offset.y());
-    QRectF innerRect = outerRect - padding;
-    // The preview copies its right/bottom strips one texel inward.
-    // Keep the left cutout at the frame edge to avoid darkening translucent borders.
-    if (preview) {
-        innerRect.adjust(0, 2, -2, -2);
-    }
+    const QRectF innerRect = outerRect - padding;
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
     painter.drawRoundedRect(innerRect, cornerRadius + 0.5, cornerRadius + 0.5);
 
     painter.end();
+
+    if (preview) {
+        // PreviewItem offsets only the right/bottom strip sources by one texel.
+        // Their center row/column are not used by the corner tiles.
+        const QImage source = shadowTexture;
+        const QPoint center = outerRect.center();
+        auto *row = reinterpret_cast<QRgb *>(shadowTexture.scanLine(center.y()));
+        const auto *sourceRow = reinterpret_cast<const QRgb *>(source.constScanLine(center.y()));
+        std::copy(sourceRow + center.x() + 1, sourceRow + source.width(), row + center.x());
+        row[source.width() - 1] = 0;
+        for (int y = center.y(); y < source.height() - 1; ++y) {
+            auto *target = reinterpret_cast<QRgb *>(shadowTexture.scanLine(y));
+            const auto *next = reinterpret_cast<const QRgb *>(source.constScanLine(y + 1));
+            target[center.x()] = next[center.x()];
+        }
+        reinterpret_cast<QRgb *>(shadowTexture.scanLine(source.height() - 1))[center.x()] = 0;
+    }
 
     auto ret = std::make_shared<KDecoration3::DecorationShadow>();
     ret->setPadding(padding);
