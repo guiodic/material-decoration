@@ -994,7 +994,7 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
     QRectF innerRect = outerRect - padding;
     // Keep shadow pixels under the frame, as in Breeze. Cutting exactly at
     // the window edge can expose a light seam when the texture is filtered.
-    innerRect.adjust(2, 2, -2, -2);
+    innerRect.adjust(1, 1, -1, -1);
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
