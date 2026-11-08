@@ -15,7 +15,7 @@ private slots:
     {
         auto defaults = Material::InternalSettingsPtr::create();
         defaults->setDefaults();
-        QVERIFY(!defaults->menusFollowDecorationColors());
+        QVERIFY(defaults->menusFollowDecorationColors());
         auto exception = Material::InternalSettingsPtr::create();
         Material::SettingsProvider provider;
 
