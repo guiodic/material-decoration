@@ -154,7 +154,7 @@ private:
     void setButtonGroupAnimation(KDecoration3::DecorationButtonGroup *buttonGroup, bool enabled, int duration);
     void updateButtonAnimation();
     void updateShadow();
-    std::shared_ptr<KDecoration3::DecorationShadow> createShadowObject(const float strengthScale);
+    std::shared_ptr<KDecoration3::DecorationShadow> createShadowObject(const float strengthScale, qreal cornerRadius);
     void updateDecorationState();
     void updateOpaqueState();
     void updatePaths();

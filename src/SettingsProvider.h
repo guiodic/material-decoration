@@ -45,6 +45,8 @@ public:
     InternalSettingsPtr createMergedSettings(const InternalSettingsPtr &defaultSettings,
                                               const InternalSettingsPtr &exceptionSettings);
 
+    int defaultCornerRadius() const { return m_defaultSettings->cornerRadius(); }
+
     void clearCache();
 
 public slots:
