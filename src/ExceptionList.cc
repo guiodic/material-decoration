@@ -40,6 +40,7 @@ void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettings
     dst->setUseSystemColors(src->useSystemColors());
     dst->setMenusFollowDecorationColors(src->menusFollowDecorationColors());
     dst->setUseCustomBorderColors(src->useCustomBorderColors());
+    dst->setActiveBorderUsesAccent(src->activeBorderUsesAccent());
     dst->setActiveBorderColor(src->activeBorderColor());
     dst->setInactiveBorderColor(src->inactiveBorderColor());
     dst->setHideCaptionWhenLimitedSpace(src->hideCaptionWhenLimitedSpace());

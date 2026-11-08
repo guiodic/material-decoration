@@ -28,12 +28,17 @@ private slots:
         QTest::addColumn<bool>("dark");
         QTest::addColumn<bool>("active");
         QTest::addColumn<bool>("accent");
+        QTest::addColumn<bool>("customBorder");
+        QTest::addColumn<bool>("borderAccent");
         for (bool dark : {false, true}) {
             for (bool active : {false, true}) {
                 for (bool accent : {false, true}) {
                     const auto name = QStringLiteral("%1-%2-%3")
                         .arg(dark ? "dark" : "light", active ? "active" : "inactive", accent ? "accent" : "frame");
-                    QTest::newRow(qPrintable(name)) << dark << active << accent;
+                    for (int variant = 0; variant < 4; ++variant) {
+                        const auto row = name + QStringLiteral("-border-%1").arg(variant);
+                        QTest::newRow(qPrintable(row)) << dark << active << accent << bool(variant & 1) << bool(variant & 2);
+                    }
                 }
             }
         }
@@ -44,11 +49,16 @@ private slots:
         QFETCH(bool, dark);
         QFETCH(bool, active);
         QFETCH(bool, accent);
+        QFETCH(bool, customBorder);
+        QFETCH(bool, borderAccent);
         auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
         auto group = config->group(QStringLiteral("Windeco"));
         group.writeEntry("OutlineActive", true);
         group.writeEntry("ActiveOutlineUsesAccent", accent);
-        group.writeEntry("UseCustomBorderColors", false);
+        group.writeEntry("UseCustomBorderColors", customBorder);
+        group.writeEntry("ActiveBorderUsesAccent", borderAccent);
+        group.writeEntry("ActiveBorderColor", QColor("#cc3344"));
+        group.writeEntry("InactiveBorderColor", QColor("#667788"));
         QVERIFY(config->sync());
 
         MaterialTest::Bridge bridge;
@@ -72,9 +82,14 @@ private slots:
             // The test compositor applies the state requested by the real plugin.
             decoration->apply(decoration->nextState()->clone());
             const auto outline = decoration->currentState()->borderOutline();
+            const QColor frame = customBorder
+                ? (bridge.client->active
+                    ? (borderAccent ? palette.color(QPalette::Active, QPalette::Highlight) : QColor("#cc3344"))
+                    : QColor("#667788"))
+                : palette.color(bridge.client->active ? QPalette::Active : QPalette::Inactive, QPalette::Window);
             const QColor expected = accent && bridge.client->active
                 ? palette.color(QPalette::Active, QPalette::Highlight)
-                : palette.color(bridge.client->active ? QPalette::Active : QPalette::Inactive, QPalette::Window);
+                : frame;
             QCOMPARE(outline.color(), expected);
             QCOMPARE(outline.thickness(), initial.thickness());
             QVERIFY(outline.radius() == initial.radius());

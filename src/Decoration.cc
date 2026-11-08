@@ -1346,9 +1346,13 @@ QColor Decoration::borderColor() const
     
     QColor color;
     if (m_internalSettings->useCustomBorderColors()) {
-        color = isActive
-            ? m_internalSettings->activeBorderColor()
-            : m_internalSettings->inactiveBorderColor();
+        if (isActive && m_internalSettings->activeBorderUsesAccent()) {
+            color = decoratedClient->palette().color(QPalette::Active, QPalette::Highlight);
+        } else {
+            color = isActive
+                ? m_internalSettings->activeBorderColor()
+                : m_internalSettings->inactiveBorderColor();
+        }
     } else {
         const auto group = isActive
             ? KDecoration3::ColorGroup::Active

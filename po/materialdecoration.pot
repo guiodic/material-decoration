@@ -639,3 +639,7 @@ msgstr ""
 #: config.ui
 msgid "Use accent color for the active window outline"
 msgstr ""
+
+#: src/kcm/config.ui
+msgid "Use accent color for the active window border"
+msgstr ""
