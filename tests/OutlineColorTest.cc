@@ -29,18 +29,14 @@ private slots:
     {
         QTest::addColumn<bool>("dark");
         QTest::addColumn<bool>("active");
-        QTest::addColumn<bool>("accent");
         QTest::addColumn<bool>("customBorder");
         QTest::addColumn<bool>("borderAccent");
         for (bool dark : {false, true}) {
             for (bool active : {false, true}) {
-                for (bool accent : {false, true}) {
-                    const auto name = QStringLiteral("%1-%2-%3")
-                        .arg(dark ? "dark" : "light", active ? "active" : "inactive", accent ? "accent" : "frame");
-                    for (int variant = 0; variant < 4; ++variant) {
-                        const auto row = name + QStringLiteral("-border-%1").arg(variant);
-                        QTest::newRow(qPrintable(row)) << dark << active << accent << bool(variant & 1) << bool(variant & 2);
-                    }
+                for (int variant = 0; variant < 4; ++variant) {
+                    const auto name = QStringLiteral("%1-%2-border-%3")
+                        .arg(dark ? "dark" : "light", active ? "active" : "inactive").arg(variant);
+                    QTest::newRow(qPrintable(name)) << dark << active << bool(variant & 1) << bool(variant & 2);
                 }
             }
         }
@@ -50,7 +46,6 @@ private slots:
     {
         QFETCH(bool, dark);
         QFETCH(bool, active);
-        QFETCH(bool, accent);
         QFETCH(bool, customBorder);
         QFETCH(bool, borderAccent);
         auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
@@ -59,7 +54,6 @@ private slots:
         group.writeEntry("ActiveOpacity", 1.0);
         group.writeEntry("InactiveOpacity", 1.0);
         group.writeEntry("OutlineActive", true);
-        group.writeEntry("ActiveOutlineUsesAccent", accent);
         group.writeEntry("UseCustomBorderColors", customBorder);
         group.writeEntry("ActiveBorderUsesAccent", borderAccent);
         group.writeEntry("ActiveBorderColor", QColor("#cc3344"));
@@ -92,10 +86,7 @@ private slots:
                     ? (borderAccent ? palette.color(QPalette::Active, QPalette::Highlight) : QColor("#cc3344"))
                     : QColor("#667788"))
                 : palette.color(bridge.client->active ? QPalette::Active : QPalette::Inactive, QPalette::Window);
-            const QColor expected = accent && bridge.client->active
-                ? palette.color(QPalette::Active, QPalette::Highlight)
-                : frame;
-            QCOMPARE(outline.color(), expected);
+            QCOMPARE(outline.color(), frame);
             QCOMPARE(outline.thickness(), initial.thickness());
             QVERIFY(outline.radius() == initial.radius());
         };
@@ -106,8 +97,8 @@ private slots:
         palette.setColor(QPalette::Active, QPalette::Highlight, Qt::green);
         Q_EMIT decoration->window()->paletteChanged(palette);
         check();
-        accent = !accent;
-        group.writeEntry("ActiveOutlineUsesAccent", accent);
+        borderAccent = !borderAccent;
+        group.writeEntry("ActiveBorderUsesAccent", borderAccent);
         QVERIFY(config->sync());
         Q_EMIT decoration->settings()->reconfigured();
         check();

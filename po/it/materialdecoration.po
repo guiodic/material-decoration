@@ -480,10 +480,6 @@ msgstr "Attivato"
 msgid "Disabled"
 msgstr "Disattivato"
 
-#: config.ui
-msgid "Use accent color for the active window outline"
-msgstr "Usa il colore di accento per il contorno della finestra attiva"
-
 #: src/kcm/config.ui
 msgid "Use accent color for the active window border"
 msgstr "Usa il colore di accento per il bordo della finestra attiva"
