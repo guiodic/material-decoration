@@ -44,6 +44,80 @@ private slots:
         QVERIFY(config->sync());
     }
 
+    void shadowReuse_data()
+    {
+        QTest::addColumn<qreal>("scale");
+        QTest::addColumn<int>("radius");
+        for (qreal scale : {1.0, 1.25}) {
+            for (int radius : {0, 6, 16}) {
+                QTest::newRow(qPrintable(QStringLiteral("scale-%1-radius-%2").arg(scale).arg(radius))) << scale << radius;
+            }
+        }
+    }
+
+    void shadowReuse()
+    {
+        QFETCH(qreal, scale);
+        QFETCH(int, radius);
+        auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        auto group = config->group(QStringLiteral("Windeco"));
+        group.writeEntry("CornerRadius", radius);
+        group.writeEntry("SquareCornersTiled", true);
+        group.writeEntry("ShadowSize", 2);
+        auto exception = config->group(QStringLiteral("Windeco Exception 0"));
+        exception.writeEntry("ExceptionPattern", "Square window");
+        exception.writeEntry("ExceptionType", 0);
+        exception.writeEntry("Mask", 1 << 4); // SquareCorners
+        exception.writeEntry("SquareCorners", true);
+        QVERIFY(config->sync());
+
+        MaterialTest::Bridge bridge;
+        auto decoration = create(bridge);
+        QVERIFY(decoration);
+        bridge.client->outputScale = scale;
+        decoration->create();
+        decoration->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&bridge));
+        QVERIFY(decoration->init());
+        Q_EMIT decoration->settings()->reconfigured();
+        decoration->apply(decoration->nextState()->clone());
+        const auto shadow = decoration->shadow();
+        QVERIFY(shadow);
+        const auto rounded = decoration->currentState()->borderRadius();
+        const auto checkSquare = [&] {
+            decoration->apply(decoration->nextState()->clone());
+            QVERIFY(decoration->currentState()->borderRadius() == KDecoration3::BorderRadius());
+            QCOMPARE(decoration->shadow(), shadow);
+        };
+        bridge.client->screenEdges = Qt::LeftEdge | Qt::TopEdge | Qt::BottomEdge;
+        Q_EMIT decoration->window()->adjacentScreenEdgesChanged(bridge.client->screenEdges);
+        checkSquare();
+        bridge.client->screenEdges = {};
+        Q_EMIT decoration->window()->adjacentScreenEdgesChanged({});
+        QCOMPARE(decoration->shadow(), shadow);
+        bridge.client->maximizedHorizontal = true;
+        bridge.client->maximizedVertical = true;
+        Q_EMIT decoration->window()->maximizedChanged(true);
+        checkSquare();
+        bridge.client->maximizedHorizontal = false;
+        bridge.client->maximizedVertical = false;
+        Q_EMIT decoration->window()->maximizedChanged(false);
+        QCOMPARE(decoration->shadow(), shadow);
+        bridge.client->captionText = QStringLiteral("Square window");
+        Q_EMIT decoration->window()->captionChanged(bridge.client->captionText);
+        checkSquare();
+        bridge.client->captionText.clear();
+        Q_EMIT decoration->window()->captionChanged(bridge.client->captionText);
+        decoration->apply(decoration->nextState()->clone());
+        QVERIFY(decoration->currentState()->borderRadius() == rounded);
+        QCOMPARE(decoration->shadow(), shadow);
+        group.writeEntry("CornerRadius", radius == 16 ? 6 : 16);
+        QVERIFY(config->sync());
+        Q_EMIT decoration->settings()->reconfigured();
+        QVERIFY(decoration->shadow() != shadow);
+        config->deleteGroup(QStringLiteral("Windeco Exception 0"));
+        QVERIFY(config->sync());
+    }
+
     void resizeBorders_data()
     {
         QTest::addColumn<KDecoration3::BorderSize>("mode");

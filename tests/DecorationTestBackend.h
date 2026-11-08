@@ -28,10 +28,11 @@ public:
         resizeable = value;
         Q_EMIT window()->resizeableChanged(value);
     }
+    QString captionText;
     QPalette colors;
 
     bool isActive() const override { return active; }
-    QString caption() const override { return {}; }
+    QString caption() const override { return captionText; }
     bool isOnAllDesktops() const override { return false; }
     bool isShaded() const override { return shaded; }
     QIcon icon() const override { return {}; }

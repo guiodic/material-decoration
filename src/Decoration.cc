@@ -178,7 +178,7 @@ static std::atomic<int> s_decoCount(0);
 static int s_shadowSizePreset = InternalSettings::ShadowVeryLarge;
 static int s_shadowStrength = 255;
 static QColor s_shadowColor = QColor(33, 33, 33);
-static qreal s_cornerRadius = -1;
+static qreal s_shadowCornerRadius = -1;
 static bool s_previewShadow = false;
 static std::shared_ptr<KDecoration3::DecorationShadow> s_cachedShadow;
 
@@ -203,7 +203,7 @@ Decoration::~Decoration()
         s_shadowSizePreset = -1;
         s_shadowStrength = -1;
         s_shadowColor = QColor();
-        s_cornerRadius = -1;
+        s_shadowCornerRadius = -1;
     }
 }
 
@@ -914,12 +914,15 @@ void Decoration::updateShadow()
     const int shadowStrengthInt = m_internalSettings->shadowStrength();
     const int shadowSizePreset = m_internalSettings->shadowSize();
     const bool preview = property("visualParent").isValid();
+    // Keep the texture reusable when tiling or exceptions square the visible corners.
+    const qreal shadowCornerRadius = KDecoration3::snapToPixelGrid(
+        SettingsProvider::self()->defaultCornerRadius(), window()->nextScale());
 
     if (s_cachedShadow
         && s_shadowColor == shadowColor
         && s_shadowSizePreset == shadowSizePreset
         && s_shadowStrength == shadowStrengthInt
-        && s_cornerRadius == m_cornerRadius
+        && s_shadowCornerRadius == shadowCornerRadius
         && s_previewShadow == preview
     ) {
         setShadow(s_cachedShadow);
@@ -929,14 +932,14 @@ void Decoration::updateShadow()
     s_shadowColor = shadowColor;
     s_shadowStrength = shadowStrengthInt;
     s_shadowSizePreset = shadowSizePreset;
-    s_cornerRadius = m_cornerRadius;
+    s_shadowCornerRadius = shadowCornerRadius;
     s_previewShadow = preview;
 
-    s_cachedShadow = createShadowObject(1.0);
+    s_cachedShadow = createShadowObject(1.0, shadowCornerRadius);
     setShadow(s_cachedShadow);
 }
 
-std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(const float strengthScale)
+std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(const float strengthScale, qreal cornerRadius)
 {
     CompositeShadowParams params = lookupShadowParams(m_internalSettings->shadowSize());
     if (params.isNone()) {
@@ -953,7 +956,7 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
         BoxShadowRenderer::calculateMinimumBoxSize(params.shadow1.radius).expandedTo(BoxShadowRenderer::calculateMinimumBoxSize(params.shadow2.radius));
 
     BoxShadowRenderer shadowRenderer;
-    shadowRenderer.setBorderRadius(m_cornerRadius + 0.5);
+    shadowRenderer.setBorderRadius(cornerRadius + 0.5);
     shadowRenderer.setBoxSize(boxSize);
 
     const qreal strength = m_internalSettings->shadowStrength() / 255.0 * strengthScale;
@@ -982,7 +985,7 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
-    painter.drawRoundedRect(innerRect, m_cornerRadius + 0.5, m_cornerRadius + 0.5);
+    painter.drawRoundedRect(innerRect, cornerRadius + 0.5, cornerRadius + 0.5);
 
     painter.end();
 
