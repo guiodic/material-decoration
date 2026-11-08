@@ -977,6 +977,9 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
     shadowRenderer.addShadow(params.shadow2.offset, params.shadow2.radius, withOpacity(m_internalSettings->shadowColor(), params.shadow2.opacity * strength));
 
     QImage shadowTexture = shadowRenderer.render();
+    if (shadowTexture.isNull()) {
+        return nullptr;
+    }
 
     QPainter painter(&shadowTexture);
     painter.setRenderHint(QPainter::Antialiasing);
@@ -1004,7 +1007,10 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
     if (preview) {
         // PreviewItem offsets only the right/bottom strip sources by one texel.
         // Their center row/column are not used by the corner tiles.
-        const QImage source = shadowTexture;
+        const QImage source = shadowTexture.copy();
+        if (source.isNull()) {
+            return nullptr;
+        }
         const QPoint center = outerRect.center();
         auto *row = reinterpret_cast<QRgb *>(shadowTexture.scanLine(center.y()));
         const auto *sourceRow = reinterpret_cast<const QRgb *>(source.constScanLine(center.y()));
