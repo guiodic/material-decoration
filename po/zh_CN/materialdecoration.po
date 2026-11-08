@@ -480,10 +480,6 @@ msgstr "启用"
 msgid "Disabled"
 msgstr "禁用"
 
-#: config.ui
-msgid "Use accent color for the active window outline"
-msgstr "使用强调色绘制活动窗口的轮廓"
-
 #: src/kcm/config.ui
 msgid "Use accent color for the active window border"
 msgstr "为活动窗口边框使用强调色"
