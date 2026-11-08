@@ -19,7 +19,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
 #include <atomic>
+#include <list>
 #include <optional>
 
 // own
@@ -175,12 +177,23 @@ void forEachButton(KDecoration3::DecorationButtonGroup *buttonGroup, Func f)
 
 static std::atomic<int> s_decoCount(0);
 
-static int s_shadowSizePreset = InternalSettings::ShadowVeryLarge;
-static int s_shadowStrength = 255;
-static QColor s_shadowColor = QColor(33, 33, 33);
-static qreal s_shadowCornerRadius = -1;
-static bool s_previewShadow = false;
-static std::shared_ptr<KDecoration3::DecorationShadow> s_cachedShadow;
+struct ShadowCacheKey {
+    QColor color;
+    int size;
+    int strength;
+    qreal cornerRadius;
+    bool preview;
+
+    bool operator==(const ShadowCacheKey &) const = default;
+};
+
+struct ShadowCacheEntry {
+    ShadowCacheKey key;
+    std::shared_ptr<KDecoration3::DecorationShadow> shadow;
+};
+
+static std::list<ShadowCacheEntry> s_shadowCache;
+static constexpr size_t s_shadowCacheLimit = 8;
 
 Decoration::Decoration(QObject *parent, const QVariantList &args)
     : KDecoration3::Decoration(parent, args)
@@ -199,11 +212,7 @@ Decoration::~Decoration()
         if (count < 0) {
             s_decoCount.store(0); // defensive reset
         }
-        s_cachedShadow.reset();
-        s_shadowSizePreset = -1;
-        s_shadowStrength = -1;
-        s_shadowColor = QColor();
-        s_shadowCornerRadius = -1;
+        s_shadowCache.clear();
     }
 }
 
@@ -910,33 +919,29 @@ void Decoration::updateShadow()
         return;
     }
 
-    const QColor shadowColor = m_internalSettings->shadowColor();
-    const int shadowStrengthInt = m_internalSettings->shadowStrength();
-    const int shadowSizePreset = m_internalSettings->shadowSize();
-    const bool preview = property("visualParent").isValid();
-    // Keep the texture reusable when tiling or exceptions square the visible corners.
-    const qreal shadowCornerRadius = KDecoration3::snapToPixelGrid(
-        SettingsProvider::self()->defaultCornerRadius(), window()->nextScale());
-
-    if (s_cachedShadow
-        && s_shadowColor == shadowColor
-        && s_shadowSizePreset == shadowSizePreset
-        && s_shadowStrength == shadowStrengthInt
-        && s_shadowCornerRadius == shadowCornerRadius
-        && s_previewShadow == preview
-    ) {
-        setShadow(s_cachedShadow);
+    const ShadowCacheKey key{
+        m_internalSettings->shadowColor(),
+        m_internalSettings->shadowSize(),
+        m_internalSettings->shadowStrength(),
+        m_cornerRadius,
+        property("visualParent").isValid(),
+    };
+    const auto cached = std::find_if(s_shadowCache.begin(), s_shadowCache.end(), [&key](const auto &entry) {
+        return entry.key == key;
+    });
+    if (cached != s_shadowCache.end()) {
+        s_shadowCache.splice(s_shadowCache.begin(), s_shadowCache, cached);
+        setShadow(s_shadowCache.front().shadow);
         return;
     }
 
-    s_shadowColor = shadowColor;
-    s_shadowStrength = shadowStrengthInt;
-    s_shadowSizePreset = shadowSizePreset;
-    s_shadowCornerRadius = shadowCornerRadius;
-    s_previewShadow = preview;
-
-    s_cachedShadow = createShadowObject(1.0, shadowCornerRadius);
-    setShadow(s_cachedShadow);
+    auto shadow = createShadowObject(1.0, key.cornerRadius);
+    s_shadowCache.push_front({key, shadow});
+    // Retain common corner/scale variants without keeping every past setting.
+    if (s_shadowCache.size() > s_shadowCacheLimit) {
+        s_shadowCache.pop_back();
+    }
+    setShadow(shadow);
 }
 
 std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(const float strengthScale, qreal cornerRadius)

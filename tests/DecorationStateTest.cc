@@ -83,10 +83,17 @@ private slots:
         const auto shadow = decoration->shadow();
         QVERIFY(shadow);
         const auto rounded = decoration->currentState()->borderRadius();
+        std::shared_ptr<KDecoration3::DecorationShadow> squareShadow;
         const auto checkSquare = [&] {
             decoration->apply(decoration->nextState()->clone());
             QVERIFY(decoration->currentState()->borderRadius() == KDecoration3::BorderRadius());
-            QCOMPARE(decoration->shadow(), shadow);
+            QVERIFY(decoration->shadow());
+            if (squareShadow) {
+                QCOMPARE(decoration->shadow(), squareShadow);
+            } else {
+                squareShadow = decoration->shadow();
+            }
+            QCOMPARE(squareShadow == shadow, radius == 0);
         };
         bridge.client->screenEdges = Qt::LeftEdge | Qt::TopEdge | Qt::BottomEdge;
         Q_EMIT decoration->window()->adjacentScreenEdgesChanged(bridge.client->screenEdges);
@@ -114,6 +121,10 @@ private slots:
         QVERIFY(config->sync());
         Q_EMIT decoration->settings()->reconfigured();
         QVERIFY(decoration->shadow() != shadow);
+        group.writeEntry("CornerRadius", radius);
+        QVERIFY(config->sync());
+        Q_EMIT decoration->settings()->reconfigured();
+        QCOMPARE(decoration->shadow(), shadow);
         config->deleteGroup(QStringLiteral("Windeco Exception 0"));
         QVERIFY(config->sync());
     }
