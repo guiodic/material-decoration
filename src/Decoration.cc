@@ -995,8 +995,9 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
                            outerRect.bottom() - boxRect.bottom() - shadowOverlap + params.offset.y());
     QRectF innerRect = outerRect - padding;
     // The preview copies its right/bottom strips one texel inward.
+    // Keep the left cutout at the frame edge to avoid darkening translucent borders.
     if (preview) {
-        innerRect.adjust(2, 2, -2, -2);
+        innerRect.adjust(0, 2, -2, -2);
     }
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::black);
