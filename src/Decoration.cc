@@ -936,10 +936,12 @@ void Decoration::updateShadow()
     }
 
     auto shadow = createShadowObject(1.0, key.cornerRadius);
-    s_shadowCache.push_front({key, shadow});
-    // Retain common corner/scale variants without keeping every past setting.
-    if (s_shadowCache.size() > s_shadowCacheLimit) {
-        s_shadowCache.pop_back();
+    if (shadow) {
+        s_shadowCache.push_front({key, shadow});
+        // Retain common corner/scale variants without keeping every past setting.
+        if (s_shadowCache.size() > s_shadowCacheLimit) {
+            s_shadowCache.pop_back();
+        }
     }
     setShadow(shadow);
 }

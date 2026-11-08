@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "DecorationTestBackend.h"
 
+#include <array>
+
 #include <KConfigGroup>
 #include <KDecoration3/DecorationSettings>
 #include <KDecoration3/DecorationButton>
@@ -127,6 +129,51 @@ private slots:
         QCOMPARE(decoration->shadow(), shadow);
         config->deleteGroup(QStringLiteral("Windeco Exception 0"));
         QVERIFY(config->sync());
+    }
+
+    void shadowCacheEviction()
+    {
+        auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        auto group = config->group(QStringLiteral("Windeco"));
+        MaterialTest::Bridge bridge;
+        auto decoration = create(bridge);
+        QVERIFY(decoration);
+        decoration->create();
+        decoration->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&bridge));
+        QVERIFY(decoration->init());
+        const auto select = [&](int variant, int preset = 2) {
+            group.writeEntry("ShadowSize", preset);
+            group.writeEntry("ShadowColor", QColor(40 + variant, 50, 60));
+            QVERIFY(config->sync());
+            Q_EMIT decoration->settings()->reconfigured();
+        };
+        std::array<std::shared_ptr<KDecoration3::DecorationShadow>, 8> shadows;
+        for (int i = 0; i < int(shadows.size()); ++i) {
+            select(i);
+            shadows[i] = decoration->shadow();
+            QVERIFY(shadows[i]);
+        }
+
+        // Disabled shadows must not occupy entries or evict real textures.
+        for (int i = 0; i < 9; ++i) {
+            select(i, 0);
+            QVERIFY(!decoration->shadow());
+        }
+        select(0);
+        QCOMPARE(decoration->shadow(), shadows[0]);
+
+        // Reusing the oldest entry makes variant 1 the eviction candidate.
+        select(8);
+        QVERIFY(decoration->shadow());
+        select(0);
+        QCOMPARE(decoration->shadow(), shadows[0]);
+        for (int i = 2; i < int(shadows.size()); ++i) {
+            select(i);
+            QCOMPARE(decoration->shadow(), shadows[i]);
+        }
+        select(1);
+        QVERIFY(decoration->shadow());
+        QVERIFY(decoration->shadow() != shadows[1]);
     }
 
     void resizeBorders_data()
