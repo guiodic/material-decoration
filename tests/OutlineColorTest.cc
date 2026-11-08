@@ -6,6 +6,8 @@
 #include <KPluginFactory>
 #include <KSharedConfig>
 #include <QApplication>
+#include <QImage>
+#include <QPainter>
 #include <QPluginLoader>
 #include <QTemporaryDir>
 #include <QTest>
@@ -53,6 +55,9 @@ private slots:
         QFETCH(bool, borderAccent);
         auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
         auto group = config->group(QStringLiteral("Windeco"));
+        group.writeEntry("AnimationsEnabled", false);
+        group.writeEntry("ActiveOpacity", 1.0);
+        group.writeEntry("InactiveOpacity", 1.0);
         group.writeEntry("OutlineActive", true);
         group.writeEntry("ActiveOutlineUsesAccent", accent);
         group.writeEntry("UseCustomBorderColors", customBorder);
@@ -110,6 +115,30 @@ private slots:
         QVERIFY(config->sync());
         Q_EMIT decoration->settings()->reconfigured();
         QVERIFY(decoration->nextState()->borderOutline().isNull());
+
+        // Exercise the real paint path independently of the compositor outline.
+        const auto checkPaintedBorder = [&] {
+            decoration->apply(decoration->nextState()->clone());
+            QVERIFY(decoration->borderLeft() >= 2);
+            QImage image(decoration->size().toSize(), QImage::Format_ARGB32_Premultiplied);
+            image.fill(Qt::transparent);
+            QPainter painter(&image);
+            decoration->paint(&painter, decoration->rect());
+            painter.end();
+            const QColor expected = customBorder
+                ? (bridge.client->active
+                    ? (borderAccent ? palette.color(QPalette::Active, QPalette::Highlight) : QColor("#cc3344"))
+                    : QColor("#667788"))
+                : palette.color(bridge.client->active ? QPalette::Active : QPalette::Inactive, QPalette::Window);
+            QCOMPARE(image.pixelColor(int(decoration->borderLeft() / 2), image.height() / 2), expected);
+        };
+        checkPaintedBorder();
+        bridge.client->active = !bridge.client->active;
+        Q_EMIT decoration->window()->activeChanged(bridge.client->active);
+        checkPaintedBorder();
+        palette.setColor(QPalette::Active, QPalette::Highlight, QColor("#ee9900"));
+        Q_EMIT decoration->window()->paletteChanged(palette);
+        checkPaintedBorder();
     }
 };
 
