@@ -15,16 +15,20 @@ private slots:
         auto defaults = Material::InternalSettingsPtr::create();
         defaults->setDefaults();
         QVERIFY(!defaults->activeOutlineUsesAccent());
+        QVERIFY(!defaults->activeBorderUsesAccent());
         auto exception = Material::InternalSettingsPtr::create();
         exception->setMask(Material::ExceptionMask::OutlineActive);
         exception->setOutlineActive(true);
         Material::SettingsProvider provider;
         for (bool enabled : {false, true}) {
             defaults->setActiveOutlineUsesAccent(enabled);
+            defaults->setActiveBorderUsesAccent(enabled);
+            exception->setActiveBorderUsesAccent(!enabled);
             exception->setActiveOutlineUsesAccent(!enabled);
             QCOMPARE(Material::cloneInternalSettings(defaults)->activeOutlineUsesAccent(), enabled);
             const auto merged = provider.createMergedSettings(defaults, exception);
             QVERIFY(merged->outlineActive());
+            QCOMPARE(merged->activeBorderUsesAccent(), enabled);
             QCOMPARE(merged->activeOutlineUsesAccent(), enabled);
         }
     }
@@ -39,12 +43,14 @@ private slots:
             written.setSharedConfig(config);
             written.load();
             written.setActiveOutlineUsesAccent(enabled);
+            written.setActiveBorderUsesAccent(enabled);
             QVERIFY(written.save());
             QCOMPARE(config->group(QStringLiteral("Windeco")).readEntry("ActiveOutlineUsesAccent", false), enabled);
             Material::InternalSettings loaded;
             loaded.setSharedConfig(config);
             loaded.load();
             QCOMPARE(loaded.activeOutlineUsesAccent(), enabled);
+            QCOMPARE(loaded.activeBorderUsesAccent(), enabled);
         }
     }
 };

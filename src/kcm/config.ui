@@ -39,6 +39,12 @@
        <string>Appearance</string>
       </attribute>
       <layout class="QFormLayout" name="formLayout">
+       <property name="labelAlignment">
+        <set>Qt::AlignRight|Qt::AlignVCenter</set>
+       </property>
+       <property name="formAlignment">
+        <set>Qt::AlignHCenter|Qt::AlignTop</set>
+       </property>
        <item row="0" column="0">
         <widget class="QLabel" name="label">
          <property name="text">
@@ -139,115 +145,192 @@
          </property>
         </widget>
        </item>
-       <item row="7" column="0">
+       <item row="7" column="1">
         <widget class="QCheckBox" name="kcfg_UseCustomBorderColors">
          <property name="text">
           <string>Use custom border colors</string>
          </property>
         </widget>
        </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="label_11">
-         <property name="text">
-          <string>Active window border color</string>
-         </property>
-        </widget>
-       </item>
        <item row="8" column="1">
-        <widget class="KColorButton" name="kcfg_ActiveBorderColor">
-         <property name="alphaChannelEnabled">
-          <bool>false</bool>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="kcfg_ActiveBorderColorIndentLayout">
+         <item>
+          <spacer name="kcfg_ActiveBorderColorIndentSpacer">
+           <property name="orientation"><enum>Qt::Horizontal</enum></property>
+           <property name="sizeType"><enum>QSizePolicy::Fixed</enum></property>
+           <property name="sizeHint" stdset="0"><size><width>20</width><height>0</height></size></property>
+          </spacer>
+         </item>
+         <item>
+          <layout class="QFormLayout" name="kcfg_ActiveBorderColorFormLayout">
+           <property name="labelAlignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property>
+           <item row="0" column="0" colspan="2">
+            <widget class="QCheckBox" name="kcfg_ActiveBorderUsesAccent">
+             <property name="text">
+              <string>Use accent color for the active window border</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_11">
+             <property name="text">
+              <string>Active window border color</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="KColorButton" name="kcfg_ActiveBorderColor">
+             <property name="alphaChannelEnabled">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_12">
+             <property name="text">
+              <string>Inactive window border color</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="KColorButton" name="kcfg_InactiveBorderColor">
+             <property name="alphaChannelEnabled">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
        </item>
-       <item row="9" column="0">
-        <widget class="QLabel" name="label_12">
-         <property name="text">
-          <string>Inactive window border color</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="1">
-        <widget class="KColorButton" name="kcfg_InactiveBorderColor">
-         <property name="alphaChannelEnabled">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="0" colspan="2">
+       <item row="10" column="1">
         <widget class="QCheckBox" name="kcfg_OutlineActive">
          <property name="text">
           <string>Paint a thin outline around the window</string>
          </property>
         </widget>
        </item>
-       <item row="11" column="0" colspan="2">
-        <widget class="QCheckBox" name="kcfg_ActiveOutlineUsesAccent">
-         <property name="text">
-          <string>Use accent color for the active window outline</string>
-         </property>
-        </widget>
+       <item row="11" column="1">
+        <layout class="QHBoxLayout" name="kcfg_ActiveOutlineUsesAccentIndentLayout">
+         <item>
+          <spacer name="kcfg_ActiveOutlineUsesAccentIndentSpacer">
+           <property name="orientation"><enum>Qt::Horizontal</enum></property>
+           <property name="sizeType"><enum>QSizePolicy::Fixed</enum></property>
+           <property name="sizeHint" stdset="0"><size><width>20</width><height>0</height></size></property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="kcfg_ActiveOutlineUsesAccent">
+           <property name="text">
+            <string>Use accent color for the active window outline</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
-       <item row="12" column="0" colspan="2">
+       <item row="12" column="1">
         <widget class="QCheckBox" name="kcfg_HideCaptionWhenLimitedSpace">
          <property name="text">
           <string>Hide window title when space is limited</string>
          </property>
         </widget>
        </item>
-       <item row="13" column="0" colspan="2">
-        <widget class="QCheckBox" name="kcfg_ShowCaptionOnHover">
-         <property name="text">
-          <string>Show window title on mouse over</string>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="0">
-        <widget class="QLabel" name="label_minWidthForCaption">
-         <property name="text">
-          <string>Minimum reserved space</string>
-         </property>
-        </widget>
+       <item row="13" column="1">
+        <layout class="QHBoxLayout" name="kcfg_ShowCaptionOnHoverIndentLayout">
+         <item>
+          <spacer name="kcfg_ShowCaptionOnHoverIndentSpacer">
+           <property name="orientation"><enum>Qt::Horizontal</enum></property>
+           <property name="sizeType"><enum>QSizePolicy::Fixed</enum></property>
+           <property name="sizeHint" stdset="0"><size><width>20</width><height>0</height></size></property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="kcfg_ShowCaptionOnHover">
+           <property name="text">
+            <string>Show window title on mouse over</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item row="14" column="1">
-        <widget class="QSpinBox" name="kcfg_MinWidthForCaption">
-         <property name="suffix">
-          <string> px</string>
-         </property>
-         <property name="minimum">
-          <number>0</number>
-         </property>
-         <property name="maximum">
-          <number>500</number>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="kcfg_MinWidthForCaptionIndentLayout">
+         <item>
+          <spacer name="kcfg_MinWidthForCaptionIndentSpacer">
+           <property name="orientation"><enum>Qt::Horizontal</enum></property>
+           <property name="sizeType"><enum>QSizePolicy::Fixed</enum></property>
+           <property name="sizeHint" stdset="0"><size><width>20</width><height>0</height></size></property>
+          </spacer>
+         </item>
+         <item>
+          <layout class="QFormLayout" name="kcfg_MinWidthForCaptionFormLayout">
+           <property name="labelAlignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_minWidthForCaption">
+             <property name="text">
+              <string>Minimum reserved space</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="kcfg_MinWidthForCaption">
+             <property name="suffix">
+              <string> px</string>
+             </property>
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
        </item>
-       <item row="15" column="0" colspan="2">
+       <item row="15" column="1">
         <widget class="QCheckBox" name="kcfg_AnimationsEnabled">
          <property name="text">
           <string>Enable animations</string>
          </property>
         </widget>
        </item>
-       <item row="16" column="0">
-        <widget class="QLabel" name="label_9">
-         <property name="text">
-          <string>Animation duration</string>
-         </property>
-        </widget>
-       </item>
        <item row="16" column="1">
-        <widget class="QSpinBox" name="kcfg_AnimationsDuration">
-         <property name="suffix">
-          <string>ms</string>
-         </property>
-         <property name="minimum">
-          <number>0</number>
-         </property>
-         <property name="maximum">
-          <number>1000</number>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="kcfg_AnimationsDurationIndentLayout">
+         <item>
+          <spacer name="kcfg_AnimationsDurationIndentSpacer">
+           <property name="orientation"><enum>Qt::Horizontal</enum></property>
+           <property name="sizeType"><enum>QSizePolicy::Fixed</enum></property>
+           <property name="sizeHint" stdset="0"><size><width>20</width><height>0</height></size></property>
+          </spacer>
+         </item>
+         <item>
+          <layout class="QFormLayout" name="kcfg_AnimationsDurationFormLayout">
+           <property name="labelAlignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_9">
+             <property name="text">
+              <string>Animation duration</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="kcfg_AnimationsDuration">
+             <property name="suffix">
+              <string>ms</string>
+             </property>
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
@@ -256,14 +339,20 @@
        <string>Menu and Search</string>
       </attribute>
       <layout class="QFormLayout" name="formLayout_2">
-       <item row="0" column="0" colspan="2">
+       <property name="labelAlignment">
+        <set>Qt::AlignRight|Qt::AlignVCenter</set>
+       </property>
+       <property name="formAlignment">
+        <set>Qt::AlignHCenter|Qt::AlignTop</set>
+       </property>
+       <item row="0" column="1">
         <widget class="QCheckBox" name="kcfg_MenuAlwaysShow">
          <property name="text">
           <string>Always show application menu</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="0" colspan="2">
+       <item row="1" column="1">
         <widget class="QCheckBox" name="kcfg_SearchEnabled">
          <property name="text">
           <string>Enable search button</string>
@@ -271,34 +360,78 @@
         </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QCheckBox" name="kcfg_ShowDisabledActions">
-         <property name="text">
-          <string>Show disabled menu actions</string>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="kcfg_ShowDisabledActionsIndentLayout">
+         <item>
+          <spacer name="kcfg_ShowDisabledActionsIndentSpacer">
+           <property name="orientation"><enum>Qt::Horizontal</enum></property>
+           <property name="sizeType"><enum>QSizePolicy::Fixed</enum></property>
+           <property name="sizeHint" stdset="0"><size><width>20</width><height>0</height></size></property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="kcfg_ShowDisabledActions">
+           <property name="text">
+            <string>Show disabled menu actions</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item row="3" column="1">
-        <widget class="QCheckBox" name="kcfg_SearchIgnoreTopLevel">
-         <property name="text">
-          <string>Ignore top-level menu labels</string>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="kcfg_SearchIgnoreTopLevelIndentLayout">
+         <item>
+          <spacer name="kcfg_SearchIgnoreTopLevelIndentSpacer">
+           <property name="orientation"><enum>Qt::Horizontal</enum></property>
+           <property name="sizeType"><enum>QSizePolicy::Fixed</enum></property>
+           <property name="sizeHint" stdset="0"><size><width>20</width><height>0</height></size></property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="kcfg_SearchIgnoreTopLevel">
+           <property name="text">
+            <string>Ignore top-level menu labels</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item row="4" column="1">
-        <widget class="QCheckBox" name="kcfg_SearchIgnoreSubMenus">
-         <property name="text">
-          <string>Also ignore submenu labels</string>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="kcfg_SearchIgnoreSubMenusIndentLayout">
+         <item>
+          <spacer name="kcfg_SearchIgnoreSubMenusIndentSpacer">
+           <property name="orientation"><enum>Qt::Horizontal</enum></property>
+           <property name="sizeType"><enum>QSizePolicy::Fixed</enum></property>
+           <property name="sizeHint" stdset="0"><size><width>40</width><height>0</height></size></property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="kcfg_SearchIgnoreSubMenus">
+           <property name="text">
+            <string>Also ignore submenu labels</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item row="5" column="1">
-        <widget class="QCheckBox" name="kcfg_SearchFuzzyMatching">
-         <property name="text">
-          <string>Enable fuzzy search</string>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="kcfg_SearchFuzzyMatchingIndentLayout">
+         <item>
+          <spacer name="kcfg_SearchFuzzyMatchingIndentSpacer">
+           <property name="orientation"><enum>Qt::Horizontal</enum></property>
+           <property name="sizeType"><enum>QSizePolicy::Fixed</enum></property>
+           <property name="sizeHint" stdset="0"><size><width>20</width><height>0</height></size></property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="kcfg_SearchFuzzyMatching">
+           <property name="text">
+            <string>Enable fuzzy search</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
-       <item row="6" column="0" colspan="2">
+       <item row="6" column="1">
         <widget class="QCheckBox" name="kcfg_HamburgerMenu">
          <property name="text">
           <string>Use hamburger menu</string>
@@ -312,24 +445,24 @@
          </property>
         </widget>
        </item>
-       <item row="8" column="1">
+       <item row="7" column="1">
         <widget class="QSpinBox" name="kcfg_MenuButtonHorzPadding"/>
        </item>
-       <item row="9" column="0" colspan="2">
+       <item row="9" column="1">
         <widget class="QCheckBox" name="kcfg_UseSystemMenuFont">
          <property name="text">
           <string>Use system menu font</string>
          </property>
         </widget>
        </item>
-       <item row="10" column="0" colspan="2">
+       <item row="10" column="1">
         <widget class="QCheckBox" name="kcfg_UseSystemColors">
          <property name="text">
           <string>Use system colors</string>
          </property>
         </widget>
        </item>
-       <item row="11" column="0" colspan="2">
+       <item row="11" column="1">
         <widget class="QCheckBox" name="kcfg_MenusFollowDecorationColors">
          <property name="text">
           <string>Menus follow decoration colors</string>
@@ -343,6 +476,12 @@
        <string>Shadows</string>
       </attribute>
       <layout class="QFormLayout" name="formLayout_3">
+       <property name="labelAlignment">
+        <set>Qt::AlignRight|Qt::AlignVCenter</set>
+       </property>
+       <property name="formAlignment">
+        <set>Qt::AlignHCenter|Qt::AlignTop</set>
+       </property>
        <item row="0" column="0">
         <widget class="QLabel" name="label_6">
          <property name="text">
@@ -398,7 +537,13 @@
        <string>Button Options</string>
       </attribute>
       <layout class="QFormLayout" name="formLayout_5">
-       <item row="0" column="0" colspan="2">
+       <property name="labelAlignment">
+        <set>Qt::AlignRight|Qt::AlignVCenter</set>
+       </property>
+       <property name="formAlignment">
+        <set>Qt::AlignHCenter|Qt::AlignTop</set>
+       </property>
+       <item row="0" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
           <widget class="QCheckBox" name="kcfg_LongPressEnabled">
@@ -438,44 +583,76 @@
          </item>
         </layout>
        </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_13">
-         <property name="text">
-          <string>Long-press duration</string>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="1">
-        <widget class="QSpinBox" name="kcfg_LongPressDuration">
-         <property name="suffix">
-          <string> ms</string>
-         </property>
-         <property name="minimum">
-          <number>500</number>
-         </property>
-         <property name="maximum">
-          <number>5000</number>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="kcfg_LongPressDurationIndentLayout">
+         <item>
+          <spacer name="kcfg_LongPressDurationIndentSpacer">
+           <property name="orientation"><enum>Qt::Horizontal</enum></property>
+           <property name="sizeType"><enum>QSizePolicy::Fixed</enum></property>
+           <property name="sizeHint" stdset="0"><size><width>20</width><height>0</height></size></property>
+          </spacer>
+         </item>
+         <item>
+          <layout class="QFormLayout" name="kcfg_LongPressDurationFormLayout">
+           <property name="labelAlignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string>Long-press duration</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="kcfg_LongPressDuration">
+             <property name="suffix">
+              <string> ms</string>
+             </property>
+             <property name="minimum">
+              <number>500</number>
+             </property>
+             <property name="maximum">
+              <number>5000</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
        </item>
-       <item row="3" column="0" colspan="2">
+       <item row="3" column="1">
         <widget class="QCheckBox" name="kcfg_TilingPopupHoverEnabled">
          <property name="text"><string>Open tiling popup when hovering over maximize</string></property>
         </widget>
        </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="tilingPopupHoverDelayLabel">
-         <property name="text"><string>Tiling popup hover delay</string></property>
-        </widget>
-       </item>
        <item row="4" column="1">
-        <widget class="QSpinBox" name="kcfg_TilingPopupHoverDelay">
-         <property name="suffix"><string> ms</string></property>
-         <property name="minimum"><number>500</number></property>
-         <property name="maximum"><number>5000</number></property>
-        </widget>
+        <layout class="QHBoxLayout" name="kcfg_TilingPopupHoverDelayIndentLayout">
+         <item>
+          <spacer name="kcfg_TilingPopupHoverDelayIndentSpacer">
+           <property name="orientation"><enum>Qt::Horizontal</enum></property>
+           <property name="sizeType"><enum>QSizePolicy::Fixed</enum></property>
+           <property name="sizeHint" stdset="0"><size><width>20</width><height>0</height></size></property>
+          </spacer>
+         </item>
+         <item>
+          <layout class="QFormLayout" name="kcfg_TilingPopupHoverDelayFormLayout">
+           <property name="labelAlignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property>
+           <item row="0" column="0">
+            <widget class="QLabel" name="tilingPopupHoverDelayLabel">
+             <property name="text"><string>Tiling popup hover delay</string></property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="kcfg_TilingPopupHoverDelay">
+             <property name="suffix"><string> ms</string></property>
+             <property name="minimum"><number>500</number></property>
+             <property name="maximum"><number>5000</number></property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
        </item>
-       <item row="2" column="0" colspan="2">
+       <item row="2" column="1">
         <widget class="QCheckBox" name="kcfg_DragFromButtonsEnabled">
          <property name="text">
           <string>Allow window dragging from buttons</string>

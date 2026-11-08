@@ -71,6 +71,7 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_InactiveOpacity, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_CornerRadius, &QSpinBox::valueChanged, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_OutlineActive, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_OutlineActive, &QCheckBox::toggled, m_ui->kcfg_ActiveOutlineUsesAccent, &QWidget::setEnabled);
     connect(m_ui->kcfg_ActiveOutlineUsesAccent, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_UseSystemColors, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_UseCustomBorderColors, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
@@ -106,10 +107,15 @@ void MaterialDecorationKCM::setupConnections()
 
     const auto updateBorderStuff = [this] {
         const bool useCustom = m_ui->kcfg_UseCustomBorderColors->isChecked();
-        m_ui->kcfg_ActiveBorderColor->setEnabled(useCustom);
+        m_ui->kcfg_ActiveBorderUsesAccent->setEnabled(useCustom);
+        m_ui->kcfg_ActiveBorderColor->setEnabled(useCustom && !m_ui->kcfg_ActiveBorderUsesAccent->isChecked());
+        m_ui->label_11->setEnabled(useCustom && !m_ui->kcfg_ActiveBorderUsesAccent->isChecked());
+        m_ui->label_12->setEnabled(useCustom);
         m_ui->kcfg_InactiveBorderColor->setEnabled(useCustom);
     };
     connect(m_ui->kcfg_UseCustomBorderColors, &QCheckBox::toggled, this, updateBorderStuff);
+    connect(m_ui->kcfg_ActiveBorderUsesAccent, &QCheckBox::toggled, this, updateBorderStuff);
+    connect(m_ui->kcfg_ActiveBorderUsesAccent, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
 
     connect(m_ui->kcfg_HamburgerMenu, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_ShowDisabledActions, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
@@ -159,10 +165,14 @@ void MaterialDecorationKCM::loadUIFromSettings(const Material::InternalSettings 
     m_ui->kcfg_CornerRadius->setValue(settings.cornerRadius());
     m_ui->kcfg_UseSystemColors->setChecked(settings.useSystemColors());
     m_ui->kcfg_UseCustomBorderColors->setChecked(settings.useCustomBorderColors());
+    m_ui->kcfg_ActiveBorderUsesAccent->setChecked(settings.activeBorderUsesAccent());
     m_ui->kcfg_ActiveBorderColor->setColor(settings.activeBorderColor());
     m_ui->kcfg_InactiveBorderColor->setColor(settings.inactiveBorderColor());
     const bool useCustom = m_ui->kcfg_UseCustomBorderColors->isChecked();
-    m_ui->kcfg_ActiveBorderColor->setEnabled(useCustom);
+    m_ui->kcfg_ActiveBorderUsesAccent->setEnabled(useCustom);
+    m_ui->kcfg_ActiveBorderColor->setEnabled(useCustom && !settings.activeBorderUsesAccent());
+    m_ui->label_11->setEnabled(useCustom && !settings.activeBorderUsesAccent());
+    m_ui->label_12->setEnabled(useCustom);
     m_ui->kcfg_InactiveBorderColor->setEnabled(useCustom);
     m_ui->kcfg_MenuAlwaysShow->setChecked(settings.menuAlwaysShow());
     m_ui->kcfg_ShowCaptionOnHover->setChecked(settings.showCaptionOnHover());
@@ -189,6 +199,7 @@ void MaterialDecorationKCM::loadUIFromSettings(const Material::InternalSettings 
     m_ui->kcfg_MenusFollowDecorationColors->setChecked(settings.menusFollowDecorationColors());
     m_ui->kcfg_OutlineActive->setChecked(settings.outlineActive());
     m_ui->kcfg_ActiveOutlineUsesAccent->setChecked(settings.activeOutlineUsesAccent());
+    m_ui->kcfg_ActiveOutlineUsesAccent->setEnabled(settings.outlineActive());
     m_ui->kcfg_HideCaptionWhenLimitedSpace->setChecked(settings.hideCaptionWhenLimitedSpace());
     m_ui->kcfg_MinWidthForCaption->setValue(settings.minWidthForCaption());
     m_ui->kcfg_MinWidthForCaption->setEnabled(settings.hideCaptionWhenLimitedSpace());
@@ -220,6 +231,7 @@ void MaterialDecorationKCM::save()
     m_settings->setCornerRadius(m_ui->kcfg_CornerRadius->value());
     m_settings->setUseSystemColors(m_ui->kcfg_UseSystemColors->isChecked());
     m_settings->setUseCustomBorderColors(m_ui->kcfg_UseCustomBorderColors->isChecked());
+    m_settings->setActiveBorderUsesAccent(m_ui->kcfg_ActiveBorderUsesAccent->isChecked());
     m_settings->setActiveBorderColor(m_ui->kcfg_ActiveBorderColor->color());
     m_settings->setInactiveBorderColor(m_ui->kcfg_InactiveBorderColor->color());
     m_settings->setMenuAlwaysShow(m_ui->kcfg_MenuAlwaysShow->isChecked());
@@ -294,6 +306,7 @@ bool MaterialDecorationKCM::isChanged() const
     if (m_ui->kcfg_CornerRadius->value() != m_settings->cornerRadius()) return true;
     if (m_ui->kcfg_UseSystemColors->isChecked() != m_settings->useSystemColors()) return true;
     if (m_ui->kcfg_UseCustomBorderColors->isChecked() != m_settings->useCustomBorderColors()) return true;
+    if (m_ui->kcfg_ActiveBorderUsesAccent->isChecked() != m_settings->activeBorderUsesAccent()) return true;
     if (m_ui->kcfg_ActiveBorderColor->color() != m_settings->activeBorderColor()) return true;
     if (m_ui->kcfg_InactiveBorderColor->color() != m_settings->inactiveBorderColor()) return true;
     if (m_ui->kcfg_MenuAlwaysShow->isChecked() != m_settings->menuAlwaysShow()) return true;

@@ -52,6 +52,9 @@
         <entry name="UseCustomBorderColors" type="Bool">
             <default>false</default>
         </entry>
+        <entry name="ActiveBorderUsesAccent" type="Bool">
+            <default>false</default>
+        </entry>
         <entry name="ActiveBorderColor" type="Color">
             <default>61, 174, 233</default>
         </entry>
