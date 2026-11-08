@@ -67,6 +67,7 @@
 #include <QScopedValueRollback>
 #include <QWheelEvent>
 #include <QTimer>
+#include <QThread>
 #include <QToolTip>
 #include <QCursor>
 #include <QMetaMethod>
@@ -192,6 +193,7 @@ struct ShadowCacheEntry {
     std::shared_ptr<KDecoration3::DecorationShadow> shadow;
 };
 
+// The cache is accessed only from the GUI thread.
 static std::list<ShadowCacheEntry> s_shadowCache;
 static constexpr size_t s_shadowCacheLimit = 8;
 
@@ -206,6 +208,8 @@ Decoration::Decoration(QObject *parent, const QVariantList &args)
 
 Decoration::~Decoration()
 {
+    Q_ASSERT_X(qApp && QThread::currentThread() == qApp->thread(),
+               Q_FUNC_INFO, "The shadow cache must be accessed from the GUI thread");
     int count = --s_decoCount;
     if (count <= 0) {
         Q_ASSERT_X(count >= 0, "Decoration::~Decoration()", "s_decoCount became negative, indicating a logic error!");
@@ -914,6 +918,8 @@ void Decoration::updateButtonAnimation()
 
 void Decoration::updateShadow()
 {
+    Q_ASSERT_X(qApp && QThread::currentThread() == qApp->thread(),
+               Q_FUNC_INFO, "The shadow cache must be accessed from the GUI thread");
     if (!m_internalSettings || m_internalSettings->hideShadow()) {
         setShadow(nullptr);
         return;
