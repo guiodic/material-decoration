@@ -981,14 +981,14 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
     QPainter painter(&shadowTexture);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    const QRect outerRect = shadowTexture.rect();
+    const QRectF outerRect = shadowTexture.rect();
 
-    QRect boxRect(QPoint(0, 0), boxSize);
+    QRectF boxRect(QPointF(0, 0), boxSize);
     boxRect.moveCenter(outerRect.center());
 
     // Klassy adjusts the padding and derives the cutout directly from it.
     constexpr int shadowOverlap = 3;
-    const QMargins padding(boxRect.left() - outerRect.left() - shadowOverlap - params.offset.x(),
+    const QMarginsF padding(boxRect.left() - outerRect.left() - shadowOverlap - params.offset.x(),
                            boxRect.top() - outerRect.top() - shadowOverlap - params.offset.y(),
                            outerRect.right() - boxRect.right() - shadowOverlap + params.offset.x(),
                            outerRect.bottom() - boxRect.bottom() - shadowOverlap + params.offset.y());
@@ -1002,7 +1002,7 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
 
     auto ret = std::make_shared<KDecoration3::DecorationShadow>();
     ret->setPadding(padding);
-    ret->setInnerShadowRect(QRect(outerRect.center(), QSize(1, 1)));
+    ret->setInnerShadowRect(QRectF(outerRect.center(), QSizeF(1, 1)));
     ret->setShadow(shadowTexture);
     return ret;
 }
