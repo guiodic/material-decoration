@@ -6,6 +6,7 @@
 #include <KConfigGroup>
 #include <KDecoration3/DecorationSettings>
 #include <KDecoration3/DecorationButton>
+#include <KDecoration3/DecorationShadow>
 #include <KDecoration3/ScaleHelpers>
 #include <KPluginFactory>
 #include <KSharedConfig>
@@ -174,6 +175,63 @@ private slots:
         select(1);
         QVERIFY(decoration->shadow());
         QVERIFY(decoration->shadow() != shadows[1]);
+    }
+
+    void previewShadowTileContinuity()
+    {
+        auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        config->group(QStringLiteral("Windeco")).writeEntry("ShadowSize", 2);
+        QVERIFY(config->sync());
+        MaterialTest::Bridge realBridge;
+        auto real = create(realBridge);
+        QVERIFY(real);
+        real->create();
+        real->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&realBridge));
+        QVERIFY(real->init());
+        Q_EMIT real->settings()->reconfigured();
+        MaterialTest::Bridge previewBridge;
+        auto preview = create(previewBridge);
+        QVERIFY(preview);
+        preview->setProperty("visualParent", QVariant::fromValue<QObject *>(this));
+        preview->create();
+        preview->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&previewBridge));
+        QVERIFY(preview->init());
+        const auto reference = real->shadow();
+        const auto candidate = preview->shadow();
+        QVERIFY(reference);
+        QVERIFY(candidate);
+        QCOMPARE(candidate->padding(), reference->padding());
+        QCOMPARE(candidate->innerShadowRect(), reference->innerShadowRect());
+
+        const auto render = [](const auto &shadow, qreal scale, bool previewSources) {
+            const auto texture = shadow->shadow();
+            const auto split = shadow->innerShadowRect();
+            const auto padding = shadow->padding();
+            const QSize size(240 + padding.left() + padding.right(), 180 + padding.top() + padding.bottom());
+            QImage image(size * scale, QImage::Format_ARGB32_Premultiplied);
+            image.setDevicePixelRatio(scale);
+            image.fill(Qt::transparent);
+            QPainter painter(&image);
+            const qreal sx[] = {0, split.left(), split.right(), qreal(texture.width())};
+            const qreal sy[] = {0, split.top(), split.bottom(), qreal(texture.height())};
+            const qreal dx[] = {0, sx[1], size.width() - (sx[3] - sx[2]), qreal(size.width())};
+            const qreal dy[] = {0, sy[1], size.height() - (sy[3] - sy[2]), qreal(size.height())};
+            for (int y = 0; y < 3; ++y) {
+                for (int x = 0; x < 3; ++x) {
+                    if (x == 1 && y == 1) continue;
+                    QRectF source(sx[x], sy[y], sx[x + 1] - sx[x], sy[y + 1] - sy[y]);
+                    // Match PreviewItem::paintShadow's QRect right()/bottom() offsets.
+                    if (previewSources && x == 2 && y == 1) source.translate(-1, 0);
+                    if (previewSources && x == 1 && y == 2) source.translate(0, -1);
+                    painter.drawImage(QRectF(dx[x], dy[y], dx[x + 1] - dx[x], dy[y + 1] - dy[y]), texture, source);
+                }
+            }
+            painter.end();
+            return image;
+        };
+        for (qreal scale : {1.0, 1.25, 1.5, 1.75, 2.0}) {
+            QCOMPARE(render(candidate, scale, true), render(reference, scale, false));
+        }
     }
 
     void resizeBorders_data()

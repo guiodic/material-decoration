@@ -977,24 +977,26 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
     shadowRenderer.addShadow(params.shadow2.offset, params.shadow2.radius, withOpacity(m_internalSettings->shadowColor(), params.shadow2.opacity * strength));
 
     QImage shadowTexture = shadowRenderer.render();
+    if (shadowTexture.isNull()) {
+        return nullptr;
+    }
 
     QPainter painter(&shadowTexture);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    const QRectF outerRect = shadowTexture.rect();
+    const QRect outerRect = shadowTexture.rect();
 
-    QRectF boxRect(QPoint(0, 0), boxSize);
+    QRect boxRect(QPoint(0, 0), boxSize);
     boxRect.moveCenter(outerRect.center());
 
-    // Mask out inner rect.
-    const QMarginsF padding = QMarginsF(boxRect.left() - outerRect.left() - params.offset.x(),
-                                        boxRect.top() - outerRect.top() - params.offset.y(),
-                                        outerRect.right() - boxRect.right() + params.offset.x(),
-                                        outerRect.bottom() - boxRect.bottom() + params.offset.y());
-    QRectF innerRect = outerRect - padding;
-    // Keep shadow pixels under the frame, as in Breeze. Cutting exactly at
-    // the window edge can expose a light seam when the texture is filtered.
-    innerRect.adjust(1, 1, -1, -1);
+    // Klassy adjusts the padding and derives the cutout directly from it.
+    const bool preview = property("visualParent").isValid();
+    constexpr int shadowOverlap = 3;
+    const QMargins padding(boxRect.left() - outerRect.left() - shadowOverlap - params.offset.x(),
+                           boxRect.top() - outerRect.top() - shadowOverlap - params.offset.y(),
+                           outerRect.right() - boxRect.right() - shadowOverlap + params.offset.x(),
+                           outerRect.bottom() - boxRect.bottom() - shadowOverlap + params.offset.y());
+    const QRectF innerRect = outerRect - padding;
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
@@ -1002,13 +1004,29 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
 
     painter.end();
 
+    if (preview) {
+        // PreviewItem offsets only the right/bottom strip sources by one texel.
+        // Their center row/column are not used by the corner tiles.
+        const QImage source = shadowTexture.copy();
+        if (source.isNull()) {
+            return nullptr;
+        }
+        const QPoint center = outerRect.center();
+        auto *row = reinterpret_cast<QRgb *>(shadowTexture.scanLine(center.y()));
+        const auto *sourceRow = reinterpret_cast<const QRgb *>(source.constScanLine(center.y()));
+        std::copy(sourceRow + center.x() + 1, sourceRow + source.width(), row + center.x());
+        row[source.width() - 1] = 0;
+        for (int y = center.y(); y < source.height() - 1; ++y) {
+            auto *target = reinterpret_cast<QRgb *>(shadowTexture.scanLine(y));
+            const auto *next = reinterpret_cast<const QRgb *>(source.constScanLine(y + 1));
+            target[center.x()] = next[center.x()];
+        }
+        reinterpret_cast<QRgb *>(shadowTexture.scanLine(source.height() - 1))[center.x()] = 0;
+    }
+
     auto ret = std::make_shared<KDecoration3::DecorationShadow>();
     ret->setPadding(padding);
-    // The preview copies shadow tiles with QPainter; keep their source edges
-    // on whole texels rather than splitting the central pixel in half.
-    const QPointF shadowCenter = property("visualParent").isValid()
-        ? QPointF(shadowTexture.rect().center()) : outerRect.center();
-    ret->setInnerShadowRect(QRectF(shadowCenter, QSizeF(1, 1)));
+    ret->setInnerShadowRect(QRect(outerRect.center(), QSize(1, 1)));
     ret->setShadow(shadowTexture);
     return ret;
 }
@@ -1405,7 +1423,11 @@ void Decoration::paintTitleBarBackground(QPainter *painter, const QRectF &repain
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
-    painter->setBrush(titleBarBackgroundColor());
+    const QColor background = titleBarBackgroundColor();
+    if (background.alpha() < 255) {
+        painter->setCompositionMode(QPainter::CompositionMode_Source);
+    }
+    painter->setBrush(background);
 
     painter->drawPath(m_titleBarPath);
 
