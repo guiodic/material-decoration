@@ -986,13 +986,18 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
     QRect boxRect(QPoint(0, 0), boxSize);
     boxRect.moveCenter(outerRect.center());
 
-    // Klassy adjusts the padding and derives the cutout directly from it.
-    constexpr int shadowOverlap = 3;
+    // Preserve the QPainter preview geometry; real windows use Klassy's padding.
+    const bool preview = property("visualParent").isValid();
+    const int shadowOverlap = preview ? 0 : 3;
     const QMargins padding(boxRect.left() - outerRect.left() - shadowOverlap - params.offset.x(),
                            boxRect.top() - outerRect.top() - shadowOverlap - params.offset.y(),
                            outerRect.right() - boxRect.right() - shadowOverlap + params.offset.x(),
                            outerRect.bottom() - boxRect.bottom() - shadowOverlap + params.offset.y());
-    const QRectF innerRect = outerRect - padding;
+    QRectF innerRect = outerRect - padding;
+    // The preview copies its right/bottom strips one texel inward.
+    if (preview) {
+        innerRect.adjust(2, 2, -2, -2);
+    }
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::black);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
