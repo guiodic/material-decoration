@@ -264,20 +264,30 @@ private slots:
         const auto first = fetchLayout(1);
         const auto second = fetchLayout(7);
         const auto nested = fetchLayout(3);
+        service.customLayouts[0] = {7, 1};
+        const auto reorderedRoot = fetchLayout(0);
+        service.customLayouts.remove(0);
         DBusMenuImporter importer(service.bus.baseService(), "/Menu");
         QVERIFY(deliver(importer, 0, root));
         QVERIFY(deliver(importer, 1, first));
         QVERIFY(deliver(importer, 7, second));
         QVERIFY(deliver(importer, 3, nested));
-        QCOMPARE(importer.actionForId(1)->menu()->actions().size(), 2);
-        QCOMPARE(importer.actionForId(7)->menu()->actions().size(), 1);
-        QCOMPARE(importer.actionForId(3)->menu()->actions().size(), 1);
-        // A subsequent root refresh must also remain usable.
-        QVERIFY(deliver(importer, 0, root));
-        QCOMPARE(importer.menu()->actions().size(), 2);
         QVERIFY(importer.actionForId(2));
         QVERIFY(importer.actionForId(4));
         QVERIFY(importer.actionForId(8));
+        const QList<QAction *> firstActions{importer.actionForId(2), importer.actionForId(3)};
+        const QList<QAction *> secondActions{importer.actionForId(8)};
+        const QList<QAction *> nestedActions{importer.actionForId(4)};
+        QCOMPARE(importer.actionForId(1)->menu()->actions(), firstActions);
+        QCOMPARE(importer.actionForId(7)->menu()->actions(), secondActions);
+        QCOMPARE(importer.actionForId(3)->menu()->actions(), nestedActions);
+        QCOMPARE(importer.menu()->actions(), (QList<QAction *>{importer.actionForId(1), importer.actionForId(7)}));
+        // The root still reports revision 1, even when its contents change.
+        QVERIFY(deliver(importer, 0, reorderedRoot));
+        QCOMPARE(importer.menu()->actions(), (QList<QAction *>{importer.actionForId(7), importer.actionForId(1)}));
+        QCOMPARE(importer.actionForId(1)->menu()->actions(), firstActions);
+        QCOMPARE(importer.actionForId(7)->menu()->actions(), secondActions);
+        QCOMPARE(importer.actionForId(3)->menu()->actions(), nestedActions);
     }
     void childLimitStillApplies()
     {
