@@ -2,6 +2,7 @@
 #pragma once
 
 #include <KDecoration3/DecoratedWindow>
+#include <QMenu>
 #include <KDecoration3/Private/DecoratedWindowPrivate>
 #include <KDecoration3/Private/DecorationBridge>
 #include <KDecoration3/Private/DecorationSettingsPrivate>
@@ -9,11 +10,17 @@
 namespace MaterialTest
 {
 // Supply compositor state to a real KDecoration DecoratedWindow.
-class Window : public KDecoration3::DecoratedWindowPrivate
+class Window : public KDecoration3::DecoratedWindowPrivateV3
 {
 public:
     Window(KDecoration3::DecoratedWindow *window, KDecoration3::Decoration *decoration)
-        : DecoratedWindowPrivate(window, decoration) {}
+        : DecoratedWindowPrivateV3(window, decoration) {}
+    bool showPopups = false;
+    QString applicationMenuServiceName() const override { return {}; }
+    QString applicationMenuObjectPath() const override { return {}; }
+    void popup(const KDecoration3::Positioner &, QMenu *menu) override {
+        if (showPopups) menu->popup(QPoint(10, 10));
+    }
     bool active = true;
     bool resizeable = true;
     bool maximizedHorizontal = false;
