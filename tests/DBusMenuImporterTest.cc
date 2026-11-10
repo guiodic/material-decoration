@@ -177,6 +177,38 @@ private slots:
         QVERIFY(deliver(importer, 0, subsequent));
         QCOMPARE(importer.menu()->actions(), QList<QAction *>{importer.actionForId(7)});
     }
+    void invalidReferencesPreserveLayout_data()
+    {
+        QTest::addColumn<int>("parentId");
+        QTest::addColumn<int>("childId");
+        QTest::newRow("reserved-root-id") << 0 << 0;
+        QTest::newRow("self-reference") << 1 << 1;
+        QTest::newRow("ancestor-reference") << 3 << 1;
+    }
+    void invalidReferencesPreserveLayout()
+    {
+        QFETCH(int, parentId);
+        QFETCH(int, childId);
+        const auto root = fetchLayout(0);
+        const auto parentLayout = fetchLayout(1);
+        const auto childLayout = fetchLayout(3);
+        service.customLayouts[parentId] = {childId};
+        const auto invalid = fetchLayout(parentId);
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QVERIFY(deliver(importer, 0, root));
+        QVERIFY(deliver(importer, 1, parentLayout));
+        QVERIFY(deliver(importer, 3, childLayout));
+        QMenu *menu = parentId == 0 ? importer.menu() : importer.actionForId(parentId)->menu();
+        const auto original = menu->actions();
+        const auto originalParent = menu->parentWidget();
+        QVERIFY(deliver(importer, parentId, invalid));
+        QCOMPARE(menu->actions(), original);
+        QCOMPARE(menu->parentWidget(), originalParent);
+        QVERIFY(menu->updatesEnabled());
+        const auto valid = parentId == 0 ? root : parentId == 1 ? parentLayout : childLayout;
+        QVERIFY(deliver(importer, parentId, valid));
+        QCOMPARE(menu->actions(), original);
+    }
     void childLimitStillApplies()
     {
         QList<int> ids;
@@ -219,13 +251,20 @@ private slots:
         QVERIFY(deliver(importer, 0, root));
         QVERIFY(deliver(importer, 1, oldBefore));
         if (movedId == 3) QVERIFY(deliver(importer, 3, nested));
+        const QPointer<QAction> original(importer.actionForId(movedId));
+        const QPointer<QAction> originalChild(importer.actionForId(4));
         if (newFirst) {
             QVERIFY(deliver(importer, 7, newAfter));
             QVERIFY(deliver(importer, 1, oldAfter));
         } else {
             QVERIFY(deliver(importer, 1, oldAfter));
+            QVERIFY(!importer.actionForId(movedId));
+            if (movedId == 3) QVERIFY(!importer.actionForId(4));
             QVERIFY(deliver(importer, 7, newAfter));
         }
+        // Reuse descendant IDs before the retired branch is actually destroyed.
+        if (movedId == 3) QVERIFY(deliver(importer, 3, nested));
+        const QPointer<QAction> survivingChild(importer.actionForId(4));
         QVERIFY(deliver(importer, 0, removeOldParent));
         QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
         auto *moved = importer.actionForId(movedId);
@@ -237,10 +276,16 @@ private slots:
             QVERIFY(moved->menu());
             QCOMPARE(moved->menu()->parentWidget(), destination);
             QVERIFY(moved->menu()->windowFlags().testFlag(Qt::Popup));
-            // Load the new instance too when old-parent-first recreated the submenu.
-            QVERIFY(deliver(importer, 3, nested));
-            QVERIFY(importer.actionForId(4));
-            QCOMPARE(moved->menu()->actions(), QList<QAction *>{importer.actionForId(4)});
+            QVERIFY(survivingChild);
+            QCOMPARE(importer.actionForId(4), survivingChild.data());
+            QCOMPARE(moved->menu()->actions(), QList<QAction *>{survivingChild.data()});
+        }
+        if (newFirst) {
+            QCOMPARE(moved, original.data());
+            if (movedId == 3) QCOMPARE(survivingChild, originalChild);
+        } else {
+            QVERIFY(original.isNull());
+            QVERIFY(originalChild.isNull());
         }
     }
     void reusedIdSurvivesDeferredDestruction()

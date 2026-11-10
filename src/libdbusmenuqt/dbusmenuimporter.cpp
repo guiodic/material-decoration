@@ -151,6 +151,26 @@ public:
         return action;
     }
 
+    // Retired widgets may live until deferred deletion, but their IDs must
+    // stop resolving immediately, including those of owned descendants.
+    void forgetAction(QAction *action)
+    {
+        QList<QAction *> pending{action};
+        while (!pending.isEmpty()) {
+            QAction *current = pending.takeLast();
+            if (QMenu *subMenu = current->menu()) {
+                for (QAction *child : subMenu->actions()) {
+                    if (child->parent() == subMenu) pending.append(child);
+                }
+            }
+            const int id = current->property(DBUSMENU_PROPERTY_ID).toInt();
+            auto it = m_actionForId.find(id);
+            if (it != m_actionForId.end() && it.value() == current) {
+                m_actionForId.erase(it);
+            }
+        }
+    }
+
     /**
      * Update mutable properties of an action.
      *
@@ -483,8 +503,19 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     newIds.reserve(childCount);
     for (int i = 0; i < childCount; ++i) {
         const int id = rootItem.children.at(i).id;
-        if (newIds.contains(id)) {
-            qCWarning(DBUSMENUQT) << "Ignoring menu layout with duplicate ID" << id;
+        QAction *existing = d->m_actionForId.value(id);
+        QMenu *subMenu = existing ? existing->menu() : nullptr;
+        bool createsCycle = false;
+        // QMenu popups are windows: QWidget::isAncestorOf() stops at their
+        // window boundaries, so follow the ownership chain explicitly.
+        for (QWidget *ancestor = menu; subMenu && ancestor; ancestor = ancestor->parentWidget()) {
+            if (ancestor == subMenu) {
+                createsCycle = true;
+                break;
+            }
+        }
+        if (newIds.contains(id) || id == 0 || id == parentId || createsCycle) {
+            qCWarning(DBUSMENUQT) << "Ignoring invalid menu layout for" << parentId << "with child ID" << id;
             Q_EMIT menuUpdated(menu);
             return;
         }
@@ -512,11 +543,13 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
         if (!newIds.contains(id)) {
             menu->removeAction(action);
-            if (QMenu *subMenu = action->menu()) {
-                subMenu->deleteLater();
+            if (action->parent() == menu) {
+                d->forgetAction(action);
+                if (QMenu *subMenu = action->menu()) {
+                    subMenu->deleteLater();
+                }
+                action->deleteLater();
             }
-            action->deleteLater();
-            d->m_actionForId.remove(id);
         } else {
             currentActions.append(action);
         }
@@ -710,12 +743,13 @@ void DBusMenuImporter::retryEmptySubMenu(QMenu *menu)
     auto *request = new QObject(this);
     const QPointer<QMenu> parentMenu(parent);
     const QPointer<QAction> requestedAction(action);
+    const QPointer<QMenu> requestedMenu(menu);
     connect(parent, &QMenu::aboutToHide, request, [request] { request->setProperty("cancelled", true); });
     connect(parent, &QMenu::hovered, request, [request, requestedAction](QAction *hovered) {
         if (hovered != requestedAction) request->setProperty("cancelled", true);
     });
-    connect(this, &DBusMenuImporter::menuUpdated, request, [request, parentMenu, requestedAction, menu](QMenu *updated) {
-        if (updated != menu) return;
+    connect(this, &DBusMenuImporter::menuUpdated, request, [request, parentMenu, requestedAction, requestedMenu](QMenu *updated) {
+        if (!requestedMenu || updated != requestedMenu) return;
         QTimer::singleShot(0, request, [request, parentMenu, requestedAction] {
             const QPointer<QObject> guard(request);
             if (!request->property("cancelled").toBool() && parentMenu && requestedAction
