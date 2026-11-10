@@ -26,7 +26,6 @@
 #include <QKeyEvent>
 #include <QPointer>
 #include <QSet>
-#include <QTime>
 #include <QTimer>
 #include <QToolButton>
 #include <QWidgetAction>
@@ -38,17 +37,6 @@
 
 // Generated
 #include "dbusmenu_interface.h"
-
-// #define BENCHMARK
-#ifdef BENCHMARK
-static QTime sChrono;
-#endif
-
-#define DMRETURN_IF_FAIL(cond)                                                                                                                                 \
-    if (!(cond)) {                                                                                                                                             \
-        qCWarning(DBUSMENUQT) << "Condition failed: " #cond;                                                                                                   \
-        return;                                                                                                                                                \
-    }
 
 static constexpr auto DBUSMENU_PROPERTY_ID = "_dbusmenu_id";
 static constexpr auto DBUSMENU_PROPERTY_LABEL = "_dbusmenu_label";
@@ -194,19 +182,19 @@ public:
         if (key == QLatin1StringView("label")) {
             updateActionLabel(action, value);
         } else if (key == QLatin1StringView("enabled")) {
-            updateActionEnabled(action, value);
+            action->setEnabled(value.isValid() ? value.toBool() : true);
         } else if (key == QLatin1StringView("toggle-state")) {
-            updateActionChecked(action, value);
+            if (action->isCheckable() && value.isValid()) {
+                action->setChecked(value.toInt() == 1);
+            }
         } else if (key == QLatin1StringView("icon-name")) {
             updateActionIconByName(action, value);
         } else if (key == QLatin1StringView("icon-data")) {
             updateActionIconByData(action, value);
         } else if (key == QLatin1StringView("visible")) {
-            updateActionVisible(action, value);
+            action->setVisible(value.isValid() ? value.toBool() : true);
         } else if (key == QLatin1StringView("shortcut")) {
             updateActionShortcut(action, value);
-        } else {
-            // qDebug(DBUSMENUQT) << "Unhandled property update" << key;
         }
     }
 
@@ -218,18 +206,6 @@ public:
             text += QLatin1StringView("  ");
         }
         action->setText(text);
-    }
-
-    void updateActionEnabled(QAction *action, const QVariant &value)
-    {
-        action->setEnabled(value.isValid() ? value.toBool() : true);
-    }
-
-    void updateActionChecked(QAction *action, const QVariant &value)
-    {
-        if (action->isCheckable() && value.isValid()) {
-            action->setChecked(value.toInt() == 1);
-        }
     }
 
     void updateActionIconByName(QAction *action, const QVariant &value)
@@ -258,16 +234,10 @@ public:
         action->setProperty(DBUSMENU_PROPERTY_ICON_DATA_HASH, dataHash);
         QPixmap pix;
         if (!pix.loadFromData(data)) {
-            // qDebug(DBUSMENUQT) << "Failed to decode icon-data property for action" << action->text();
             action->setIcon(QIcon());
             return;
         }
         action->setIcon(QIcon(pix));
-    }
-
-    void updateActionVisible(QAction *action, const QVariant &value)
-    {
-        action->setVisible(value.isValid() ? value.toBool() : true);
     }
 
     void updateActionShortcut(QAction *action, const QVariant &value)
@@ -484,9 +454,6 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         return;
     }
 
-#ifdef BENCHMARK
-    qCDebug(DBUSMENUQT) << "- items received:" << sChrono.elapsed() << "ms";
-#endif
     const DBusMenuLayoutItem rootItem = reply.argumentAt<1>();
 
     if (!menu) {
