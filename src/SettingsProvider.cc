@@ -34,6 +34,8 @@ SettingsProvider *SettingsProvider::self()
 
 SettingsProvider::SettingsProvider()
 {
+    m_cache.setMaxCost(1024);
+
     reconfigure();
 
     QDBusConnection::sessionBus().connect(
@@ -157,9 +159,8 @@ InternalSettingsPtr SettingsProvider::internalSettings(const QString &windowClas
         ? (QString::number(windowClass.size()) + u':' + windowClass + caption)
         : windowClass;
 
-    auto it = m_cache.constFind(cacheKey);
-    if (it != m_cache.constEnd()) {
-        return it.value();
+    if (const InternalSettingsPtr *cached = m_cache.object(cacheKey)) {
+        return *cached;
     }
 
     InternalSettingsPtr matchedSettings = m_defaultSettings;
@@ -208,10 +209,7 @@ InternalSettingsPtr SettingsProvider::internalSettings(const QString &windowClas
         }
     }
 
-    if (m_cache.size() >= 1024) {
-        m_cache.clear();
-    }
-    m_cache.insert(cacheKey, matchedSettings);
+    m_cache.insert(cacheKey, new InternalSettingsPtr(matchedSettings));
 
     return matchedSettings;
 }

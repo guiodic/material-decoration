@@ -20,7 +20,7 @@
 #include "ExceptionList.h"
 #include "InternalSettings.h"
 
-#include <QHash>
+#include <QCache>
 #include <QObject>
 #include <QSharedPointer>
 
@@ -65,7 +65,7 @@ private:
     InternalSettingsPtr m_defaultSettings;
     ExceptionList m_exceptions;
     QList<CompiledException> m_compiledExceptions;
-    QHash<QString, InternalSettingsPtr> m_cache;
+    QCache<QString, InternalSettingsPtr> m_cache;
     bool m_hasWindowTitleExceptions = false;
 };
 
