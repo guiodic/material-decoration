@@ -543,14 +543,15 @@ private slots:
 
     void overflowHideCallbacks_data()
     {
-        QTest::addColumn<bool>("reset");
-        QTest::newRow("replace-popup") << false;
-        QTest::newRow("reset-buttons") << true;
+        QTest::addColumn<int>("scenario");
+        QTest::newRow("replace-popup") << 0;
+        QTest::newRow("reset-buttons") << 1;
+        QTest::newRow("overflow-disappears") << 2;
     }
 
     void overflowHideCallbacks()
     {
-        QFETCH(bool, reset);
+        QFETCH(int, scenario);
         auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
         auto settings = config->group(QStringLiteral("Windeco"));
         settings.writeEntry("HamburgerMenu", true);
@@ -578,6 +579,7 @@ private slots:
         QVERIFY(buttons);
         QMenu menu;
         menu.addMenu(QStringLiteral("File"))->addAction(QStringLiteral("Action"));
+        // This fixture has neither an importer nor a signal sender.
         QVERIFY(QMetaObject::invokeMethod(model, "onMenuUpdated", Qt::DirectConnection, Q_ARG(QMenu *, &menu)));
         QTRY_VERIFY(buttons->property("overflowing").toBool());
         QVERIFY(QMetaObject::invokeMethod(buttons, "requestActivateOverflow", Qt::DirectConnection));
@@ -589,12 +591,17 @@ private slots:
         connect(popup, &QMenu::aboutToHide, buttons, [&] {
             if (hidden) return;
             hidden = true;
-            if (!reset) {
+            if (scenario == 2) {
+                settings.writeEntry("HamburgerMenu", false);
+                QVERIFY(config->sync());
+                Q_EMIT decoration->settings()->reconfigured();
+                QVERIFY(!buttons->property("overflowing").toBool());
+            } else if (scenario == 0) {
                 QMetaObject::invokeMethod(buttons, "requestActivateOverflow", Qt::DirectConnection);
                 reopened = qobject_cast<QMenu *>(QApplication::activePopupWidget());
             }
         });
-        if (reset) {
+        if (scenario == 1) {
             bridge.client->applicationMenuAvailable = false;
             Q_EMIT decoration->window()->hasApplicationMenuChanged(false);
             QTRY_VERIFY(popup.isNull());
@@ -605,6 +612,12 @@ private slots:
         } else {
             QVERIFY(QMetaObject::invokeMethod(buttons, "requestActivateOverflow", Qt::DirectConnection));
             QVERIFY(hidden);
+            if (scenario == 2) {
+                QVERIFY(!QApplication::activePopupWidget());
+                QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+                QVERIFY(popup.isNull());
+                return;
+            }
             QVERIFY(reopened);
             QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
             QVERIFY(popup.isNull());

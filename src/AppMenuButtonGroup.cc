@@ -952,6 +952,9 @@ void AppMenuButtonGroup::handleOverflowTrigger()
     if (m_overflowMenu) {
         return; // A hide callback has already opened a replacement.
     }
+    if (!overflowing() || !m_overflowButton || !m_overflowButton->isVisible() || !m_overflowButton->isEnabled()) {
+        return; // A hide callback may have changed the button layout.
+    }
 
     auto *actionMenu = qobject_cast<Decoration *>(decoration())->createNavigableMenu();
     actionMenu->setAttribute(Qt::WA_DeleteOnClose);
