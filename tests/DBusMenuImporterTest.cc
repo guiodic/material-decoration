@@ -29,6 +29,7 @@ public:
     QMap<int, QList<int>> customLayouts;
     QMap<int, uint> menuRevisions;
     bool kdeTitle = false;
+    int disabledId = -1;
     QList<int> clicked;
     QString introspect(const QString &) const override { return {}; }
     DBusMenuLayoutItem tree(int id, int depth) const
@@ -36,7 +37,7 @@ public:
         DBusMenuLayoutItem item;
         item.id = id;
         item.properties = {{"label", id == 1 ? "_File" : id == 2 ? actionLabel : id == 3 ? "_Nested" : "_Run"},
-                           {"enabled", true}, {"visible", true}};
+                           {"enabled", id != disabledId}, {"visible", true}};
         if (id == 2 && kdeTitle) item.properties.insert("x-kde-title", true);
         if (id == 0 || id == 1 || id == 3 || id == 7) item.properties.insert("children-display", "submenu");
         if (depth == 0) return item;
@@ -141,6 +142,7 @@ private slots:
     void init()
     {
         service.kdeTitle = false;
+        service.disabledId = -1;
         service.customLayouts.clear();
         service.menuRevisions.clear();
         service.layouts.clear();
@@ -302,6 +304,43 @@ private slots:
         QCOMPARE(importer.menu()->actions().size(), 1000);
         QCOMPARE(importer.menu()->actions().first(), importer.actionForId(10));
         QCOMPARE(importer.menu()->actions().last(), importer.actionForId(1009));
+    }
+    void changedSignalSeesTransferredOwnership_data()
+    {
+        QTest::addColumn<int>("movedId");
+        QTest::newRow("action") << 2;
+        QTest::newRow("submenu") << 3;
+    }
+    void changedSignalSeesTransferredOwnership()
+    {
+        QFETCH(int, movedId);
+        service.menuRevisions = {{0, 1}, {1, 40}, {7, 3}};
+        service.customLayouts[1] = {movedId};
+        const auto root = fetchLayout(0);
+        const auto sourceLayout = fetchLayout(1);
+        service.customLayouts[7] = {movedId};
+        service.disabledId = movedId;
+        const auto destinationLayout = fetchLayout(7);
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QVERIFY(deliver(importer, 0, root));
+        QVERIFY(deliver(importer, 1, sourceLayout));
+        auto *source = importer.actionForId(1)->menu();
+        auto *destination = importer.actionForId(7)->menu();
+        auto *action = importer.actionForId(movedId);
+        QVERIFY(action);
+        bool changed = false;
+        connect(action, &QAction::changed, &importer, [&] {
+            changed = true;
+            QCOMPARE(action->parent(), destination);
+            QVERIFY(!source->actions().contains(action));
+            if (QMenu *subMenu = action->menu()) {
+                QCOMPARE(subMenu->parentWidget(), destination);
+            }
+        });
+        QVERIFY(deliver(importer, 7, destinationLayout));
+        QVERIFY(changed);
+        QVERIFY(!action->isEnabled());
+        QCOMPARE(destination->actions(), QList<QAction *>{action});
     }
     void movesBetweenMenus_data()
     {

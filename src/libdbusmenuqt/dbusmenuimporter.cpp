@@ -541,8 +541,6 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         QAction *action = d->m_actionForId.value(dbusMenuItem.id);
 
         if (action) {
-            // Update properties
-            d->updateAction(action, dbusMenuItem.properties);
             if (action->parent() != menu) {
                 // Detach before the old parent's next layout can delete the action.
                 if (auto *previousMenu = qobject_cast<QMenu *>(action->parent())) {
@@ -553,6 +551,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
                     subMenu->setParent(menu, subMenu->windowFlags());
                 }
             }
+            d->updateAction(action, dbusMenuItem.properties);
         } else {
             // Create
             if (d->m_actionForId.count() >= MAX_TOTAL_ACTIONS) {
