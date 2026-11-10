@@ -9,6 +9,7 @@
 #include <QTest>
 #include <QTimer>
 #include <QMenu>
+#include <QKeyEvent>
 
 class MenuService : public QDBusVirtualObject
 {
@@ -25,6 +26,7 @@ public:
     bool blankNestedAction = false;
     bool duplicateNestedAction = false;
     bool renameNestedAction = false;
+    QMap<int, QList<int>> customLayouts;
     QList<int> clicked;
     QString introspect(const QString &) const override { return {}; }
     DBusMenuLayoutItem tree(int id, int depth) const
@@ -54,6 +56,10 @@ public:
             }
         }
         if (id == 7) item.children = {tree(8, next)};
+        if (customLayouts.contains(id)) {
+            item.children.clear();
+            for (int child : customLayouts.value(id)) item.children.append(tree(child, next));
+        }
         return item;
     }
     bool handleMessage(const QDBusMessage &message, const QDBusConnection &bus) override
@@ -84,10 +90,45 @@ public:
     }
 };
 
+class DestroyImporterOnRetry : public QObject
+{
+public:
+    QPointer<DBusMenuImporter> importer;
+    bool armed = false;
+    bool eventFilter(QObject *, QEvent *event) override
+    {
+        if (armed && event->type() == QEvent::KeyPress
+            && static_cast<QKeyEvent *>(event)->key() == Qt::Key_Right) {
+            armed = false;
+            delete importer.data();
+            return true;
+        }
+        return false;
+    }
+};
+
 class DBusMenuImporterTest : public QObject
 {
     Q_OBJECT
     MenuService service;
+    QDBusMessage fetchLayout(int id)
+    {
+        auto message = QDBusMessage::createMethodCall(service.bus.baseService(), "/Menu",
+                                                     "com.canonical.dbusmenu", "GetLayout");
+        message << id << 1 << QStringList{};
+        QDBusPendingCallWatcher watcher(QDBusConnection::sessionBus().asyncCall(message));
+        QSignalSpy finished(&watcher, &QDBusPendingCallWatcher::finished);
+        if (!watcher.isFinished()) finished.wait(5000);
+        return watcher.reply();
+    }
+    bool deliver(DBusMenuImporter &importer, int id, const QDBusMessage &reply)
+    {
+        if (reply.type() != QDBusMessage::ReplyMessage) return false;
+        auto *watcher = new QDBusPendingCallWatcher(QDBusPendingCall::fromCompletedCall(reply), &importer);
+        watcher->setProperty("_dbusmenu_id", id);
+        return QMetaObject::invokeMethod(&importer, "slotGetLayoutFinished", Qt::DirectConnection,
+                                         Q_ARG(QDBusPendingCallWatcher *, watcher));
+    }
 private slots:
     void initTestCase()
     {
@@ -96,6 +137,7 @@ private slots:
     }
     void init()
     {
+        service.customLayouts.clear();
         service.layouts.clear();
         service.actionLabel = QStringLiteral("_Save");
         service.emptyRoot = false;
@@ -108,6 +150,98 @@ private slots:
         service.duplicateNestedAction = false;
         service.renameNestedAction = false;
         service.clicked.clear();
+    }
+    void duplicateIdsPreserveLayout_data()
+    {
+        QTest::addColumn<QList<int>>("ids");
+        QTest::newRow("adjacent") << QList<int>{1, 1};
+        QTest::newRow("separated") << QList<int>{1, 7, 1};
+        QTest::newRow("multiple") << QList<int>{1, 1, 7, 7};
+    }
+    void duplicateIdsPreserveLayout()
+    {
+        QFETCH(QList<int>, ids);
+        const auto valid = fetchLayout(0);
+        service.customLayouts[0] = ids;
+        const auto invalid = fetchLayout(0);
+        service.customLayouts[0] = {7};
+        const auto subsequent = fetchLayout(0);
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QVERIFY(deliver(importer, 0, valid));
+        const auto original = importer.menu()->actions();
+        importer.menu()->setActiveAction(original.first());
+        QVERIFY(deliver(importer, 0, invalid));
+        QCOMPARE(importer.menu()->activeAction(), original.first());
+        QCOMPARE(importer.menu()->actions(), original);
+        QVERIFY(importer.menu()->updatesEnabled());
+        QVERIFY(deliver(importer, 0, subsequent));
+        QCOMPARE(importer.menu()->actions(), QList<QAction *>{importer.actionForId(7)});
+    }
+    void childLimitStillApplies()
+    {
+        QList<int> ids;
+        for (int id = 10; id < 1010; ++id) ids.append(id);
+        // Entries beyond the existing limit are ignored, including duplicates.
+        ids.append(10);
+        service.customLayouts[0] = ids;
+        const auto layout = fetchLayout(0);
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QVERIFY(deliver(importer, 0, layout));
+        QCOMPARE(importer.menu()->actions().size(), 1000);
+        QCOMPARE(importer.menu()->actions().first(), importer.actionForId(10));
+        QCOMPARE(importer.menu()->actions().last(), importer.actionForId(1009));
+    }
+    void movesBetweenMenus_data()
+    {
+        QTest::addColumn<bool>("newFirst");
+        QTest::addColumn<int>("movedId");
+        QTest::newRow("leaf-new-parent-first") << true << 2;
+        QTest::newRow("leaf-old-parent-first") << false << 2;
+        QTest::newRow("submenu-new-parent-first") << true << 3;
+        QTest::newRow("submenu-old-parent-first") << false << 3;
+    }
+    void movesBetweenMenus()
+    {
+        QFETCH(bool, newFirst);
+        QFETCH(int, movedId);
+        service.customLayouts[1] = {movedId};
+        service.customLayouts[7] = {};
+        const auto root = fetchLayout(0);
+        const auto oldBefore = fetchLayout(1);
+        const auto nested = fetchLayout(3);
+        service.customLayouts[1] = {};
+        service.customLayouts[7] = {movedId};
+        const auto oldAfter = fetchLayout(1);
+        const auto newAfter = fetchLayout(7);
+        service.customLayouts[0] = {7};
+        const auto removeOldParent = fetchLayout(0);
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QVERIFY(deliver(importer, 0, root));
+        QVERIFY(deliver(importer, 1, oldBefore));
+        if (movedId == 3) QVERIFY(deliver(importer, 3, nested));
+        if (newFirst) {
+            QVERIFY(deliver(importer, 7, newAfter));
+            QVERIFY(deliver(importer, 1, oldAfter));
+        } else {
+            QVERIFY(deliver(importer, 1, oldAfter));
+            QVERIFY(deliver(importer, 7, newAfter));
+        }
+        QVERIFY(deliver(importer, 0, removeOldParent));
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        auto *moved = importer.actionForId(movedId);
+        QVERIFY(moved);
+        auto *destination = importer.actionForId(7)->menu();
+        QCOMPARE(destination->actions(), QList<QAction *>{moved});
+        QCOMPARE(moved->parent(), destination);
+        if (movedId == 3) {
+            QVERIFY(moved->menu());
+            QCOMPARE(moved->menu()->parentWidget(), destination);
+            QVERIFY(moved->menu()->windowFlags().testFlag(Qt::Popup));
+            // Load the new instance too when old-parent-first recreated the submenu.
+            QVERIFY(deliver(importer, 3, nested));
+            QVERIFY(importer.actionForId(4));
+            QCOMPARE(moved->menu()->actions(), QList<QAction *>{importer.actionForId(4)});
+        }
     }
     void reusedIdSurvivesDeferredDestruction()
     {
@@ -357,6 +491,23 @@ private slots:
         QTRY_COMPARE(importer.menu()->actions().first()->menu()->actions().size(), 2);
         QTRY_COMPARE(requested.size(), 1);
         QCOMPARE(qvariant_cast<QAction *>(requested.first().first())->property("_dbusmenu_id").toInt(), 2);
+    }
+    void destroyDuringRetry()
+    {
+        DestroyImporterOnRetry filter;
+        filter.importer = new DBusMenuImporter(service.bus.baseService(), "/Menu");
+        QTRY_COMPARE(filter.importer->menu()->actions().size(), 2);
+        auto *parent = filter.importer->menu()->actions().first()->menu();
+        filter.importer->updateMenu(parent);
+        QTRY_COMPARE(parent->actions().size(), 2);
+        auto *child = parent->actions().at(1)->menu();
+        parent->installEventFilter(&filter);
+        connect(filter.importer, &DBusMenuImporter::menuUpdated, &filter, [&filter, child](QMenu *updated) {
+            if (updated == child) filter.armed = true;
+        });
+        parent->popup(QPoint(10, 10));
+        QTest::keyClick(parent, Qt::Key_N);
+        QTRY_VERIFY(filter.importer.isNull());
     }
     void coldSubmenu_data()
     {
