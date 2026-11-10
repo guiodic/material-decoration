@@ -144,6 +144,7 @@ private:
     void trigger(int index);
 
     void resetButtons(bool closeSearchMenu = true);
+    void closeOverflowMenu();
     void setupSearchMenu();
     void repositionSearchMenu();
     AppMenuButton *getAppMenuButton(int index) const;

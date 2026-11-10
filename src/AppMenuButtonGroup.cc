@@ -377,6 +377,17 @@ KDecoration3::DecorationButton* AppMenuButtonGroup::buttonAt(QPoint pos) const
     return nullptr;
 }
 
+void AppMenuButtonGroup::closeOverflowMenu()
+{
+    // Hiding can run synchronous callbacks. Keep the old popup separate from
+    // any replacement and check whether it survived before scheduling deletion.
+    const QPointer<QMenu> menu = std::exchange(m_overflowMenu, nullptr);
+    if (menu) {
+        menu->hide();
+        if (menu) menu->deleteLater();
+    }
+}
+
 void AppMenuButtonGroup::resetButtons(bool closeSearchMenu)
 {
     // Structural updates preserve the open search popup; a full reset (for
@@ -410,11 +421,7 @@ void AppMenuButtonGroup::resetButtons(bool closeSearchMenu)
     m_overflowIndex = -1;
     m_searchIndex = -1;
 
-    if (m_overflowMenu) {
-        m_overflowMenu->hide();
-        m_overflowMenu->deleteLater();
-        m_overflowMenu = nullptr;
-    }
+    closeOverflowMenu();
 
     // An empty button list must not prevent the logical state above from being reset.
     if (buttons().isEmpty()) {
@@ -941,10 +948,9 @@ void AppMenuButtonGroup::handleOverflowTrigger()
         return;
     }
 
+    closeOverflowMenu();
     if (m_overflowMenu) {
-        m_overflowMenu->hide();
-        m_overflowMenu->deleteLater();
-        m_overflowMenu = nullptr;
+        return; // A hide callback has already opened a replacement.
     }
 
     auto *actionMenu = qobject_cast<Decoration *>(decoration())->createNavigableMenu();

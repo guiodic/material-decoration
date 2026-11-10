@@ -541,6 +541,80 @@ private slots:
         QTRY_VERIFY(overflow->isVisible());
     }
 
+    void overflowHideCallbacks_data()
+    {
+        QTest::addColumn<bool>("reset");
+        QTest::newRow("replace-popup") << false;
+        QTest::newRow("reset-buttons") << true;
+    }
+
+    void overflowHideCallbacks()
+    {
+        QFETCH(bool, reset);
+        auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        auto settings = config->group(QStringLiteral("Windeco"));
+        settings.writeEntry("HamburgerMenu", true);
+        settings.writeEntry("MenuAlwaysShow", true);
+        settings.writeEntry("SearchEnabled", false);
+        settings.writeEntry("AnimationsEnabled", false);
+        QVERIFY(config->sync());
+        MaterialTest::Bridge bridge;
+        auto decoration = create(bridge);
+        QVERIFY(decoration);
+        bridge.client->applicationMenuAvailable = true;
+        bridge.client->showPopups = true;
+        decoration->create();
+        decoration->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&bridge));
+        QVERIFY(decoration->init());
+        Q_EMIT decoration->settings()->reconfigured();
+        decoration->apply(decoration->nextState()->clone());
+        QObject *model = nullptr;
+        QObject *buttons = nullptr;
+        for (auto *object : decoration->findChildren<QObject *>()) {
+            if (qstrcmp(object->metaObject()->className(), "Material::AppMenuModel") == 0) model = object;
+            if (qstrcmp(object->metaObject()->className(), "Material::AppMenuButtonGroup") == 0) buttons = object;
+        }
+        QVERIFY(model);
+        QVERIFY(buttons);
+        QMenu menu;
+        menu.addMenu(QStringLiteral("File"))->addAction(QStringLiteral("Action"));
+        QVERIFY(QMetaObject::invokeMethod(model, "onMenuUpdated", Qt::DirectConnection, Q_ARG(QMenu *, &menu)));
+        QTRY_VERIFY(buttons->property("overflowing").toBool());
+        QVERIFY(QMetaObject::invokeMethod(buttons, "requestActivateOverflow", Qt::DirectConnection));
+        const QPointer<QMenu> popup(qobject_cast<QMenu *>(QApplication::activePopupWidget()));
+        QVERIFY(popup);
+        QVERIFY(popup->isVisible());
+        bool hidden = false;
+        QPointer<QMenu> reopened;
+        connect(popup, &QMenu::aboutToHide, buttons, [&] {
+            if (hidden) return;
+            hidden = true;
+            if (!reset) {
+                QMetaObject::invokeMethod(buttons, "requestActivateOverflow", Qt::DirectConnection);
+                reopened = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+            }
+        });
+        if (reset) {
+            bridge.client->applicationMenuAvailable = false;
+            Q_EMIT decoration->window()->hasApplicationMenuChanged(false);
+            QTRY_VERIFY(popup.isNull());
+            QCOMPARE(buttons->property("currentIndex").toInt(), -1);
+            // CR-01: a trigger after reset must not open a popup for index -1.
+            QVERIFY(QMetaObject::invokeMethod(buttons, "requestActivateOverflow", Qt::DirectConnection));
+            QVERIFY(!QApplication::activePopupWidget());
+        } else {
+            QVERIFY(QMetaObject::invokeMethod(buttons, "requestActivateOverflow", Qt::DirectConnection));
+            QVERIFY(hidden);
+            QVERIFY(reopened);
+            QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+            QVERIFY(popup.isNull());
+            QVERIFY(reopened);
+            QCOMPARE(QApplication::activePopupWidget(), reopened.data());
+            QVERIFY(reopened->isVisible());
+            reopened->hide();
+        }
+    }
+
     void opaqueState()
     {
         MaterialTest::Bridge bridge;
