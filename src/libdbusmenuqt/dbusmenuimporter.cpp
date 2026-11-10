@@ -479,12 +479,14 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         QAction *existing = d->m_actionForId.value(id);
         QMenu *subMenu = existing ? existing->menu() : nullptr;
         bool createsCycle = false;
-        // QMenu popups are windows: QWidget::isAncestorOf() stops at their
-        // window boundaries, so follow the ownership chain explicitly.
-        for (QWidget *ancestor = menu; subMenu && ancestor; ancestor = ancestor->parentWidget()) {
-            if (ancestor == subMenu) {
-                createsCycle = true;
-                break;
+        // A direct child cannot be an ancestor of its own parent.
+        if (subMenu && subMenu->parentWidget() != menu) {
+            // QMenu popups are windows: follow ownership across window boundaries.
+            for (QWidget *ancestor = menu; ancestor; ancestor = ancestor->parentWidget()) {
+                if (ancestor == subMenu) {
+                    createsCycle = true;
+                    break;
+                }
             }
         }
         if (newIds.contains(id) || id == 0 || id == parentId || createsCycle) {
