@@ -333,6 +333,7 @@ private slots:
             changed = true;
             QCOMPARE(action->parent(), destination);
             QVERIFY(!source->actions().contains(action));
+            QVERIFY(destination->actions().contains(action));
             if (QMenu *subMenu = action->menu()) {
                 QCOMPARE(subMenu->parentWidget(), destination);
             }

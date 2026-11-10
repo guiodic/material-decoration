@@ -539,6 +539,7 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     for (int i = 0; i < childCount; ++i) {
         const DBusMenuLayoutItem &dbusMenuItem = rootItem.children.at(i);
         QAction *action = d->m_actionForId.value(dbusMenuItem.id);
+        const bool isExistingAction = action != nullptr;
 
         if (action) {
             if (action->parent() != menu) {
@@ -551,7 +552,6 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
                     subMenu->setParent(menu, subMenu->windowFlags());
                 }
             }
-            d->updateAction(action, dbusMenuItem.properties);
         } else {
             // Create
             if (d->m_actionForId.count() >= MAX_TOTAL_ACTIONS) {
@@ -588,6 +588,9 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
 
         if (before != action) {
             menu->insertAction(before, action);
+        }
+        if (isExistingAction) {
+            d->updateAction(action, dbusMenuItem.properties);
         }
 
         finalActions.append(action);
