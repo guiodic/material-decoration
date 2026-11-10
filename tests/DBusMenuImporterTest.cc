@@ -99,10 +99,11 @@ class DestroyImporterOnRetry : public QObject
 public:
     QPointer<DBusMenuImporter> importer;
     bool armed = false;
+    int openingKey = Qt::Key_Right;
     bool eventFilter(QObject *, QEvent *event) override
     {
         if (armed && event->type() == QEvent::KeyPress
-            && static_cast<QKeyEvent *>(event)->key() == Qt::Key_Right) {
+            && static_cast<QKeyEvent *>(event)->key() == openingKey) {
             armed = false;
             delete importer.data();
             return true;
@@ -415,29 +416,18 @@ private slots:
         QList<QDBusMessage> replies;
         for (bool empty : {false, true}) {
             service.emptyRoot = empty;
-            auto message = QDBusMessage::createMethodCall(service.bus.baseService(), "/Menu",
-                                                         "com.canonical.dbusmenu", "GetLayout");
-            message << 0 << 1 << QStringList{};
-            QDBusPendingCallWatcher watcher(QDBusConnection::sessionBus().asyncCall(message));
-            QSignalSpy finished(&watcher, &QDBusPendingCallWatcher::finished);
-            if (!watcher.isFinished()) QVERIFY(finished.wait(5000));
-            QCOMPARE(watcher.reply().type(), QDBusMessage::ReplyMessage);
-            replies.append(watcher.reply());
+            const auto reply = fetchLayout(0);
+            QCOMPARE(reply.type(), QDBusMessage::ReplyMessage);
+            replies.append(reply);
         }
         service.emptyRoot = false;
 
         DBusMenuImporter importer(service.bus.baseService(), "/Menu");
-        const auto deliver = [&importer](const QDBusMessage &reply) {
-            auto *watcher = new QDBusPendingCallWatcher(QDBusPendingCall::fromCompletedCall(reply), &importer);
-            watcher->setProperty("_dbusmenu_id", 0);
-            return QMetaObject::invokeMethod(&importer, "slotGetLayoutFinished", Qt::DirectConnection,
-                                             Q_ARG(QDBusPendingCallWatcher *, watcher));
-        };
-        QVERIFY(deliver(replies.at(0)));
+        QVERIFY(deliver(importer, 0, replies.at(0)));
         const QPointer<QAction> original(importer.actionForId(1));
         QVERIFY(original);
-        QVERIFY(deliver(replies.at(1)));
-        QVERIFY(deliver(replies.at(0)));
+        QVERIFY(deliver(importer, 0, replies.at(1)));
+        QVERIFY(deliver(importer, 0, replies.at(0)));
         const QPointer<QAction> replacement(importer.actionForId(1));
         QVERIFY(replacement);
         QVERIFY(replacement != original);
@@ -449,7 +439,7 @@ private slots:
 
         // A subsequent refresh must retain the same action, without creating a
         // duplicate or hitting the importer's layout consistency assertion.
-        QVERIFY(deliver(replies.at(0)));
+        QVERIFY(deliver(importer, 0, replies.at(0)));
         QCOMPARE(importer.actionForId(1), replacement.data());
         QCOMPARE(importer.menu()->actions().size(), 2);
         replacement->trigger();
@@ -657,15 +647,24 @@ private slots:
         QTRY_COMPARE(requested.size(), 1);
         QCOMPARE(qvariant_cast<QAction *>(requested.first().first())->property("_dbusmenu_id").toInt(), 2);
     }
+    void destroyDuringRetry_data()
+    {
+        QTest::addColumn<Qt::LayoutDirection>("direction");
+        QTest::newRow("ltr") << Qt::LeftToRight;
+        QTest::newRow("rtl") << Qt::RightToLeft;
+    }
     void destroyDuringRetry()
     {
+        QFETCH(Qt::LayoutDirection, direction);
         DestroyImporterOnRetry filter;
+        filter.openingKey = direction == Qt::RightToLeft ? Qt::Key_Left : Qt::Key_Right;
         filter.importer = new DBusMenuImporter(service.bus.baseService(), "/Menu");
         QTRY_COMPARE(filter.importer->menu()->actions().size(), 2);
         auto *parent = filter.importer->menu()->actions().first()->menu();
         filter.importer->updateMenu(parent);
         QTRY_COMPARE(parent->actions().size(), 2);
         auto *child = parent->actions().at(1)->menu();
+        parent->setLayoutDirection(direction);
         parent->installEventFilter(&filter);
         connect(filter.importer, &DBusMenuImporter::menuUpdated, &filter, [&filter, child](QMenu *updated) {
             if (updated == child) filter.armed = true;
