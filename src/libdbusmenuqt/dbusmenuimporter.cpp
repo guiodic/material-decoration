@@ -9,7 +9,6 @@
 #include "debug.h"
 
 // STL
-#include <algorithm>
 #include <utility>
 #include <functional>
 
@@ -85,7 +84,6 @@ public:
     using ActionForId = QHash<int, QAction *>;
     ActionForId m_actionForId;
     QTimer m_pendingLayoutUpdateTimer;
-    uint m_layoutRevision = 0;
 
     QSet<int> m_idsRefreshedByAboutToShow;
     QSet<int> m_pendingLayoutUpdates;
@@ -335,7 +333,7 @@ DBusMenuImporter::~DBusMenuImporter()
 
 void DBusMenuImporter::slotLayoutUpdated(uint revision, int parentId)
 {
-    d->m_layoutRevision = std::max(d->m_layoutRevision, revision);
+    Q_UNUSED(revision)
     d->m_idsRefreshedByAboutToShow.remove(parentId);
     d->m_pendingLayoutUpdates << parentId;
     if (!d->m_pendingLayoutUpdateTimer.isActive()) {
@@ -501,20 +499,6 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         return;
     }
 
-    const uint revision = reply.argumentAt<0>();
-    if (revision < d->m_layoutRevision) {
-        // Another parent may have moved an action since this snapshot. Fetch
-        // this parent's current contents instead of applying the old snapshot.
-        // Retry once, so an inconsistent exporter cannot cause a request loop.
-        if (!watcher->property("_dbusmenu_revision_retry").toBool()) {
-            auto *retry = d->refresh(parentId);
-            retry->setProperty("_dbusmenu_revision_retry", true);
-        } else {
-            Q_EMIT menuUpdated(menu);
-        }
-        return;
-    }
-
     int childCount = rootItem.children.count();
     if (childCount > MAX_ACTIONS_PER_MENU) {
         qCWarning(DBUSMENUQT) << "Menu children count" << childCount << "exceeds limit" << MAX_ACTIONS_PER_MENU << ". Truncating.";
@@ -544,7 +528,6 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         newIds.insert(id);
     }
 
-    d->m_layoutRevision = revision;
     menu->setUpdatesEnabled(false);
 
     const auto actionIdentity = [](const QAction *action) {
