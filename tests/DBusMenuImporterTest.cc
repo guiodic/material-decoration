@@ -27,6 +27,7 @@ public:
     bool duplicateNestedAction = false;
     bool renameNestedAction = false;
     QMap<int, QList<int>> customLayouts;
+    uint revision = 1;
     bool kdeTitle = false;
     QList<int> clicked;
     QString introspect(const QString &) const override { return {}; }
@@ -70,7 +71,7 @@ public:
             const int id = message.arguments().at(0).toInt();
             const int depth = message.arguments().at(1).toInt();
             layouts.append({id, depth});
-            const QVariantList result{QVariant::fromValue(uint(1)), QVariant::fromValue(tree(id, depth))};
+            const QVariantList result{QVariant::fromValue(revision), QVariant::fromValue(tree(id, depth))};
             if (depth < 0) {
                 treeProperties = message.arguments().at(2).toStringList();
                 if (removeAfterTree) missingNested = true;
@@ -139,6 +140,7 @@ private slots:
     }
     void init()
     {
+        service.revision = 1;
         service.kdeTitle = false;
         service.customLayouts.clear();
         service.layouts.clear();
@@ -253,6 +255,85 @@ private slots:
         QVERIFY(replacement);
         QCOMPARE(importer.actionForId(2), replacement.data());
         QCOMPARE(importer.actionForId(1)->menu()->actions(), QList<QAction *>{replacement.data()});
+    }
+    void staleReplyDoesNotUndoMove()
+    {
+        service.customLayouts[1] = {2};
+        const auto root = fetchLayout(0);
+        const auto sourceOld = fetchLayout(1);
+        service.revision = 2;
+        service.customLayouts[1] = {};
+        service.customLayouts[7] = {2};
+        const auto destinationNew = fetchLayout(7);
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QVERIFY(deliver(importer, 0, root));
+        QVERIFY(deliver(importer, 1, sourceOld));
+        QVERIFY(deliver(importer, 7, destinationNew));
+        auto *destination = importer.actionForId(7)->menu();
+        const QPointer<QAction> moved(importer.actionForId(2));
+        QVERIFY(deliver(importer, 1, sourceOld));
+        QCOMPARE(destination->actions(), QList<QAction *>{moved.data()});
+        QSignalSpy updated(&importer, &DBusMenuImporter::menuUpdated);
+        QTRY_VERIFY(!updated.isEmpty());
+        QCOMPARE(destination->actions(), QList<QAction *>{moved.data()});
+        QCOMPARE(importer.actionForId(2), moved.data());
+        QVERIFY(importer.actionForId(1)->menu()->actions().isEmpty());
+    }
+    void staleReplyPreservesNewerProperties()
+    {
+        const auto root = fetchLayout(0);
+        const auto oldLayout = fetchLayout(1);
+        service.revision = 2;
+        service.actionLabel = "_Updated";
+        const auto newLayout = fetchLayout(1);
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QVERIFY(deliver(importer, 0, root));
+        QVERIFY(deliver(importer, 1, newLayout));
+        const QPointer<QAction> action(importer.actionForId(2));
+        QVERIFY(action);
+        QCOMPARE(action->text(), "&Updated");
+        QVERIFY(deliver(importer, 1, oldLayout));
+        QCOMPARE(action->text(), "&Updated");
+        QSignalSpy updated(&importer, &DBusMenuImporter::menuUpdated);
+        QTRY_VERIFY(!updated.isEmpty());
+        QCOMPARE(importer.actionForId(2), action.data());
+        QCOMPARE(action->text(), "&Updated");
+    }
+    void staleUnloadedMenuIsRefreshed()
+    {
+        const auto root = fetchLayout(0);
+        const auto sourceOld = fetchLayout(1);
+        service.revision = 2;
+        const auto destinationNew = fetchLayout(7);
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QVERIFY(deliver(importer, 0, root));
+        QVERIFY(deliver(importer, 7, destinationNew));
+        auto *source = importer.actionForId(1)->menu();
+        QVERIFY(deliver(importer, 1, sourceOld));
+        QVERIFY(source->actions().isEmpty());
+        QTRY_COMPARE(source->actions().size(), 2);
+        QVERIFY(importer.actionForId(2));
+        QVERIFY(importer.actionForId(8));
+    }
+    void staleRetryIsBounded()
+    {
+        const auto root = fetchLayout(0);
+        const auto sourceOld = fetchLayout(1);
+        service.revision = 2;
+        const auto destinationNew = fetchLayout(7);
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QVERIFY(deliver(importer, 0, root));
+        QVERIFY(deliver(importer, 7, destinationNew));
+        // Simulate an exporter returning an old revision even for new requests.
+        service.revision = 1;
+        service.layouts.clear();
+        QSignalSpy updated(&importer, &DBusMenuImporter::menuUpdated);
+        QVERIFY(deliver(importer, 1, sourceOld));
+        QTRY_VERIFY(!updated.isEmpty());
+        QTest::qWait(100);
+        QCOMPARE(service.layouts.count({1, 1}), 1);
+        QVERIFY(importer.actionForId(1)->menu()->actions().isEmpty());
+        QVERIFY(importer.actionForId(8));
     }
     void childLimitStillApplies()
     {
