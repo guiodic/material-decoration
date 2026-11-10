@@ -145,6 +145,7 @@ public:
         if (isKdeTitle) {
             QAction *oldAction = action;
             action = createKdeTitle(oldAction, parent);
+            action->setProperty(DBUSMENU_PROPERTY_ID, id);
             oldAction->deleteLater();
         }
 
@@ -492,6 +493,11 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
         qCDebug(DBUSMENUQT) << "No menu for id" << parentId;
         return;
     }
+    if (rootItem.id != parentId) {
+        qCWarning(DBUSMENUQT) << "Ignoring menu layout with root ID" << rootItem.id << "for" << parentId;
+        Q_EMIT menuUpdated(menu);
+        return;
+    }
 
     int childCount = rootItem.children.count();
     if (childCount > MAX_ACTIONS_PER_MENU) {
@@ -750,12 +756,13 @@ void DBusMenuImporter::retryEmptySubMenu(QMenu *menu)
     });
     connect(this, &DBusMenuImporter::menuUpdated, request, [request, parentMenu, requestedAction, requestedMenu](QMenu *updated) {
         if (!requestedMenu || updated != requestedMenu) return;
-        QTimer::singleShot(0, request, [request, parentMenu, requestedAction] {
+        QTimer::singleShot(0, request, [request, parentMenu, requestedAction, requestedMenu] {
             const QPointer<QObject> guard(request);
             if (!request->property("cancelled").toBool() && parentMenu && requestedAction
                 && parentMenu->isVisible() && parentMenu->activeAction() == requestedAction
-                && QApplication::activePopupWidget() == parentMenu && requestedAction->menu()
-                && !requestedAction->menu()->isVisible() && !requestedAction->menu()->actions().isEmpty()) {
+                && QApplication::activePopupWidget() == parentMenu && requestedMenu
+                && requestedAction->menu() == requestedMenu
+                && !requestedMenu->isVisible() && !requestedMenu->actions().isEmpty()) {
                 const auto key = parentMenu->layoutDirection() == Qt::RightToLeft ? Qt::Key_Left : Qt::Key_Right;
                 QKeyEvent event(QEvent::KeyPress, key, Qt::NoModifier);
                 QCoreApplication::sendEvent(parentMenu, &event);

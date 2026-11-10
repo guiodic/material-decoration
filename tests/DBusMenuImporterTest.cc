@@ -27,6 +27,7 @@ public:
     bool duplicateNestedAction = false;
     bool renameNestedAction = false;
     QMap<int, QList<int>> customLayouts;
+    bool kdeTitle = false;
     QList<int> clicked;
     QString introspect(const QString &) const override { return {}; }
     DBusMenuLayoutItem tree(int id, int depth) const
@@ -35,6 +36,7 @@ public:
         item.id = id;
         item.properties = {{"label", id == 1 ? "_File" : id == 2 ? actionLabel : id == 3 ? "_Nested" : "_Run"},
                            {"enabled", true}, {"visible", true}};
+        if (id == 2 && kdeTitle) item.properties.insert("x-kde-title", true);
         if (id == 0 || id == 1 || id == 3 || id == 7) item.properties.insert("children-display", "submenu");
         if (depth == 0) return item;
         const int next = depth < 0 ? -1 : depth - 1;
@@ -137,6 +139,7 @@ private slots:
     }
     void init()
     {
+        service.kdeTitle = false;
         service.customLayouts.clear();
         service.layouts.clear();
         service.actionLabel = QStringLiteral("_Save");
@@ -208,6 +211,48 @@ private slots:
         const auto valid = parentId == 0 ? root : parentId == 1 ? parentLayout : childLayout;
         QVERIFY(deliver(importer, parentId, valid));
         QCOMPARE(menu->actions(), original);
+    }
+    void mismatchedRootPreservesLayout()
+    {
+        const auto root = fetchLayout(0);
+        const auto valid = fetchLayout(1);
+        const auto wrongRoot = fetchLayout(7);
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QVERIFY(deliver(importer, 0, root));
+        QVERIFY(deliver(importer, 1, valid));
+        auto *menu = importer.actionForId(1)->menu();
+        const auto original = menu->actions();
+        QVERIFY(deliver(importer, 1, wrongRoot));
+        QCOMPARE(menu->actions(), original);
+        QVERIFY(!importer.actionForId(8));
+        QVERIFY(deliver(importer, 1, valid));
+        QCOMPARE(menu->actions(), original);
+    }
+    void kdeTitleRetiresAndReusesId()
+    {
+        service.kdeTitle = true;
+        service.customLayouts[1] = {2};
+        const auto root = fetchLayout(0);
+        const auto populated = fetchLayout(1);
+        service.customLayouts[1] = {};
+        const auto empty = fetchLayout(1);
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QVERIFY(deliver(importer, 0, root));
+        QVERIFY(deliver(importer, 1, populated));
+        const QPointer<QAction> original(importer.actionForId(2));
+        QVERIFY(original);
+        QCOMPARE(original->property("_dbusmenu_id").toInt(), 2);
+        QVERIFY(deliver(importer, 1, empty));
+        QVERIFY(!importer.actionForId(2));
+        QVERIFY(deliver(importer, 1, populated));
+        const QPointer<QAction> replacement(importer.actionForId(2));
+        QVERIFY(replacement);
+        QVERIFY(replacement != original);
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        QVERIFY(original.isNull());
+        QVERIFY(replacement);
+        QCOMPARE(importer.actionForId(2), replacement.data());
+        QCOMPARE(importer.actionForId(1)->menu()->actions(), QList<QAction *>{replacement.data()});
     }
     void childLimitStillApplies()
     {
@@ -553,6 +598,33 @@ private slots:
         parent->popup(QPoint(10, 10));
         QTest::keyClick(parent, Qt::Key_N);
         QTRY_VERIFY(filter.importer.isNull());
+    }
+    void replacedSubmenuCancelsRetry()
+    {
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QTRY_COMPARE(importer.menu()->actions().size(), 2);
+        auto *parent = importer.menu()->actions().first()->menu();
+        importer.updateMenu(parent);
+        QTRY_COMPARE(parent->actions().size(), 2);
+        auto *action = parent->actions().at(1);
+        auto *original = action->menu();
+        QMenu replacement;
+        replacement.addAction("Replacement");
+        bool replaced = false;
+        connect(&importer, &DBusMenuImporter::menuUpdated, &importer, [&](QMenu *updated) {
+            if (updated == original) {
+                action->setMenu(&replacement);
+                replaced = true;
+            }
+        });
+        parent->popup(QPoint(10, 10));
+        QTest::keyClick(parent, Qt::Key_N);
+        QTRY_VERIFY(replaced);
+        QTest::qWait(50);
+        QVERIFY(!replacement.isVisible());
+        QCOMPARE(action->menu(), &replacement);
+        parent->hide();
+        action->setMenu(original);
     }
     void coldSubmenu_data()
     {
