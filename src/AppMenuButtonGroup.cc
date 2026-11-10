@@ -892,7 +892,7 @@ void AppMenuButtonGroup::popupMenu(QMenu *menu, int buttonIndex)
 
 void AppMenuButtonGroup::handleMenuButtonTrigger(int buttonIndex)
 {
-    if (!m_appMenuModel || !m_appMenuModel->menu() || buttonIndex >= m_appMenuModel->menu()->actions().count()) {
+    if (buttonIndex < 0 || !m_appMenuModel || !m_appMenuModel->menu() || buttonIndex >= m_appMenuModel->menu()->actions().count()) {
         return; // Index out of bounds
     }
 
