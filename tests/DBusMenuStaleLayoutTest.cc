@@ -192,6 +192,55 @@ private slots:
         QTRY_COMPARE(ids(importer.menu()), (QList<int>{7, 1}));
     }
 
+    void aboutErrorRecoversSupersededLayout_data()
+    {
+        QTest::addColumn<bool>("failRecovery");
+        QTest::newRow("layout-success") << false;
+        QTest::newRow("layout-error") << true;
+    }
+
+    void aboutErrorRecoversSupersededLayout()
+    {
+        QFETCH(bool, failRecovery);
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QTRY_COMPARE(service.layouts, 1);
+        QVERIFY(service.reply(1));
+        QTRY_COMPARE(ids(importer.menu()), (QList<int>{1, 7}));
+        service.rootChildren = {7, 1};
+        service.layoutUpdated(0);
+        QTRY_COMPARE(service.layouts, 2);
+        const auto superseded = pendingRequest(importer, 0);
+        QVERIFY(superseded);
+        service.holdAboutToShow = true;
+        importer.updateMenu(importer.menu());
+        QTRY_COMPARE(service.aboutCalls, 1);
+        QVERIFY(service.reply(2));
+        QTRY_VERIFY(superseded.isNull());
+        QCOMPARE(ids(importer.menu()), (QList<int>{1, 7}));
+        const auto about = pendingRequest(importer, 0);
+        QVERIFY(about);
+        service.failNextLayout = failRecovery;
+        QVERIFY(service.replyAbout(1, true));
+        QTRY_VERIFY(about.isNull());
+        QTRY_COMPARE(service.layouts, 3);
+        const auto recovery = pendingRequest(importer, 0);
+        QVERIFY(recovery);
+        QVERIFY(service.reply(3));
+        QTRY_VERIFY(recovery.isNull());
+        QCOMPARE(service.layouts, 3); // A failed recovery does not schedule another attempt.
+        if (failRecovery) {
+            QCOMPARE(ids(importer.menu()), (QList<int>{1, 7}));
+            importer.updateMenu(importer.menu());
+            QTRY_COMPARE(service.aboutCalls, 2);
+            QVERIFY(service.replyAbout(2, false));
+            QTRY_COMPARE(service.layouts, 4);
+            QVERIFY(service.reply(4));
+            QTRY_COMPARE(ids(importer.menu()), (QList<int>{7, 1}));
+        } else {
+            QCOMPARE(ids(importer.menu()), (QList<int>{7, 1}));
+        }
+    }
+
     void obsoleteAboutErrorDoesNotUnlockNewRequest()
     {
         DBusMenuImporter importer(service.bus.baseService(), "/Menu");

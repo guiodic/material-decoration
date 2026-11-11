@@ -695,14 +695,10 @@ void DBusMenuImporter::slotAboutToShowDBusCallFinished(QDBusPendingCallWatcher *
 
     const QDBusPendingReply<bool> reply = *watcher;
     if (reply.isError()) {
-        menu->setProperty(DBUSMENU_PROPERTY_PENDING, false);
         qCWarning(DBUSMENUQT) << "Call to AboutToShow() failed:" << reply.error().message();
-        Q_EMIT menuUpdated(menu);
-        return;
     }
-    // We used to only refresh if needRefresh was true.
-    // However, some servers are buggy and don't signal correctly, or signals are lost.
-    // Since this is called JIT before showing a menu, always refreshing is safer
+    // Always fetch the layout: exporters may miss updates or not implement
+    // AboutToShow, and this activation may have superseded an earlier refresh.
     d->refresh(id);
 }
 
