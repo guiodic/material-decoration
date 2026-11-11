@@ -328,7 +328,7 @@ DBusMenuImporter::~DBusMenuImporter()
     // leave enough time for the menu to finish what it was doing, for example
     // if it was being displayed.
     if (d->m_menu) {
-        // If StatusNotifierItemSource is gone before PlasmaDBusMenuImporter::menuUpdated, there is no menu
+        // The root is created lazily and may not have been requested yet.
         d->m_menu->deleteLater();
     }
 }

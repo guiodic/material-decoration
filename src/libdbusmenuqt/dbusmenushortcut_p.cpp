@@ -51,10 +51,8 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
             continue;
         }
 
-        // Hack: Qt::CTRL | Qt::Key_Plus is turned into the string "Ctrl++",
-        // but we don't want the call to token.split() to consider the
-        // second '+' as a separator so we handle it by checking if the token
-        // ends with "++".
+        // Qt serializes Ctrl+Plus as "Ctrl++". Preserve the final key while
+        // tokenizing the modifier separators.
         const bool endsWithPlusPlus = token.endsWith(QLatin1StringView("++"));
         const QStringView subToken = endsWithPlusPlus ? token.chopped(2) : token;
 
@@ -80,8 +78,7 @@ DBusMenuShortcut DBusMenuShortcut::fromKeySequence(const QKeySequence &sequence)
 QKeySequence DBusMenuShortcut::toKeySequence() const
 {
     QString res;
-    // Heuristic: estimate size to minimize reallocations.
-    // Each shortcut part is at least a few chars, plus separators.
+    // Reserve room for typical modifier/key combinations and separators.
     res.reserve(size() * 24);
 
     for (const QStringList &keyTokens : std::as_const(*this)) {

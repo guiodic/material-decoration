@@ -20,61 +20,74 @@ class QMenu;
 class DBusMenuImporterPrivate;
 
 /**
- * A DBusMenuImporter instance can recreate a menu serialized over DBus by
- * DBusMenuExporter
+ * Imports com.canonical.dbusmenu items as QMenu and QAction objects on the
+ * session bus. Menu contents are loaded asynchronously.
  */
 class DBusMenuImporter : public QObject
 {
     Q_OBJECT
 public:
     /**
-     * Creates a DBusMenuImporter listening over DBus on service, path
+     * Creates an importer for service and path, and queues the initial root
+     * layout request. Construction does not wait for the remote menu.
      */
     DBusMenuImporter(const QString &service, const QString &path, QObject *parent = nullptr);
 
     ~DBusMenuImporter() override;
 
+    /** Returns the currently imported action for id, or nullptr if not loaded. */
     QAction *actionForId(int id) const;
 
     /**
-     * The menu created from listening to the DBusMenuExporter over DBus
+     * Returns the root menu, creating it if necessary without waiting for data.
+     * The importer schedules this menu for deletion when it is destroyed.
      */
     QMenu *menu() const;
+    /** Cancels an unresolved exporter activation request; menu loads may finish. */
     void cancelActivationRequest();
 
 public Q_SLOTS:
     /**
-     * Load the menu
-     *
-     * Will Q_EMIT menuUpdated() when complete.
-     * This should be done before showing a menu
+     * Asynchronously refreshes the root menu before it is shown.
+     * @see updateMenu(QMenu *)
      */
     void updateMenu();
 
+    /**
+     * Asynchronously refreshes an imported menu, notifying the exporter before
+     * fetching its layout. Re-entrant requests for the same menu are coalesced;
+     * later requests or layout signals can supersede an outstanding reply.
+     * @see menuUpdated()
+     */
     void updateMenu(QMenu *menu);
 
 Q_SIGNALS:
     /**
-     * Emitted after a call to updateMenu().
+     * Emitted when a current layout request completes, including errors and
+     * rejected layouts that leave the menu unchanged. Also emitted for updates
+     * initiated by exporter layout signals. Superseded replies are discarded
+     * without emitting this signal, so it is not an acknowledgement per call.
      * @see updateMenu()
      */
     void menuUpdated(QMenu *);
 
     /**
-     * Emitted when the exporter was asked to activate an action
+     * Emitted when the exporter requests an item and its action is available.
+     * Unknown items may require loading ancestor menus first. This signal does
+     * not trigger the action; cancelled or unsuccessful searches do not emit it.
      */
     void actionActivationRequested(QAction *);
 
 protected:
     /**
-     * Must create a menu, may be customized to fit host appearance.
-     * Default implementation creates a simple QMenu.
+     * Creates a menu for the given parent, optionally using a host-specific type.
+     * Used for the root and submenus; the default returns new QMenu(parent).
      */
     virtual QMenu *createMenu(QWidget *parent);
 
     /**
-     * Must convert a name into an icon.
-     * Default implementation returns a null icon.
+     * Resolves a named icon. The default uses QIcon::fromTheme(name), returning
+     * a null icon when the theme cannot resolve the name.
      */
     virtual QIcon iconForName(const QString &);
 

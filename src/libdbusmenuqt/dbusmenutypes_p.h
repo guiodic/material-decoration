@@ -15,6 +15,7 @@ class QDBusArgument;
 
 namespace DBusMenuLimits
 {
+// Imported actions exclude the root; the decoder budgets one extra root node.
 inline constexpr int MaxActions = 5000;
 }
 
@@ -48,15 +49,16 @@ typedef QList<DBusMenuItemKeys> DBusMenuItemKeysList;
 
 //// DBusMenuLayoutItem
 /**
- * Represents an item with its children. GetLayout() returns a
- * DBusMenuLayoutItemList.
+ * A layout node with its children, encoded as (ia{sv}av). GetLayout() returns
+ * a revision and one root node. Decoding shares a node budget across the tree.
  */
 struct DBusMenuLayoutItem;
 struct DBusMenuLayoutItem {
     int id = 0;
     QVariantMap properties;
     QList<DBusMenuLayoutItem> children;
-    // Local decoding status; this field is not part of the D-Bus structure.
+    // True if this subtree was cut short by the node budget. Propagates to the
+    // root so callers can reject partial trees; never serialized on D-Bus.
     bool truncated = false;
 };
 

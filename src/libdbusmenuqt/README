@@ -1,2 +1,66 @@
-Contains a patched version of the import path of libdbusmenu-qt
-Remove when next version of libdbusmenu-qt is released.
+Internal D-Bus menu importer
+===========================
+
+This directory contains a locally maintained copy of the importer side of
+libdbusmenu-qt. It builds the static dbusmenuqt target for Material's application
+menus using Qt Widgets and Qt DBus. It does not include a menu exporter.
+
+Provenance
+----------
+
+The code was bundled in repository commit dec3fd2b0ba9c0e9cf98dc982da04b4b1577e2ea.
+Commit 0277a1d6e127bdaf89955ef18799e42cc07a6189 records a subsequent update from
+Plasma Workspace's libdbusmenuqt at f07b7f1c23636e9f1c190971bc6dc371d6b52253:
+
+https://github.com/guiodic/material-decoration/commit/0277a1d6e127bdaf89955ef18799e42cc07a6189
+https://github.com/KDE/plasma-workspace/commit/f07b7f1c23636e9f1c190971bc6dc371d6b52253
+
+This is a historical synchronization point, not a release version for the
+current copy. The copy has since been ported to Qt 6 and modified locally; its
+current behavior is outlined below.
+Source-file SPDX notices retain the applicable licensing and attribution.
+
+Local behavior
+--------------
+
+- Load one menu level at a time; fetch submenus on demand. An activation request
+  for an unknown item first fetches the ID tree, then loads its ancestor menus.
+- Reject obsolete asynchronous replies using both the menu instance and its
+  request generation, including when an item ID is reused after deletion.
+- Restore omitted mutable properties to defaults in complete layouts. Apply
+  incremental property signals only to the properties they update or remove.
+- Keep KDE section-heading widgets (x-kde-title) synchronized with their actions.
+- Handle mnemonic escaping and likely unescaped filename underscores, and retry
+  opening empty submenus after their asynchronous contents arrive. Filename
+  detection is a compatibility heuristic, not an unambiguous protocol rule.
+
+Limits
+------
+
+The importer displays at most 1,000 direct children per menu and keeps at most
+5,000 imported actions in total. Layout decoding has a separate, per-tree budget
+of 5,001 nodes: the root plus up to 5,000 descendants, shared across all branches.
+If decoding stops at this budget, the importer ignores the incomplete layout,
+preserves the previous menu, and cancels activation searches based on that tree.
+The local truncation flag is not serialized on D-Bus.
+
+These are node/action limits, not byte limits on messages or property values.
+Transport validation, including wire nesting limits, is handled by QtDBus/libdbus.
+
+Maintenance and validation
+--------------------------
+
+An upstream release alone is not a reason to remove this copy. Before replacing
+it, check Qt 6 integration and each local behavior above against the proposed
+replacement, port any remaining fixes, and run the importer regression suites.
+Record the upstream revision when synchronizing again.
+
+With the project's development dependencies, Qt Test and dbus-run-session
+installed, run from the repository root:
+
+    cmake -S . -B build -DBUILD_TESTING=ON
+    cmake --build build --target dbusmenuimporter_test dbusmenustalelayout_test
+    ctest --test-dir build -R '^(dbusmenuimporter|dbusmenustalelayout)$' --output-on-failure
+
+CMake registers these tests only when dbus-run-session is found at configuration
+time. CTest supplies QT_QPA_PLATFORM=offscreen and an isolated D-Bus session.

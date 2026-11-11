@@ -32,3 +32,11 @@ tablet mode.
 (`qt6-svg` on Arch, `libqt6svg6-dev` on Debian). It exports real GTK button
 icons through `QSvgGenerator` and checks their pixel alignment when rendered
 at 18×18. This checks SVG geometry, not GTK image caching or HiDPI behavior.
+
+## D-Bus menu importer
+
+`dbusmenuimporter` covers layout validation, decoding limits, action properties,
+KDE section headings and lazy submenu activation. `dbusmenustalelayout` controls
+reply ordering to check that obsolete requests cannot overwrite newer menus.
+Both use fake D-Bus exporters and run offscreen in isolated sessions. Build and
+run instructions are in the [internal importer notes](../src/libdbusmenuqt/README).
