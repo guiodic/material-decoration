@@ -32,14 +32,16 @@ function fixture(extraWindows = []) {
             workspace.activeWindow.tile = {unmanage(window) { window.tile = null; }};
         };
     }
-    vm.runInNewContext(source, {workspace, KWin: {PlacementArea: 0},
+    const context = {workspace, KWin: {PlacementArea: 0},
         registerShortcut(name, text, key, callback) { assert.equal(key, ''); shortcut = callback; },
         callDBus(service, objectPath, iface, method, ...args) {
             if (method === 'takeRequest') args[0](request);
             else if (method === 'completeLayout') result = {id: args[0], success: true, layout: JSON.parse(args[1])};
             else { assert.equal(method, 'complete'); result = {id: args[0], success: args[1], reason: args[2]}; }
-        }});
+        }};
+    vm.runInNewContext(source, context);
     return {workspace, target, other, calls, output, root, leaf,
+        restoreImmediately(state) { return context.materialRestoreWindowState(target, JSON.stringify(state)); },
         send(edges, uuid = 'target', operation = 'tile', extra = {}) {
             request = {id: String(++assertions), uuid, edges, operation, ...extra}; result = undefined;
             if (operation === 'restoreState') request.stateJson = JSON.stringify(extra.state);
@@ -167,6 +169,30 @@ function savedState(extra = {}) {
     return {version: 1, geometry: {x: 100, y: 80, width: 900, height: 600}, desktopIds: ['desktop-1'],
         onAllDesktops: false, maximizeMode: 0, fullScreen: false, outputUuid: 'output-1', outputName: 'Virtual-1',
         outputGeometry: {x: 0, y: 0, width: 1280, height: 800}, ...extra};
+}
+{
+    const f = fixture();
+    assert.equal(f.restoreImmediately(savedState()), true);
+    assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 900, height: 600});
+    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(f.calls.length, 0, 'synchronous restore needs no shortcut dispatch');
+    assert.throws(() => f.restoreImmediately(savedState({version: 2})), /Invalid saved geometry/);
+}
+{
+    const f = fixture();
+    let current = {...f.target.frameGeometry};
+    let pending;
+    Object.defineProperty(f.target, 'frameGeometry', {
+        get() { return {...current}; },
+        set(g) {
+            // Wayland commits a move immediately only if size stays unchanged.
+            if (g.width === current.width && g.height === current.height) current = {...g};
+            else pending = {...g};
+        }
+    });
+    assert.equal(f.restoreImmediately(savedState()), true);
+    assert.deepEqual(current, {x: 100, y: 80, width: 640, height: 480}, 'move before waiting for a resized client buffer');
+    assert.deepEqual(pending, {x: 100, y: 80, width: 900, height: 600});
 }
 {
     const f = fixture();

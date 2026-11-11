@@ -15,6 +15,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QJSEngine>
 
 using TestBridge = MaterialTest::Bridge;
 
@@ -247,6 +248,28 @@ private slots:
         const auto decoded = QJsonDocument::fromJson(action.requests.last().value("stateJson").toString().toUtf8()).object();
         QCOMPARE(decoded.value("desktopIds").toArray().at(0).toString(), "desktop-1");
         bridge.client->setResizeable(true);
+    }
+    void callsMatchingScriptEngineSynchronously() {
+        TestDecoration valid(&window, &bridge);
+        QObject scripting;
+        auto bus = QDBusConnection::sessionBus();
+        QVERIFY(bus.registerObject(QStringLiteral("/Scripting"), &scripting));
+        auto *unrelatedEngine = new QJSEngine(&scripting);
+        unrelatedEngine->evaluate(QStringLiteral("var materialRestoreWindowState = null;"));
+        auto *engine = new QJSEngine(&scripting);
+        const QVariantMap state{{QStringLiteral("version"), 1}, {QStringLiteral("desktopIds"), QStringList{QStringLiteral("desktop-1")}}};
+        QVERIFY(!Material::restoreWindowStateImmediately(&valid, state));
+        engine->evaluate(QStringLiteral("var restored, ownerName; function materialRestoreWindowState(window, json) { restored = JSON.parse(json); ownerName = window.objectName; return true; }"));
+        window.setObjectName(QStringLiteral("target-window"));
+        const auto queued = action.requests.size();
+        QVERIFY(Material::restoreWindowStateImmediately(&valid, state));
+        QCOMPARE(engine->globalObject().property("ownerName").toString(), "target-window");
+        QCOMPARE(engine->globalObject().property("restored").property("desktopIds").property(0).toString(), "desktop-1");
+        QCOMPARE(action.requests.size(), queued);
+        engine->evaluate(QStringLiteral("materialRestoreWindowState = function() { throw new Error('unavailable'); };"));
+        QVERIFY(!Material::restoreWindowStateImmediately(&valid, state));
+        bus.unregisterObject(QStringLiteral("/Scripting"));
+        QVERIFY(!Material::restoreWindowStateImmediately(&valid, state));
     }
     void timesOutAndRecovers() {
         TestDecoration valid(&window, &bridge);

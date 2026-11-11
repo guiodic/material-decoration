@@ -43,7 +43,15 @@ public:
 };
 
 static QList<QVariantMap> restoreRequests;
+static QList<QVariantMap> immediateRequests;
+static bool immediateAvailable = false;
 namespace Material {
+bool restoreWindowStateImmediately(KDecoration3::Decoration *, const QVariantMap &state)
+{
+    if (!immediateAvailable) return false;
+    immediateRequests.append(state);
+    return true;
+}
 void restoreWindowState(KDecoration3::Decoration *, const QVariantMap &state, std::function<void(bool)> callback)
 {
     restoreRequests.append(state);
@@ -163,6 +171,24 @@ private slots:
         window.setProperty("frameGeometry", QRectF(200, 200, 1000, 700));
         window.close();
         QCOMPARE(Material::readWindowState(key), saved);
+    }
+    void restoresBeforeMappingSignalReturns() {
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.Immediate." + QUuid::createUuid().toString());
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        const auto queued = restoreRequests.size();
+        const auto immediate = immediateRequests.size();
+        immediateAvailable = true;
+        window.map();
+        // No processEvents/QTRY: complete before the compositor can render.
+        QCOMPARE(immediateRequests.size(), immediate + 1);
+        QCOMPARE(restoreRequests.size(), queued);
+        QCoreApplication::processEvents();
+        QCOMPARE(restoreRequests.size(), queued);
+        immediateAvailable = false;
     }
 };
 

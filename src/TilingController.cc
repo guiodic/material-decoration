@@ -12,6 +12,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJSEngine>
 #include <QSet>
 #include <cmath>
 #include <limits>
@@ -171,6 +172,26 @@ void restoreWindowState(KDecoration3::Decoration *decoration, const QVariantMap 
     bridge()->enqueue(decoration, {{QStringLiteral("operation"), QStringLiteral("restoreState")},
                                   {QStringLiteral("stateJson"), QString::fromUtf8(QJsonDocument::fromVariant(state).toJson(QJsonDocument::Compact))}},
                       [callback = std::move(callback)](bool success, const QString &) { callback(success); });
+}
+
+bool restoreWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
+{
+    if (!decoration || !decoration->parent()) return false;
+    // KWin 6.8 registers its Scripting QObject on the same session connection
+    // used by the decoration. Its Script objects own their QJSEngine. All access
+    // below uses public Qt APIs, without KWin headers or private C++ symbols.
+    // A missing object/entry point falls back to the existing asynchronous bridge.
+    auto *scripting = QDBusConnection::sessionBus().objectRegisteredAt(QStringLiteral("/Scripting"));
+    if (!scripting) return false;
+    const QString json = QString::fromUtf8(QJsonDocument::fromVariant(state).toJson(QJsonDocument::Compact));
+    for (auto *engine : scripting->findChildren<QJSEngine *>()) {
+        auto restore = engine->globalObject().property(QStringLiteral("materialRestoreWindowState"));
+        if (!restore.isCallable()) continue;
+        QJSEngine::setObjectOwnership(decoration->parent(), QJSEngine::CppOwnership);
+        const auto result = restore.call({engine->newQObject(decoration->parent()), QJSValue(json)});
+        return !result.isError() && result.isBool() && result.toBool();
+    }
+    return false;
 }
 
 void fetchTilingLayout(KDecoration3::Decoration *decoration, std::function<void(bool, const CustomTilingLayout &)> callback)

@@ -126,9 +126,10 @@ private slots:
     {
         if (!m_enabled || m_restoreStarted) return;
         m_restoreStarted = true;
-        // The first buffer has been committed. Let the initial decoration and
-        // configure acknowledgements settle before requesting another size.
-        QTimer::singleShot(100, this, &WindowStateController::restore);
+        // KWin has placed and added the window while handling this signal.
+        // Restore synchronously before returning to the render loop; queuing a
+        // timer or D-Bus round trip here exposes the initial centered frame.
+        restore();
     }
     void save()
     {
@@ -145,6 +146,7 @@ private slots:
         }
         const auto state = readWindowState(key);
         if (state.isEmpty()) return;
+        if (restoreWindowStateImmediately(m_decoration, state)) return;
         restoreWindowState(m_decoration, state, [this](bool success) {
             if (!success) retry();
         });

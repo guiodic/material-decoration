@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Optional synchronous entry point for the decoration's in-process Qt bridge.
+var materialRestoreWindowState;
 (function () {
     "use strict";
     const service = "com.github.guiodic.MaterialTiling";
@@ -108,10 +110,21 @@
         y = Math.max(area.y, Math.min(y, area.y + area.height - height));
         // KWin registers a converter from a JavaScript rectangle to RectF.
         // Its returned native value wrapper has read-only fields in JS.
+        // Move with the current size first: on Wayland a combined move/resize
+        // waits for the client's next buffer, exposing the old centered frame.
+        const current = target.frameGeometry;
+        if (current.x !== x || current.y !== y) {
+            target.frameGeometry = {x: x, y: y, width: current.width, height: current.height};
+        }
         target.frameGeometry = {x: x, y: y, width: width, height: height};
         target.setMaximize(Boolean(mode & 1), Boolean(mode & 2));
         target.fullScreen = Boolean(state.fullScreen);
     }
+
+    materialRestoreWindowState = function (target, stateJson) {
+        restoreState(target, JSON.parse(stateJson));
+        return true;
+    };
 
     function apply(request) {
         const target = workspace.windowList().find(function (window) { return id(window) === request.uuid; });

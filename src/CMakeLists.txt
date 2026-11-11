@@ -129,6 +129,7 @@ target_link_libraries (materialdecoration
         Qt6::Core
         Qt6::Gui
         Qt6::DBus
+        Qt6::Qml
         # Qt6::GuiPrivate
         # Qt${QT_VERSION_MAJOR}::X11Extras
         KF6::ConfigCore

@@ -47,7 +47,11 @@ with a Wayland tag; otherwise indistinguishable windows share the state of the
 last closed window.
 
 The restore operation does not activate the window or switch the current
-desktop. Missing desktops fall back to the window's initial desktop; missing
+desktop. On KWin 6.8, the decoration calls the companion script synchronously
+while KWin announces the first mapped buffer, before returning to the render
+loop. This avoids displaying the initial centered frame. The asynchronous
+D-Bus bridge remains available if the in-process script entry point is missing.
+Missing desktops fall back to the window's initial desktop; missing
 screens fall back to its current screen. Geometry is adjusted to the available
 work area. Maximized and fullscreen states are also restored; the saved
 rectangle is the frame geometry at closure, not a separate pre-maximization
