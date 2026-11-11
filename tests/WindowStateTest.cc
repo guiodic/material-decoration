@@ -2,6 +2,7 @@
 #include "WindowState.h"
 #include "InternalSettings.h"
 #include "ExceptionList.h"
+#include "SettingsProvider.h"
 #include "DecorationTestBackend.h"
 #include <KDecoration3/Decoration>
 #include <KConfigGroup>
@@ -10,6 +11,7 @@
 #include <QJsonObject>
 #include <QRectF>
 #include <QStandardPaths>
+#include <QTemporaryDir>
 #include <QTest>
 #include <QUuid>
 #include <functional>
@@ -95,6 +97,39 @@ private slots:
         QVERIFY(!Material::windowStateKey(&b).isEmpty());
         b.setProperty("resourceClass", "");
         QVERIFY(Material::windowStateKey(&b).isEmpty());
+    }
+    void windowPositionExceptions() {
+        Material::SettingsProvider provider;
+        auto defaults = Material::InternalSettingsPtr::create();
+        auto exception = Material::InternalSettingsPtr::create();
+        exception->setExceptionPattern("org.example.Excluded");
+        exception->setMask(Material::ExceptionMask::ExcludeWindowPosition);
+        for (bool global : {false, true}) {
+            defaults->setRememberWindowState(global);
+            for (bool excluded : {false, true}) {
+                exception->setExcludeWindowPosition(excluded);
+                QCOMPARE(Material::cloneInternalSettings(exception)->excludeWindowPosition(), excluded);
+                QCOMPARE(provider.createMergedSettings(defaults, exception)->rememberWindowState(), global && !excluded);
+            }
+        }
+        defaults->setRememberWindowState(true);
+        exception->setMask(Material::ExceptionMask::None);
+        QVERIFY(provider.createMergedSettings(defaults, exception)->rememberWindowState());
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        auto config = KSharedConfig::openConfig(directory.filePath("exceptionsrc"), KConfig::SimpleConfig);
+        exception->setMask(Material::ExceptionMask::ExcludeWindowPosition);
+        Material::ExceptionList list;
+        for (bool excluded : {true, false}) {
+            exception->setExcludeWindowPosition(excluded);
+            list.setExceptions({exception});
+            list.writeConfig(config);
+            Material::ExceptionList loaded;
+            loaded.readConfig(config);
+            QCOMPARE(loaded.exceptions().size(), 1);
+            QCOMPARE(loaded.exceptions().first()->excludeWindowPosition(), excluded);
+            QCOMPARE(loaded.exceptions().first()->mask(), int(Material::ExceptionMask::ExcludeWindowPosition));
+        }
     }
     void capturesNativeValuesAndRoundTrips() {
         KWin::WaylandWindow window;

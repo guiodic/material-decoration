@@ -491,3 +491,7 @@ msgstr "Ricorda posizione, desktop e schermo delle finestre (Wayland)"
 #: src/kcm/config.ui
 msgid "Save window position, desktop and screen when a window closes and restore them when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window."
 msgstr "Salva posizione, desktop e schermo della finestra alla chiusura e li ripristina alla riapertura. Le dimensioni sono gestite dall’applicazione. Richiede lo script KWin Material Tiling Popup. Le finestre della stessa applicazione prive di un'identità distinta condividono lo stato dell'ultima finestra chiusa."
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Do not remember window position"
+msgstr "Non ricordare la posizione della finestra"

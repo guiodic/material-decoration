@@ -175,6 +175,9 @@
         </entry>
 
         <!-- exception options -->
+        <entry name="ExcludeWindowPosition" type="Bool">
+            <default>false</default>
+        </entry>
         <entry name="ExceptionPattern" type="String">
             <default></default>
         </entry>
