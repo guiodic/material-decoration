@@ -314,6 +314,12 @@
          </item>
         </layout>
        </item>
+       <item row="17" column="0" colspan="2">
+        <widget class="QCheckBox" name="kcfg_RememberWindowState">
+         <property name="text"><string>Remember window position, desktop and screen (Wayland)</string></property>
+         <property name="toolTip"><string>Save window position, desktop and screen when a window closes and restore them when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window.</string></property>
+        </widget>
+       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="menuSearchTab">
@@ -639,12 +645,6 @@
          <property name="text">
           <string>Allow window dragging from buttons</string>
          </property>
-        </widget>
-       </item>
-       <item row="3" column="0" colspan="2">
-        <widget class="QCheckBox" name="kcfg_RememberWindowState">
-         <property name="text"><string>Remember window position, desktop and screen (Wayland)</string></property>
-         <property name="toolTip"><string>Save window position, desktop and screen when a window closes and restore them when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window.</string></property>
         </widget>
        </item>
       </layout>
