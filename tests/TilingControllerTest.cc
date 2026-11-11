@@ -263,6 +263,10 @@ private slots:
         window.setObjectName(QStringLiteral("target-window"));
         const auto queued = action.requests.size();
         QVERIFY(Material::restoreWindowStateImmediately(&valid, state));
+        QVERIFY(!Material::prepareWindowStateImmediately(&valid, state));
+        engine->evaluate(QStringLiteral("function materialPrepareWindowState(window, json) { preparedOwner = window.objectName; return true; }"));
+        QVERIFY(Material::prepareWindowStateImmediately(&valid, state));
+        QCOMPARE(engine->globalObject().property("preparedOwner").toString(), "target-window");
         QCOMPARE(engine->globalObject().property("ownerName").toString(), "target-window");
         QCOMPARE(engine->globalObject().property("restored").property("desktopIds").property(0).toString(), "desktop-1");
         QCOMPARE(action.requests.size(), queued);

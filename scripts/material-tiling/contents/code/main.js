@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Optional synchronous entry point for the decoration's in-process Qt bridge.
 var materialRestoreWindowState;
+var materialPrepareWindowState;
 (function () {
     "use strict";
     const service = "com.github.guiodic.MaterialTiling";
@@ -115,6 +116,25 @@ var materialRestoreWindowState;
             target.frameGeometry = {x: x, y: y, width: current.width, height: current.height};
         }
     }
+
+    materialPrepareWindowState = function (target, stateJson) {
+        const state = JSON.parse(stateJson);
+        if (!target.normalWindow || target.transient || target.deleted || state.version !== 2 || !Array.isArray(state.desktopIds)) return false;
+        if (state.onAllDesktops) {
+            target.onAllDesktops = true;
+        } else {
+            const desktops = workspace.desktops.filter(function (desktop) { return state.desktopIds.indexOf(desktop.id) !== -1; });
+            if (desktops.length) {
+                // Before KWin adds/activates the window, keep an off-desktop
+                // window out of its activation policy (including "bring here").
+                // The C++ controller releases only this temporary minimize flag
+                // once the first buffer and complete placement are ready.
+                if (!desktops.some(function (desktop) { return desktop.id === workspace.currentDesktop.id; }) && !target.minimized) target.minimized = true;
+                target.desktops = desktops;
+            }
+        }
+        return true;
+    };
 
     materialRestoreWindowState = function (target, stateJson) {
         restoreState(target, JSON.parse(stateJson));

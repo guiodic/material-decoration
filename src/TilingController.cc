@@ -174,7 +174,7 @@ void restoreWindowState(KDecoration3::Decoration *decoration, const QVariantMap 
                       [callback = std::move(callback)](bool success, const QString &) { callback(success); });
 }
 
-bool restoreWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
+static bool callWindowStateScript(KDecoration3::Decoration *decoration, const QVariantMap &state, const QString &entryPoint)
 {
     if (!decoration || !decoration->parent()) return false;
     // KWin 6.8 registers its Scripting QObject on the same session connection
@@ -185,13 +185,23 @@ bool restoreWindowStateImmediately(KDecoration3::Decoration *decoration, const Q
     if (!scripting) return false;
     const QString json = QString::fromUtf8(QJsonDocument::fromVariant(state).toJson(QJsonDocument::Compact));
     for (auto *engine : scripting->findChildren<QJSEngine *>()) {
-        auto restore = engine->globalObject().property(QStringLiteral("materialRestoreWindowState"));
+        auto restore = engine->globalObject().property(entryPoint);
         if (!restore.isCallable()) continue;
         QJSEngine::setObjectOwnership(decoration->parent(), QJSEngine::CppOwnership);
         const auto result = restore.call({engine->newQObject(decoration->parent()), QJSValue(json)});
         return !result.isError() && result.isBool() && result.toBool();
     }
     return false;
+}
+
+bool restoreWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
+{
+    return callWindowStateScript(decoration, state, QStringLiteral("materialRestoreWindowState"));
+}
+
+bool prepareWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
+{
+    return callWindowStateScript(decoration, state, QStringLiteral("materialPrepareWindowState"));
 }
 
 void fetchTilingLayout(KDecoration3::Decoration *decoration, std::function<void(bool, const CustomTilingLayout &)> callback)

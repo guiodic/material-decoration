@@ -42,6 +42,7 @@ function fixture(extraWindows = []) {
     vm.runInNewContext(source, context);
     return {workspace, target, other, calls, output, root, leaf,
         restoreImmediately(state) { return context.materialRestoreWindowState(target, JSON.stringify(state)); },
+        prepareImmediately(state) { return context.materialPrepareWindowState(target, JSON.stringify(state)); },
         send(edges, uuid = 'target', operation = 'tile', extra = {}) {
             request = {id: String(++assertions), uuid, edges, operation, ...extra}; result = undefined;
             if (operation === 'restoreState') request.stateJson = JSON.stringify(extra.state);
@@ -169,6 +170,31 @@ function savedState(extra = {}) {
     return {version: 2, position: {x: 100, y: 80}, desktopIds: ['desktop-1'],
         onAllDesktops: false, outputUuid: 'output-1', outputName: 'Virtual-1',
         outputPosition: {x: 0, y: 0}, ...extra};
+}
+{
+    const f = fixture();
+    const destination = {id: 'desktop-2'};
+    f.workspace.desktops.push(destination);
+    const state = savedState({desktopIds: ['desktop-2']});
+    assert.equal(f.prepareImmediately(state), true);
+    assert.equal(f.target.desktops[0], destination, 'assign the saved desktop before workspace.windowAdded');
+    assert.equal(f.target.minimized, true, 'prevent initial activation from bringing the window to the current desktop');
+    // Simulate KWin's "bring to current desktop" activation policy.
+    if (!f.target.minimized) {
+        f.target.desktops = [f.workspace.currentDesktop];
+        f.workspace.activeWindow = f.target;
+    }
+    assert.equal(f.restoreImmediately(state), true);
+    f.target.minimized = false; // The C++ controller releases its startup guard.
+    assert.equal(f.target.desktops[0], destination);
+    assert.equal(f.workspace.currentDesktop.id, 'desktop-1');
+    assert.equal(f.workspace.activeWindow, f.other);
+}
+for (const extra of [{}, {desktopIds: ['removed']}, {onAllDesktops: true}]) {
+    const f = fixture();
+    f.target.minimized = false;
+    assert.equal(f.prepareImmediately(savedState(extra)), true);
+    assert.equal(f.target.minimized, false, 'no guard for current/all/missing desktops');
 }
 {
     const f = fixture();

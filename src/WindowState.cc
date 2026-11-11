@@ -129,22 +129,42 @@ public:
         // Read synchronously on closed(), before KWin releases the window.
         connect(m_window, SIGNAL(closed()), this, SLOT(save()), Qt::DirectConnection);
         connect(m_window, SIGNAL(readyForPaintingChanged()), this, SLOT(scheduleRestore()));
+        m_originalDesktops = m_window->property("desktops");
+        prepare();
+        // Initialization may still apply the app's initial desktop/minimized
+        // state after creating the decoration. Reassert before its first buffer.
+        QTimer::singleShot(0, this, &WindowStateController::prepare);
     }
     void configure(KDecoration3::Decoration *decoration, bool enabled)
     {
         m_decoration = decoration;
         m_enabled = enabled;
+        if (!enabled && !m_restoreStarted) {
+            if (m_prepared && m_originalDesktops.isValid()) m_window->setProperty("desktops", m_originalDesktops);
+            releaseVisibilityGuard();
+            m_prepared = false;
+        }
     }
 
 private slots:
+    void prepare()
+    {
+        if (!m_enabled || m_restoreStarted || !m_decoration || m_window->property("deleted").toBool()) return;
+        if (m_state.isEmpty()) m_state = readWindowState(windowStateKey(m_window));
+        if (m_state.isEmpty()) return;
+        const bool wasMinimized = m_window->property("minimized").toBool();
+        m_prepared = prepareWindowStateImmediately(m_decoration, m_state) || m_prepared;
+        m_visibilityGuard = m_visibilityGuard || (!wasMinimized && m_window->property("minimized").toBool());
+    }
     void scheduleRestore()
     {
-        if (!m_enabled || m_restoreStarted) return;
+        if (m_restoreStarted) return;
         m_restoreStarted = true;
         // KWin has placed and added the window while handling this signal.
         // Restore synchronously before returning to the render loop; queuing a
         // timer or D-Bus round trip here exposes the initial centered frame.
-        restore();
+        if (m_enabled) restore();
+        releaseVisibilityGuard();
     }
     void save()
     {
@@ -159,15 +179,23 @@ private slots:
             retry();
             return;
         }
-        const auto state = readWindowState(key);
-        if (state.isEmpty()) return;
-        if (restoreWindowStateImmediately(m_decoration, state)) return;
-        restoreWindowState(m_decoration, state, [this](bool success) {
+        if (m_state.isEmpty()) m_state = readWindowState(key);
+        if (m_state.isEmpty()) return;
+        if (restoreWindowStateImmediately(m_decoration, m_state)) return;
+        restoreWindowState(m_decoration, m_state, [this](bool success) {
             if (!success) retry();
         });
     }
 
 private:
+    void releaseVisibilityGuard()
+    {
+        if (!m_visibilityGuard) return;
+        m_visibilityGuard = false;
+        // Our temporary minimization only prevents KWin's initial activation
+        // from bringing an off-desktop window onto the current desktop.
+        m_window->setProperty("minimized", false);
+    }
     void retry()
     {
         if (++m_attempts < 20) QTimer::singleShot(250, this, &WindowStateController::restore);
@@ -176,6 +204,10 @@ private:
     QPointer<KDecoration3::Decoration> m_decoration;
     bool m_enabled;
     bool m_restoreStarted = false;
+    bool m_prepared = false;
+    bool m_visibilityGuard = false;
+    QVariant m_originalDesktops;
+    QVariantMap m_state;
     int m_attempts = 0;
 };
 

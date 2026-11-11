@@ -51,7 +51,19 @@ public:
 static QList<QVariantMap> restoreRequests;
 static QList<QVariantMap> immediateRequests;
 static bool immediateAvailable = false;
+static QList<QVariantMap> prepareRequests;
+static bool prepareAvailable = false;
+static bool prepareMinimizes = false;
+static QVariant preparedDesktops;
 namespace Material {
+bool prepareWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
+{
+    if (!prepareAvailable) return false;
+    prepareRequests.append(state);
+    if (prepareMinimizes) decoration->parent()->setProperty("minimized", true);
+    if (preparedDesktops.isValid()) decoration->parent()->setProperty("desktops", preparedDesktops);
+    return true;
+}
 bool restoreWindowStateImmediately(KDecoration3::Decoration *, const QVariantMap &state)
 {
     if (!immediateAvailable) return false;
@@ -253,6 +265,53 @@ private slots:
         QCoreApplication::processEvents();
         QCOMPARE(restoreRequests.size(), queued);
         immediateAvailable = false;
+    }
+    void preparesDesktopBeforeMappingAndReleasesGuard() {
+        for (bool initiallyMinimized : {false, true}) {
+            KWin::WaylandWindow window;
+            setup(window, "org.example.StateTest.Prepare." + QUuid::createUuid().toString());
+            window.setProperty("minimized", initiallyMinimized);
+            QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+            MaterialTest::Bridge bridge;
+            StateDecoration decoration(&window, &bridge);
+            prepareAvailable = true;
+            prepareMinimizes = true;
+            immediateAvailable = true;
+            const auto count = prepareRequests.size();
+            Material::configureWindowState(&decoration, true);
+            QCOMPARE(prepareRequests.size(), count + 1); // Already prepared, no event loop.
+            QVERIFY(window.property("minimized").toBool());
+            window.map();
+            QCOMPARE(window.property("minimized").toBool(), initiallyMinimized);
+            QCoreApplication::processEvents();
+            QCOMPARE(prepareRequests.size(), count + 1); // No late preparation after map.
+            prepareAvailable = prepareMinimizes = immediateAvailable = false;
+        }
+    }
+    void disablingBeforeMappingCancelsPreparation() {
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.CancelPrepare." + QUuid::createUuid().toString());
+        QObject oldDesktop, newDesktop;
+        const auto original = QVariant::fromValue(QList<QObject *>{&oldDesktop});
+        window.setProperty("desktops", original);
+        window.setProperty("minimized", false);
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        preparedDesktops = QVariant::fromValue(QList<QObject *>{&newDesktop});
+        prepareAvailable = prepareMinimizes = true;
+        Material::configureWindowState(&decoration, true);
+        QVERIFY(window.property("minimized").toBool());
+        QCOMPARE(window.property("desktops"), preparedDesktops);
+        Material::configureWindowState(&decoration, false);
+        QVERIFY(!window.property("minimized").toBool());
+        QCOMPARE(window.property("desktops"), original);
+        const auto count = restoreRequests.size();
+        window.map();
+        QCoreApplication::processEvents();
+        QCOMPARE(restoreRequests.size(), count);
+        prepareAvailable = prepareMinimizes = false;
+        preparedDesktops.clear();
     }
 };
 
