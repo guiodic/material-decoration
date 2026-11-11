@@ -47,7 +47,7 @@ static constexpr auto DBUSMENU_PROPERTY_MENU = "_dbusmenu_request_menu";
 static constexpr auto DBUSMENU_PROPERTY_PENDING = "_dbusmenu_update_pending";
 
 static constexpr int MAX_ACTIONS_PER_MENU = 1000;
-static constexpr int MAX_TOTAL_ACTIONS = 5000;
+static constexpr int MAX_TOTAL_ACTIONS = DBusMenuLimits::MaxActions;
 
 static QAction *createKdeTitle(QWidget *parent)
 {
@@ -438,7 +438,8 @@ void DBusMenuImporter::slotItemActivationRequested(int id, uint /*timestamp*/)
             path.removeLast();
             return false;
         };
-        if (!find(reply.argumentAt<1>(), 0)) { request->deleteLater(); return; }
+        const auto rootItem = reply.argumentAt<1>();
+        if (rootItem.truncated || !find(rootItem, 0)) { request->deleteLater(); return; }
 
         // Each update imports one level, keeping unrelated branches unloaded.
         auto advance = [this, request, path, id, waiting = QPointer<QMenu>{}, requested = QSet<int>{}](QMenu *updated) mutable {
@@ -489,6 +490,12 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     }
 
     const DBusMenuLayoutItem rootItem = reply.argumentAt<1>();
+
+    if (rootItem.truncated) {
+        qCWarning(DBUSMENUQT) << "Ignoring menu layout exceeding" << MAX_TOTAL_ACTIONS << "actions for" << parentId;
+        Q_EMIT menuUpdated(menu);
+        return;
+    }
 
     if (rootItem.id != parentId) {
         qCWarning(DBUSMENUQT) << "Ignoring menu layout with root ID" << rootItem.id << "for" << parentId;
