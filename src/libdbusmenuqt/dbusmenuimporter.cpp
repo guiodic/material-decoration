@@ -184,19 +184,33 @@ public:
     }
 
     /**
-     * Update mutable properties of an action.
+     * Apply a complete layout's mutable properties, including omitted defaults.
      *
      * @param action the action to update
      * @param map holds the property values
      */
     void updateAction(QAction *action, const QVariantMap &map)
     {
-        for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
-            const QString &key = it.key();
-            if (key == QLatin1StringView("type") || key == QLatin1StringView("toggle-type") || key == QLatin1StringView("children-display")) {
-                continue;
+        for (const auto key : {"label", "enabled", "visible", "toggle-state", "shortcut"}) {
+            const QString property = QLatin1StringView(key);
+            updateActionProperty(action, property, map.value(property));
+        }
+
+        // Select the icon source before updating it: clearing an absent source
+        // must not erase the icon supplied by the other source.
+        const QVariant iconName = map.value(QStringLiteral("icon-name"));
+        if (!iconName.toString().isEmpty()) {
+            action->setProperty(DBUSMENU_PROPERTY_ICON_DATA_HASH, QVariant());
+            updateActionIconByName(action, iconName);
+        } else {
+            action->setProperty(DBUSMENU_PROPERTY_ICON_NAME, QVariant());
+            const QVariant iconData = map.value(QStringLiteral("icon-data"));
+            if (iconData.toByteArray().isEmpty()) {
+                action->setProperty(DBUSMENU_PROPERTY_ICON_DATA_HASH, QVariant());
+                action->setIcon(QIcon());
+            } else {
+                updateActionIconByData(action, iconData);
             }
-            updateActionProperty(action, key, it.value());
         }
     }
 
@@ -207,7 +221,7 @@ public:
         } else if (key == QLatin1StringView("enabled")) {
             action->setEnabled(value.isValid() ? value.toBool() : true);
         } else if (key == QLatin1StringView("toggle-state")) {
-            if (action->isCheckable() && value.isValid()) {
+            if (action->isCheckable()) {
                 action->setChecked(value.toInt() == 1);
             }
         } else if (key == QLatin1StringView("icon-name")) {
@@ -238,6 +252,7 @@ public:
         if (previous == iconName) {
             return;
         }
+        action->setProperty(DBUSMENU_PROPERTY_ICON_DATA_HASH, QVariant());
         action->setProperty(DBUSMENU_PROPERTY_ICON_NAME, iconName);
         if (iconName.isEmpty()) {
             action->setIcon(QIcon());
@@ -254,6 +269,7 @@ public:
         if (previousDataHash == dataHash) {
             return;
         }
+        action->setProperty(DBUSMENU_PROPERTY_ICON_NAME, QVariant());
         action->setProperty(DBUSMENU_PROPERTY_ICON_DATA_HASH, dataHash);
         QPixmap pix;
         if (!pix.loadFromData(data)) {
@@ -265,6 +281,10 @@ public:
 
     void updateActionShortcut(QAction *action, const QVariant &value)
     {
+        if (!value.isValid()) {
+            action->setShortcut(QKeySequence());
+            return;
+        }
         QDBusArgument arg = value.value<QDBusArgument>();
         DBusMenuShortcut dmShortcut;
         arg >> dmShortcut;

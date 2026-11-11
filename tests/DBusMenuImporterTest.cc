@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "dbusmenuimporter.h"
 #include "dbusmenutypes_p.h"
+#include "dbusmenushortcut_p.h"
+#include <QBuffer>
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusVirtualObject>
@@ -30,6 +32,7 @@ public:
     QMap<int, uint> menuRevisions;
     bool kdeTitle = false;
     int disabledId = -1;
+    QVariantMap actionProperties;
     QList<int> clicked;
     QString introspect(const QString &) const override { return {}; }
     DBusMenuLayoutItem tree(int id, int depth) const
@@ -39,6 +42,7 @@ public:
         item.properties = {{"label", id == 1 ? "_File" : id == 2 ? actionLabel : id == 3 ? "_Nested" : "_Run"},
                            {"enabled", id != disabledId}, {"visible", true}};
         if (id == 2 && kdeTitle) item.properties.insert("x-kde-title", true);
+        if (id == 2 && !actionProperties.isEmpty()) item.properties = actionProperties;
         if (id == 0 || id == 1 || id == 3 || id == 7) item.properties.insert("children-display", "submenu");
         if (depth == 0) return item;
         const int next = depth < 0 ? -1 : depth - 1;
@@ -91,6 +95,25 @@ public:
         auto message = QDBusMessage::createSignal("/Menu", "com.canonical.dbusmenu", "ItemActivationRequested");
         message << id << uint(0);
         bus.send(message);
+    }
+    void propertiesUpdated(const DBusMenuItemList &updated, const DBusMenuItemKeysList &removed = {})
+    {
+        auto message = QDBusMessage::createSignal("/Menu", "com.canonical.dbusmenu", "ItemsPropertiesUpdated");
+        message << QVariant::fromValue(updated) << QVariant::fromValue(removed);
+        bus.send(message);
+    }
+};
+
+class IconTestImporter : public DBusMenuImporter
+{
+public:
+    using DBusMenuImporter::DBusMenuImporter;
+protected:
+    QIcon iconForName(const QString &) override
+    {
+        QPixmap pixmap(8, 8);
+        pixmap.fill(Qt::blue);
+        return QIcon(pixmap);
     }
 };
 
@@ -148,6 +171,7 @@ private slots:
     {
         service.kdeTitle = false;
         service.disabledId = -1;
+        service.actionProperties.clear();
         service.customLayouts.clear();
         service.menuRevisions.clear();
         service.layouts.clear();
@@ -162,6 +186,161 @@ private slots:
         service.duplicateNestedAction = false;
         service.renameNestedAction = false;
         service.clicked.clear();
+    }
+    void layoutResetsOmittedProperties()
+    {
+        QPixmap pixmap(8, 8);
+        pixmap.fill(Qt::red);
+        QByteArray png;
+        QBuffer buffer(&png);
+        QVERIFY(buffer.open(QIODevice::WriteOnly));
+        QVERIFY(pixmap.save(&buffer, "PNG"));
+        const auto shortcut = DBusMenuShortcut::fromKeySequence(QKeySequence("Ctrl+S"));
+        service.actionProperties = {{"label", "_Custom"}, {"enabled", false}, {"visible", false},
+                                    {"toggle-type", "checkmark"}, {"toggle-state", 1},
+                                    {"shortcut", QVariant::fromValue(shortcut)}, {"icon-data", png}};
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QTRY_COMPARE(importer.menu()->actions().size(), 2);
+        auto *menu = importer.actionForId(1)->menu();
+        importer.updateMenu(menu);
+        QTRY_VERIFY(importer.actionForId(2));
+        auto *action = importer.actionForId(2);
+        QCOMPARE(action->text(), QStringLiteral("&Custom"));
+        QVERIFY(!action->isEnabled());
+        QVERIFY(!action->isVisible());
+        QVERIFY(action->isChecked());
+        QCOMPARE(action->shortcut(), QKeySequence("Ctrl+S"));
+        QVERIFY(!action->icon().isNull());
+
+        service.actionProperties = {{"toggle-type", "checkmark"}};
+        QSignalSpy updated(&importer, &DBusMenuImporter::menuUpdated);
+        importer.updateMenu(menu);
+        QTRY_VERIFY(!updated.isEmpty());
+        QCOMPARE(importer.actionForId(2), action);
+        QVERIFY(action->text().isEmpty());
+        QVERIFY(action->isEnabled());
+        QVERIFY(action->isVisible());
+        QVERIFY(action->isCheckable());
+        QVERIFY(!action->isChecked());
+        QVERIFY(action->shortcut().isEmpty());
+        QVERIFY(action->icon().isNull());
+    }
+    void layoutReconcilesIconSources()
+    {
+        QPixmap pixmap(8, 8);
+        pixmap.fill(Qt::red);
+        QByteArray png;
+        QBuffer buffer(&png);
+        QVERIFY(buffer.open(QIODevice::WriteOnly));
+        QVERIFY(pixmap.save(&buffer, "PNG"));
+        const QVariantMap named{{"icon-name", "test-icon"}};
+        const QVariantMap data{{"icon-data", png}};
+        const QVariantMap both{{"icon-name", "test-icon"}, {"icon-data", png}};
+        IconTestImporter importer(service.bus.baseService(), "/Menu");
+        QTRY_COMPARE(importer.menu()->actions().size(), 2);
+        auto *menu = importer.actionForId(1)->menu();
+        // Repeated layouts exercise caches as well as switching icon sources.
+        for (const auto &properties : {named, named, data, data, named, both, data, named}) {
+            service.actionProperties = properties;
+            QSignalSpy updated(&importer, &DBusMenuImporter::menuUpdated);
+            importer.updateMenu(menu);
+            QTRY_VERIFY(!updated.isEmpty());
+            auto *action = importer.actionForId(2);
+            QVERIFY(action);
+            const QColor expected = properties.contains("icon-name") ? Qt::blue : Qt::red;
+            QCOMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(0, 0), expected);
+        }
+        // An incremental name update must not leave the previous data hash
+        // suppressing restoration of the same image by the next full layout.
+        service.actionProperties = data;
+        {
+            QSignalSpy updated(&importer, &DBusMenuImporter::menuUpdated);
+            importer.updateMenu(menu);
+            QTRY_VERIFY(!updated.isEmpty());
+        }
+        auto *action = importer.actionForId(2);
+        QVERIFY(action);
+        QCOMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(0, 0), QColor(Qt::red));
+        service.propertiesUpdated({{2, named}});
+        QTRY_COMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(0, 0), QColor(Qt::blue));
+        {
+            QSignalSpy updated(&importer, &DBusMenuImporter::menuUpdated);
+            importer.updateMenu(menu);
+            QTRY_VERIFY(!updated.isEmpty());
+        }
+        QCOMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(0, 0), QColor(Qt::red));
+
+        service.actionProperties = {{"label", "No icon"}};
+        QSignalSpy updated(&importer, &DBusMenuImporter::menuUpdated);
+        importer.updateMenu(menu);
+        QTRY_VERIFY(!updated.isEmpty());
+        QVERIFY(importer.actionForId(2)->icon().isNull());
+    }
+    void restoresNameAfterIncrementalIconData_data()
+    {
+        QTest::addColumn<bool>("fullLayout");
+        QTest::newRow("incremental-name") << false;
+        QTest::newRow("layout-name") << true;
+    }
+    void restoresNameAfterIncrementalIconData()
+    {
+        QFETCH(bool, fullLayout);
+        QPixmap pixmap(8, 8);
+        pixmap.fill(Qt::red);
+        QByteArray png;
+        QBuffer buffer(&png);
+        QVERIFY(buffer.open(QIODevice::WriteOnly));
+        QVERIFY(pixmap.save(&buffer, "PNG"));
+        const QVariantMap named{{"icon-name", "test-icon"}};
+        const QVariantMap data{{"icon-data", png}};
+        service.actionProperties = data;
+        IconTestImporter importer(service.bus.baseService(), "/Menu");
+        QTRY_COMPARE(importer.menu()->actions().size(), 2);
+        auto *menu = importer.actionForId(1)->menu();
+        importer.updateMenu(menu);
+        QTRY_VERIFY(importer.actionForId(2));
+        auto *action = importer.actionForId(2);
+        QCOMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(0, 0), QColor(Qt::red));
+        service.propertiesUpdated({{2, named}});
+        QTRY_COMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(0, 0), QColor(Qt::blue));
+        service.propertiesUpdated({{2, data}});
+        QTRY_COMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(0, 0), QColor(Qt::red));
+        if (fullLayout) {
+            service.actionProperties = named;
+            QSignalSpy updated(&importer, &DBusMenuImporter::menuUpdated);
+            importer.updateMenu(menu);
+            QTRY_VERIFY(!updated.isEmpty());
+        } else {
+            service.propertiesUpdated({{2, named}});
+        }
+        QTRY_COMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(0, 0), QColor(Qt::blue));
+    }
+    void incrementalUpdatesPreserveUnspecifiedProperties()
+    {
+        service.actionProperties = {{"label", "_Original"}, {"enabled", false}, {"visible", false},
+                                    {"toggle-type", "checkmark"}, {"toggle-state", 1},
+                                    {"icon-name", "test-icon"},
+                                    {"shortcut", QVariant::fromValue(DBusMenuShortcut::fromKeySequence(QKeySequence("Ctrl+S")))}};
+        IconTestImporter importer(service.bus.baseService(), "/Menu");
+        QTRY_COMPARE(importer.menu()->actions().size(), 2);
+        importer.updateMenu(importer.actionForId(1)->menu());
+        QTRY_VERIFY(importer.actionForId(2));
+        auto *action = importer.actionForId(2);
+        service.propertiesUpdated({{2, {{"label", "_Changed"}}}});
+        QTRY_COMPARE(action->text(), QStringLiteral("&Changed"));
+        QVERIFY(!action->isEnabled());
+        QVERIFY(!action->isVisible());
+        QVERIFY(action->isChecked());
+        QVERIFY(!action->icon().isNull());
+        QCOMPARE(action->shortcut(), QKeySequence("Ctrl+S"));
+
+        service.propertiesUpdated({}, {{2, {"label", "enabled", "visible", "toggle-state", "shortcut", "icon-name"}}});
+        QTRY_VERIFY(action->text().isEmpty());
+        QVERIFY(action->isEnabled());
+        QVERIFY(action->isVisible());
+        QVERIFY(!action->isChecked());
+        QVERIFY(action->shortcut().isEmpty());
+        QVERIFY(action->icon().isNull());
     }
     void duplicateIdsPreserveLayout_data()
     {
