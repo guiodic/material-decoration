@@ -269,6 +269,7 @@ public:
         if (previousDataHash == dataHash) {
             return;
         }
+        action->setProperty(DBUSMENU_PROPERTY_ICON_NAME, QVariant());
         action->setProperty(DBUSMENU_PROPERTY_ICON_DATA_HASH, dataHash);
         QPixmap pix;
         if (!pix.loadFromData(data)) {

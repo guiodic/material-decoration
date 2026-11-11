@@ -276,6 +276,45 @@ private slots:
         QTRY_VERIFY(!updated.isEmpty());
         QVERIFY(importer.actionForId(2)->icon().isNull());
     }
+    void restoresNameAfterIncrementalIconData_data()
+    {
+        QTest::addColumn<bool>("fullLayout");
+        QTest::newRow("incremental-name") << false;
+        QTest::newRow("layout-name") << true;
+    }
+    void restoresNameAfterIncrementalIconData()
+    {
+        QFETCH(bool, fullLayout);
+        QPixmap pixmap(8, 8);
+        pixmap.fill(Qt::red);
+        QByteArray png;
+        QBuffer buffer(&png);
+        QVERIFY(buffer.open(QIODevice::WriteOnly));
+        QVERIFY(pixmap.save(&buffer, "PNG"));
+        const QVariantMap named{{"icon-name", "test-icon"}};
+        const QVariantMap data{{"icon-data", png}};
+        service.actionProperties = data;
+        IconTestImporter importer(service.bus.baseService(), "/Menu");
+        QTRY_COMPARE(importer.menu()->actions().size(), 2);
+        auto *menu = importer.actionForId(1)->menu();
+        importer.updateMenu(menu);
+        QTRY_VERIFY(importer.actionForId(2));
+        auto *action = importer.actionForId(2);
+        QCOMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(0, 0), QColor(Qt::red));
+        service.propertiesUpdated({{2, named}});
+        QTRY_COMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(0, 0), QColor(Qt::blue));
+        service.propertiesUpdated({{2, data}});
+        QTRY_COMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(0, 0), QColor(Qt::red));
+        if (fullLayout) {
+            service.actionProperties = named;
+            QSignalSpy updated(&importer, &DBusMenuImporter::menuUpdated);
+            importer.updateMenu(menu);
+            QTRY_VERIFY(!updated.isEmpty());
+        } else {
+            service.propertiesUpdated({{2, named}});
+        }
+        QTRY_COMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(0, 0), QColor(Qt::blue));
+    }
     void incrementalUpdatesPreserveUnspecifiedProperties()
     {
         service.actionProperties = {{"label", "_Original"}, {"enabled", false}, {"visible", false},
