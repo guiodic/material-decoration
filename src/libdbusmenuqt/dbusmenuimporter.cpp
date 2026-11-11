@@ -49,19 +49,22 @@ static constexpr auto DBUSMENU_PROPERTY_PENDING = "_dbusmenu_update_pending";
 static constexpr int MAX_ACTIONS_PER_MENU = 1000;
 static constexpr int MAX_TOTAL_ACTIONS = 5000;
 
-static QAction *createKdeTitle(const QAction *action, QWidget *parent)
+static QAction *createKdeTitle(QWidget *parent)
 {
     QToolButton *titleWidget = new QToolButton(nullptr);
     QFont font = titleWidget->font();
     font.setBold(true);
     titleWidget->setFont(font);
-    titleWidget->setIcon(action->icon());
-    titleWidget->setText(action->text());
     titleWidget->setDown(true);
     titleWidget->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
     QWidgetAction *titleAction = new QWidgetAction(parent);
     titleAction->setDefaultWidget(titleWidget);
+    // Keep the heading in sync without binding clicks to QAction::trigger().
+    QObject::connect(titleAction, &QAction::changed, titleWidget, [titleAction, titleWidget] {
+        titleWidget->setIcon(titleAction->icon());
+        titleWidget->setText(titleAction->text());
+    });
     return titleAction;
 }
 
@@ -117,18 +120,12 @@ public:
         return menu;
     }
 
-    /**
-     * Init all the immutable action properties here
-     * TODO: Document immutable properties?
-     *
-     * Note: we remove properties we handle from the map (using QMap::take()
-     * instead of QMap::value()) to avoid warnings about these properties in
-     * updateAction()
-     */
+    // Initialize the action's structure before applying mutable properties.
     QAction *createAction(int id, const QVariantMap &_map, QWidget *parent)
     {
         QVariantMap map = _map;
-        QAction *action = new QAction(parent);
+        const bool isKdeTitle = map.take(QStringLiteral("x-kde-title")).toBool();
+        QAction *action = isKdeTitle ? createKdeTitle(parent) : new QAction(parent);
         action->setProperty(DBUSMENU_PROPERTY_ID, id);
 
         const QString type = map.take(QStringLiteral("type")).toString();
@@ -150,15 +147,7 @@ public:
             }
         }
 
-        const bool isKdeTitle = map.take(QStringLiteral("x-kde-title")).toBool();
         updateAction(action, map);
-
-        if (isKdeTitle) {
-            QAction *oldAction = action;
-            action = createKdeTitle(oldAction, parent);
-            action->setProperty(DBUSMENU_PROPERTY_ID, id);
-            oldAction->deleteLater();
-        }
 
         return action;
     }
