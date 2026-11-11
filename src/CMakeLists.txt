@@ -92,6 +92,7 @@ set (decoration_SRCS
     TilingZoneButton.cc
     LongPressAction.cc
     TilingController.cc
+    WindowState.cc
     plugin.cc
 )
 

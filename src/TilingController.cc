@@ -54,7 +54,9 @@ public:
 
     bool enqueue(KDecoration3::Decoration *decoration, QVariantMap data, std::function<void(bool, const QString &)> callback = {})
     {
-        if (!m_registered || m_pending.size() >= 8 || !canTileWindow(decoration)) {
+        const bool restore = data.value(QStringLiteral("operation")).toString() == QLatin1String("restoreState");
+        if (!m_registered || (!restore && m_pending.size() >= 8)
+            || (restore ? windowId(decoration).isNull() : !canTileWindow(decoration))) {
             if (callback) QTimer::singleShot(0, decoration, [callback] { callback(false, {}); });
             return false;
         }
@@ -107,8 +109,9 @@ private:
         if (m_inFlight) return;
         while (!m_pending.isEmpty() && !m_pending.head().context) m_pending.dequeue();
         if (m_pending.isEmpty()) return;
-        if (!canTileWindow(m_pending.head().context)) {
-            finish(false, QStringLiteral("Window can no longer be tiled"));
+        const bool restore = m_pending.head().data.value(QStringLiteral("operation")).toString() == QLatin1String("restoreState");
+        if (restore ? windowId(m_pending.head().context).isNull() : !canTileWindow(m_pending.head().context)) {
+            finish(false, QStringLiteral("Target window is unavailable"));
             return;
         }
         m_inFlight = true;
@@ -158,6 +161,16 @@ bool canTileWindow(KDecoration3::Decoration *decoration)
 {
     return !windowId(decoration).isNull() && decoration->window()->isResizeable()
         && !decoration->parent()->property("specialWindow").toBool();
+}
+
+void restoreWindowState(KDecoration3::Decoration *decoration, const QVariantMap &state, std::function<void(bool)> callback)
+{
+    // A JSON string preserves arrays and numeric types through KWin's D-Bus
+    // conversion; a nested QVariantMap can expose QStringList as an array-like
+    // native wrapper rather than a JavaScript Array.
+    bridge()->enqueue(decoration, {{QStringLiteral("operation"), QStringLiteral("restoreState")},
+                                  {QStringLiteral("stateJson"), QString::fromUtf8(QJsonDocument::fromVariant(state).toJson(QJsonDocument::Compact))}},
+                      [callback = std::move(callback)](bool success, const QString &) { callback(success); });
 }
 
 void fetchTilingLayout(KDecoration3::Decoration *decoration, std::function<void(bool, const CustomTilingLayout &)> callback)

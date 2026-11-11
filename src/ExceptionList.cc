@@ -62,6 +62,7 @@ void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettings
     dst->setLongPressEnabled(src->longPressEnabled());
     dst->setLongPressDuration(src->longPressDuration());
     dst->setDragFromButtonsEnabled(src->dragFromButtonsEnabled());
+    dst->setRememberWindowState(src->rememberWindowState());
 
     dst->setExceptionPattern(src->exceptionPattern());
     dst->setExceptionType(src->exceptionType());

@@ -7,14 +7,18 @@ const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '../scripts/material-tiling/contents/code/main.js'), 'utf8');
 let assertions = 0;
 function fixture(extraWindows = []) {
-    const output = {};
+    const output = {name: 'Virtual-1', uuid: 'output-1', geometry: {x: 0, y: 0, width: 1280, height: 800}};
     const other = {internalId: '{other}', caption: 'other'};
-    const target = {internalId: '{target}', resizeable: true, specialWindow: false, output, tile: null};
+    const desktop = {id: 'desktop-1'};
+    const target = {internalId: '{target}', resizeable: true, specialWindow: false, normalWindow: true,
+        output, tile: null, desktops: [desktop], frameGeometry: {x: 0, y: 0, width: 640, height: 480},
+        setMaximize(vertical, horizontal) { this.maximizeMode = Number(vertical) | (Number(horizontal) << 1); }};
     function leaf(x, y, width, height) {
         return {relativeGeometry: {x, y, width, height}, tiles: [], manage(window) { window.tile = this; return true; }, unmanage(window) { window.tile = null; }};
     }
     const root = {tiles: [leaf(0, 0, 1 / 3, 1), leaf(1 / 3, 0, 1 / 3, 1), leaf(2 / 3, 0, 1 / 3, 1)]};
-    const workspace = {activeWindow: other, layoutRoot: root,
+    const workspace = {activeWindow: other, layoutRoot: root, screens: [output], desktops: [desktop], currentDesktop: desktop,
+        clientArea(option, screen) { return screen.geometry; },
         tilingForScreen() { return {rootTile: this.layoutRoot}; },
         windows: [target, other, ...extraWindows], windowList() { return this.windows; },
         windowAdded: {connect(callback) { this.callback = callback; }},
@@ -28,7 +32,7 @@ function fixture(extraWindows = []) {
             workspace.activeWindow.tile = {unmanage(window) { window.tile = null; }};
         };
     }
-    vm.runInNewContext(source, {workspace,
+    vm.runInNewContext(source, {workspace, KWin: {PlacementArea: 0},
         registerShortcut(name, text, key, callback) { assert.equal(key, ''); shortcut = callback; },
         callDBus(service, objectPath, iface, method, ...args) {
             if (method === 'takeRequest') args[0](request);
@@ -38,6 +42,7 @@ function fixture(extraWindows = []) {
     return {workspace, target, other, calls, output, root, leaf,
         send(edges, uuid = 'target', operation = 'tile', extra = {}) {
             request = {id: String(++assertions), uuid, edges, operation, ...extra}; result = undefined;
+            if (operation === 'restoreState') request.stateJson = JSON.stringify(extra.state);
             shortcut(); assert.ok(result); assert.equal(result.id, request.id); return result;
         }};
 }
@@ -158,4 +163,53 @@ for (const change of [
         'activation switching the desktop must invalidate the old layout');
     assert.equal(f.target.tile, null);
 }
-console.log('Tiling script: quick tiles, custom layouts, nested tiles, stale selections and output preservation passed.');
+function savedState(extra = {}) {
+    return {version: 1, geometry: {x: 100, y: 80, width: 900, height: 600}, desktopIds: ['desktop-1'],
+        onAllDesktops: false, maximizeMode: 0, fullScreen: false, outputUuid: 'output-1', outputName: 'Virtual-1',
+        outputGeometry: {x: 0, y: 0, width: 1280, height: 800}, ...extra};
+}
+{
+    const f = fixture();
+    const secondDesktop = {id: 'desktop-2'};
+    f.workspace.desktops.push(secondDesktop);
+    assert.ok(f.send(0, 'target', 'restoreState', {state: savedState({desktopIds: ['desktop-2']})}).success);
+    assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 900, height: 600});
+    assert.equal(f.target.desktops[0], secondDesktop);
+    assert.equal(f.workspace.activeWindow, f.other, 'restore must not take focus');
+    assert.equal(f.workspace.currentDesktop.id, 'desktop-1', 'restore must not switch the current desktop');
+    assert.equal(f.calls.length, 0);
+}
+{
+    const f = fixture();
+    const movedOutput = {name: 'Virtual-1', uuid: 'output-1', geometry: {x: 1920, y: 50, width: 800, height: 600}};
+    f.workspace.screens = [movedOutput];
+    assert.ok(f.send(0, 'target', 'restoreState', {state: savedState()}).success);
+    assert.equal(f.target.output, movedOutput);
+    assert.deepEqual({...f.target.frameGeometry}, {x: 1920, y: 50, width: 800, height: 600}, 'fit the saved frame to the new work area');
+}
+{
+    const f = fixture();
+    f.target.resizeable = false;
+    assert.ok(f.send(0, 'target', 'restoreState', {state: savedState({desktopIds: ['removed'], outputUuid: 'removed', outputName: 'removed'})}).success);
+    assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 640, height: 480});
+    assert.equal(f.target.desktops[0], f.workspace.currentDesktop, 'missing desktops leave the window on its existing desktop');
+    assert.equal(f.target.output, f.output, 'missing output falls back to the current screen');
+}
+{
+    const f = fixture();
+    assert.ok(f.send(0, 'target', 'restoreState', {state: savedState({onAllDesktops: true, maximizeMode: 3, fullScreen: true})}).success);
+    assert.equal(f.target.onAllDesktops, true);
+    assert.equal(f.target.maximizeMode, 3);
+    assert.equal(f.target.fullScreen, true);
+}
+{
+    const f = fixture();
+    for (const state of [null, savedState({version: 2}), savedState({geometry: {x: NaN, y: 0, width: 1, height: 1}}),
+        savedState({geometry: {x: 0, y: 0, width: -1, height: 100}}), savedState({maximizeMode: 9})]) {
+        assert.ok(!f.send(0, 'target', 'restoreState', {state}).success);
+    }
+    assert.deepEqual({...f.target.frameGeometry}, {x: 0, y: 0, width: 640, height: 480});
+    f.target.normalWindow = false;
+    assert.ok(!f.send(0, 'target', 'restoreState', {state: savedState()}).success);
+}
+console.log('Tiling and window state: quick/custom tiles, restore, desktop/output fallbacks, fixed sizes and validation passed.');

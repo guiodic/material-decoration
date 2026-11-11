@@ -29,6 +29,7 @@
 #include "DrawHelper.h"
 #include "TilingPopup.h"
 #include "TilingController.h"
+#include "WindowState.h"
 #include "LongPressAction.h"
 #include "AppMenuButtonGroup.h"
 #include "BoxShadowHelper.h"
@@ -589,6 +590,7 @@ void Decoration::applySettings()
     if (!m_internalSettings) {
         return;
     }
+    configureWindowState(this, m_internalSettings->rememberWindowState());
     if (m_tilingPopup) {
         m_tilingPopup->setZoneCornerRadius(m_internalSettings->cornerRadius());
         m_tilingPopup->setSquareCornersTiled(m_internalSettings->squareCornersTiled());

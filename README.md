@@ -32,6 +32,27 @@ Note: if you configure the decoration to use Opacity < 100%,
 strongly recommended on Wayland.
 
 
+### Remember window state (Wayland)
+In **Button options**, enable **Remember window position, size, desktop and
+screen (Wayland)** to save a window's state when it closes and restore it when
+it opens again. This option is **off by default** and requires the companion
+**Material Tiling Popup** KWin script to be enabled.
+
+State is written only on window closure to
+`$XDG_STATE_HOME/material-window-staterc` (normally
+`~/.local/state/material-window-staterc`). Application-owned state files are
+left untouched. Normal, non-transient Wayland windows are supported; XWayland
+windows and dialogs are excluded. Applications can distinguish their windows
+with a Wayland tag; otherwise indistinguishable windows share the state of the
+last closed window.
+
+The restore operation does not activate the window or switch the current
+desktop. Missing desktops fall back to the window's initial desktop; missing
+screens fall back to its current screen. Geometry is adjusted to the available
+work area. Maximized and fullscreen states are also restored; the saved
+rectangle is the frame geometry at closure, not a separate pre-maximization
+geometry.
+
 ### Actions on Press-and-Hold buttons
 Pressing and holding the “Close” button will minimize the window to the traybar
 if the [kwin-minimize2tray](https://github.com/luisbocanegra/kwin-minimize2tray)

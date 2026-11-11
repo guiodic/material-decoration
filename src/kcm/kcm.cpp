@@ -142,6 +142,7 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_LongPressDuration, qOverload<int>(&QSpinBox::valueChanged), this, &MaterialDecorationKCM::updateChanged);
 
     connect(m_ui->kcfg_DragFromButtonsEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_RememberWindowState, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
 
     connect(m_ui->exceptionsWidget, &Material::ExceptionListWidget::changed, this, &MaterialDecorationKCM::updateChanged);
 }
@@ -209,6 +210,7 @@ void MaterialDecorationKCM::loadUIFromSettings(const Material::InternalSettings 
     m_ui->kcfg_LongPressDuration->setEnabled(settings.longPressEnabled());
 
     m_ui->kcfg_DragFromButtonsEnabled->setChecked(settings.dragFromButtonsEnabled());
+    m_ui->kcfg_RememberWindowState->setChecked(settings.rememberWindowState());
 }
 
 void MaterialDecorationKCM::updateUI()
@@ -258,6 +260,7 @@ void MaterialDecorationKCM::save()
     m_settings->setLongPressDuration(m_ui->kcfg_LongPressDuration->value());
 
     m_settings->setDragFromButtonsEnabled(m_ui->kcfg_DragFromButtonsEnabled->isChecked());
+    m_settings->setRememberWindowState(m_ui->kcfg_RememberWindowState->isChecked());
 
     m_settings->save();
     const auto message = QDBusMessage::createMethodCall(
@@ -330,6 +333,7 @@ bool MaterialDecorationKCM::isChanged() const
     if (m_ui->kcfg_LongPressEnabled->isChecked() != m_settings->longPressEnabled()) return true;
     if (m_ui->kcfg_LongPressDuration->value() != m_settings->longPressDuration()) return true;
     if (m_ui->kcfg_DragFromButtonsEnabled->isChecked() != m_settings->dragFromButtonsEnabled()) return true;
+    if (m_ui->kcfg_RememberWindowState->isChecked() != m_settings->rememberWindowState()) return true;
 
     if (m_ui->exceptionsWidget->isChanged()) return true;
 

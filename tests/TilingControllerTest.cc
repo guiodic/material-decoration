@@ -12,6 +12,9 @@
 #include <QTimer>
 #include <QUuid>
 #include <QVariantMap>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 
 using TestBridge = MaterialTest::Bridge;
 
@@ -224,6 +227,26 @@ private slots:
         QTRY_VERIFY(finished);
         action.legacyReply = false;
         action.layoutJson = QStringLiteral("[]");
+    }
+    void restoresMoreThanEightFixedSizeWindows() {
+        TestDecoration valid(&window, &bridge);
+        bridge.client->setResizeable(false);
+        const auto count = action.requests.size();
+        const QVariantMap state{{QStringLiteral("version"), 1},
+            {QStringLiteral("desktopIds"), QStringList{QStringLiteral("desktop-1")}},
+            {QStringLiteral("geometry"), QVariantMap{{"x", 100}, {"y", 80}, {"width", 640}, {"height", 480}}}};
+        int completed = 0;
+        bool succeeded = true;
+        for (int i = 0; i < 12; ++i) {
+            Material::restoreWindowState(&valid, state, [&](bool ok) { ++completed; succeeded &= ok; });
+        }
+        QTRY_COMPARE(completed, 12);
+        QVERIFY(succeeded);
+        QCOMPARE(action.requests.size(), count + 12);
+        QCOMPARE(action.requests.last().value("operation").toString(), "restoreState");
+        const auto decoded = QJsonDocument::fromJson(action.requests.last().value("stateJson").toString().toUtf8()).object();
+        QCOMPARE(decoded.value("desktopIds").toArray().at(0).toString(), "desktop-1");
+        bridge.client->setResizeable(true);
     }
     void timesOutAndRecovers() {
         TestDecoration valid(&window, &bridge);

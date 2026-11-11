@@ -128,6 +128,14 @@ if(DBUS_RUN_SESSION)
         KDecoration3::KDecoration KDecoration3::KDecoration3Private)
     add_test(NAME tilingcontroller COMMAND ${DBUS_RUN_SESSION} -- $<TARGET_FILE:tilingcontroller_test>)
     set_tests_properties(tilingcontroller PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+    add_executable(windowstate_test WindowStateTest.cc ../src/WindowState.cc)
+    set_target_properties(windowstate_test PROPERTIES AUTOMOC ON)
+    target_include_directories(windowstate_test PRIVATE ../src ${PROJECT_BINARY_DIR}/src)
+    target_link_libraries(windowstate_test PRIVATE materialdecoration_core Qt6::Widgets Qt6::Test
+        KF6::ConfigCore KDecoration3::KDecoration KDecoration3::KDecoration3Private)
+    add_test(NAME windowstate COMMAND ${DBUS_RUN_SESSION} -- $<TARGET_FILE:windowstate_test>)
+    set_tests_properties(windowstate PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()
 
 find_program(NODE_EXECUTABLE node)

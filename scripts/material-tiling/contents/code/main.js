@@ -71,9 +71,53 @@
         return current.tiles[index];
     }
 
+    function restoreState(target, state) {
+        if (!target.normalWindow || target.transient || target.deleted) throw new Error("Target window cannot be restored");
+        const g = state && state.geometry;
+        if (!state || state.version !== 1 || !g ||
+            ![g.x, g.y, g.width, g.height].every(function (n) { return typeof n === "number" && Number.isFinite(n); }) ||
+            g.width <= 0 || g.height <= 0) throw new Error("Invalid saved geometry");
+        const mode = state.maximizeMode;
+        if (!Number.isInteger(mode) || mode < 0 || mode > 3 || !Array.isArray(state.desktopIds)) throw new Error("Invalid saved state");
+        const screens = workspace.screens;
+        const output = screens.find(function (screen) { return state.outputUuid && String(screen.uuid) === state.outputUuid; }) ||
+            screens.find(function (screen) { return state.outputName && screen.name === state.outputName; }) || target.output || screens[0];
+        if (!output) throw new Error("No screen is available");
+        const desktops = workspace.desktops.filter(function (desktop) { return state.desktopIds.indexOf(desktop.id) !== -1; });
+
+        // This path deliberately does not activate the window or change the
+        // current desktop. The popup's tiling activation is unrelated.
+        target.fullScreen = false;
+        target.setMaximize(false, false);
+        if (target.tile) target.tile.unmanage(target);
+        if (state.onAllDesktops) target.onAllDesktops = true;
+        else if (desktops.length) target.desktops = desktops;
+        workspace.sendClientToScreen(target, output);
+
+        const area = workspace.clientArea(KWin.PlacementArea, output, target.desktops[0] || workspace.currentDesktop);
+        const before = state.outputGeometry;
+        let x = g.x, y = g.y;
+        if (before && Number.isFinite(before.x) && Number.isFinite(before.y)) {
+            x += output.geometry.x - before.x;
+            y += output.geometry.y - before.y;
+        }
+        // Fixed-size windows can still restore their position and desktop.
+        const width = target.resizeable ? Math.min(g.width, area.width) : target.frameGeometry.width;
+        const height = target.resizeable ? Math.min(g.height, area.height) : target.frameGeometry.height;
+        x = Math.max(area.x, Math.min(x, area.x + area.width - width));
+        y = Math.max(area.y, Math.min(y, area.y + area.height - height));
+        // KWin registers a converter from a JavaScript rectangle to RectF.
+        // Its returned native value wrapper has read-only fields in JS.
+        target.frameGeometry = {x: x, y: y, width: width, height: height};
+        target.setMaximize(Boolean(mode & 1), Boolean(mode & 2));
+        target.fullScreen = Boolean(state.fullScreen);
+    }
+
     function apply(request) {
         const target = workspace.windowList().find(function (window) { return id(window) === request.uuid; });
-        if (!target || !target.resizeable || target.specialWindow) throw new Error("Target window is unavailable");
+        if (!target || target.deleted || target.specialWindow) throw new Error("Target window is unavailable");
+        if (request.operation === "restoreState") return restoreState(target, JSON.parse(request.stateJson));
+        if (!target.resizeable) throw new Error("Target window is not resizeable");
         if (request.operation === "ping") return request.layout ? captureLayout(target, request) : undefined;
         const action = tileActions[request.edges];
         const custom = request.operation === "tileCustom";

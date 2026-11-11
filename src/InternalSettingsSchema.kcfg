@@ -149,6 +149,9 @@
         </entry>
 
         <!-- other -->
+        <entry name="RememberWindowState" type="Bool">
+            <default>false</default>
+        </entry>
         <entry name="LongPressEnabled" type="Bool">
             <default>true</default>
         </entry>
