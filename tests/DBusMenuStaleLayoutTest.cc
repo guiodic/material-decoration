@@ -241,6 +241,52 @@ private slots:
         }
     }
 
+    void staleRecoveryDoesNotStrandPending_data()
+    {
+        QTest::addColumn<bool>("failLatest");
+        QTest::newRow("latest-layout-success") << false;
+        QTest::newRow("latest-layout-error") << true;
+    }
+
+    void staleRecoveryDoesNotStrandPending()
+    {
+        QFETCH(bool, failLatest);
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QTRY_COMPARE(service.layouts, 1);
+        QVERIFY(service.reply(1));
+        QTRY_COMPARE(importer.menu()->actions().size(), 2);
+        service.holdAboutToShow = true;
+        importer.updateMenu(importer.menu());
+        QTRY_COMPARE(service.aboutCalls, 1);
+        QVERIFY(service.replyAbout(1, true));
+        QTRY_COMPARE(service.layouts, 2);
+        const auto recovery = pendingRequest(importer, 0);
+        QVERIFY(recovery);
+        service.rootChildren = {7, 1};
+        service.layoutUpdated(0);
+        QTRY_COMPARE(service.layouts, 3);
+        importer.updateMenu(importer.menu());
+        QTRY_COMPARE(service.aboutCalls, 2);
+        QVERIFY(service.reply(2));
+        QTRY_VERIFY(recovery.isNull());
+        importer.updateMenu(importer.menu());
+        service.failNextLayout = failLatest;
+        QVERIFY(service.replyAbout(2, false));
+        QTRY_COMPARE(service.layouts, 4);
+        QCOMPARE(service.aboutCalls, 2);
+        QVERIFY(service.reply(4));
+        if (failLatest) {
+            QTRY_VERIFY(!importer.menu()->property("_dbusmenu_update_pending").toBool());
+            importer.updateMenu(importer.menu());
+            QTRY_COMPARE(service.aboutCalls, 3);
+            QVERIFY(service.replyAbout(3, false));
+            QTRY_COMPARE(service.layouts, 5);
+            QVERIFY(service.reply(5));
+        }
+        QTRY_COMPARE(ids(importer.menu()), (QList<int>{7, 1}));
+        QVERIFY(!importer.menu()->property("_dbusmenu_update_pending").toBool());
+    }
+
     void obsoleteAboutErrorDoesNotUnlockNewRequest()
     {
         DBusMenuImporter importer(service.bus.baseService(), "/Menu");
