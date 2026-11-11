@@ -42,6 +42,9 @@ static constexpr auto DBUSMENU_PROPERTY_ID = "_dbusmenu_id";
 static constexpr auto DBUSMENU_PROPERTY_LABEL = "_dbusmenu_label";
 static constexpr auto DBUSMENU_PROPERTY_ICON_NAME = "_dbusmenu_icon_name";
 static constexpr auto DBUSMENU_PROPERTY_ICON_DATA_HASH = "_dbusmenu_icon_data_hash";
+static constexpr auto DBUSMENU_PROPERTY_GENERATION = "_dbusmenu_layout_generation";
+static constexpr auto DBUSMENU_PROPERTY_MENU = "_dbusmenu_request_menu";
+static constexpr auto DBUSMENU_PROPERTY_PENDING = "_dbusmenu_update_pending";
 
 static constexpr int MAX_ACTIONS_PER_MENU = 1000;
 static constexpr int MAX_TOTAL_ACTIONS = 5000;
@@ -73,15 +76,35 @@ public:
     ActionForId m_actionForId;
     QTimer m_pendingLayoutUpdateTimer;
 
-    QSet<int> m_idsRefreshedByAboutToShow;
     QSet<int> m_pendingLayoutUpdates;
     QPointer<QObject> m_activationRequest;
 
+    void stampRequest(QDBusPendingCallWatcher *watcher, QMenu *menu)
+    {
+        const quint64 generation = menu->property(DBUSMENU_PROPERTY_GENERATION).toULongLong() + 1;
+        menu->setProperty(DBUSMENU_PROPERTY_GENERATION, generation);
+        watcher->setProperty(DBUSMENU_PROPERTY_GENERATION, generation);
+        watcher->setProperty(DBUSMENU_PROPERTY_MENU, QVariant::fromValue(QPointer<QMenu>(menu)));
+    }
+
+    QMenu *menuForRequest(QDBusPendingCallWatcher *watcher) const
+    {
+        const auto menu = watcher->property(DBUSMENU_PROPERTY_MENU).value<QPointer<QMenu>>();
+        if (!menu || menuForId(watcher->property(DBUSMENU_PROPERTY_ID).toInt()) != menu
+            || menu->property(DBUSMENU_PROPERTY_GENERATION) != watcher->property(DBUSMENU_PROPERTY_GENERATION)) {
+            return nullptr;
+        }
+        return menu;
+    }
+
     QDBusPendingCallWatcher *refresh(int id)
     {
+        QMenu *menu = menuForId(id);
+        if (!menu) return nullptr;
         const auto call = m_interface->GetLayout(id, 1, QStringList());
         QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, q);
         watcher->setProperty(DBUSMENU_PROPERTY_ID, id);
+        stampRequest(watcher, menu);
         QObject::connect(watcher, &QDBusPendingCallWatcher::finished, q, &DBusMenuImporter::slotGetLayoutFinished);
 
         return watcher;
@@ -287,7 +310,8 @@ DBusMenuImporter::DBusMenuImporter(const QString &service, const QString &path, 
         d->slotItemsPropertiesUpdated(updatedList, removedList);
     });
 
-    d->refresh(0);
+    // Creating the root menu can call a derived importer's createMenu().
+    QMetaObject::invokeMethod(this, [this] { d->refresh(0); }, Qt::QueuedConnection);
 }
 
 DBusMenuImporter::~DBusMenuImporter()
@@ -304,7 +328,10 @@ DBusMenuImporter::~DBusMenuImporter()
 void DBusMenuImporter::slotLayoutUpdated(uint revision, int parentId)
 {
     Q_UNUSED(revision)
-    d->m_idsRefreshedByAboutToShow.remove(parentId);
+    if (QMenu *menu = d->menuForId(parentId)) {
+        menu->setProperty(DBUSMENU_PROPERTY_GENERATION, menu->property(DBUSMENU_PROPERTY_GENERATION).toULongLong() + 1);
+        menu->setProperty(DBUSMENU_PROPERTY_PENDING, false);
+    }
     d->m_pendingLayoutUpdates << parentId;
     if (!d->m_pendingLayoutUpdateTimer.isActive()) {
         d->m_pendingLayoutUpdateTimer.start();
@@ -441,25 +468,19 @@ void DBusMenuImporter::slotGetLayoutFinished(QDBusPendingCallWatcher *watcher)
     const int parentId = watcher->property(DBUSMENU_PROPERTY_ID).toInt();
     watcher->deleteLater();
 
-    d->m_idsRefreshedByAboutToShow.remove(parentId);
-
-    QMenu *menu = d->menuForId(parentId);
+    QMenu *menu = d->menuForRequest(watcher);
+    if (!menu) return;
+    menu->setProperty(DBUSMENU_PROPERTY_PENDING, false);
 
     const QDBusPendingReply<uint, DBusMenuLayoutItem> reply = *watcher;
     if (!reply.isValid()) {
         qCWarning(DBUSMENUQT) << reply.error().message();
-        if (menu) {
-            Q_EMIT menuUpdated(menu);
-        }
+        Q_EMIT menuUpdated(menu);
         return;
     }
 
     const DBusMenuLayoutItem rootItem = reply.argumentAt<1>();
 
-    if (!menu) {
-        qCDebug(DBUSMENUQT) << "No menu for id" << parentId;
-        return;
-    }
     if (rootItem.id != parentId) {
         qCWarning(DBUSMENUQT) << "Ignoring menu layout with root ID" << rootItem.id << "for" << parentId;
         Q_EMIT menuUpdated(menu);
@@ -649,14 +670,15 @@ void DBusMenuImporter::updateMenu(QMenu *menu)
 
     const int id = action->property(DBUSMENU_PROPERTY_ID).toInt();
 
-    if (d->m_idsRefreshedByAboutToShow.contains(id)) {
+    if (menu->property(DBUSMENU_PROPERTY_PENDING).toBool()) {
         return; // Update already in progress, ignore re-entrant call.
     }
-    d->m_idsRefreshedByAboutToShow << id;
+    menu->setProperty(DBUSMENU_PROPERTY_PENDING, true);
 
     const auto call = d->m_interface->AboutToShow(id);
     QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, this);
     watcher->setProperty(DBUSMENU_PROPERTY_ID, id);
+    d->stampRequest(watcher, menu);
     connect(watcher, &QDBusPendingCallWatcher::finished, this, &DBusMenuImporter::slotAboutToShowDBusCallFinished);
 
     // Firefox deliberately ignores "aboutToShow" whereas Qt ignores" opened", so we'll just send both all the time...
@@ -668,22 +690,15 @@ void DBusMenuImporter::slotAboutToShowDBusCallFinished(QDBusPendingCallWatcher *
     const int id = watcher->property(DBUSMENU_PROPERTY_ID).toInt();
     watcher->deleteLater();
 
-    QMenu *menu = d->menuForId(id);
-    if (!menu) {
-        d->m_idsRefreshedByAboutToShow.remove(id);
-        return;
-    }
+    QMenu *menu = d->menuForRequest(watcher);
+    if (!menu) return;
 
     const QDBusPendingReply<bool> reply = *watcher;
     if (reply.isError()) {
-        d->m_idsRefreshedByAboutToShow.remove(id);
         qCWarning(DBUSMENUQT) << "Call to AboutToShow() failed:" << reply.error().message();
-        Q_EMIT menuUpdated(menu);
-        return;
     }
-    // We used to only refresh if needRefresh was true.
-    // However, some servers are buggy and don't signal correctly, or signals are lost.
-    // Since this is called JIT before showing a menu, always refreshing is safer
+    // Always fetch the layout: exporters may miss updates or not implement
+    // AboutToShow, and this activation may have superseded an earlier refresh.
     d->refresh(id);
 }
 

@@ -131,6 +131,10 @@ class DBusMenuImporterTest : public QObject
         if (reply.type() != QDBusMessage::ReplyMessage) return false;
         auto *watcher = new QDBusPendingCallWatcher(QDBusPendingCall::fromCompletedCall(reply), &importer);
         watcher->setProperty("_dbusmenu_id", id);
+        // Exercise layout application directly; request ordering is tested via D-Bus.
+        QMenu *menu = id == 0 ? importer.menu() : importer.actionForId(id)->menu();
+        watcher->setProperty("_dbusmenu_request_menu", QVariant::fromValue(QPointer<QMenu>(menu)));
+        watcher->setProperty("_dbusmenu_layout_generation", menu->property("_dbusmenu_layout_generation"));
         return QMetaObject::invokeMethod(&importer, "slotGetLayoutFinished", Qt::DirectConnection,
                                          Q_ARG(QDBusPendingCallWatcher *, watcher));
     }

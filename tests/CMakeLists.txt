@@ -62,6 +62,13 @@ if(DBUS_RUN_SESSION)
     add_test(NAME dbusmenuimporter COMMAND ${DBUS_RUN_SESSION} -- $<TARGET_FILE:dbusmenuimporter_test>)
     set_tests_properties(dbusmenuimporter PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+    add_executable(dbusmenustalelayout_test DBusMenuStaleLayoutTest.cc)
+    set_target_properties(dbusmenustalelayout_test PROPERTIES AUTOMOC ON)
+    target_include_directories(dbusmenustalelayout_test PRIVATE ../src/libdbusmenuqt)
+    target_link_libraries(dbusmenustalelayout_test PRIVATE dbusmenuqt Qt6::Widgets Qt6::Test Qt6::DBus)
+    add_test(NAME dbusmenustalelayout COMMAND ${DBUS_RUN_SESSION} -- $<TARGET_FILE:dbusmenustalelayout_test>)
+    set_tests_properties(dbusmenustalelayout PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
+
     add_executable(menucolorssettings_test MenuColorsSettingsTest.cc)
     set_target_properties(menucolorssettings_test PROPERTIES AUTOMOC ON)
     target_include_directories(menucolorssettings_test PRIVATE ../src ${PROJECT_BINARY_DIR}/src ${PROJECT_BINARY_DIR})
