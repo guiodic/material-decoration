@@ -12,6 +12,8 @@
 #include <QTimer>
 #include <QMenu>
 #include <QKeyEvent>
+#include <QToolButton>
+#include <QWidgetAction>
 
 class MenuService : public QDBusVirtualObject
 {
@@ -415,6 +417,97 @@ private slots:
         QVERIFY(!importer.actionForId(8));
         QVERIFY(deliver(importer, 1, valid));
         QCOMPARE(menu->actions(), original);
+    }
+    void kdeTitlePreservesInitialProperties()
+    {
+        service.actionProperties = {{"x-kde-title", true}, {"label", "_Title"},
+                                    {"enabled", false}, {"visible", false},
+                                    {"icon-name", "test-icon"}, {"toggle-type", "checkmark"},
+                                    {"toggle-state", 1},
+                                    {"shortcut", QVariant::fromValue(DBusMenuShortcut::fromKeySequence(QKeySequence("Ctrl+S")))}};
+        IconTestImporter importer(service.bus.baseService(), "/Menu");
+        QTRY_COMPARE(importer.menu()->actions().size(), 2);
+        importer.updateMenu(importer.actionForId(1)->menu());
+        QTRY_VERIFY(importer.actionForId(2));
+        auto *action = qobject_cast<QWidgetAction *>(importer.actionForId(2));
+        QVERIFY(action);
+        auto *widget = qobject_cast<QToolButton *>(action->defaultWidget());
+        QVERIFY(widget);
+        QCOMPARE(action->text(), QStringLiteral("&Title"));
+        QCOMPARE(action->property("_dbusmenu_label").toString(), QStringLiteral("_Title"));
+        QCOMPARE(action->property("_dbusmenu_icon_name").toString(), QStringLiteral("test-icon"));
+        QVERIFY(!action->isEnabled());
+        QVERIFY(!action->isVisible());
+        QVERIFY(action->isCheckable());
+        QVERIFY(action->isChecked());
+        QCOMPARE(action->shortcut(), QKeySequence("Ctrl+S"));
+        QCOMPARE(widget->text(), action->text());
+        QCOMPARE(widget->icon().pixmap(8, 8).toImage().pixelColor(0, 0), QColor(Qt::blue));
+        QVERIFY(!widget->isEnabled());
+        QVERIFY(widget->font().bold());
+        QCOMPARE(widget->toolButtonStyle(), Qt::ToolButtonTextBesideIcon);
+    }
+    void kdeTitleTracksUpdates_data()
+    {
+        QTest::addColumn<bool>("fullLayout");
+        QTest::newRow("layout") << true;
+        QTest::newRow("incremental") << false;
+    }
+    void kdeTitleTracksUpdates()
+    {
+        QFETCH(bool, fullLayout);
+        service.actionProperties = {{"x-kde-title", true}, {"label", "_Title"}, {"icon-name", "test-icon"}};
+        IconTestImporter importer(service.bus.baseService(), "/Menu");
+        QTRY_COMPARE(importer.menu()->actions().size(), 2);
+        auto *menu = importer.actionForId(1)->menu();
+        importer.updateMenu(menu);
+        QTRY_VERIFY(importer.actionForId(2));
+        auto *action = qobject_cast<QWidgetAction *>(importer.actionForId(2));
+        QVERIFY(action);
+        auto *widget = qobject_cast<QToolButton *>(action->defaultWidget());
+        QVERIFY(widget);
+        QVERIFY(widget->isDown());
+        QSignalSpy triggered(action, &QAction::triggered);
+        QPixmap pixmap(8, 8);
+        pixmap.fill(Qt::red);
+        QByteArray png;
+        QBuffer buffer(&png);
+        QVERIFY(buffer.open(QIODevice::WriteOnly));
+        QVERIFY(pixmap.save(&buffer, "PNG"));
+        const QVariantMap changed{{"x-kde-title", true}, {"label", "_Changed"},
+                                  {"icon-data", png}, {"enabled", false}, {"visible", false}};
+        if (fullLayout) {
+            service.actionProperties = changed;
+            QSignalSpy updated(&importer, &DBusMenuImporter::menuUpdated);
+            importer.updateMenu(menu);
+            QTRY_VERIFY(!updated.isEmpty());
+        } else {
+            service.propertiesUpdated({{2, changed}});
+            QTRY_COMPARE(action->text(), QStringLiteral("&Changed"));
+        }
+        QCOMPARE(importer.actionForId(2), action);
+        QCOMPARE(widget->text(), QStringLiteral("&Changed"));
+        QCOMPARE(widget->icon().pixmap(8, 8).toImage().pixelColor(0, 0), QColor(Qt::red));
+        QVERIFY(!action->isVisible());
+        QVERIFY(!action->isEnabled());
+        QVERIFY(!widget->isEnabled());
+        if (fullLayout) {
+            service.actionProperties = {{"x-kde-title", true}};
+            QSignalSpy updated(&importer, &DBusMenuImporter::menuUpdated);
+            importer.updateMenu(menu);
+            QTRY_VERIFY(!updated.isEmpty());
+        } else {
+            service.propertiesUpdated({}, {{2, {"label", "icon-name", "icon-data", "enabled", "visible"}}});
+            QTRY_VERIFY(action->text().isEmpty());
+        }
+        QVERIFY(widget->text().isEmpty());
+        QVERIFY(widget->icon().isNull());
+        QVERIFY(action->isVisible());
+        QVERIFY(action->isEnabled());
+        QVERIFY(widget->isEnabled());
+        widget->click();
+        QVERIFY(triggered.isEmpty());
+        QVERIFY(service.clicked.isEmpty());
     }
     void kdeTitleRetiresAndReusesId()
     {
