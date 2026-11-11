@@ -252,6 +252,7 @@ public:
         if (previous == iconName) {
             return;
         }
+        action->setProperty(DBUSMENU_PROPERTY_ICON_DATA_HASH, QVariant());
         action->setProperty(DBUSMENU_PROPERTY_ICON_NAME, iconName);
         if (iconName.isEmpty()) {
             action->setIcon(QIcon());

@@ -250,6 +250,26 @@ private slots:
             const QColor expected = properties.contains("icon-name") ? Qt::blue : Qt::red;
             QCOMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(0, 0), expected);
         }
+        // An incremental name update must not leave the previous data hash
+        // suppressing restoration of the same image by the next full layout.
+        service.actionProperties = data;
+        {
+            QSignalSpy updated(&importer, &DBusMenuImporter::menuUpdated);
+            importer.updateMenu(menu);
+            QTRY_VERIFY(!updated.isEmpty());
+        }
+        auto *action = importer.actionForId(2);
+        QVERIFY(action);
+        QCOMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(0, 0), QColor(Qt::red));
+        service.propertiesUpdated({{2, named}});
+        QTRY_COMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(0, 0), QColor(Qt::blue));
+        {
+            QSignalSpy updated(&importer, &DBusMenuImporter::menuUpdated);
+            importer.updateMenu(menu);
+            QTRY_VERIFY(!updated.isEmpty());
+        }
+        QCOMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(0, 0), QColor(Qt::red));
+
         service.actionProperties = {{"label", "No icon"}};
         QSignalSpy updated(&importer, &DBusMenuImporter::menuUpdated);
         importer.updateMenu(menu);
