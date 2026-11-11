@@ -32,10 +32,10 @@ Note: if you configure the decoration to use Opacity < 100%,
 strongly recommended on Wayland.
 
 
-### Remember window state (Wayland)
-In **Button options**, enable **Remember window position, size, desktop and
-screen (Wayland)** to save a window's state when it closes and restore it when
-it opens again. This option is **off by default** and requires the companion
+### Remember window position (Wayland)
+In **Button options**, enable **Remember window position, desktop and screen
+(Wayland)** to save a window's position, desktop and screen when it closes and
+restore them when it opens again. This option is **off by default** and requires the companion
 **Material Tiling Popup** KWin script to be enabled.
 
 State is written only on window closure to
@@ -52,10 +52,12 @@ while KWin announces the first mapped buffer, before returning to the render
 loop. This avoids displaying the initial centered frame. The asynchronous
 D-Bus bridge remains available if the in-process script entry point is missing.
 Missing desktops fall back to the window's initial desktop; missing
-screens fall back to its current screen. Geometry is adjusted to the available
-work area. Maximized and fullscreen states are also restored; the saved
-rectangle is the frame geometry at closure, not a separate pre-maximization
-geometry.
+screens fall back to its current screen. Position is adjusted to the available
+work area, while the application's current dimensions are preserved even on a
+smaller screen. Window sizes, maximization, fullscreen and tiling are controlled
+by the application and KWin. They are neither saved nor forced by this feature.
+Existing version 1 state is read for its coordinates only; new saves use the
+position-only version 2 format.
 
 ### Actions on Press-and-Hold buttons
 Pressing and holding the “Close” button will minimize the window to the traybar

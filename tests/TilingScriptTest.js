@@ -18,7 +18,7 @@ function fixture(extraWindows = []) {
     }
     const root = {tiles: [leaf(0, 0, 1 / 3, 1), leaf(1 / 3, 0, 1 / 3, 1), leaf(2 / 3, 0, 1 / 3, 1)]};
     const workspace = {activeWindow: other, layoutRoot: root, screens: [output], desktops: [desktop], currentDesktop: desktop,
-        clientArea(option, screen) { return screen.geometry; },
+        clientArea(option, screen) { this.lastClientAreaOutput = screen; return screen.geometry; },
         tilingForScreen() { return {rootTile: this.layoutRoot}; },
         windows: [target, other, ...extraWindows], windowList() { return this.windows; },
         windowAdded: {connect(callback) { this.callback = callback; }},
@@ -166,76 +166,92 @@ for (const change of [
     assert.equal(f.target.tile, null);
 }
 function savedState(extra = {}) {
-    return {version: 1, geometry: {x: 100, y: 80, width: 900, height: 600}, desktopIds: ['desktop-1'],
-        onAllDesktops: false, maximizeMode: 0, fullScreen: false, outputUuid: 'output-1', outputName: 'Virtual-1',
-        outputGeometry: {x: 0, y: 0, width: 1280, height: 800}, ...extra};
+    return {version: 2, position: {x: 100, y: 80}, desktopIds: ['desktop-1'],
+        onAllDesktops: false, outputUuid: 'output-1', outputName: 'Virtual-1',
+        outputPosition: {x: 0, y: 0}, ...extra};
 }
 {
     const f = fixture();
+    f.target.setMaximize = () => { throw new Error('must not alter app-requested modes'); };
+    f.workspace.sendClientToScreen = () => { throw new Error('must not constrain a normal window'); };
     assert.equal(f.restoreImmediately(savedState()), true);
-    assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 900, height: 600});
+    assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 640, height: 480});
     assert.equal(f.workspace.activeWindow, f.other);
-    assert.equal(f.calls.length, 0, 'synchronous restore needs no shortcut dispatch');
-    assert.throws(() => f.restoreImmediately(savedState({version: 2})), /Invalid saved geometry/);
+    assert.equal(f.calls.length, 0);
+    assert.throws(() => f.restoreImmediately(savedState({version: 3})), /Invalid saved position/);
 }
 {
     const f = fixture();
     let current = {...f.target.frameGeometry};
-    let pending;
     Object.defineProperty(f.target, 'frameGeometry', {
         get() { return {...current}; },
         set(g) {
-            // Wayland commits a move immediately only if size stays unchanged.
-            if (g.width === current.width && g.height === current.height) current = {...g};
-            else pending = {...g};
+            assert.equal(g.width, current.width, 'never request another width');
+            assert.equal(g.height, current.height, 'never request another height');
+            current = {...g};
         }
     });
-    assert.equal(f.restoreImmediately(savedState()), true);
-    assert.deepEqual(current, {x: 100, y: 80, width: 640, height: 480}, 'move before waiting for a resized client buffer');
-    assert.deepEqual(pending, {x: 100, y: 80, width: 900, height: 600});
+    // Even unexpected old dimension/mode fields must not affect the app size.
+    assert.equal(f.restoreImmediately(savedState({geometry: {width: 900, height: 600}, maximizeMode: 3, fullScreen: true})), true);
+    assert.deepEqual(current, {x: 100, y: 80, width: 640, height: 480});
+    assert.equal(f.target.fullScreen, undefined);
 }
 {
     const f = fixture();
     const secondDesktop = {id: 'desktop-2'};
     f.workspace.desktops.push(secondDesktop);
     assert.ok(f.send(0, 'target', 'restoreState', {state: savedState({desktopIds: ['desktop-2']})}).success);
-    assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 900, height: 600});
+    assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 640, height: 480});
     assert.equal(f.target.desktops[0], secondDesktop);
-    assert.equal(f.workspace.activeWindow, f.other, 'restore must not take focus');
-    assert.equal(f.workspace.currentDesktop.id, 'desktop-1', 'restore must not switch the current desktop');
-    assert.equal(f.calls.length, 0);
+    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(f.workspace.currentDesktop.id, 'desktop-1');
 }
 {
     const f = fixture();
     const movedOutput = {name: 'Virtual-1', uuid: 'output-1', geometry: {x: 1920, y: 50, width: 800, height: 600}};
     f.workspace.screens = [movedOutput];
     assert.ok(f.send(0, 'target', 'restoreState', {state: savedState()}).success);
-    assert.equal(f.target.output, movedOutput);
-    assert.deepEqual({...f.target.frameGeometry}, {x: 1920, y: 50, width: 800, height: 600}, 'fit the saved frame to the new work area');
+    assert.equal(f.workspace.lastClientAreaOutput, movedOutput);
+    assert.deepEqual({...f.target.frameGeometry}, {x: 2020, y: 130, width: 640, height: 480});
+    const tinyOutput = {name: 'Virtual-1', uuid: 'output-1', geometry: {x: 1920, y: 50, width: 400, height: 300}};
+    f.workspace.screens = [tinyOutput];
+    assert.ok(f.send(0, 'target', 'restoreState', {state: savedState()}).success);
+    assert.deepEqual({...f.target.frameGeometry}, {x: 1920, y: 50, width: 640, height: 480}, 'a smaller output must not shrink the app');
 }
 {
     const f = fixture();
     f.target.resizeable = false;
     assert.ok(f.send(0, 'target', 'restoreState', {state: savedState({desktopIds: ['removed'], outputUuid: 'removed', outputName: 'removed'})}).success);
     assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 640, height: 480});
-    assert.equal(f.target.desktops[0], f.workspace.currentDesktop, 'missing desktops leave the window on its existing desktop');
-    assert.equal(f.target.output, f.output, 'missing output falls back to the current screen');
+    assert.equal(f.target.desktops[0], f.workspace.currentDesktop);
+    assert.equal(f.workspace.lastClientAreaOutput, f.output);
 }
-{
+for (const mode of ['maximized', 'fullscreen', 'tiled']) {
     const f = fixture();
-    assert.ok(f.send(0, 'target', 'restoreState', {state: savedState({onAllDesktops: true, maximizeMode: 3, fullScreen: true})}).success);
+    const original = {...f.target.frameGeometry};
+    if (mode === 'maximized') f.target.maximizeMode = 3;
+    if (mode === 'fullscreen') f.target.fullScreen = true;
+    if (mode === 'tiled') f.target.tile = {unmanage() { throw new Error('must not untile'); }};
+    f.target.setMaximize = () => { throw new Error('must not maximize or restore'); };
+    const tile = f.target.tile;
+    const destination = {name: 'Virtual-2', uuid: 'output-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
+    f.workspace.screens.push(destination);
+    assert.ok(f.send(0, 'target', 'restoreState', {state: savedState({outputUuid: 'output-2', onAllDesktops: true})}).success);
+    assert.deepEqual({...f.target.frameGeometry}, original);
+    assert.equal(f.target.output, destination);
     assert.equal(f.target.onAllDesktops, true);
-    assert.equal(f.target.maximizeMode, 3);
-    assert.equal(f.target.fullScreen, true);
+    assert.equal(f.target.tile, tile);
+    if (mode === 'maximized') assert.equal(f.target.maximizeMode, 3);
+    if (mode === 'fullscreen') assert.equal(f.target.fullScreen, true);
 }
 {
     const f = fixture();
-    for (const state of [null, savedState({version: 2}), savedState({geometry: {x: NaN, y: 0, width: 1, height: 1}}),
-        savedState({geometry: {x: 0, y: 0, width: -1, height: 100}}), savedState({maximizeMode: 9})]) {
+    for (const state of [null, savedState({version: 1}), savedState({position: {x: NaN, y: 0}}),
+        savedState({position: {x: 0}}), savedState({desktopIds: null})]) {
         assert.ok(!f.send(0, 'target', 'restoreState', {state}).success);
     }
     assert.deepEqual({...f.target.frameGeometry}, {x: 0, y: 0, width: 640, height: 480});
     f.target.normalWindow = false;
     assert.ok(!f.send(0, 'target', 'restoreState', {state: savedState()}).success);
 }
-console.log('Tiling and window state: quick/custom tiles, restore, desktop/output fallbacks, fixed sizes and validation passed.');
+console.log('Tiling and window positions: app sizes/modes preserved, desktop/output fallbacks and validation passed.');

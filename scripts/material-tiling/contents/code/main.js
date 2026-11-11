@@ -75,12 +75,10 @@ var materialRestoreWindowState;
 
     function restoreState(target, state) {
         if (!target.normalWindow || target.transient || target.deleted) throw new Error("Target window cannot be restored");
-        const g = state && state.geometry;
-        if (!state || state.version !== 1 || !g ||
-            ![g.x, g.y, g.width, g.height].every(function (n) { return typeof n === "number" && Number.isFinite(n); }) ||
-            g.width <= 0 || g.height <= 0) throw new Error("Invalid saved geometry");
-        const mode = state.maximizeMode;
-        if (!Number.isInteger(mode) || mode < 0 || mode > 3 || !Array.isArray(state.desktopIds)) throw new Error("Invalid saved state");
+        const position = state && state.position;
+        if (!state || state.version !== 2 || !position ||
+            ![position.x, position.y].every(function (n) { return typeof n === "number" && Number.isFinite(n); })) throw new Error("Invalid saved position");
+        if (!Array.isArray(state.desktopIds)) throw new Error("Invalid saved state");
         const screens = workspace.screens;
         const output = screens.find(function (screen) { return state.outputUuid && String(screen.uuid) === state.outputUuid; }) ||
             screens.find(function (screen) { return state.outputName && screen.name === state.outputName; }) || target.output || screens[0];
@@ -89,36 +87,33 @@ var materialRestoreWindowState;
 
         // This path deliberately does not activate the window or change the
         // current desktop. The popup's tiling activation is unrelated.
-        target.fullScreen = false;
-        target.setMaximize(false, false);
-        if (target.tile) target.tile.unmanage(target);
         if (state.onAllDesktops) target.onAllDesktops = true;
         else if (desktops.length) target.desktops = desktops;
-        workspace.sendClientToScreen(target, output);
+        // Let KWin move app-requested fullscreen, maximized and tiled windows
+        // between outputs without undoing their mode or assigning a normal size.
+        if (target.fullScreen || target.maximizeMode || target.tile) {
+            if (target.output !== output) workspace.sendClientToScreen(target, output);
+            return;
+        }
 
         const area = workspace.clientArea(KWin.PlacementArea, output, target.desktops[0] || workspace.currentDesktop);
-        const before = state.outputGeometry;
-        let x = g.x, y = g.y;
+        const before = state.outputPosition;
+        let x = position.x, y = position.y;
         if (before && Number.isFinite(before.x) && Number.isFinite(before.y)) {
             x += output.geometry.x - before.x;
             y += output.geometry.y - before.y;
         }
-        // Fixed-size windows can still restore their position and desktop.
-        const width = target.resizeable ? Math.min(g.width, area.width) : target.frameGeometry.width;
-        const height = target.resizeable ? Math.min(g.height, area.height) : target.frameGeometry.height;
-        x = Math.max(area.x, Math.min(x, area.x + area.width - width));
-        y = Math.max(area.y, Math.min(y, area.y + area.height - height));
-        // KWin registers a converter from a JavaScript rectangle to RectF.
-        // Its returned native value wrapper has read-only fields in JS.
-        // Move with the current size first: on Wayland a combined move/resize
-        // waits for the client's next buffer, exposing the old centered frame.
+        // Use exactly the app's current frame size, including when it exceeds
+        // the work area. Moving to a smaller screen must not shrink the window.
         const current = target.frameGeometry;
+        x = Math.max(area.x, Math.min(x, area.x + area.width - current.width));
+        y = Math.max(area.y, Math.min(y, area.y + area.height - current.height));
+        // A same-size frameGeometry assignment moves immediately on Wayland.
+        // Its position also determines the output; sendClientToScreen() could
+        // constrain a normal window's size, so it is not used for this path.
         if (current.x !== x || current.y !== y) {
             target.frameGeometry = {x: x, y: y, width: current.width, height: current.height};
         }
-        target.frameGeometry = {x: x, y: y, width: width, height: height};
-        target.setMaximize(Boolean(mode & 1), Boolean(mode & 2));
-        target.fullScreen = Boolean(state.fullScreen);
     }
 
     materialRestoreWindowState = function (target, stateJson) {

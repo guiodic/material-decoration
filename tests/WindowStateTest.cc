@@ -4,6 +4,10 @@
 #include "ExceptionList.h"
 #include "DecorationTestBackend.h"
 #include <KDecoration3/Decoration>
+#include <KConfigGroup>
+#include <KSharedConfig>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QRectF>
 #include <QStandardPaths>
 #include <QTest>
@@ -105,17 +109,42 @@ private slots:
         window.setProperty("maximizeMode", 3);
         window.setProperty("fullScreen", true);
         const auto state = Material::captureWindowState(&window);
-        QCOMPARE(state.value("geometry").toMap().value("width").toDouble(), 800);
+        QCOMPARE(state.value("position").toMap().value("x").toDouble(), 40);
+        QVERIFY(!state.contains("geometry"));
+        QVERIFY(!QJsonDocument::fromVariant(state).toJson().contains("width"));
+        QVERIFY(!QJsonDocument::fromVariant(state).toJson().contains("height"));
         QCOMPARE(state.value("desktopIds").toStringList(), QStringList{"desktop-uuid"});
-        QCOMPARE(state.value("outputGeometry").toMap().value("x").toDouble(), 1920);
+        QCOMPARE(state.value("outputPosition").toMap().value("x").toDouble(), 1920);
         const auto key = Material::windowStateKey(&window);
         QVERIFY(Material::writeWindowState(key, state));
         const auto saved = Material::readWindowState(key);
         QCOMPARE(saved.value("outputUuid").toString(), "monitor-uuid");
-        QCOMPARE(saved.value("maximizeMode").toInt(), 3);
-        QVERIFY(saved.value("fullScreen").toBool());
-        QVERIFY(!Material::writeWindowState(key, {{"version", 1}, {"geometry", QVariantMap{{"width", -1}}}}));
+        QVERIFY(!saved.contains("maximizeMode"));
+        QVERIFY(!saved.contains("fullScreen"));
+        QVERIFY(!Material::writeWindowState(key, {{"version", 2}, {"position", QVariantMap{{"x", 1}}}}));
         QCOMPARE(Material::readWindowState(key), saved);
+    }
+    void importsLegacyPositionsWithoutKeepingDimensions() {
+        const QString key = "legacy-" + QUuid::createUuid().toString();
+        const QVariantMap legacy{{"version", 1}, {"geometry", QVariantMap{{"x", 80}, {"y", 100}, {"width", 1200}, {"height", 900}}},
+            {"desktopIds", QStringList{"desktop-1"}}, {"maximizeMode", 3}, {"fullScreen", true},
+            {"outputGeometry", QVariantMap{{"x", 1920}, {"y", 0}, {"width", 1280}, {"height", 800}}}};
+        auto config = KSharedConfig::openStateConfig(QStringLiteral("material-window-staterc"));
+        KConfigGroup group(config, key);
+        group.writeEntry("State", QJsonDocument::fromVariant(legacy).toJson(QJsonDocument::Compact));
+        QVERIFY(config->sync());
+        const auto imported = Material::readWindowState(key);
+        QCOMPARE(imported.value("version").toInt(), 2);
+        QCOMPARE(imported.value("position").toMap().value("x").toInt(), 80);
+        QCOMPARE(imported.value("outputPosition").toMap().value("x").toInt(), 1920);
+        QVERIFY(!imported.contains("geometry"));
+        QVERIFY(!imported.contains("maximizeMode"));
+        QVERIFY(!imported.contains("fullScreen"));
+        QVERIFY(Material::writeWindowState(key, legacy));
+        const auto written = QJsonDocument::fromJson(group.readEntry("State", QByteArray())).object();
+        QCOMPARE(written.value("version").toInt(), 2);
+        QVERIFY(!QJsonDocument(written).toJson().contains("width"));
+        QVERIFY(!QJsonDocument(written).toJson().contains("height"));
     }
     void savesOnlyOnCloseAndSurvivesDecorationRemoval() {
         KWin::WaylandWindow window;
@@ -131,7 +160,7 @@ private slots:
         delete decoration;
         window.close();
         // Direct connection: no event loop iteration is needed to persist state.
-        QCOMPARE(Material::readWindowState(key).value("geometry").toMap().value("x").toDouble(), 120);
+        QCOMPARE(Material::readWindowState(key).value("position").toMap().value("x").toDouble(), 120);
     }
     void disabledNeverRestoresOrWrites() {
         KWin::WaylandWindow window;

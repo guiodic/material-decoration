@@ -19,30 +19,46 @@ namespace Material
 {
 namespace
 {
-QVariantMap rectangle(const QVariant &value)
+QVariantMap position(const QVariant &value)
 {
     // KWin 6.8 uses a Q_GADGET KWin::RectF rather than QRectF.
     const QMetaObject *meta = value.metaType().metaObject();
     QVariantMap result;
-    for (const char *name : {"x", "y", "width", "height"}) {
+    for (const char *name : {"x", "y"}) {
         const int index = meta ? meta->indexOfProperty(name) : -1;
         if (index < 0) {
             const QRectF r = value.toRectF();
-            return {{"x", r.x()}, {"y", r.y()}, {"width", r.width()}, {"height", r.height()}};
+            return value.isValid() ? QVariantMap{{"x", r.x()}, {"y", r.y()}} : QVariantMap();
         }
         result.insert(QLatin1String(name), meta->property(index).readOnGadget(value.constData()));
     }
     return result;
 }
 
-bool validGeometry(const QVariantMap &g)
+bool validPosition(const QVariantMap &g)
 {
-    for (const char *name : {"x", "y", "width", "height"}) {
+    for (const char *name : {"x", "y"}) {
         bool ok = false;
         const double n = g.value(QLatin1String(name)).toDouble(&ok);
         if (!ok || !std::isfinite(n)) return false;
     }
-    return g.value("width").toDouble() > 0 && g.value("height").toDouble() > 0;
+    return true;
+}
+
+// Version 1 also stored dimensions and window modes. Import only its
+// coordinates; every subsequent write uses the position-only format.
+QVariantMap positionState(const QVariantMap &state)
+{
+    const int version = state.value("version").toInt();
+    if (version != 1 && version != 2) return {};
+    const auto coordinates = state.value(version == 1 ? "geometry" : "position").toMap();
+    if (!validPosition(coordinates)) return {};
+    QVariantMap saved{{"version", 2}, {"position", QVariantMap{{"x", coordinates.value("x")}, {"y", coordinates.value("y")}}},
+                      {"desktopIds", state.value("desktopIds")}, {"onAllDesktops", state.value("onAllDesktops").toBool()},
+                      {"outputName", state.value("outputName")}, {"outputUuid", state.value("outputUuid")}};
+    const auto output = state.value(version == 1 ? "outputGeometry" : "outputPosition").toMap();
+    if (validPosition(output)) saved.insert("outputPosition", QVariantMap{{"x", output.value("x")}, {"y", output.value("y")}});
+    return saved;
 }
 
 KSharedConfig::Ptr stateConfig()
@@ -67,8 +83,8 @@ QString windowStateKey(const QObject *window)
 QVariantMap captureWindowState(const QObject *window)
 {
     if (!window || windowStateKey(window).isEmpty()) return {};
-    const auto geometry = rectangle(window->property("frameGeometry"));
-    if (!validGeometry(geometry)) return {};
+    const auto coordinates = position(window->property("frameGeometry"));
+    if (!validPosition(coordinates)) return {};
     QStringList desktops;
     const QVariant values = window->property("desktops");
     for (const QVariant &value : values.toList()) {
@@ -77,14 +93,12 @@ QVariantMap captureWindowState(const QObject *window)
             if (!id.isEmpty()) desktops.append(id);
         }
     }
-    QVariantMap state{{"version", 1}, {"geometry", geometry}, {"desktopIds", desktops},
-                      {"onAllDesktops", window->property("onAllDesktops").toBool()},
-                      {"maximizeMode", window->property("maximizeMode").toInt()},
-                      {"fullScreen", window->property("fullScreen").toBool()}};
+    QVariantMap state{{"version", 2}, {"position", coordinates}, {"desktopIds", desktops},
+                      {"onAllDesktops", window->property("onAllDesktops").toBool()}};
     if (auto *output = window->property("output").value<QObject *>()) {
         state.insert("outputName", output->property("name").toString());
         state.insert("outputUuid", output->property("uuid").toString());
-        state.insert("outputGeometry", rectangle(output->property("geometry")));
+        state.insert("outputPosition", position(output->property("geometry")));
     }
     return state;
 }
@@ -93,14 +107,15 @@ QVariantMap readWindowState(const QString &key)
 {
     if (key.isEmpty()) return {};
     const auto state = QJsonDocument::fromJson(KConfigGroup(stateConfig(), key).readEntry("State", QByteArray())).object().toVariantMap();
-    return state.value("version").toInt() == 1 && validGeometry(state.value("geometry").toMap()) ? state : QVariantMap();
+    return positionState(state);
 }
 
 bool writeWindowState(const QString &key, const QVariantMap &state)
 {
-    if (key.isEmpty() || state.value("version").toInt() != 1 || !validGeometry(state.value("geometry").toMap())) return false;
+    const auto saved = positionState(state);
+    if (key.isEmpty() || saved.isEmpty()) return false;
     const auto config = stateConfig();
-    KConfigGroup(config, key).writeEntry("State", QJsonDocument::fromVariant(state).toJson(QJsonDocument::Compact));
+    KConfigGroup(config, key).writeEntry("State", QJsonDocument::fromVariant(saved).toJson(QJsonDocument::Compact));
     return config->sync();
 }
 

@@ -643,8 +643,8 @@
        </item>
        <item row="3" column="0" colspan="2">
         <widget class="QCheckBox" name="kcfg_RememberWindowState">
-         <property name="text"><string>Remember window position, size, desktop and screen (Wayland)</string></property>
-         <property name="toolTip"><string>Save window state when a window closes and restore it when it opens again. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window.</string></property>
+         <property name="text"><string>Remember window position, desktop and screen (Wayland)</string></property>
+         <property name="toolTip"><string>Save window position, desktop and screen when a window closes and restore them when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window.</string></property>
         </widget>
        </item>
       </layout>

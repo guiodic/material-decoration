@@ -233,9 +233,9 @@ private slots:
         TestDecoration valid(&window, &bridge);
         bridge.client->setResizeable(false);
         const auto count = action.requests.size();
-        const QVariantMap state{{QStringLiteral("version"), 1},
+        const QVariantMap state{{QStringLiteral("version"), 2},
             {QStringLiteral("desktopIds"), QStringList{QStringLiteral("desktop-1")}},
-            {QStringLiteral("geometry"), QVariantMap{{"x", 100}, {"y", 80}, {"width", 640}, {"height", 480}}}};
+            {QStringLiteral("position"), QVariantMap{{"x", 100}, {"y", 80}}}};
         int completed = 0;
         bool succeeded = true;
         for (int i = 0; i < 12; ++i) {
@@ -257,7 +257,7 @@ private slots:
         auto *unrelatedEngine = new QJSEngine(&scripting);
         unrelatedEngine->evaluate(QStringLiteral("var materialRestoreWindowState = null;"));
         auto *engine = new QJSEngine(&scripting);
-        const QVariantMap state{{QStringLiteral("version"), 1}, {QStringLiteral("desktopIds"), QStringList{QStringLiteral("desktop-1")}}};
+        const QVariantMap state{{QStringLiteral("version"), 2}, {QStringLiteral("desktopIds"), QStringList{QStringLiteral("desktop-1")}}};
         QVERIFY(!Material::restoreWindowStateImmediately(&valid, state));
         engine->evaluate(QStringLiteral("var restored, ownerName; function materialRestoreWindowState(window, json) { restored = JSON.parse(json); ownerName = window.objectName; return true; }"));
         window.setObjectName(QStringLiteral("target-window"));
