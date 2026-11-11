@@ -7,6 +7,7 @@
 #include <QDBusMessage>
 #include <QDBusVirtualObject>
 #include <QDBusPendingCallWatcher>
+#include <QDBusPendingReply>
 #include <QSignalSpy>
 #include <QTest>
 #include <QTimer>
@@ -141,11 +142,11 @@ class DBusMenuImporterTest : public QObject
 {
     Q_OBJECT
     MenuService service;
-    QDBusMessage fetchLayout(int id)
+    QDBusMessage fetchLayout(int id, int depth = 1)
     {
         auto message = QDBusMessage::createMethodCall(service.bus.baseService(), "/Menu",
                                                      "com.canonical.dbusmenu", "GetLayout");
-        message << id << 1 << QStringList{};
+        message << id << depth << QStringList{};
         QDBusPendingCallWatcher watcher(QDBusConnection::sessionBus().asyncCall(message));
         QSignalSpy finished(&watcher, &QDBusPendingCallWatcher::finished);
         if (!watcher.isFinished()) finished.wait(5000);
@@ -343,6 +344,102 @@ private slots:
         QVERIFY(!action->isChecked());
         QVERIFY(action->shortcut().isEmpty());
         QVERIFY(action->icon().isNull());
+    }
+    void decodingBoundsLayoutNodes_data()
+    {
+        QTest::addColumn<int>("children");
+        QTest::addColumn<bool>("nested");
+        QTest::newRow("below-limit") << DBusMenuLimits::MaxActions - 1 << false;
+        QTest::newRow("at-limit") << DBusMenuLimits::MaxActions << false;
+        QTest::newRow("over-limit") << DBusMenuLimits::MaxActions + 1 << false;
+        QTest::newRow("shared-budget") << DBusMenuLimits::MaxActions << true;
+    }
+    void decodingBoundsLayoutNodes()
+    {
+        QFETCH(int, children);
+        QFETCH(bool, nested);
+        QList<int> ids;
+        for (int i = 0; i < children; ++i) ids.append(10 + i);
+        if (nested) {
+            service.customLayouts[0] = {1, 7};
+            service.customLayouts[1] = ids.first(children / 2);
+            service.customLayouts[7] = ids.sliced(children / 2);
+        } else {
+            service.customLayouts[0] = ids;
+        }
+        const auto message = fetchLayout(0, -1);
+        QCOMPARE(message.type(), QDBusMessage::ReplyMessage);
+        const QDBusPendingReply<uint, DBusMenuLayoutItem> reply(QDBusPendingCall::fromCompletedCall(message));
+        QVERIFY(reply.isValid());
+        const auto root = reply.argumentAt<1>();
+        int count = 0;
+        QList<const DBusMenuLayoutItem *> pending{&root};
+        while (!pending.isEmpty()) {
+            const auto *item = pending.takeLast();
+            ++count;
+            for (const auto &child : item->children) pending.append(&child);
+        }
+        const int total = children + (nested ? 3 : 1);
+        QCOMPARE(count, qMin(total, DBusMenuLimits::MaxActions + 1));
+        QCOMPARE(root.truncated, total > DBusMenuLimits::MaxActions + 1);
+
+        // A new reply gets its own budget after an oversized tree.
+        service.customLayouts[0] = {10};
+        const auto smallMessage = fetchLayout(0);
+        QCOMPARE(smallMessage.type(), QDBusMessage::ReplyMessage);
+        const QDBusPendingReply<uint, DBusMenuLayoutItem> smallReply(QDBusPendingCall::fromCompletedCall(smallMessage));
+        QVERIFY(smallReply.isValid());
+        const auto smallRoot = smallReply.argumentAt<1>();
+        QVERIFY(!smallRoot.truncated);
+        QCOMPARE(smallRoot.children.size(), 1);
+        QCOMPARE(smallRoot.children.first().id, 10);
+    }
+    void oversizedLayoutPreservesMenu()
+    {
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QTRY_COMPARE(importer.menu()->actions().size(), 2);
+        auto *menu = importer.menu();
+        const auto original = menu->actions();
+        menu->setActiveAction(original.first());
+        QList<int> ids;
+        for (int i = 0; i <= DBusMenuLimits::MaxActions; ++i) ids.append(10 + i);
+        service.customLayouts[0] = ids;
+        int rootUpdates = 0;
+        connect(&importer, &DBusMenuImporter::menuUpdated, &importer, [&](QMenu *updated) {
+            if (updated == menu) ++rootUpdates;
+        });
+        importer.updateMenu(menu);
+        QTRY_COMPARE(rootUpdates, 1);
+        QCOMPARE(menu->actions(), original);
+        QCOMPARE(menu->activeAction(), original.first());
+        QVERIFY(menu->updatesEnabled());
+        QVERIFY(!importer.actionForId(10));
+
+        service.customLayouts[0] = {7};
+        importer.updateMenu(menu);
+        QTRY_COMPARE(rootUpdates, 2);
+        QCOMPARE(menu->actions(), QList<QAction *>{importer.actionForId(7)});
+    }
+    void oversizedActivationTreeDoesNotImportPartialPath()
+    {
+        DBusMenuImporter importer(service.bus.baseService(), "/Menu");
+        QTRY_COMPARE(importer.menu()->actions().size(), 2);
+        QList<int> ids;
+        for (int i = 0; i < DBusMenuLimits::MaxActions; ++i) ids.append(10 + i);
+        service.customLayouts[1] = ids;
+        QSignalSpy requested(&importer, &DBusMenuImporter::actionActivationRequested);
+        QVERIFY(QMetaObject::invokeMethod(&importer, "slotItemActivationRequested", Qt::DirectConnection,
+                                         Q_ARG(int, 10), Q_ARG(uint, 0u)));
+        QPointer<QDBusPendingCallWatcher> treeRequest;
+        for (auto *watcher : importer.findChildren<QDBusPendingCallWatcher *>()) {
+            if (!watcher->property("_dbusmenu_id").isValid()) treeRequest = watcher;
+        }
+        QVERIFY(treeRequest);
+        const QPointer<QObject> activationRequest(treeRequest->parent());
+        QTRY_VERIFY(activationRequest.isNull());
+        QVERIFY(requested.isEmpty());
+        QVERIFY(!importer.actionForId(10));
+        QVERIFY(!service.layouts.contains({1, 1}));
     }
     void duplicateIdsPreserveLayout_data()
     {

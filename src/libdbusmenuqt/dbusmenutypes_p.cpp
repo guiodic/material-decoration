@@ -61,22 +61,37 @@ QDBusArgument &operator<<(QDBusArgument &argument, const DBusMenuLayoutItem &obj
     return argument;
 }
 
-const QDBusArgument &operator>>(const QDBusArgument &argument, DBusMenuLayoutItem &obj)
+namespace
 {
+void readLayout(const QDBusArgument &argument, DBusMenuLayoutItem &obj, int &remaining)
+{
+    --remaining;
+    obj.truncated = false;
     argument.beginStructure();
     argument >> obj.id >> obj.properties;
     argument.beginArray();
     obj.children.clear();
-    while (!argument.atEnd()) {
+    while (!argument.atEnd() && remaining > 0) {
         QDBusVariant dbusVariant;
         argument >> dbusVariant;
         const auto childArgument = dbusVariant.variant().value<QDBusArgument>();
 
-        // Deserialize directly into the newly created element to avoid stack temporaries
-        childArgument >> obj.children.emplace_back();
+        auto &child = obj.children.emplace_back();
+        readLayout(childArgument, child, remaining);
+        obj.truncated = obj.truncated || child.truncated;
     }
+    obj.truncated = obj.truncated || !argument.atEnd();
+    // Closing the array skips unread entries without decoding their subtrees.
     argument.endArray();
     argument.endStructure();
+}
+}
+
+const QDBusArgument &operator>>(const QDBusArgument &argument, DBusMenuLayoutItem &obj)
+{
+    // Include the root in addition to the maximum number of imported actions.
+    int remaining = DBusMenuLimits::MaxActions + 1;
+    readLayout(argument, obj, remaining);
     return argument;
 }
 

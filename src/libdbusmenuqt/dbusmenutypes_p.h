@@ -13,6 +13,11 @@
 
 class QDBusArgument;
 
+namespace DBusMenuLimits
+{
+inline constexpr int MaxActions = 5000;
+}
+
 //// DBusMenuItem
 /**
  * Internal struct used to communicate on DBus
@@ -51,6 +56,8 @@ struct DBusMenuLayoutItem {
     int id = 0;
     QVariantMap properties;
     QList<DBusMenuLayoutItem> children;
+    // Local decoding status; this field is not part of the D-Bus structure.
+    bool truncated = false;
 };
 
 QDBusArgument &operator<<(QDBusArgument &argument, const DBusMenuLayoutItem &);
