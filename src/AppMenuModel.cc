@@ -63,10 +63,6 @@ public:
     }
 
 protected:
-    QIcon iconForName(const QString &name) override {
-        return QIcon::fromTheme(name);
-    }
-
     QMenu *createMenu(QWidget *parent) override {
         auto *menu = m_decoration ? m_decoration->createNavigableMenu(parent) : new NavigableMenu(nullptr, parent);
         // The application handles top-level Alt shortcuts; keep its labels intact.
