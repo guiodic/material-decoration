@@ -306,7 +306,8 @@ private:
     }
     void retry()
     {
-        if (++m_attempts < 20) QTimer::singleShot(250, this, &WindowStateController::restore);
+        // Four retries at 250 ms: stop after about one second.
+        if (++m_attempts <= 4) QTimer::singleShot(250, this, &WindowStateController::restore);
     }
     QObject *m_window;
     QPointer<KDecoration3::Decoration> m_decoration;
