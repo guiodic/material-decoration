@@ -14,8 +14,12 @@
 #include <QMetaMethod>
 #include <QPointer>
 #include <QRectF>
+#include <QScopedValueRollback>
 #include <QTimer>
 #include <cmath>
+
+namespace KWin { class Tile; }
+Q_DECLARE_OPAQUE_POINTER(KWin::Tile *)
 
 namespace Material
 {
@@ -57,6 +61,22 @@ QVariantMap tileRegion(const QVariant &value)
         else result.insert(QLatin1String(name), QByteArray(name) == "width" ? value.toRectF().width() : value.toRectF().height());
     }
     return result;
+}
+
+QVariantMap normalSize(const QVariant &geometry)
+{
+    const auto rectangle = tileRegion(geometry);
+    return {{"width", rectangle.value("width")}, {"height", rectangle.value("height")}};
+}
+
+bool validSize(const QVariantMap &size)
+{
+    for (const char *name : {"width", "height"}) {
+        bool ok = false;
+        const double value = size.value(QLatin1String(name)).toDouble(&ok);
+        if (!ok || !std::isfinite(value) || value <= 0) return false;
+    }
+    return true;
 }
 
 int quickTileEdges(const QVariantMap &region)
@@ -104,8 +124,8 @@ QVariantMap windowTile(const QObject *window)
     return {{"kind", "custom"}, {"path", path}, {"region", region}};
 }
 
-// Tile region metadata belongs to the compositor's layout and does not impose
-// a size on floating windows.
+// Dimensions are retained only as tile metadata for subsequent unsnapping.
+// Floating window sizes remain under the application's control.
 QVariantMap positionState(const QVariantMap &state)
 {
     if (state.value("version").toInt() != 3) return {};
@@ -130,6 +150,12 @@ QVariantMap positionState(const QVariantMap &state)
             && region.value("x").toDouble() + w <= 1.00001 && region.value("y").toDouble() + h <= 1.00001;
         for (const auto &index : path) if (index.toDouble() != index.toInt() || index.toInt() < 0) valid = false;
         if (valid) saved.insert("tile", QVariantMap{{"kind", kind}, {"path", path}, {"region", region}});
+    }
+    const auto size = tile.value("normalSize").toMap();
+    if (saved.contains("tile") && validSize(size)) {
+        auto savedTile = saved.value("tile").toMap();
+        savedTile.insert("normalSize", QVariantMap{{"width", size.value("width").toDouble()}, {"height", size.value("height").toDouble()}});
+        saved.insert("tile", savedTile);
     }
     return saved;
 }
@@ -219,14 +245,26 @@ public:
             if (!origin.isEmpty()) state.insert("outputPosition", origin);
             writeWindowState(windowStateKey(m_window), state, oldScope);
         });
-        const auto slot = metaObject()->method(metaObject()->indexOfSlot("updateTile()"));
-        for (int i = 0; i < m_window->metaObject()->methodCount(); ++i) {
-            const auto signal = m_window->metaObject()->method(i);
-            if (signal.methodType() == QMetaMethod::Signal && signal.name() == "tileChanged") {
-                connect(m_window, signal, this, slot, Qt::DirectConnection);
-                break;
+        m_normalSizeTimer.setSingleShot(true);
+        connect(&m_normalSizeTimer, &QTimer::timeout, this, &WindowStateController::rememberSettledNormalSize);
+        m_requestedTiled = m_window->property("tile").value<QObject *>() != nullptr;
+        const auto connectSignal = [this](const char *name, const char *slot) {
+            const auto destination = metaObject()->method(metaObject()->indexOfSlot(slot));
+            for (int i = 0; i < m_window->metaObject()->methodCount(); ++i) {
+                const auto signal = m_window->metaObject()->method(i);
+                if (signal.methodType() == QMetaMethod::Signal && signal.name() == name) {
+                    connect(m_window, signal, this, destination, Qt::DirectConnection);
+                    break;
+                }
             }
-        }
+        };
+        connectSignal("tileChanged", "committedTileChanged(KWin::Tile*)");
+        connectSignal("requestedTileChanged", "requestedTileChanged()");
+        connectSignal("frameGeometryAboutToChange", "rememberNormalSize()");
+        connectSignal("frameGeometryChanged", "queueNormalSizeUpdate()");
+        connectSignal("maximizedAboutToChange", "maximizeStarting()");
+        connectSignal("maximizedChanged", "maximizeFinished()");
+        connectSignal("fullScreenChanged", "queueNormalSizeUpdate()");
         m_originalDesktops = m_window->property("desktops");
         prepare();
         // Initialization may still apply the app's initial desktop/minimized
@@ -258,6 +296,7 @@ private slots:
     {
         if (m_restoreStarted) return;
         m_restoreStarted = true;
+        rememberNormalSize();
         // KWin has placed and added the window while handling this signal.
         // Restore synchronously before returning to the render loop; queuing a
         // timer or D-Bus round trip here exposes the initial centered frame.
@@ -273,6 +312,51 @@ private slots:
     void updateTile()
     {
         if (!m_window->property("deleted").toBool()) m_lastTile = windowTile(m_window);
+    }
+    void requestedTileChanged()
+    {
+        m_requestedTiled = m_window->property("tile").value<QObject *>() != nullptr;
+        queueNormalSizeUpdate();
+    }
+    void committedTileChanged(KWin::Tile *tile)
+    {
+        // Only compare this opaque pointer; no private KWin API is called.
+        // The requested property may already refer to a later configure event.
+        m_committedTiled = tile != nullptr;
+        updateTile();
+        queueNormalSizeUpdate();
+    }
+    void queueNormalSizeUpdate()
+    {
+        // KWin commits tile/maximize state AFTER frameGeometryChanged. Wait
+        // until that same event has finished before classifying the frame.
+        if (m_enabled && m_restoreStarted) m_normalSizeTimer.start(0);
+    }
+    void rememberSettledNormalSize()
+    {
+        // A maximize request can be superseded before the client commits, so
+        // maximizedChanged need not fire. At this point committed properties
+        // classify the frame and no transient "about to" flag is needed.
+        m_maximizeChanging = false;
+        rememberNormalSize();
+    }
+    void rememberNormalSize()
+    {
+        if (!m_enabled || !m_restoreStarted || m_restoring || m_requestedTiled || m_committedTiled || m_maximizeChanging
+            || m_window->property("deleted").toBool() || m_window->property("fullScreen").toBool()
+            || m_window->property("maximizeMode").toInt()) return;
+        const auto size = normalSize(m_window->property("frameGeometry"));
+        if (validSize(size)) m_normalSize = size;
+    }
+    void maximizeStarting()
+    {
+        rememberNormalSize();
+        m_maximizeChanging = true;
+    }
+    void maximizeFinished()
+    {
+        m_maximizeChanging = false;
+        queueNormalSizeUpdate();
     }
     void cancelRestore()
     {
@@ -293,6 +377,11 @@ private slots:
         }
         if (m_state.isEmpty()) m_state = readWindowState(key, WindowStateScope::self()->current());
         if (m_state.isEmpty()) return;
+        // Ignore synthetic intermediate sizes while seeding KWin's unsnap
+        // geometry. Missing metadata must not turn a tile-sized startup frame
+        // into an allegedly known normal size.
+        if (m_state.contains("tile")) m_normalSize = m_state.value("tile").toMap().value("normalSize").toMap();
+        QScopedValueRollback restoring(m_restoring, true);
         const auto result = restoreWindowStateImmediately(m_decoration, m_state);
         if (result == WindowRestoreResult::Succeeded) updateTile();
         else if (result == WindowRestoreResult::Unavailable) retry();
@@ -303,6 +392,11 @@ private:
     {
         auto state = captureWindowState(m_window);
         if (!state.contains("tile") && !m_lastTile.isEmpty()) state.insert("tile", m_lastTile);
+        if (state.contains("tile") && validSize(m_normalSize)) {
+            auto tile = state.value("tile").toMap();
+            tile.insert("normalSize", m_normalSize);
+            state.insert("tile", tile);
+        }
         return state;
     }
     void releaseVisibilityGuard()
@@ -329,6 +423,12 @@ private:
     QVariant m_originalDesktops;
     QVariantMap m_state;
     QVariantMap m_lastTile;
+    QVariantMap m_normalSize;
+    QTimer m_normalSizeTimer;
+    bool m_requestedTiled = false;
+    bool m_committedTiled = false;
+    bool m_maximizeChanging = false;
+    bool m_restoring = false;
     int m_attempts = 0;
 };
 
@@ -342,7 +442,7 @@ void configureWindowState(KDecoration3::Decoration *decoration, bool enabled)
         controller->configure(decoration, enabled);
     } else {
         // Owned by the KWin window, so fullscreen/decoration removal cannot lose
-        // the close handler. No continuous geometry tracking is needed.
+        // the close handler. Normal sizes are tracked in memory, never polled.
         new WindowStateController(decoration, enabled);
     }
 }

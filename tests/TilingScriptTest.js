@@ -439,3 +439,57 @@ for (const extra of [{onAllDesktops: true, desktops: []}, {activities: []}, {rea
     assert.equal(f.target.frameGeometry.x, 100, 'saved native snap bypasses cascading');
 }
 console.log('Window collision placement: decoration height, fallback, scope, cascading and bounds passed.');
+
+// Seed only a restored native tile's unsnap geometry, never a floating size.
+for (const kind of ['quick', 'custom']) {
+    const f = fixture();
+    let normal;
+    const tile = f.leaf(0, 0, 0.5, 1);
+    tile.manage = function (window) {
+        normal = {...window.frameGeometry};
+        window.tile = this;
+        window.frameGeometry = {x: 0, y: 0, width: 640, height: 800};
+        return true;
+    };
+    tile.unmanage = function (window) { window.tile = null; window.frameGeometry = normal; };
+    if (kind === 'quick') f.workspace.quickTiles = [tile];
+    else f.workspace.layoutRoot = {tiles: [tile]};
+    const saved = kind === 'quick' ? {kind, edges: 2} : {kind, path: [0], region: {...tile.relativeGeometry}};
+    saved.normalSize = {width: 900.5, height: 650.25};
+    f.restoreImmediately(savedState({tile: saved}));
+    assert.equal(normal.width, 900.5);
+    assert.equal(normal.height, 650.25);
+    assert.equal(f.target.tile, tile);
+    tile.unmanage(f.target);
+    assert.equal(f.target.frameGeometry.width, 900.5, 'native unsnap restores the pre-tiling width');
+    assert.equal(f.target.frameGeometry.height, 650.25);
+    assert.equal(f.workspace.activeWindow, f.other);
+}
+for (const outcome of ['rejected', 'throws', 'missing']) {
+    const f = fixture();
+    const tile = f.leaf(0, 0, 0.5, 1);
+    tile.manage = () => { if (outcome === 'throws') throw new Error('tile unavailable'); return false; };
+    f.workspace.quickTiles = outcome === 'missing' ? [] : [tile];
+    const state = savedState({tile: {kind: 'quick', edges: 2, normalSize: {width: 900, height: 650}}});
+    if (outcome === 'throws') assert.throws(() => f.restoreImmediately(state), /tile unavailable/);
+    else f.restoreImmediately(state);
+    assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 640, height: 480}, 'failed native tiling keeps the app-requested size');
+}
+for (const size of [undefined, {width: 0, height: 650}, {width: -1, height: 650}, {width: 900}, {width: '900', height: 650}, {width: Infinity, height: 650}]) {
+    const f = fixture();
+    const tile = f.leaf(0, 0, 0.5, 1);
+    let initial;
+    tile.manage = window => { initial = {...window.frameGeometry}; window.tile = tile; return true; };
+    f.workspace.quickTiles = [tile];
+    f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2, normalSize: size}}));
+    assert.equal(initial.width, 640);
+    assert.equal(initial.height, 480);
+}
+{
+    const f = fixture();
+    f.workspace.quickTiles = [f.leaf(0, 0, 0.5, 1)];
+    f.restoreImmediately(savedState({normalSize: {width: 900, height: 650}}));
+    assert.equal(f.target.frameGeometry.width, 640, 'floating states never resize the app');
+    assert.equal(f.target.frameGeometry.height, 480);
+}
+console.log('Restored native tile normal sizes: unsnapping, unavailable tiles and missing metadata passed.');

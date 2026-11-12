@@ -21,19 +21,26 @@
 
 // Match the runtime base-class name without including any private KWin header.
 namespace KWin {
+class Tile : public QObject { Q_OBJECT public: using QObject::QObject; };
 class QuickRootTile : public QObject { Q_OBJECT public: using QObject::QObject; };
 class WaylandWindow : public QObject {
     Q_OBJECT
 public:
     void close() { Q_EMIT closed(); }
     void map() { Q_EMIT readyForPaintingChanged(); }
-    void changedTile() { Q_EMIT tileChanged(); }
+    void changedTile() { Q_EMIT tileChanged(reinterpret_cast<KWin::Tile *>(property("tile").value<QObject *>())); }
     void startInteraction() { Q_EMIT interactiveMoveResizeStarted(); }
     void finishInteraction() { Q_EMIT interactiveMoveResizeFinished(); }
 signals:
     void closed();
     void readyForPaintingChanged();
-    void tileChanged();
+    void tileChanged(KWin::Tile *tile);
+    void requestedTileChanged();
+    void frameGeometryAboutToChange();
+    void frameGeometryChanged();
+    void maximizedAboutToChange(int mode);
+    void maximizedChanged();
+    void fullScreenChanged();
     void interactiveMoveResizeStarted();
     void interactiveMoveResizeFinished();
 };
@@ -75,6 +82,7 @@ public:
 static QList<QVariantMap> immediateRequests;
 static bool immediateAvailable = true;
 static bool immediateSucceeds = true;
+static std::function<void()> immediateHook;
 static QList<QVariantMap> prepareRequests;
 static bool prepareAvailable = false;
 static bool prepareMinimizes = false;
@@ -94,6 +102,7 @@ WindowRestoreResult restoreWindowStateImmediately(KDecoration3::Decoration *, co
 {
     if (!immediateAvailable) return WindowRestoreResult::Unavailable;
     immediateRequests.append(state);
+    if (immediateHook) immediateHook();
     return immediateSucceeds ? WindowRestoreResult::Succeeded : WindowRestoreResult::Failed;
 }
 
@@ -254,6 +263,126 @@ private slots:
             window.close();
             QCOMPARE(Material::readWindowState(Material::windowStateKey(&window)).contains("tile"), !unsnap);
         }
+    }
+    void savesNormalSizeOnlyWithValidTileMetadata() {
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.NormalSizeValidation." + QUuid::createUuid().toString());
+        auto state = Material::captureWindowState(&window);
+        const auto key = Material::windowStateKey(&window);
+        const QVariantMap size{{"width", 900.5}, {"height", 650.25}};
+        state.insert("tile", QVariantMap{{"kind", "quick"}, {"edges", 2}, {"normalSize", size}});
+        QVERIFY(Material::writeWindowState(key, state));
+        QCOMPARE(Material::readWindowState(key).value("tile").toMap().value("normalSize").toMap(), size);
+        for (const auto &bad : {QVariantMap{{"width", 0}, {"height", 500}}, QVariantMap{{"width", -1}, {"height", 500}}, QVariantMap{{"width", 900}}}) {
+            state.insert("tile", QVariantMap{{"kind", "quick"}, {"edges", 2}, {"normalSize", bad}});
+            QVERIFY(Material::writeWindowState(key, state));
+            QVERIFY(!Material::readWindowState(key).value("tile").toMap().contains("normalSize"));
+        }
+        state.insert("tile", QVariantMap{{"kind", "quick"}, {"edges", 6}, {"normalSize", size}});
+        QVERIFY(Material::writeWindowState(key, state));
+        QVERIFY(!Material::readWindowState(key).contains("tile"));
+    }
+    void remembersNormalSizeAcrossTilingAndMaximizing_data() {
+        QTest::addColumn<bool>("maximizeFirst");
+        QTest::newRow("normal-to-tile") << false;
+        QTest::newRow("maximize-to-tile") << true;
+    }
+    void remembersNormalSizeAcrossTilingAndMaximizing() {
+        QFETCH(bool, maximizeFirst);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.NormalSize." + QUuid::createUuid().toString());
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        window.setProperty("frameGeometry", QRectF(100, 100, 900, 650));
+        Q_EMIT window.frameGeometryChanged();
+        QCoreApplication::processEvents();
+        if (maximizeFirst) {
+            Q_EMIT window.maximizedAboutToChange(3);
+            Q_EMIT window.frameGeometryAboutToChange();
+            window.setProperty("frameGeometry", QRectF(0, 0, 1280, 800));
+            Q_EMIT window.frameGeometryChanged();
+            window.setProperty("maximizeMode", 3);
+            Q_EMIT window.maximizedChanged();
+            QCoreApplication::processEvents();
+            Q_EMIT window.maximizedAboutToChange(0);
+        }
+        KWin::QuickRootTile root;
+        KWin::Tile tile;
+        tile.setProperty("parent", QVariant::fromValue<QObject *>(&root));
+        tile.setProperty("relativeGeometry", QRectF(0, 0, 0.5, 1));
+        window.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
+        Q_EMIT window.frameGeometryAboutToChange();
+        Q_EMIT window.requestedTileChanged();
+        window.setProperty("frameGeometry", QRectF(0, 0, 640, 800));
+        Q_EMIT window.frameGeometryChanged();
+        if (maximizeFirst) {
+            window.setProperty("maximizeMode", 0);
+            Q_EMIT window.maximizedChanged();
+        }
+        window.changedTile();
+        QCoreApplication::processEvents();
+        window.close();
+        auto state = Material::readWindowState(Material::windowStateKey(&window));
+        QCOMPARE(state.value("tile").toMap().value("normalSize").toMap(), (QVariantMap{{"width", 900}, {"height", 650}}));
+        // A tile-to-tile resize must preserve the original normal dimensions.
+        window.setProperty("frameGeometry", QRectF(0, 0, 450, 800));
+        Q_EMIT window.frameGeometryChanged();
+        window.changedTile();
+        QCoreApplication::processEvents();
+        window.close();
+        QCOMPARE(Material::readWindowState(Material::windowStateKey(&window)).value("tile"), state.value("tile"));
+        // After unsnapping, normal sizes can change again and floating saves
+        // must never acquire dimensions from this observer.
+        window.setProperty("tile", QVariant::fromValue<QObject *>(nullptr));
+        Q_EMIT window.frameGeometryAboutToChange();
+        Q_EMIT window.requestedTileChanged();
+        QCoreApplication::processEvents(); // Still tiled until the client commits.
+        window.setProperty("frameGeometry", QRectF(150, 150, 900, 650));
+        Q_EMIT window.frameGeometryChanged();
+        window.changedTile();
+        QCoreApplication::processEvents();
+        window.close();
+        state = Material::readWindowState(Material::windowStateKey(&window));
+        QVERIFY(!state.contains("tile"));
+        QVERIFY(!state.contains("normalSize"));
+        QVERIFY(!state.contains("width"));
+    }
+    void preservesStoredNormalSizeDuringRestore() {
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.SeededNormalSize." + QUuid::createUuid().toString());
+        window.setProperty("frameGeometry", QRectF(0, 0, 640, 800));
+        const QVariantMap size{{"width", 900}, {"height", 650}};
+        auto state = Material::captureWindowState(&window);
+        state.insert("tile", QVariantMap{{"kind", "quick"}, {"edges", 2}, {"normalSize", size}});
+        const auto key = Material::windowStateKey(&window);
+        QVERIFY(Material::writeWindowState(key, state));
+        KWin::QuickRootTile root;
+        KWin::Tile tile;
+        tile.setProperty("parent", QVariant::fromValue<QObject *>(&root));
+        tile.setProperty("relativeGeometry", QRectF(0, 0, 0.5, 1));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        immediateAvailable = true;
+        immediateHook = [&] {
+            // Simulate the synchronous request followed by its eventual commit.
+            Q_EMIT window.frameGeometryAboutToChange();
+            window.setProperty("frameGeometry", QRectF(0, 0, 900, 650));
+            Q_EMIT window.frameGeometryChanged();
+            window.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
+            Q_EMIT window.frameGeometryAboutToChange();
+            Q_EMIT window.requestedTileChanged();
+            window.setProperty("frameGeometry", QRectF(0, 0, 640, 800));
+            Q_EMIT window.frameGeometryChanged();
+            window.changedTile();
+        };
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        immediateHook = {};
+        QCoreApplication::processEvents();
+        window.close();
+        QCOMPARE(Material::readWindowState(key).value("tile").toMap().value("normalSize").toMap(), size);
     }
     void savesOnlyOnCloseAndSurvivesDecorationRemoval() {
         KWin::WaylandWindow window;
