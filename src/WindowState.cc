@@ -282,11 +282,9 @@ private slots:
         }
         if (m_state.isEmpty()) m_state = readWindowState(key, WindowStateScope::self()->current());
         if (m_state.isEmpty()) return;
-        if (restoreWindowStateImmediately(m_decoration, m_state)) {
-            updateTile();
-            return;
-        }
-        retry();
+        const auto result = restoreWindowStateImmediately(m_decoration, m_state);
+        if (result == WindowRestoreResult::Succeeded) updateTile();
+        else if (result == WindowRestoreResult::Unavailable) retry();
     }
 
 private:

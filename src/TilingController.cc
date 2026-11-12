@@ -81,11 +81,15 @@ static QJSEngine *scriptEngine(const QString &name)
     return {};
 }
 
-static QJSValue callScript(KDecoration3::Decoration *decoration, const QString &name, const QString &json)
+static QJSValue callScript(KDecoration3::Decoration *decoration, const QString &name, const QString &json, bool *available = nullptr)
 {
+    if (available) *available = true;
     if (!decoration || !decoration->parent()) return {};
     auto *engine = scriptEngine(name);
-    if (!engine) return {};
+    if (!engine) {
+        if (available) *available = false;
+        return {};
+    }
     auto function = engine->globalObject().property(name);
     static auto *stateBridge = new WindowStateScriptBridge(QCoreApplication::instance());
     QJSEngine::setObjectOwnership(stateBridge, QJSEngine::CppOwnership);
@@ -107,10 +111,12 @@ bool tilingScriptAvailable()
     return scriptEngine(QStringLiteral("materialTiling")) != nullptr;
 }
 
-bool restoreWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
+WindowRestoreResult restoreWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
 {
-    const auto result = callScript(decoration, QStringLiteral("materialRestoreWindowState"), windowStateJson(decoration, state));
-    return result.isBool() && result.toBool();
+    bool available = false;
+    const auto result = callScript(decoration, QStringLiteral("materialRestoreWindowState"), windowStateJson(decoration, state), &available);
+    if (!available) return WindowRestoreResult::Unavailable;
+    return result.isBool() && result.toBool() ? WindowRestoreResult::Succeeded : WindowRestoreResult::Failed;
 }
 
 bool prepareWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)

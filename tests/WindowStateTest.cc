@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "WindowState.h"
 #include "WindowStateScope.h"
+#include "TilingController.h"
 #include "InternalSettings.h"
 #include "ExceptionList.h"
 #include "SettingsProvider.h"
@@ -69,6 +70,7 @@ public:
 
 static QList<QVariantMap> immediateRequests;
 static bool immediateAvailable = true;
+static bool immediateSucceeds = true;
 static QList<QVariantMap> prepareRequests;
 static bool prepareAvailable = false;
 static bool prepareMinimizes = false;
@@ -84,11 +86,11 @@ bool prepareWindowStateImmediately(KDecoration3::Decoration *decoration, const Q
     if (preparedDesktops.isValid()) decoration->parent()->setProperty("desktops", preparedDesktops);
     return true;
 }
-bool restoreWindowStateImmediately(KDecoration3::Decoration *, const QVariantMap &state)
+WindowRestoreResult restoreWindowStateImmediately(KDecoration3::Decoration *, const QVariantMap &state)
 {
-    if (!immediateAvailable) return false;
+    if (!immediateAvailable) return WindowRestoreResult::Unavailable;
     immediateRequests.append(state);
-    return true;
+    return immediateSucceeds ? WindowRestoreResult::Succeeded : WindowRestoreResult::Failed;
 }
 
 }
@@ -317,6 +319,22 @@ private slots:
         QCOMPARE(immediateRequests.size(), count);
         immediateAvailable = true;
         QTRY_COMPARE(immediateRequests.size(), count + 1);
+    }
+    void doesNotRetryExecutionFailure() {
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.Failure." + QUuid::createUuid().toString());
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        const auto count = immediateRequests.size();
+        immediateAvailable = true;
+        immediateSucceeds = false;
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        immediateSucceeds = true;
+        QCOMPARE(immediateRequests.size(), count + 1);
+        QTest::qWait(600);
+        QCOMPARE(immediateRequests.size(), count + 1);
     }
     void restoresBeforeMappingSignalReturns() {
         KWin::WaylandWindow window;

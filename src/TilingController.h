@@ -13,7 +13,8 @@ namespace Material
 {
 QObject *windowStateWorkspace();
 bool canTileWindow(KDecoration3::Decoration *decoration);
-bool restoreWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state);
+enum class WindowRestoreResult { Unavailable, Failed, Succeeded };
+WindowRestoreResult restoreWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state);
 bool prepareWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state);
 bool tilingScriptAvailable();
 bool fetchTilingLayout(KDecoration3::Decoration *decoration, CustomTilingLayout &layout);

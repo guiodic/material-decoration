@@ -126,13 +126,17 @@ private slots:
         valid.setTitleBar(QRectF(0, 0, 640, 32.5));
         bridge.client->setResizeable(false);
         const QVariantMap state{{"version", 3}, {"desktopIds", QStringList{"desktop-1"}}};
-        QVERIFY(!Material::restoreWindowStateImmediately(&valid, state));
+        QCOMPARE(Material::restoreWindowStateImmediately(&valid, state), Material::WindowRestoreResult::Unavailable);
         evaluate("function materialRestoreWindowState(window, json) { restored = JSON.parse(json); ownerName = window.objectName; return true; }");
-        QVERIFY(Material::restoreWindowStateImmediately(&valid, state));
+        QCOMPARE(Material::restoreWindowStateImmediately(&valid, state), Material::WindowRestoreResult::Succeeded);
         QCOMPARE(engine->globalObject().property("ownerName").toString(), "target-window");
         QCOMPARE(engine->evaluate("restored.titleBarHeight").toNumber(), 32.5);
         QCOMPARE(engine->evaluate("restored.desktopIds[0]").toString(), "desktop-1");
         QVERIFY(!state.contains("titleBarHeight"));
+        for (const auto &body : {QStringLiteral("return false;"), QStringLiteral("return undefined;"), QStringLiteral("throw new Error('invalid state');")}) {
+            evaluate("materialRestoreWindowState = function() { " + body + " }; ");
+            QCOMPARE(Material::restoreWindowStateImmediately(&valid, state), Material::WindowRestoreResult::Failed);
+        }
         QVERIFY(!Material::prepareWindowStateImmediately(&valid, state));
         evaluate("function materialPrepareWindowState(window, json) { return true; }");
         QVERIFY(Material::prepareWindowStateImmediately(&valid, state));
