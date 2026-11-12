@@ -76,16 +76,18 @@ Limitations: due to the way the Qt toolkit works, you may need to press the key
 combination (e.g., `Alt+F`) twice if there is already an element (e.g., a
 button) in the application interface associated with that shortcut.
 
+
 # Restore Window position
 You can enable position restore via the configuration module when windows are 
 closed and reopened.
-It works with apps that use Kwin-managed decorations. For those that don’t
-decoration (GTK’s CSD), you can enable a Kwin rule to achieve the ‘shadow-only’ 
-decoration that will enable position restoration to work.
+It works with apps that use Kwin-managed decorations. For other apps 
+(i.e. GNOME apps using GTK’s CSD), you can enable a Kwin rule to add the 
+‘shadow-only’ decoration that will enable position restoration too.
 The restore process also takes into account any connected displays and the 
 configuration of virtual desktops.
 This is an experimental feature not enabled by default. 
 Your feedback is welcome!
+
 
 # Installation
 ### Ubuntu
