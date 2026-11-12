@@ -483,3 +483,15 @@ msgstr "禁用"
 #: src/kcm/config.ui
 msgid "Use accent color for the active window border"
 msgstr "为活动窗口边框使用强调色"
+
+#: src/kcm/config.ui
+msgid "Remember window position, desktop and screen (Wayland)"
+msgstr "记住窗口位置、虚拟桌面和屏幕（Wayland）"
+
+#: src/kcm/config.ui
+msgid "Save window position, desktop and screen when a window closes and restore them when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window."
+msgstr "窗口关闭时保存其位置、虚拟桌面和屏幕，并在重新打开时恢复。窗口大小由应用程序控制。需要启用 Material Tiling Popup KWin 脚本。同一应用程序中没有独立标识的窗口共用最后关闭的窗口的状态。"
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Do not remember window position"
+msgstr "不记住窗口位置"

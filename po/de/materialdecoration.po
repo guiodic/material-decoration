@@ -483,3 +483,15 @@ msgstr "Deaktiviert"
 #: src/kcm/config.ui
 msgid "Use accent color for the active window border"
 msgstr "Akzentfarbe für den Rahmen des aktiven Fensters verwenden"
+
+#: src/kcm/config.ui
+msgid "Remember window position, desktop and screen (Wayland)"
+msgstr "Fensterposition, Arbeitsfläche und Bildschirm merken (Wayland)"
+
+#: src/kcm/config.ui
+msgid "Save window position, desktop and screen when a window closes and restore them when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window."
+msgstr "Speichert Position, Arbeitsfläche und Bildschirm beim Schließen eines Fensters und stellt sie beim erneuten Öffnen wieder her. Die Größe wird von der Anwendung festgelegt. Erfordert das KWin-Skript Material Tiling Popup. Fenster derselben Anwendung ohne eindeutige Identität teilen sich den Zustand des zuletzt geschlossenen Fensters."
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Do not remember window position"
+msgstr "Fensterposition nicht merken"
