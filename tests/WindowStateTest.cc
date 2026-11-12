@@ -269,6 +269,48 @@ private slots:
         QVERIFY(!merged->rememberWindowScreen());
         QVERIFY(merged->rememberWindowDesktop());
     }
+    void latePreparationRespectsDesktopOption_data() {
+        QTest::addColumn<bool>("enabledInitially");
+        QTest::addColumn<bool>("rememberDesktop");
+        for (bool enabled : {false, true}) {
+            for (bool desktop : {false, true}) {
+                const auto name = QStringLiteral("initially-enabled-%1-desktop-%2").arg(enabled).arg(desktop);
+                QTest::newRow(qPrintable(name)) << enabled << desktop;
+            }
+        }
+    }
+    void latePreparationRespectsDesktopOption() {
+        QFETCH(bool, enabledInitially);
+        QFETCH(bool, rememberDesktop);
+        QScopedValueRollback available(prepareAvailable, true);
+        QScopedValueRollback minimizes(prepareMinimizes, true);
+        QScopedValueRollback restoreAvailability(immediateAvailable, true);
+        QObject currentDesktop, savedDesktop;
+        currentDesktop.setProperty("id", "current");
+        savedDesktop.setProperty("id", "saved");
+        const auto current = QVariant::fromValue(QList<QObject *>{&currentDesktop});
+        const auto saved = QVariant::fromValue(QList<QObject *>{&savedDesktop});
+        QScopedValueRollback desktops(preparedDesktops, saved);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.LateDesktopOption." + QUuid::createUuid().toString());
+        window.setProperty("desktops", current);
+        window.setProperty("minimized", false);
+        auto state = Material::captureWindowState(&window);
+        state.insert("desktopIds", QStringList{"saved"});
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), state, Material::WindowStateScope::self()->current()));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, enabledInitially, true, false);
+        QCoreApplication::processEvents();
+        const auto calls = prepareCalls;
+        Material::configureWindowState(&decoration, true, true, rememberDesktop);
+        QCOMPARE(prepareCalls, calls + int(rememberDesktop));
+        QCOMPARE(window.property("minimized").toBool(), rememberDesktop);
+        QCOMPARE(window.property("desktops"), rememberDesktop ? saved : current);
+        window.map();
+        QVERIFY(!window.property("minimized").toBool());
+        QCOMPARE(immediateRequests.last().value("rememberDesktop").toBool(), rememberDesktop);
+    }
     void identifiesApplicationsAndTags() {
         KWin::WaylandWindow a, b;
         setup(a, "org.example.StateTest");
@@ -403,6 +445,102 @@ private slots:
         else QCOMPARE(saved.value("position").toMap().value("x").toInt(), 400);
         QCOMPARE(Material::readWindowState(originalKey, scope), originalState);
         QCOMPARE(window.property("caption").toString(), "Unchanged title");
+    }
+    void lateIdentityChangeStartsPreparation_data() {
+        QTest::addColumn<bool>("available");
+        QTest::addColumn<bool>("cancelled");
+        QTest::addColumn<bool>("mapped");
+        QTest::addColumn<bool>("splitNotifications");
+        for (bool available : {false, true}) {
+            for (bool cancelled : {false, true}) {
+                for (bool mapped : {false, true}) {
+                    for (bool split : {false, true}) {
+                        const auto name = QStringLiteral("%1-%2-%3-%4").arg(available ? "script-ready" : "script-late",
+                            cancelled ? "user-cancelled" : "untouched", mapped ? "mapped" : "before-map",
+                            split ? "native-signal-order" : "single-notification");
+                        QTest::newRow(qPrintable(name)) << available << cancelled << mapped << split;
+                    }
+                }
+            }
+        }
+    }
+    void lateIdentityChangeStartsPreparation() {
+        QFETCH(bool, available);
+        QFETCH(bool, cancelled);
+        QFETCH(bool, mapped);
+        QFETCH(bool, splitNotifications);
+        QScopedValueRollback prepareAvailability(prepareAvailable, available);
+        QScopedValueRollback minimize(prepareMinimizes, true);
+        QScopedValueRollback restoreAvailability(immediateAvailable, true);
+        const auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        auto group = config->group("Windeco");
+        const bool hadDesktop = group.hasKey("RememberWindowDesktop");
+        const bool oldDesktop = group.readEntry("RememberWindowDesktop", false);
+        const auto cleanup = qScopeGuard([config, hadDesktop, oldDesktop] {
+            config->deleteGroup("Windeco Exception 0");
+            auto group = config->group("Windeco");
+            if (hadDesktop) group.writeEntry("RememberWindowDesktop", oldDesktop);
+            else group.deleteEntry("RememberWindowDesktop");
+            config->sync();
+            Material::SettingsProvider::self()->reconfigure();
+        });
+        // Also enables desktop preparation on the branch with separate options.
+        group.writeEntry("RememberWindowDesktop", true);
+        const QString app = "org.example.StateTest.LateEligibility." + QUuid::createUuid().toString();
+        const QString excluded = app + ".Excluded", allowed = app + ".Allowed";
+        auto exception = Material::InternalSettingsPtr::create();
+        exception->setEnabled(true);
+        exception->setExceptionType(int(Material::ExceptionType::WindowClass));
+        exception->setExceptionPattern(excluded);
+        exception->setMask(Material::ExceptionMask::ExcludeWindowPosition);
+        exception->setExcludeWindowPosition(true);
+        Material::ExceptionList exceptions;
+        exceptions.setExceptions({exception});
+        exceptions.writeConfig(config);
+        QVERIFY(config->sync());
+        Material::SettingsProvider::self()->reconfigure();
+        QObject currentDesktop, savedDesktop;
+        currentDesktop.setProperty("id", "current");
+        savedDesktop.setProperty("id", "saved");
+        const auto current = QVariant::fromValue(QList<QObject *>{&currentDesktop});
+        const auto saved = QVariant::fromValue(QList<QObject *>{&savedDesktop});
+        QScopedValueRollback desktops(preparedDesktops, saved);
+        KWin::WaylandWindow window, future;
+        setup(window, excluded);
+        window.setProperty("resourceClass", excluded);
+        window.setProperty("desktops", current);
+        window.setProperty("minimized", false);
+        setup(future, allowed);
+        future.setProperty("desktops", saved);
+        const auto scope = Material::WindowStateScope::self()->current();
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&future), Material::captureWindowState(&future), scope));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, false);
+        QCoreApplication::processEvents(); // Consume the initial zero timer while excluded.
+        if (mapped) window.map();
+        if (cancelled) window.startInteraction();
+        const auto calls = prepareCalls;
+        if (splitNotifications) {
+            window.changeIdentity("resourceClass", allowed);
+            QCOMPARE(prepareCalls, calls); // desktopFileName still identifies the excluded window.
+        } else window.setProperty("resourceClass", allowed);
+        window.changeIdentity("desktopFileName", allowed);
+        const bool shouldPrepare = !mapped && !cancelled;
+        QCOMPARE(prepareCalls, calls + int(shouldPrepare));
+        prepareAvailable = true;
+        if (shouldPrepare) {
+            QTRY_VERIFY_WITH_TIMEOUT(window.property("minimized").toBool(), 500);
+            QCOMPARE(window.property("desktops"), saved);
+            QCOMPARE(prepareRequests.last().value("desktopIds").toStringList(), QStringList{"saved"});
+        } else {
+            QTest::qWait(80);
+            QCOMPARE(prepareCalls, calls);
+            QVERIFY(!window.property("minimized").toBool());
+            QCOMPARE(window.property("desktops"), current);
+        }
+        if (!mapped) window.map();
+        QVERIFY(!window.property("minimized").toBool());
     }
     void capturesNativeValuesAndRoundTrips() {
         KWin::WaylandWindow window;
