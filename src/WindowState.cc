@@ -253,14 +253,34 @@ public:
         connect(scope, &WindowStateScope::scopeChanged, this, [this](const QString &newScope) {
             // Capture this for every open window before any sibling can close
             // and create a state in the newly entered configuration.
-            if (m_enabled && !m_window->property("deleted").toBool()) rememberStatePresence(newScope);
+            if (!m_enabled || m_window->property("deleted").toBool()) return;
+            rememberStatePresence(newScope);
+            // Only carry a deliberate placement back across output removal.
+            // Adding a screen or changing desktops keeps independent states.
+            auto *workspace = windowStateWorkspace();
+            if (!workspace || m_previousScope.isEmpty()) return;
+            QSet<QString> outputs;
+            for (const auto &value : workspace->property("screens").toList()) {
+                if (auto *output = value.value<QObject *>()) outputs.insert(output->property("name").toString());
+            }
+            bool removed = false;
+            for (const auto &name : m_previousOutputs) removed = removed || !outputs.contains(name);
+            if (!removed) {
+                m_previousScope.clear();
+                m_previousOutputs.clear();
+                m_userAdjustedAfterRemoval = false;
+            }
         });
         connect(scope, &WindowStateScope::snapshotRequested, this, [this](const QString &oldScope, const QVariantMap &origins) {
             if (!m_enabled || !m_restoreStarted || m_window->property("deleted").toBool()) return;
             auto state = stateToSave();
+            saveUserPlacementInPreviousScope(state);
             const auto origin = origins.value(state.value("outputName").toString()).toMap();
             if (!origin.isEmpty()) state.insert("outputPosition", origin);
             saveState(oldScope, state);
+            m_previousScope = oldScope;
+            m_previousOutputs = origins.keys();
+            m_userAdjustedAfterRemoval = false;
         });
         m_normalSizeTimer.setSingleShot(true);
         connect(&m_normalSizeTimer, &QTimer::timeout, this, &WindowStateController::rememberSettledNormalSize);
@@ -275,6 +295,7 @@ public:
                 }
             }
         };
+        connectSignal("interactiveMoveResizeStepped", "userPlacementStepped()");
         connectSignal("tileChanged", "committedTileChanged(KWin::Tile*)");
         connectSignal("requestedTileChanged", "requestedTileChanged()");
         connectSignal("frameGeometryAboutToChange", "rememberNormalSize()");
@@ -339,7 +360,14 @@ private slots:
         m_retryTimer.stop();
         if (!m_enabled) return;
         const auto scope = WindowStateScope::self()->current();
-        saveState(scope, stateToSave());
+        const auto state = stateToSave();
+        saveState(scope, state);
+        saveUserPlacementInPreviousScope(state);
+    }
+    void userPlacementStepped()
+    {
+        if (m_enabled && m_restoreStarted && !m_restoring && !m_previousScope.isEmpty()
+            && WindowStateScope::self()->current() != m_previousScope) m_userAdjustedAfterRemoval = true;
     }
     void updateTile()
     {
@@ -491,6 +519,14 @@ private:
             m_savedScopes.insert(scope);
         }
     }
+    void saveUserPlacementInPreviousScope(const QVariantMap &state)
+    {
+        if (!m_userAdjustedAfterRemoval || m_previousScope.isEmpty()
+            || !m_previousOutputs.contains(state.value("outputName").toString())) return;
+        // Keep the current output origin: restoration translates this position
+        // if the surviving screen returns to a different place in the old layout.
+        saveState(m_previousScope, state);
+    }
     QVariantMap siblingNormalSize() const
     {
         // Only correct a floating startup frame that looks inherited from a
@@ -548,6 +584,9 @@ private:
     bool m_restoreSucceeded = false;
     QSet<QString> m_savedScopes;
     QHash<QString, bool> m_statePresentOnEntry;
+    QString m_previousScope;
+    QStringList m_previousOutputs;
+    bool m_userAdjustedAfterRemoval = false;
     bool m_restoreCancelled = false;
     QTimer m_retryTimer;
     bool m_prepared = false;

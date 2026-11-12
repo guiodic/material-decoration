@@ -32,6 +32,7 @@ public:
     void changedTile() { Q_EMIT tileChanged(reinterpret_cast<KWin::Tile *>(property("tile").value<QObject *>())); }
     void startInteraction() { Q_EMIT interactiveMoveResizeStarted(); }
     void finishInteraction() { Q_EMIT interactiveMoveResizeFinished(); }
+    void stepInteraction() { Q_EMIT interactiveMoveResizeStepped(property("frameGeometry").toRectF()); }
 signals:
     void closed();
     void readyForPaintingChanged();
@@ -42,6 +43,7 @@ signals:
     void maximizedAboutToChange(int mode);
     void maximizedChanged();
     void fullScreenChanged();
+    void interactiveMoveResizeStepped(const QRectF &geometry);
     void interactiveMoveResizeStarted();
     void interactiveMoveResizeFinished();
 };
@@ -1047,6 +1049,104 @@ private slots:
         const auto saved = Material::readWindowState(key, after);
         if (savedInNewScope) QCOMPARE(saved, protectedState);
         else QCOMPARE(saved.value("position").toMap().value("x").toInt(), 500);
+        bus.unregisterObject("/KWin");
+    }
+    void manualPlacementAfterOutputRemoval_data() {
+        QTest::addColumn<QString>("action");
+        QTest::addColumn<bool>("anotherChange");
+        for (const auto &action : {"untouched", "application", "no-step", "move", "resize", "both", "before-removal"}) {
+            for (bool anotherChange : {false, true}) {
+                const QByteArray name = QByteArray(action) + (anotherChange ? "-then-topology" : "-then-close");
+                QTest::newRow(name.constData()) << QString::fromLatin1(action) << anotherChange;
+            }
+        }
+    }
+    void manualPlacementAfterOutputRemoval() {
+        QFETCH(QString, action);
+        QFETCH(bool, anotherChange);
+        ScopeWorkspace workspace;
+        QObject interface(&workspace), a, b, desktop;
+        auto bus = QDBusConnection::sessionBus();
+        QVERIFY(bus.registerObject("/KWin", &interface));
+        QScopedValueRollback wrapper(testWorkspace, static_cast<QObject *>(&workspace));
+        QScopedValueRollback available(immediateAvailable, true);
+        a.setProperty("name", "A"); a.setProperty("geometry", QRect(1920, 0, 1920, 1080));
+        b.setProperty("name", "B"); b.setProperty("geometry", QRect(0, 0, 1920, 1080));
+        desktop.setProperty("id", "desktop");
+        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a, &b}));
+        workspace.setProperty("desktops", QVariant::fromValue(QList<QObject *>{&desktop}));
+        workspace.setProperty("desktopGridWidth", 1);
+        workspace.setProperty("desktopGridHeight", 1);
+        KWin::WaylandWindow window;
+        const QString app = "org.example.StateTest.ManualAfterRemoval." + QUuid::createUuid().toString();
+        setup(window, app);
+        window.setProperty("output", QVariant::fromValue(&b));
+        window.setProperty("frameGeometry", QRectF(110, 90, 640, 480));
+        const auto key = Material::windowStateKey(&window);
+        const auto ab = Material::WindowStateScope::self()->current();
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        if (action == "before-removal") {
+            window.startInteraction();
+            window.setProperty("frameGeometry", QRectF(150, 90, 640, 480));
+            window.stepInteraction();
+            window.finishInteraction();
+        }
+        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a}));
+        workspace.removeOutput(&b);
+        const auto onB = Material::readWindowState(key, ab);
+        QCOMPARE(onB.value("outputName").toString(), "B");
+        a.setProperty("geometry", QRect(0, 0, 1920, 1080));
+        window.setProperty("output", QVariant::fromValue(&a));
+        window.setProperty("frameGeometry", QRectF(110, 90, 640, 480));
+        workspace.finish();
+        const auto onlyA = Material::WindowStateScope::self()->current();
+        QVERIFY(ab != onlyA);
+        const bool manual = action == "move" || action == "resize" || action == "both";
+        if (manual || action == "no-step") window.startInteraction();
+        if (manual || action == "application") {
+            const bool move = action != "resize";
+            const bool resize = action != "move";
+            window.setProperty("frameGeometry", QRectF(move ? 315 : 110, move ? 210 : 90,
+                resize ? 900 : 640, resize ? 650 : 480));
+            Q_EMIT window.frameGeometryChanged();
+        }
+        if (manual) window.stepInteraction();
+        if (manual || action == "no-step") window.finishInteraction();
+        QCOMPARE(Material::readWindowState(key, ab), onB); // No writes while interacting.
+        if (anotherChange) {
+            Q_EMIT workspace.desktopLayoutChanged();
+            workspace.setProperty("desktopGridWidth", 2);
+            QCoreApplication::processEvents();
+        }
+        window.close();
+        window.setProperty("deleted", true);
+        const auto saved = Material::readWindowState(key, ab);
+        if (manual) {
+            QCOMPARE(saved.value("outputName").toString(), "A");
+            QCOMPARE(saved.value("position").toMap().value("x").toInt(), action == "resize" ? 110 : 315);
+            QCOMPARE(saved.value("outputPosition").toMap().value("x").toInt(), 0);
+            QVERIFY(!saved.contains("normalSize"));
+            QVERIFY(!saved.contains("size"));
+        } else QCOMPARE(saved, onB);
+        // Reconnect with the original layout and check which output is restored.
+        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a, &b}));
+        a.setProperty("geometry", QRect(1920, 0, 1920, 1080));
+        workspace.setProperty("desktopGridWidth", 1);
+        workspace.addOutput(&b);
+        workspace.finish();
+        QCOMPARE(Material::WindowStateScope::self()->current(), ab);
+        KWin::WaylandWindow reopened;
+        setup(reopened, app);
+        MaterialTest::Bridge reopenedBridge;
+        StateDecoration reopenedDecoration(&reopened, &reopenedBridge);
+        const auto restores = immediateRequests.size();
+        Material::configureWindowState(&reopenedDecoration, true);
+        reopened.map();
+        QCOMPARE(immediateRequests.size(), restores + 1);
+        QCOMPARE(immediateRequests.last().value("outputName").toString(), manual ? "A" : "B");
         bus.unregisterObject("/KWin");
     }
     void snapshotsBeforeOutputEvacuation() {
