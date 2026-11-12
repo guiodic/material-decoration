@@ -32,8 +32,9 @@ Availability after the first frame can still cause a visible repositioning.
   normal, non-transient Wayland windows that use this decoration; excludes
   X11/XWayland windows, dialogs and popups. Per-window exceptions can disable it.
 - **Restored data:** position, screen, virtual-desktop membership (including
-  all desktops), and native quick or custom tiling. Custom tiling requires a
-  compatible layout. Restoration does not activate the window or switch the
+  all desktops), and native quick or custom tiling. Quick tiling also restores
+  saved split proportions, resizing other windows in the same quick-tile layout.
+  Custom tiling requires a compatible layout. Restoration does not activate the window or switch the
   current desktop.
 - **Sizes and modes:** floating sizes belong to the application. For tiled
   windows, the known normal size is saved only as tile metadata, allowing

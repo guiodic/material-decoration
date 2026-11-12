@@ -409,6 +409,73 @@ for (const mode of ['maximizeMode', 'fullScreen']) {
         'an explicit app mode intentionally takes precedence over a saved tile');
     assert.equal(f.target[mode], mode === 'maximizeMode' ? 3 : true);
 }
+for (const [edges, initial, region] of [
+    [2, [0, 0, .5, 1], {x: 0, y: 0, width: .65, height: 1}],
+    [4, [.5, 0, .5, 1], {x: .65, y: 0, width: .35, height: 1}],
+    [1, [0, 0, 1, .5], {x: 0, y: 0, width: 1, height: .4}],
+    [8, [0, .5, 1, .5], {x: 0, y: .4, width: 1, height: .6}],
+    [3, [0, 0, .5, .5], {x: 0, y: 0, width: .65, height: .4}],
+    [5, [.5, 0, .5, .5], {x: .65, y: 0, width: .35, height: .4}],
+    [10, [0, .5, .5, .5], {x: 0, y: .4, width: .65, height: .6}],
+    [12, [.5, .5, .5, .5], {x: .65, y: .4, width: .35, height: .6}]
+]) {
+    const f = fixture();
+    const wrong = f.leaf(...initial), tile = f.leaf(...initial);
+    const rejectedRegion = wrong.relativeGeometry;
+    wrong.manage = () => false;
+    Object.defineProperty(wrong, 'relativeGeometry', {get() {return rejectedRegion;}, set() {throw new Error('wrong desktop must not be resized');}});
+    f.workspace.quickTiles = [wrong, tile];
+    tile.manage = w => {
+        assert.deepEqual({...tile.relativeGeometry}, {x: initial[0], y: initial[1], width: initial[2], height: initial[3]},
+            'only resize after manage accepted the correct desktop');
+        w.tile = tile;
+        return true;
+    };
+    assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges, region}})), true);
+    assert.equal(f.target.tile, tile);
+    assert.deepEqual({...tile.relativeGeometry}, region);
+}
+for (const region of [undefined, {}, {x: 0, y: 0, width: .6}, {x: -.1, y: 0, width: .7, height: 1},
+    {x: 0, y: 0, width: 1.2, height: 1}, {x: 0, y: 0, width: 0, height: 1},
+    {x: 0, y: 0, width: .6, height: 1.2}, {x: 0, y: 0, width: '.6', height: 1},
+    {x: 0, y: 0, width: Infinity, height: 1}]) {
+    const f = fixture();
+    const tile = f.leaf(0, 0, .5, 1);
+    f.workspace.quickTiles = [tile];
+    assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2, region}})), true);
+    assert.deepEqual({...tile.relativeGeometry}, {x: 0, y: 0, width: .5, height: 1}, 'missing/invalid proportions keep native layout');
+}
+{
+    const f = fixture();
+    const tile = f.leaf(0, 0, .5, 1);
+    const initial = tile.relativeGeometry;
+    Object.defineProperty(tile, 'relativeGeometry', {get() {return initial;}, set() {}});
+    f.workspace.quickTiles = [tile];
+    assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2,
+        region: {x: 0, y: 0, width: .65, height: 1}}})), false, 'a rejected split must protect the saved state');
+}
+{
+    const f = fixture();
+    const tile = f.leaf(0, 0, .5, 1);
+    Object.defineProperty(tile, 'relativeGeometry', {set() {throw new Error('floating sibling must not resize existing tiles');}});
+    f.workspace.quickTiles = [tile];
+    assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2,
+        region: {x: 0, y: 0, width: .65, height: 1}}, inheritedTileSize: {
+        tileSize: {width: 640, height: 480}, normalSize: {width: 900, height: 600}}})), true);
+    assert.equal(f.target.tile, null);
+    assert.equal(f.target.frameGeometry.width, 900);
+}
+{
+    const f = fixture();
+    const root = {tiles: Array.from({length: 8}, () => f.leaf(0, 0, .5, .5))};
+    for (const tile of root.tiles) tile.parent = root;
+    root.tiles[0].relativeGeometry = {x: 0, y: 0, width: .65, height: .85};
+    f.workspace.quickTiles = root.tiles;
+    const region = {x: 0, y: 0, width: .7, height: .9};
+    assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2, region}})), true);
+    assert.equal(f.target.tile, root.tiles[0], 'an outer-edge resize must not turn a half into a corner');
+    assert.deepEqual({...root.tiles[0].relativeGeometry}, region);
+}
 console.log('Tiling and window positions: app sizes/modes preserved, desktop/output fallbacks and validation passed.');
 
 // Placement collisions use the current decoration height, without changing size.
