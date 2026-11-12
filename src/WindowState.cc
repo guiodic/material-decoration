@@ -208,6 +208,9 @@ public:
         // Read synchronously on closed(), before KWin releases the window.
         connect(m_window, SIGNAL(closed()), this, SLOT(save()), Qt::DirectConnection);
         connect(m_window, SIGNAL(readyForPaintingChanged()), this, SLOT(scheduleRestore()));
+        connect(m_window, SIGNAL(interactiveMoveResizeStarted()), this, SLOT(cancelRestore()), Qt::DirectConnection);
+        m_retryTimer.setSingleShot(true);
+        connect(&m_retryTimer, &QTimer::timeout, this, &WindowStateController::restore);
         auto *scope = WindowStateScope::self();
         connect(scope, &WindowStateScope::snapshotRequested, this, [this](const QString &oldScope, const QVariantMap &origins) {
             if (!m_enabled || !m_restoreStarted || m_window->property("deleted").toBool()) return;
@@ -244,7 +247,7 @@ public:
 private slots:
     void prepare()
     {
-        if (!m_enabled || m_restoreStarted || !m_decoration || m_window->property("deleted").toBool()) return;
+        if (!m_enabled || m_restoreCancelled || m_restoreStarted || !m_decoration || m_window->property("deleted").toBool()) return;
         if (m_state.isEmpty()) m_state = readWindowState(windowStateKey(m_window), WindowStateScope::self()->current());
         if (m_state.isEmpty()) return;
         const bool wasMinimized = m_window->property("minimized").toBool();
@@ -271,9 +274,17 @@ private slots:
     {
         if (!m_window->property("deleted").toBool()) m_lastTile = windowTile(m_window);
     }
+    void cancelRestore()
+    {
+        // An interactive move/resize is an explicit user decision. Never let
+        // a late script startup override it, even after the interaction ends.
+        m_restoreCancelled = true;
+        m_retryTimer.stop();
+        releaseVisibilityGuard();
+    }
     void restore()
     {
-        if (!m_enabled || !m_decoration || m_window->property("deleted").toBool()) return;
+        if (!m_enabled || m_restoreCancelled || !m_decoration || m_window->property("deleted").toBool()) return;
         const QString key = windowStateKey(m_window);
         // Initialization and script registration can finish after Decoration::init().
         if (key.isEmpty()) {
@@ -305,12 +316,14 @@ private:
     void retry()
     {
         // 20 retries at 250 ms: stop after about 5 seconds.
-        if (++m_attempts <= 20) QTimer::singleShot(250, this, &WindowStateController::restore);
+        if (!m_restoreCancelled && ++m_attempts <= 20) m_retryTimer.start(250);
     }
     QObject *m_window;
     QPointer<KDecoration3::Decoration> m_decoration;
     bool m_enabled;
     bool m_restoreStarted = false;
+    bool m_restoreCancelled = false;
+    QTimer m_retryTimer;
     bool m_prepared = false;
     bool m_visibilityGuard = false;
     QVariant m_originalDesktops;
@@ -329,7 +342,7 @@ void configureWindowState(KDecoration3::Decoration *decoration, bool enabled)
         controller->configure(decoration, enabled);
     } else {
         // Owned by the KWin window, so fullscreen/decoration removal cannot lose
-        // the close handler. No geometry or state changes are monitored.
+        // the close handler. No continuous geometry tracking is needed.
         new WindowStateController(decoration, enabled);
     }
 }

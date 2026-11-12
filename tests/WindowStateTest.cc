@@ -28,10 +28,14 @@ public:
     void close() { Q_EMIT closed(); }
     void map() { Q_EMIT readyForPaintingChanged(); }
     void changedTile() { Q_EMIT tileChanged(); }
+    void startInteraction() { Q_EMIT interactiveMoveResizeStarted(); }
+    void finishInteraction() { Q_EMIT interactiveMoveResizeFinished(); }
 signals:
     void closed();
     void readyForPaintingChanged();
     void tileChanged();
+    void interactiveMoveResizeStarted();
+    void interactiveMoveResizeFinished();
 };
 }
 
@@ -317,6 +321,50 @@ private slots:
         Material::configureWindowState(&decoration, true);
         window.map();
         QCOMPARE(immediateRequests.size(), count);
+        immediateAvailable = true;
+        QTRY_COMPARE(immediateRequests.size(), count + 1);
+    }
+    void userInteractionCancelsPendingRestore_data() {
+        QTest::addColumn<QRectF>("geometry");
+        QTest::newRow("move") << QRectF(200, 150, 800, 500);
+        QTest::newRow("resize") << QRectF(40, 60, 1000, 700);
+    }
+    void userInteractionCancelsPendingRestore() {
+        QFETCH(QRectF, geometry);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.Cancel." + QUuid::createUuid().toString());
+        const auto key = Material::windowStateKey(&window);
+        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window)));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        const auto count = immediateRequests.size();
+        immediateAvailable = false;
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        window.startInteraction();
+        window.setProperty("frameGeometry", geometry);
+        window.finishInteraction();
+        immediateAvailable = true;
+        QTest::qWait(600);
+        QCOMPARE(immediateRequests.size(), count);
+        QCOMPARE(window.property("frameGeometry").toRectF(), geometry);
+        // Cancellation affects only restoration, not saving the user's choice.
+        window.close();
+        const auto saved = Material::readWindowState(key).value("position").toMap();
+        QCOMPARE(saved.value("x").toDouble(), geometry.x());
+        QCOMPARE(saved.value("y").toDouble(), geometry.y());
+    }
+    void applicationGeometryChangeDoesNotCancelPendingRestore() {
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.AppMove." + QUuid::createUuid().toString());
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        const auto count = immediateRequests.size();
+        immediateAvailable = false;
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        window.setProperty("frameGeometry", QRectF(100, 100, 900, 600));
         immediateAvailable = true;
         QTRY_COMPARE(immediateRequests.size(), count + 1);
     }
