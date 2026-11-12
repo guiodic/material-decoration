@@ -286,10 +286,7 @@ private slots:
             updateTile();
             return;
         }
-        restoreWindowState(m_decoration, m_state, [this](bool success) {
-            if (!success) retry();
-            else updateTile();
-        });
+        retry();
     }
 
 private:

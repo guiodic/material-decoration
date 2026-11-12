@@ -67,9 +67,8 @@ public:
     void paint(QPainter *, const QRectF &) override {}
 };
 
-static QList<QVariantMap> restoreRequests;
 static QList<QVariantMap> immediateRequests;
-static bool immediateAvailable = false;
+static bool immediateAvailable = true;
 static QList<QVariantMap> prepareRequests;
 static bool prepareAvailable = false;
 static bool prepareMinimizes = false;
@@ -91,11 +90,7 @@ bool restoreWindowStateImmediately(KDecoration3::Decoration *, const QVariantMap
     immediateRequests.append(state);
     return true;
 }
-void restoreWindowState(KDecoration3::Decoration *, const QVariantMap &state, std::function<void(bool)> callback)
-{
-    restoreRequests.append(state);
-    callback(true);
-}
+
 }
 
 class WindowStateTest : public QObject {
@@ -278,11 +273,11 @@ private slots:
         const auto key = Material::windowStateKey(&window);
         QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window)));
         const auto saved = Material::readWindowState(key);
-        const auto count = restoreRequests.size();
+        const auto count = immediateRequests.size();
         Material::configureWindowState(&decoration, false);
         window.map();
         QCoreApplication::processEvents();
-        QCOMPARE(restoreRequests.size(), count);
+        QCOMPARE(immediateRequests.size(), count);
         window.setProperty("frameGeometry", QRectF(200, 200, 1000, 700));
         window.close();
         QCOMPARE(Material::readWindowState(key), saved);
@@ -294,20 +289,34 @@ private slots:
         QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window)));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
-        const auto count = restoreRequests.size();
+        const auto count = immediateRequests.size();
         Material::configureWindowState(&decoration, true);
         QCoreApplication::processEvents();
-        QCOMPARE(restoreRequests.size(), count); // Wait for the first committed buffer.
+        QCOMPARE(immediateRequests.size(), count); // Wait for the first committed buffer.
         window.map();
-        QTRY_COMPARE(restoreRequests.size(), count + 1);
+        QTRY_COMPARE(immediateRequests.size(), count + 1);
         Material::configureWindowState(&decoration, true);
         QCoreApplication::processEvents();
-        QCOMPARE(restoreRequests.size(), count + 1);
+        QCOMPARE(immediateRequests.size(), count + 1);
         const auto saved = Material::readWindowState(key);
         Material::configureWindowState(&decoration, false);
         window.setProperty("frameGeometry", QRectF(200, 200, 1000, 700));
         window.close();
         QCOMPARE(Material::readWindowState(key), saved);
+    }
+    void retriesWhenSynchronousScriptBecomesAvailable() {
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.Retry." + QUuid::createUuid().toString());
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        const auto count = immediateRequests.size();
+        immediateAvailable = false;
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        QCOMPARE(immediateRequests.size(), count);
+        immediateAvailable = true;
+        QTRY_COMPARE(immediateRequests.size(), count + 1);
     }
     void restoresBeforeMappingSignalReturns() {
         KWin::WaylandWindow window;
@@ -316,16 +325,13 @@ private slots:
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         Material::configureWindowState(&decoration, true);
-        const auto queued = restoreRequests.size();
         const auto immediate = immediateRequests.size();
         immediateAvailable = true;
         window.map();
         // No processEvents/QTRY: complete before the compositor can render.
         QCOMPARE(immediateRequests.size(), immediate + 1);
-        QCOMPARE(restoreRequests.size(), queued);
         QCoreApplication::processEvents();
-        QCOMPARE(restoreRequests.size(), queued);
-        immediateAvailable = false;
+        QCOMPARE(immediateRequests.size(), immediate + 1);
     }
     void preparesDesktopBeforeMappingAndReleasesGuard() {
         for (bool initiallyMinimized : {false, true}) {
@@ -367,10 +373,10 @@ private slots:
         Material::configureWindowState(&decoration, false);
         QVERIFY(!window.property("minimized").toBool());
         QCOMPARE(window.property("desktops"), original);
-        const auto count = restoreRequests.size();
+        const auto count = immediateRequests.size();
         window.map();
         QCoreApplication::processEvents();
-        QCOMPARE(restoreRequests.size(), count);
+        QCOMPARE(immediateRequests.size(), count);
         prepareAvailable = prepareMinimizes = false;
         preparedDesktops.clear();
     }
@@ -457,7 +463,6 @@ private slots:
         reopened.map();
         QCOMPARE(immediateRequests.last().value("outputName").toString(), "B");
         QCOMPARE(immediateRequests.last().value("position").toMap().value("x").toInt(), 1390);
-        immediateAvailable = false;
         testWorkspace = nullptr;
         bus.unregisterObject("/KWin");
     }

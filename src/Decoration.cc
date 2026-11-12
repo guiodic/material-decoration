@@ -30,7 +30,6 @@
 #include "TilingPopup.h"
 #include "TilingController.h"
 #include "WindowState.h"
-#include "LongPressAction.h"
 #include "AppMenuButtonGroup.h"
 #include "BoxShadowHelper.h"
 #include "BuildConfig.h"
@@ -261,13 +260,11 @@ bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
         });
         m_tilingPopupHoverMonitor.start();
     }
-    // Pin the button before the asynchronous availability check and before
+    // Pin the button before opening the popup and before
     // forceUnpress() can temporarily clear the physical hover state.
     m_tilingPopupOpening = true;
-    const auto request = ++m_tilingPopupRequest;
     Q_EMIT tilingPopupVisibilityChanged(true);
-    const auto showPopup = [this, anchor, request](bool available, const CustomTilingLayout &layout) {
-        if (request != m_tilingPopupRequest) return;
+    const auto showPopup = [this, anchor](bool available, const CustomTilingLayout &layout) {
         if (!canTileWindow(this)) {
             closeTilingPopup();
             return;
@@ -298,9 +295,7 @@ bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
             });
             connect(m_tilingPopup.get(), &TilingPopup::customZoneSelected, this, [this](const QString &id) {
                 QTimer::singleShot(0, this, [this, id] {
-                    tileCustomWindow(this, id, [](bool success) {
-                        if (!success) QToolTip::showText(QCursor::pos(), i18nd("materialdecoration", "The custom tile is unavailable. Open the popup again."));
-                    });
+                    if (!tileCustomWindow(this, id)) QToolTip::showText(QCursor::pos(), i18nd("materialdecoration", "The custom tile is unavailable. Open the popup again."));
                 });
             });
             connect(m_tilingPopup.get(), &TilingPopup::zoneSelected, this, [this](Qt::Edges edges) {
@@ -317,12 +312,9 @@ bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
         positioner.setAnchorRect(anchor);
         popup(positioner, m_tilingPopup.get());
     };
-    checkLongPressAction(this, QStringLiteral("MaterialTilingPopupDispatch"), QStringLiteral("material-tiling"),
-                         [this, showPopup, request](bool loaded) {
-        if (request != m_tilingPopupRequest) return;
-        if (loaded) fetchTilingLayout(this, showPopup);
-        else showPopup(false, {});
-    });
+    CustomTilingLayout layout;
+    const bool available = fetchTilingLayout(this, layout);
+    showPopup(available, layout);
     return true;
 }
 
@@ -330,7 +322,6 @@ void Decoration::closeTilingPopup()
 {
     m_tilingPopupHoverMonitor.stop();
     if (!isTilingPopupVisible()) return;
-    ++m_tilingPopupRequest;
     m_tilingPopupOpening = false;
     if (m_tilingPopup && m_tilingPopup->isVisible()) {
         m_tilingPopup->hide();

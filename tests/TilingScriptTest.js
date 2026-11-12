@@ -25,7 +25,6 @@ function fixture(extraWindows = []) {
         windowAdded: {connect(callback) { this.callback = callback; }},
         windowRemoved: {connect(callback) { this.callback = callback; }},
         sendClientToScreen(window, screen) { window.output = screen; }};
-    let shortcut, request, result;
     const calls = [];
     for (const name of ['Left', 'Right', 'Top', 'Bottom', 'TopLeft', 'TopRight', 'BottomLeft', 'BottomRight']) {
         workspace['slotWindowQuickTile' + name] = () => {
@@ -33,21 +32,19 @@ function fixture(extraWindows = []) {
             workspace.activeWindow.tile = {unmanage(window) { window.tile = null; }};
         };
     }
-    const context = {workspace, materialWindowStateBridge: {quickTiles(manager) { return manager.quickTiles; }}, KWin: {PlacementArea: 0},
-        registerShortcut(name, text, key, callback) { assert.equal(key, ''); shortcut = callback; },
-        callDBus(service, objectPath, iface, method, ...args) {
-            if (method === 'takeRequest') args[0](request);
-            else if (method === 'completeLayout') result = {id: args[0], success: true, layout: JSON.parse(args[1])};
-            else { assert.equal(method, 'complete'); result = {id: args[0], success: args[1], reason: args[2]}; }
-        }};
+    const context = {workspace, materialWindowStateBridge: {quickTiles(manager) { return manager.quickTiles; }}, KWin: {PlacementArea: 0}};
     vm.runInNewContext(source, context);
     return {workspace, target, other, calls, output, root, leaf,
         restoreImmediately(state) { return context.materialRestoreWindowState(target, JSON.stringify(state)); },
         prepareImmediately(state) { return context.materialPrepareWindowState(target, JSON.stringify(state)); },
         send(edges, uuid = 'target', operation = 'tile', extra = {}) {
-            request = {id: String(++assertions), uuid, edges, operation, ...extra}; result = undefined;
-            if (operation === 'restoreState') request.stateJson = JSON.stringify(extra.state);
-            shortcut(); assert.ok(result); assert.equal(result.id, request.id); return result;
+            ++assertions;
+            const target = workspace.windowList().find(window => String(window.internalId).replace(/[{}]/g, '') === uuid);
+            try {
+                if (operation === 'restoreState') return {success: context.materialRestoreWindowState(target, JSON.stringify(extra.state))};
+                const result = context.materialTiling(target, JSON.stringify({edges, operation: operation === 'ping' ? 'layout' : operation, ...extra}));
+                return typeof result === 'string' ? {success: true, layout: JSON.parse(result)} : {success: result};
+            } catch (error) { return {success: false, reason: String(error)}; }
         }};
 }
 {
@@ -110,7 +107,7 @@ for (const [edges, expected] of [[2,'Left'],[4,'Right'],[1,'Top'],[8,'Bottom'],[
     assert.equal(f.workspace.activeWindow, f.other, 'reading the layout must not steal focus');
     assert.equal(f.target.tile, null);
     for (let i = 0; i < 3; ++i) {
-        assert.deepEqual(result.layout[i], {id: result.id + ':' + i, ...f.root.tiles[i].relativeGeometry});
+        assert.deepEqual(result.layout[i], {id: result.layout[i].id, ...f.root.tiles[i].relativeGeometry});
         assert.ok(f.send(0, 'target', 'tileCustom', {tileId: result.layout[i].id}).success);
         assert.equal(f.target.tile, f.root.tiles[i]);
     }

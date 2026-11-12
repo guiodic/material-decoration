@@ -5,9 +5,6 @@
 #include <KDecoration3/DecoratedWindow>
 #include <QCoreApplication>
 #include <QDBusConnection>
-#include <QDBusContext>
-#include <QDBusMessage>
-#include <QDBusPendingCallWatcher>
 #include <QDebug>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -16,9 +13,6 @@
 #include <QSet>
 #include <cmath>
 #include <limits>
-#include <QPointer>
-#include <QQueue>
-#include <QTimer>
 #include <QUuid>
 #include <QVariantMap>
 
@@ -59,129 +53,6 @@ public:
     }
 };
 
-class TilingBridge : public QObject, protected QDBusContext
-{
-    Q_OBJECT
-    Q_CLASSINFO("D-Bus Interface", "com.github.guiodic.MaterialTiling")
-public:
-    explicit TilingBridge(QObject *parent) : QObject(parent)
-    {
-        auto bus = QDBusConnection::sessionBus();
-        m_registered = bus.registerService(QStringLiteral("com.github.guiodic.MaterialTiling"));
-        if (m_registered) {
-            m_registered = bus.registerObject(QStringLiteral("/Tiling"), this, QDBusConnection::ExportAllSlots);
-            if (!m_registered) bus.unregisterService(QStringLiteral("com.github.guiodic.MaterialTiling"));
-        }
-        m_timeout.setSingleShot(true);
-        m_timeout.setInterval(2000);
-        connect(&m_timeout, &QTimer::timeout, this, [this] { finish(false, QStringLiteral("Script did not respond")); });
-    }
-
-    bool enqueue(KDecoration3::Decoration *decoration, QVariantMap data, std::function<void(bool, const QString &)> callback = {})
-    {
-        const bool restore = data.value(QStringLiteral("operation")).toString() == QLatin1String("restoreState");
-        if (!m_registered || (!restore && m_pending.size() >= 8)
-            || (restore ? windowId(decoration).isNull() : !canTileWindow(decoration))) {
-            if (callback) QTimer::singleShot(0, decoration, [callback] { callback(false, {}); });
-            return false;
-        }
-        Request request;
-        request.context = decoration;
-        request.callback = std::move(callback);
-        request.data = std::move(data);
-        request.data.insert(QStringLiteral("id"), QUuid::createUuid().toString(QUuid::WithoutBraces));
-        request.data.insert(QStringLiteral("uuid"), windowId(decoration).toString(QUuid::WithoutBraces));
-        m_pending.enqueue(std::move(request));
-        if (m_pending.size() == 1) dispatch();
-        return true;
-    }
-
-public slots:
-    QVariantMap takeRequest()
-    {
-        if (!trustedCaller() || m_pending.isEmpty() || m_taken) return {};
-        m_taken = true;
-        return m_pending.head().data;
-    }
-
-    void complete(const QString &id, bool success, const QString &reason)
-    {
-        if (!trustedCaller() || m_pending.isEmpty() || m_pending.head().data.value(QStringLiteral("id")).toString() != id) return;
-        finish(success, reason);
-    }
-
-    void completeLayout(const QString &id, const QString &layout)
-    {
-        if (!trustedCaller() || m_pending.isEmpty() || m_pending.head().data.value(QStringLiteral("id")).toString() != id) return;
-        finish(true, {}, layout);
-    }
-
-private:
-    struct Request {
-        QPointer<KDecoration3::Decoration> context;
-        QVariantMap data;
-        std::function<void(bool, const QString &)> callback;
-    };
-    bool trustedCaller() const
-    {
-        // Verified on KWin 6.x: script callDBus() and this bridge both use
-        // QDBusConnection::sessionBus(), so their unique bus names match.
-        // Sharing a process alone would not guarantee the same connection.
-        return calledFromDBus() && message().service() == QDBusConnection::sessionBus().baseService();
-    }
-    void dispatch()
-    {
-        if (m_inFlight) return;
-        while (!m_pending.isEmpty() && !m_pending.head().context) m_pending.dequeue();
-        if (m_pending.isEmpty()) return;
-        const bool restore = m_pending.head().data.value(QStringLiteral("operation")).toString() == QLatin1String("restoreState");
-        if (restore ? windowId(m_pending.head().context).isNull() : !canTileWindow(m_pending.head().context)) {
-            finish(false, QStringLiteral("Target window is unavailable"));
-            return;
-        }
-        m_inFlight = true;
-        m_taken = false;
-        m_timeout.start();
-        auto message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.kglobalaccel"), QStringLiteral("/component/kwin"),
-                                                      QStringLiteral("org.kde.kglobalaccel.Component"), QStringLiteral("invokeShortcut"));
-        message << QStringLiteral("MaterialTilingPopupDispatch");
-        const QString id = m_pending.head().data.value(QStringLiteral("id")).toString();
-        auto *watcher = new QDBusPendingCallWatcher(QDBusConnection::sessionBus().asyncCall(message, 1500), this);
-        connect(watcher, &QDBusPendingCallWatcher::finished, this, [this, id](QDBusPendingCallWatcher *call) {
-            const auto reply = call->reply();
-            call->deleteLater();
-            if (m_pending.isEmpty() || m_pending.head().data.value(QStringLiteral("id")).toString() != id) return;
-            if (reply.type() == QDBusMessage::ErrorMessage) {
-                finish(false, QStringLiteral("Script action is unavailable"));
-            }
-        });
-    }
-    void finish(bool success, const QString &reason, const QString &layout = {})
-    {
-        if (m_pending.isEmpty()) return;
-        m_timeout.stop();
-        m_inFlight = false;
-        auto request = m_pending.dequeue();
-        if (!success) qWarning() << "Material tiling:" << reason;
-        if (request.context && request.callback) {
-            QTimer::singleShot(0, request.context, [callback = std::move(request.callback), success, layout] { callback(success, layout); });
-        }
-        // Let the script finish its acknowledgement before delivering another request.
-        QTimer::singleShot(0, this, [this] { dispatch(); });
-    }
-    bool m_inFlight = false;
-    bool m_registered = false;
-    bool m_taken = false;
-    QQueue<Request> m_pending;
-    QTimer m_timeout;
-};
-
-static TilingBridge *bridge()
-{
-    static auto *instance = new TilingBridge(QCoreApplication::instance());
-    return instance;
-}
-
 bool canTileWindow(KDecoration3::Decoration *decoration)
 {
     return !windowId(decoration).isNull() && decoration->window()->isResizeable()
@@ -196,47 +67,56 @@ static QString windowStateJson(KDecoration3::Decoration *decoration, const QVari
     return QString::fromUtf8(QJsonDocument::fromVariant(request).toJson(QJsonDocument::Compact));
 }
 
-void restoreWindowState(KDecoration3::Decoration *decoration, const QVariantMap &state, std::function<void(bool)> callback)
+static QJSEngine *scriptEngine(const QString &name)
 {
-    // A JSON string preserves arrays and numeric types through KWin's D-Bus
-    // conversion; a nested QVariantMap can expose QStringList as an array-like
-    // native wrapper rather than a JavaScript Array.
-    bridge()->enqueue(decoration, {{QStringLiteral("operation"), QStringLiteral("restoreState")},
-                                  {QStringLiteral("stateJson"), windowStateJson(decoration, state)}},
-                      [callback = std::move(callback)](bool success, const QString &) { callback(success); });
+    // KWin owns these engines below its registered Scripting object. This
+    // QObject hierarchy is an implementation detail, not a stable KWin API.
+    auto *scripting = QDBusConnection::sessionBus().objectRegisteredAt(QStringLiteral("/Scripting"));
+    if (scripting) {
+        for (auto *engine : scripting->findChildren<QJSEngine *>()) {
+            auto function = engine->globalObject().property(name);
+            if (function.isCallable()) return engine;
+        }
+    }
+    return {};
 }
 
-static bool callWindowStateScript(KDecoration3::Decoration *decoration, const QVariantMap &state, const QString &entryPoint)
+static QJSValue callScript(KDecoration3::Decoration *decoration, const QString &name, const QString &json)
 {
-    if (!decoration || !decoration->parent()) return false;
-    // KWin 6.8 registers its Scripting QObject on the same session connection
-    // used by the decoration. Its Script objects own their QJSEngine. All access
-    // below uses public Qt APIs, without KWin headers or private C++ symbols.
-    // A missing object/entry point falls back to the existing asynchronous bridge.
-    auto *scripting = QDBusConnection::sessionBus().objectRegisteredAt(QStringLiteral("/Scripting"));
-    if (!scripting) return false;
-    const QString json = windowStateJson(decoration, state);
-    for (auto *engine : scripting->findChildren<QJSEngine *>()) {
-        auto restore = engine->globalObject().property(entryPoint);
-        if (!restore.isCallable()) continue;
-        static auto *stateBridge = new WindowStateScriptBridge(QCoreApplication::instance());
-        QJSEngine::setObjectOwnership(stateBridge, QJSEngine::CppOwnership);
-        engine->globalObject().setProperty(QStringLiteral("materialWindowStateBridge"), engine->newQObject(stateBridge));
-        QJSEngine::setObjectOwnership(decoration->parent(), QJSEngine::CppOwnership);
-        const auto result = restore.call({engine->newQObject(decoration->parent()), QJSValue(json)});
-        return !result.isError() && result.isBool() && result.toBool();
+    if (!decoration || !decoration->parent()) return {};
+    auto *engine = scriptEngine(name);
+    if (!engine) return {};
+    auto function = engine->globalObject().property(name);
+    static auto *stateBridge = new WindowStateScriptBridge(QCoreApplication::instance());
+    QJSEngine::setObjectOwnership(stateBridge, QJSEngine::CppOwnership);
+    engine->globalObject().setProperty(QStringLiteral("materialWindowStateBridge"), engine->newQObject(stateBridge));
+    auto *owner = decoration->parent();
+    QJSEngine::setObjectOwnership(owner, QJSEngine::CppOwnership);
+    // Activation/tiling can destroy the decoration. Do not access it after
+    // entering JavaScript; the KWin window is the actual operation target.
+    auto result = function.call({engine->newQObject(owner), QJSValue(json)});
+    if (result.isError()) {
+        qWarning() << "Material script:" << result.toString();
+        return {};
     }
-    return false;
+    return result;
+}
+
+bool tilingScriptAvailable()
+{
+    return scriptEngine(QStringLiteral("materialTiling")) != nullptr;
 }
 
 bool restoreWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
 {
-    return callWindowStateScript(decoration, state, QStringLiteral("materialRestoreWindowState"));
+    const auto result = callScript(decoration, QStringLiteral("materialRestoreWindowState"), windowStateJson(decoration, state));
+    return result.isBool() && result.toBool();
 }
 
 bool prepareWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
 {
-    return callWindowStateScript(decoration, state, QStringLiteral("materialPrepareWindowState"));
+    const auto result = callScript(decoration, QStringLiteral("materialPrepareWindowState"), windowStateJson(decoration, state));
+    return result.isBool() && result.toBool();
 }
 
 QObject *windowStateWorkspace()
@@ -249,48 +129,48 @@ QObject *windowStateWorkspace()
     return nullptr;
 }
 
-void fetchTilingLayout(KDecoration3::Decoration *decoration, std::function<void(bool, const CustomTilingLayout &)> callback)
+bool fetchTilingLayout(KDecoration3::Decoration *decoration, CustomTilingLayout &layout)
 {
-    bridge()->enqueue(decoration, {{QStringLiteral("operation"), QStringLiteral("ping")}, {QStringLiteral("layout"), true}},
-                      [callback = std::move(callback)](bool available, const QString &json) {
-        CustomTilingLayout layout;
-        QSet<QString> ids;
-        const auto zones = QJsonDocument::fromJson(json.toUtf8()).array();
-        for (const auto &value : zones) {
-            const auto zone = value.toObject();
-            const auto coordinate = [&zone](const char *name) {
-                return zone.value(QLatin1String(name)).toDouble(std::numeric_limits<double>::quiet_NaN());
-            };
-            const QRectF rect(coordinate("x"), coordinate("y"), coordinate("width"), coordinate("height"));
-            const auto id = zone.value(QStringLiteral("id")).toString();
-            if (id.isEmpty() || ids.contains(id) || !std::isfinite(rect.x()) || !std::isfinite(rect.y()) ||
-                !std::isfinite(rect.width()) || !std::isfinite(rect.height()) || rect.isEmpty() ||
-                !QRectF(-0.000001, -0.000001, 1.000002, 1.000002).contains(rect)) {
-                layout.clear();
-                break;
-            }
-            ids.insert(id);
-            layout.append({rect.intersected(QRectF(0, 0, 1, 1)), id});
-        }
-        callback(available, layout);
-    });
+    layout.clear();
+    if (!canTileWindow(decoration)) return false;
+    const auto result = callScript(decoration, QStringLiteral("materialTiling"), QStringLiteral("{\"operation\":\"layout\"}"));
+    if (!result.isString()) return false;
+    const auto document = QJsonDocument::fromJson(result.toString().toUtf8());
+    if (!document.isArray()) return false;
+    CustomTilingLayout parsed;
+    QSet<QString> ids;
+    for (const auto &value : document.array()) {
+        const auto zone = value.toObject();
+        const auto coordinate = [&zone](const char *name) {
+            return zone.value(QLatin1String(name)).toDouble(std::numeric_limits<double>::quiet_NaN());
+        };
+        const QRectF rect(coordinate("x"), coordinate("y"), coordinate("width"), coordinate("height"));
+        const auto id = zone.value(QStringLiteral("id")).toString();
+        if (id.isEmpty() || ids.contains(id) || !std::isfinite(rect.x()) || !std::isfinite(rect.y()) ||
+            !std::isfinite(rect.width()) || !std::isfinite(rect.height()) || rect.isEmpty() ||
+            !QRectF(-0.000001, -0.000001, 1.000002, 1.000002).contains(rect)) return false;
+        ids.insert(id);
+        parsed.append({rect.intersected(QRectF(0, 0, 1, 1)), id});
+    }
+    layout = parsed;
+    return true;
 }
 
 bool tileWindow(KDecoration3::Decoration *decoration, Qt::Edges edges)
 {
     const int mask = int(edges);
-    if (mask != 1 && mask != 2 && mask != 4 && mask != 8 && mask != 3 && mask != 5 && mask != 10 && mask != 12) return false;
-    return bridge()->enqueue(decoration, {{QStringLiteral("operation"), QStringLiteral("tile")}, {QStringLiteral("edges"), mask}});
+    if (!canTileWindow(decoration) || (mask != 1 && mask != 2 && mask != 4 && mask != 8 && mask != 3 && mask != 5 && mask != 10 && mask != 12)) return false;
+    const auto json = QJsonDocument(QJsonObject{{"operation", "tile"}, {"edges", mask}}).toJson(QJsonDocument::Compact);
+    const auto result = callScript(decoration, QStringLiteral("materialTiling"), QString::fromUtf8(json));
+    return result.isBool() && result.toBool();
 }
 
-bool tileCustomWindow(KDecoration3::Decoration *decoration, const QString &tileId, std::function<void(bool)> callback)
+bool tileCustomWindow(KDecoration3::Decoration *decoration, const QString &tileId)
 {
-    if (tileId.isEmpty()) {
-        if (callback) QTimer::singleShot(0, decoration, [callback = std::move(callback)] { callback(false); });
-        return false;
-    }
-    return bridge()->enqueue(decoration, {{QStringLiteral("operation"), QStringLiteral("tileCustom")}, {QStringLiteral("tileId"), tileId}},
-                             [callback = std::move(callback)](bool success, const QString &) { callback(success); });
+    if (!canTileWindow(decoration) || tileId.isEmpty()) return false;
+    const auto json = QJsonDocument(QJsonObject{{"operation", "tileCustom"}, {"tileId", tileId}}).toJson(QJsonDocument::Compact);
+    const auto result = callScript(decoration, QStringLiteral("materialTiling"), QString::fromUtf8(json));
+    return result.isBool() && result.toBool();
 }
 }
 #include "TilingController.moc"

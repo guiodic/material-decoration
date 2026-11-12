@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Optional synchronous entry point for the decoration's in-process Qt bridge.
+// Synchronous entry points for the decoration's in-process Qt bridge.
 var materialRestoreWindowState;
 var materialPrepareWindowState;
+var materialTiling;
 (function () {
     "use strict";
-    const service = "com.github.guiodic.MaterialTiling";
-    const path = "/Tiling";
     function excludeDecorationPopup(window) {
         // Older KWin versions include internal QMenus in Overview and Grid.
         if (window.popupWindow && window.caption === "com.github.guiodic.material-decoration.popup") {
@@ -26,6 +25,7 @@ var materialPrepareWindowState;
     };
     const lastSelection = {};
     const layouts = {};
+    let layoutGeneration = 0;
     function id(window) { return String(window.internalId).replace(/[{}]/g, "").toLowerCase(); }
     workspace.windowRemoved.connect(function (window) {
         delete lastSelection[id(window)];
@@ -51,18 +51,19 @@ var materialPrepareWindowState;
         })};
     }
 
-    function captureLayout(target, request) {
+    function captureLayout(target) {
         const layout = readLayout(target);
-        layouts[request.uuid] = layout;
+        layouts[id(target)] = layout;
         if (!layout) return [];
-        layout.ids = layout.tiles.map(function (_, i) { return request.id + ":" + i; });
+        const generation = ++layoutGeneration;
+        layout.ids = layout.tiles.map(function (_, i) { return generation + ":" + i; });
         return layout.geometry.map(function (g, i) {
             return {id: layout.ids[i], x: g.x, y: g.y, width: g.width, height: g.height};
         });
     }
 
     function customTile(target, request) {
-        const snapshot = layouts[request.uuid];
+        const snapshot = layouts[id(target)];
         const current = readLayout(target);
         const index = snapshot ? snapshot.ids.indexOf(request.tileId) : -1;
         if (!snapshot || !current || index < 0 || snapshot.root !== current.root || snapshot.output !== current.output ||
@@ -212,12 +213,11 @@ var materialPrepareWindowState;
         return true;
     };
 
-    function apply(request) {
-        const target = workspace.windowList().find(function (window) { return id(window) === request.uuid; });
+    materialTiling = function (target, requestJson) {
+        const request = JSON.parse(requestJson);
         if (!target || target.deleted || target.specialWindow) throw new Error("Target window is unavailable");
-        if (request.operation === "restoreState") return restoreState(target, JSON.parse(request.stateJson));
         if (!target.resizeable) throw new Error("Target window is not resizeable");
-        if (request.operation === "ping") return request.layout ? captureLayout(target, request) : undefined;
+        if (request.operation === "layout") return JSON.stringify(captureLayout(target));
         const action = tileActions[request.edges];
         const custom = request.operation === "tileCustom";
         if (!custom && (request.operation !== "tile" || !action || typeof workspace[action] !== "function")) throw new Error("Unsupported tiling request");
@@ -225,7 +225,7 @@ var materialPrepareWindowState;
         if (custom) customTile(target, request);
         const output = target.output;
         const tile = target.tile;
-        const previous = lastSelection[request.uuid];
+        const previous = lastSelection[id(target)];
         workspace.activeWindow = target;
         if (workspace.activeWindow !== target) throw new Error("Target window could not be activated");
         if (custom) {
@@ -233,12 +233,12 @@ var materialPrepareWindowState;
             // user's layout or restoring geometry on another output first.
             const destination = customTile(target, request);
             if (!destination.manage(target)) throw new Error("Custom tile could not manage the window");
-            delete lastSelection[request.uuid];
-            return;
+            delete lastSelection[id(target)];
+            return true;
         }
         // Keep a resized native tile when the user selects it again, without
         // invoking a shortcut that might combine modes or switch monitors.
-        if (tile && previous && previous.edges === request.edges && previous.tile === tile && previous.output === output) return;
+        if (tile && previous && previous.edges === request.edges && previous.tile === tile && previous.output === output) return true;
         if (tile) {
             if (typeof tile.unmanage !== "function") throw new Error("This KWin version lacks tile.unmanage");
             tile.unmanage(target);
@@ -248,18 +248,8 @@ var materialPrepareWindowState;
         }
         workspace[action]();
         if (!target.tile) throw new Error("KWin did not assign a native tile");
-        lastSelection[request.uuid] = {edges: request.edges, tile: target.tile, output: output};
-    }
+        lastSelection[id(target)] = {edges: request.edges, tile: target.tile, output: output};
+        return true;
+    };
 
-    registerShortcut("MaterialTilingPopupDispatch", "Material Tiling Popup", "", function () {
-        callDBus(service, path, service, "takeRequest", function (request) {
-            if (!request || !request.id) return;
-            let success = true;
-            let reason = "";
-            let layout;
-            try { layout = apply(request); } catch (error) { success = false; reason = String(error); }
-            if (success && layout !== undefined) callDBus(service, path, service, "completeLayout", request.id, JSON.stringify(layout));
-            else callDBus(service, path, service, "complete", request.id, success, reason);
-        });
-    });
 })();
