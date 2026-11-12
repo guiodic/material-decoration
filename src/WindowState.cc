@@ -246,6 +246,8 @@ public:
         connect(m_window, SIGNAL(interactiveMoveResizeStarted()), this, SLOT(cancelRestore()), Qt::DirectConnection);
         m_retryTimer.setSingleShot(true);
         connect(&m_retryTimer, &QTimer::timeout, this, &WindowStateController::restore);
+        m_prepareRetryTimer.setSingleShot(true);
+        connect(&m_prepareRetryTimer, &QTimer::timeout, this, &WindowStateController::prepare);
         auto *scope = WindowStateScope::self();
         connect(scope, &WindowStateScope::snapshotRequested, this, [this](const QString &oldScope, const QVariantMap &origins) {
             if (!m_enabled || !m_restoreStarted || m_window->property("deleted").toBool()) return;
@@ -284,6 +286,7 @@ public:
     {
         m_decoration = decoration;
         m_enabled = enabled;
+        if (!enabled) m_prepareRetryTimer.stop();
         if (!enabled && !m_restoreStarted) {
             if (m_prepared && m_originalDesktops.isValid()) m_window->setProperty("desktops", m_originalDesktops);
             releaseVisibilityGuard();
@@ -294,17 +297,29 @@ public:
 private slots:
     void prepare()
     {
-        if (!m_enabled || m_restoreCancelled || m_restoreStarted || !m_decoration || m_window->property("deleted").toBool()) return;
+        if (!m_enabled || m_restoreCancelled || m_restoreStarted || m_prepareFailed || !m_decoration
+            || m_prepareAttempts >= 100 || m_window->property("deleted").toBool()) return;
+        m_prepareRetryTimer.stop();
         if (m_state.isEmpty()) m_state = readWindowState(windowStateKey(m_window), WindowStateScope::self()->current());
         if (m_state.isEmpty()) return;
         const bool wasMinimized = m_window->property("minimized").toBool();
-        m_prepared = prepareWindowStateImmediately(m_decoration, m_state) || m_prepared;
+        ++m_prepareAttempts;
+        const auto result = prepareWindowStateImmediately(m_decoration, m_state);
+        m_prepared = result == WindowRestoreResult::Succeeded || m_prepared;
+        m_prepareFailed = result == WindowRestoreResult::Failed;
         m_visibilityGuard = m_visibilityGuard || (!wasMinimized && m_window->property("minimized").toBool());
+        // A short pre-map interval covers script startup without delaying the
+        // first buffer. Stop on success/error; the initial zero-timer reassertion
+        // above is deliberately retained even after an immediate success.
+        if (result == WindowRestoreResult::Unavailable && !m_prepared && m_prepareAttempts < 100) {
+            m_prepareRetryTimer.start(50); // At most about five seconds in total.
+        }
     }
     void scheduleRestore()
     {
         if (m_restoreStarted) return;
         m_restoreStarted = true;
+        m_prepareRetryTimer.stop();
         rememberNormalSize();
         // KWin has placed and added the window while handling this signal.
         // Restore synchronously before returning to the render loop; queuing a
@@ -314,6 +329,8 @@ private slots:
     }
     void save()
     {
+        m_prepareRetryTimer.stop();
+        m_retryTimer.stop();
         if (!m_enabled) return;
         const auto scope = WindowStateScope::self()->current();
         saveState(scope, stateToSave());
@@ -373,6 +390,7 @@ private slots:
         // a late script startup override it, even after the interaction ends.
         m_restoreCancelled = true;
         m_retryTimer.stop();
+        m_prepareRetryTimer.stop();
         releaseVisibilityGuard();
     }
     void restore()
@@ -477,6 +495,9 @@ private:
     bool m_restoreCancelled = false;
     QTimer m_retryTimer;
     bool m_prepared = false;
+    bool m_prepareFailed = false;
+    int m_prepareAttempts = 0;
+    QTimer m_prepareRetryTimer;
     bool m_visibilityGuard = false;
     QVariant m_originalDesktops;
     QVariantMap m_state;

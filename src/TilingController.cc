@@ -119,10 +119,12 @@ WindowRestoreResult restoreWindowStateImmediately(KDecoration3::Decoration *deco
     return result.isBool() && result.toBool() ? WindowRestoreResult::Succeeded : WindowRestoreResult::Failed;
 }
 
-bool prepareWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
+WindowRestoreResult prepareWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
 {
-    const auto result = callScript(decoration, QStringLiteral("materialPrepareWindowState"), windowStateJson(decoration, state));
-    return result.isBool() && result.toBool();
+    bool available = false;
+    const auto result = callScript(decoration, QStringLiteral("materialPrepareWindowState"), windowStateJson(decoration, state), &available);
+    if (!available) return WindowRestoreResult::Unavailable;
+    return result.isBool() && result.toBool() ? WindowRestoreResult::Succeeded : WindowRestoreResult::Failed;
 }
 
 QObject *windowStateWorkspace()

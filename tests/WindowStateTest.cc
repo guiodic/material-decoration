@@ -86,18 +86,22 @@ static bool immediateSucceeds = true;
 static std::function<void()> immediateHook;
 static QList<QVariantMap> prepareRequests;
 static bool prepareAvailable = false;
+static bool prepareSucceeds = true;
+static int prepareCalls = 0;
 static bool prepareMinimizes = false;
 static QVariant preparedDesktops;
 static QObject *testWorkspace = nullptr;
 namespace Material {
 QObject *windowStateWorkspace() { return testWorkspace; }
-bool prepareWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
+WindowRestoreResult prepareWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
 {
-    if (!prepareAvailable) return false;
+    ++prepareCalls;
+    if (!prepareAvailable) return WindowRestoreResult::Unavailable;
     prepareRequests.append(state);
+    if (!prepareSucceeds) return WindowRestoreResult::Failed;
     if (prepareMinimizes) decoration->parent()->setProperty("minimized", true);
     if (preparedDesktops.isValid()) decoration->parent()->setProperty("desktops", preparedDesktops);
-    return true;
+    return WindowRestoreResult::Succeeded;
 }
 WindowRestoreResult restoreWindowStateImmediately(KDecoration3::Decoration *, const QVariantMap &state)
 {
@@ -726,6 +730,92 @@ private slots:
         QCOMPARE(immediateRequests.size(), count);
         prepareAvailable = prepareMinimizes = false;
         preparedDesktops.clear();
+    }
+    void retriesPreparationWhenScriptStartsBeforeMapping() {
+        QScopedValueRollback available(prepareAvailable, false);
+        QScopedValueRollback minimizes(prepareMinimizes, true);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.LatePrepare." + QUuid::createUuid().toString());
+        window.setProperty("minimized", false);
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        QCoreApplication::processEvents();
+        const auto count = prepareCalls;
+        prepareAvailable = true;
+        QTRY_VERIFY_WITH_TIMEOUT(window.property("minimized").toBool(), 500);
+        QCOMPARE(prepareCalls, count + 1);
+        QTest::qWait(120);
+        QCOMPARE(prepareCalls, count + 1);
+        window.map();
+        QVERIFY(!window.property("minimized").toBool());
+    }
+    void preparationStopsAtLifecycleBoundary() {
+        for (int action = 0; action < 4; ++action) {
+            QScopedValueRollback available(prepareAvailable, false);
+            KWin::WaylandWindow window;
+            setup(window, "org.example.StateTest.StopPrepare." + QUuid::createUuid().toString());
+            QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+            MaterialTest::Bridge bridge;
+            StateDecoration decoration(&window, &bridge);
+            Material::configureWindowState(&decoration, true);
+            QCoreApplication::processEvents();
+            const auto count = prepareCalls;
+            if (action == 0) window.map();
+            if (action == 1) Material::configureWindowState(&decoration, false);
+            if (action == 2) window.startInteraction();
+            if (action == 3) window.close();
+            prepareAvailable = true;
+            QTest::qWait(120);
+            QCOMPARE(prepareCalls, count);
+        }
+    }
+    void preparationFailureIsNotRetried() {
+        QScopedValueRollback available(prepareAvailable, true);
+        QScopedValueRollback succeeds(prepareSucceeds, false);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.FailedPrepare." + QUuid::createUuid().toString());
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        const auto count = prepareCalls;
+        Material::configureWindowState(&decoration, true);
+        QTest::qWait(120);
+        QCOMPARE(prepareCalls, count + 1);
+    }
+    void immediatePreparationIsReassertedOnce() {
+        QScopedValueRollback available(prepareAvailable, true);
+        QScopedValueRollback minimizes(prepareMinimizes, true);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.ReassertPrepare." + QUuid::createUuid().toString());
+        window.setProperty("minimized", false);
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        const auto count = prepareCalls;
+        Material::configureWindowState(&decoration, true);
+        QCOMPARE(prepareCalls, count + 1);
+        window.setProperty("minimized", false); // Simulate KWin applying initial client state.
+        QTest::qWait(120);
+        QCOMPARE(prepareCalls, count + 2);
+        QVERIFY(window.property("minimized").toBool());
+        window.map();
+        QVERIFY(!window.property("minimized").toBool());
+    }
+    void preparationRetriesHaveABoundedBudget() {
+        QScopedValueRollback available(prepareAvailable, false);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.PrepareBudget." + QUuid::createUuid().toString());
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        const auto count = prepareCalls;
+        Material::configureWindowState(&decoration, true);
+        QTRY_COMPARE_WITH_TIMEOUT(prepareCalls, count + 100, 6500);
+        prepareAvailable = true;
+        QTest::qWait(120);
+        QCOMPARE(prepareCalls, count + 100);
     }
     void configurationIdentityAndScopedStorage() {
         ScopeWorkspace workspace;

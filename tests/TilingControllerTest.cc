@@ -137,9 +137,13 @@ private slots:
             evaluate("materialRestoreWindowState = function() { " + body + " }; ");
             QCOMPARE(Material::restoreWindowStateImmediately(&valid, state), Material::WindowRestoreResult::Failed);
         }
-        QVERIFY(!Material::prepareWindowStateImmediately(&valid, state));
+        QCOMPARE(Material::prepareWindowStateImmediately(&valid, state), Material::WindowRestoreResult::Unavailable);
         evaluate("function materialPrepareWindowState(window, json) { return true; }");
-        QVERIFY(Material::prepareWindowStateImmediately(&valid, state));
+        QCOMPARE(Material::prepareWindowStateImmediately(&valid, state), Material::WindowRestoreResult::Succeeded);
+        for (const auto &body : {QStringLiteral("return false;"), QStringLiteral("return undefined;"), QStringLiteral("throw new Error('prepare failed');")}) {
+            evaluate("materialPrepareWindowState = function() { " + body + " }; ");
+            QCOMPARE(Material::prepareWindowStateImmediately(&valid, state), Material::WindowRestoreResult::Failed);
+        }
         bridge.client->setResizeable(true);
     }
     void toleratesDecorationDestructionDuringTiling() {
