@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "WindowStateScope.h"
+#include "WindowState.h"
 #include "TilingController.h"
 
 #include <QCoreApplication>
@@ -7,8 +8,6 @@
 #include <QDBusConnection>
 #include <QJsonDocument>
 #include <QMetaMethod>
-#include <QMetaProperty>
-#include <QRectF>
 #include <QTimer>
 #include <algorithm>
 
@@ -16,26 +15,13 @@ namespace Material
 {
 namespace
 {
-QVariantMap rectangle(const QVariant &value)
-{
-    QVariantMap result;
-    const auto *meta = value.metaType().metaObject();
-    const QRectF rect = value.toRectF();
-    const QVariantMap fallback{{"x", rect.x()}, {"y", rect.y()}, {"width", rect.width()}, {"height", rect.height()}};
-    for (const char *name : {"x", "y", "width", "height"}) {
-        const int index = meta ? meta->indexOfProperty(name) : -1;
-        result.insert(QLatin1String(name), index >= 0 ? meta->property(index).readOnGadget(value.constData()) : fallback.value(QLatin1String(name)));
-    }
-    return result;
-}
-
 QVariantMap configuration(const QObject *workspace)
 {
     if (!workspace) return {};
     QVariantList screens;
     for (const auto &value : workspace->property("screens").toList()) {
         if (auto *screen = value.value<QObject *>()) {
-            auto row = rectangle(screen->property("geometry"));
+            auto row = windowRectangle(screen->property("geometry"));
             for (const char *name : {"name", "manufacturer", "model", "serialNumber"}) row.insert(QLatin1String(name), screen->property(name).toString());
             const auto scale = screen->property("devicePixelRatio");
             row.insert("scale", scale.isValid() ? scale.toDouble() : 1.0);

@@ -26,22 +26,26 @@ Q_DECLARE_OPAQUE_POINTER(KWin::Tile *)
 
 namespace Material
 {
+QVariantMap windowRectangle(const QVariant &value)
+{
+    if (!value.isValid()) return {};
+    // KWin's rectangle gadgets expose the same coordinates as QRectF.
+    const auto *meta = value.metaType().metaObject();
+    const QRectF rect = value.toRectF();
+    QVariantMap result{{"x", rect.x()}, {"y", rect.y()}, {"width", rect.width()}, {"height", rect.height()}};
+    for (auto it = result.begin(); it != result.end(); ++it) {
+        const int index = meta ? meta->indexOfProperty(it.key().toLatin1().constData()) : -1;
+        if (index >= 0) it.value() = meta->property(index).readOnGadget(value.constData());
+    }
+    return result;
+}
+
 namespace
 {
 QVariantMap position(const QVariant &value)
 {
-    // KWin 6.8 uses a Q_GADGET KWin::RectF rather than QRectF.
-    const QMetaObject *meta = value.metaType().metaObject();
-    QVariantMap result;
-    for (const char *name : {"x", "y"}) {
-        const int index = meta ? meta->indexOfProperty(name) : -1;
-        if (index < 0) {
-            const QRectF r = value.toRectF();
-            return value.isValid() ? QVariantMap{{"x", r.x()}, {"y", r.y()}} : QVariantMap();
-        }
-        result.insert(QLatin1String(name), meta->property(index).readOnGadget(value.constData()));
-    }
-    return result;
+    const auto rect = windowRectangle(value);
+    return rect.isEmpty() ? QVariantMap() : QVariantMap{{"x", rect.value("x")}, {"y", rect.value("y")}};
 }
 
 bool validPosition(const QVariantMap &g)
@@ -54,21 +58,9 @@ bool validPosition(const QVariantMap &g)
     return true;
 }
 
-QVariantMap tileRegion(const QVariant &value)
-{
-    auto result = position(value);
-    const auto *meta = value.metaType().metaObject();
-    for (const char *name : {"width", "height"}) {
-        const int index = meta ? meta->indexOfProperty(name) : -1;
-        if (index >= 0) result.insert(QLatin1String(name), meta->property(index).readOnGadget(value.constData()));
-        else result.insert(QLatin1String(name), QByteArray(name) == "width" ? value.toRectF().width() : value.toRectF().height());
-    }
-    return result;
-}
-
 QVariantMap normalSize(const QVariant &geometry)
 {
-    const auto rectangle = tileRegion(geometry);
+    const auto rectangle = windowRectangle(geometry);
     return {{"width", rectangle.value("width")}, {"height", rectangle.value("height")}};
 }
 
@@ -116,7 +108,7 @@ QVariantMap windowTile(const QObject *window)
     }
     if (!tile) return {};
     auto *parent = tile->property("parent").value<QObject *>();
-    const auto region = tileRegion(tile->property("relativeGeometry"));
+    const auto region = windowRectangle(tile->property("relativeGeometry"));
     if (parent && parent->inherits("KWin::QuickRootTile")) {
         // KWin 6.8 creates these children in mode order. Geometry alone can
         // misidentify a half as a quarter after resizing its outer edge.

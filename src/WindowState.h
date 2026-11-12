@@ -10,6 +10,7 @@ namespace KDecoration3 { class Decoration; }
 namespace Material
 {
 // These helpers use only QObject's metaobject, never KWin's private C++ ABI.
+QVariantMap windowRectangle(const QVariant &value);
 QString windowStateKey(const QObject *window);
 QVariantMap captureWindowState(const QObject *window);
 QVariantMap readWindowState(const QString &key, const QString &scope = QString());
