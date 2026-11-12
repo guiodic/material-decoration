@@ -24,6 +24,7 @@ public:
     TestDecoration(QObject *owner, TestBridge *bridge)
         : Decoration(owner, {QVariantMap{{QStringLiteral("bridge"),
             QVariant::fromValue<KDecoration3::DecorationBridge *>(bridge)}}}) {}
+    using KDecoration3::Decoration::setTitleBar;
     bool init() override { return true; }
     void paint(QPainter *, const QRectF &) override {}
 };
@@ -231,6 +232,7 @@ private slots:
     }
     void restoresMoreThanEightFixedSizeWindows() {
         TestDecoration valid(&window, &bridge);
+        valid.setTitleBar(QRectF(0, 0, 640, 27.5));
         bridge.client->setResizeable(false);
         const auto count = action.requests.size();
         const QVariantMap state{{QStringLiteral("version"), 3},
@@ -247,10 +249,13 @@ private slots:
         QCOMPARE(action.requests.last().value("operation").toString(), "restoreState");
         const auto decoded = QJsonDocument::fromJson(action.requests.last().value("stateJson").toString().toUtf8()).object();
         QCOMPARE(decoded.value("desktopIds").toArray().at(0).toString(), "desktop-1");
+        QCOMPARE(decoded.value("titleBarHeight").toDouble(), 27.5);
+        QVERIFY(!state.contains("titleBarHeight"));
         bridge.client->setResizeable(true);
     }
     void callsMatchingScriptEngineSynchronously() {
         TestDecoration valid(&window, &bridge);
+        valid.setTitleBar(QRectF(0, 0, 640, 32.5));
         QObject scripting;
         auto bus = QDBusConnection::sessionBus();
         QVERIFY(bus.registerObject(QStringLiteral("/Scripting"), &scripting));
@@ -268,6 +273,8 @@ private slots:
         QVERIFY(Material::prepareWindowStateImmediately(&valid, state));
         QCOMPARE(engine->globalObject().property("preparedOwner").toString(), "target-window");
         QCOMPARE(engine->globalObject().property("ownerName").toString(), "target-window");
+        QCOMPARE(engine->globalObject().property("restored").property("titleBarHeight").toNumber(), 32.5);
+        QVERIFY(!state.contains("titleBarHeight"));
         QCOMPARE(engine->globalObject().property("restored").property("desktopIds").property(0).toString(), "desktop-1");
         QCOMPARE(action.requests.size(), queued);
         engine->evaluate(QStringLiteral("materialRestoreWindowState = function() { throw new Error('unavailable'); };"));

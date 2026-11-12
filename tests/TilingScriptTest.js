@@ -303,3 +303,62 @@ for (const mode of ['maximized', 'fullscreen', 'tiled']) {
     assert.equal(changed.target.frameGeometry.width, 640);
 }
 console.log('Tiling and window positions: app sizes/modes preserved, desktop/output fallbacks and validation passed.');
+
+// Placement collisions use the current decoration height, without changing size.
+function blocker(f, x = 100, y = 80, extra = {}) {
+    return {normalWindow: true, output: f.output, desktops: [f.workspace.currentDesktop], activities: [],
+        frameGeometry: {x, y, width: 400, height: 300}, ...extra};
+}
+for (const [height, step] of [[24, 48], [45.5, 91], [0, 60], [-1, 60], [undefined, 60]]) {
+    const f = fixture();
+    f.workspace.windows.push(blocker(f), blocker(f, 100 + step, 80 + step));
+    f.restoreImmediately(savedState({titleBarHeight: height}));
+    assert.deepEqual({...f.target.frameGeometry}, {x: 100 + step * 2, y: 80 + step * 2, width: 640, height: 480});
+    assert.equal(f.workspace.activeWindow, f.other);
+}
+for (const extra of [{minimized: true}, {deleted: true}, {normalWindow: false}, {popupWindow: true},
+    {output: {}}, {desktops: [{id: 'elsewhere'}]}, {activities: ['elsewhere']}]) {
+    const f = fixture();
+    f.target.activities = ['work'];
+    f.workspace.windows.push(blocker(f, 100, 80, extra));
+    f.restoreImmediately(savedState({titleBarHeight: 25}));
+    assert.equal(f.target.frameGeometry.x, 100);
+    assert.equal(f.target.frameGeometry.y, 80);
+}
+for (const extra of [{onAllDesktops: true, desktops: []}, {activities: []}, {readyForPainting: false}]) {
+    const f = fixture();
+    f.target.activities = ['work'];
+    f.workspace.windows.push(blocker(f, 100, 80, extra));
+    f.restoreImmediately(savedState({titleBarHeight: 25}));
+    assert.equal(f.target.frameGeometry.x, 150);
+    assert.equal(f.target.frameGeometry.y, 130);
+}
+{
+    const f = fixture();
+    f.workspace.windows.push(blocker(f, 124, 104));
+    f.restoreImmediately(savedState({titleBarHeight: 24}));
+    assert.equal(f.target.frameGeometry.x, 100, 'threshold is strictly less than the title height');
+}
+{
+    const f = fixture();
+    f.workspace.windows.push(blocker(f, 640, 320));
+    f.restoreImmediately(savedState({position: {x: 640, y: 320}, titleBarHeight: 24}));
+    assert.deepEqual({...f.target.frameGeometry}, {x: 0, y: 0, width: 640, height: 480}, 'wrap within the usable area');
+}
+{
+    const f = fixture();
+    f.output.geometry = {x: 0, y: 0, width: 640, height: 480};
+    f.workspace.windows.push(blocker(f, 0, 0));
+    f.restoreImmediately(savedState());
+    assert.deepEqual({...f.target.frameGeometry}, {x: 0, y: 0, width: 640, height: 480}, 'no available space: retain bounded saved placement');
+}
+{
+    const f = fixture();
+    f.workspace.windows.push(blocker(f));
+    const tile = f.leaf(0, 0, 0.5, 1);
+    f.workspace.quickTiles = [tile];
+    f.restoreImmediately(savedState({titleBarHeight: 25, tile: {kind: 'quick', edges: 2}}));
+    assert.equal(f.target.tile, tile);
+    assert.equal(f.target.frameGeometry.x, 100, 'saved native snap bypasses cascading');
+}
+console.log('Window collision placement: decoration height, fallback, scope, cascading and bounds passed.');

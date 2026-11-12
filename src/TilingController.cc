@@ -188,13 +188,21 @@ bool canTileWindow(KDecoration3::Decoration *decoration)
         && !decoration->parent()->property("specialWindow").toBool();
 }
 
+static QString windowStateJson(KDecoration3::Decoration *decoration, const QVariantMap &state)
+{
+    auto request = state;
+    // Runtime placement hint only; never persisted in the window's state.
+    request.insert(QStringLiteral("titleBarHeight"), decoration ? decoration->titleBar().height() : 0);
+    return QString::fromUtf8(QJsonDocument::fromVariant(request).toJson(QJsonDocument::Compact));
+}
+
 void restoreWindowState(KDecoration3::Decoration *decoration, const QVariantMap &state, std::function<void(bool)> callback)
 {
     // A JSON string preserves arrays and numeric types through KWin's D-Bus
     // conversion; a nested QVariantMap can expose QStringList as an array-like
     // native wrapper rather than a JavaScript Array.
     bridge()->enqueue(decoration, {{QStringLiteral("operation"), QStringLiteral("restoreState")},
-                                  {QStringLiteral("stateJson"), QString::fromUtf8(QJsonDocument::fromVariant(state).toJson(QJsonDocument::Compact))}},
+                                  {QStringLiteral("stateJson"), windowStateJson(decoration, state)}},
                       [callback = std::move(callback)](bool success, const QString &) { callback(success); });
 }
 
@@ -207,7 +215,7 @@ static bool callWindowStateScript(KDecoration3::Decoration *decoration, const QV
     // A missing object/entry point falls back to the existing asynchronous bridge.
     auto *scripting = QDBusConnection::sessionBus().objectRegisteredAt(QStringLiteral("/Scripting"));
     if (!scripting) return false;
-    const QString json = QString::fromUtf8(QJsonDocument::fromVariant(state).toJson(QJsonDocument::Compact));
+    const QString json = windowStateJson(decoration, state);
     for (auto *engine : scripting->findChildren<QJSEngine *>()) {
         auto restore = engine->globalObject().property(entryPoint);
         if (!restore.isCallable()) continue;

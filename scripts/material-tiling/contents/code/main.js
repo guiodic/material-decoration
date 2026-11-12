@@ -103,6 +103,40 @@ var materialPrepareWindowState;
         return false;
     }
 
+    function vacantPosition(target, output, area, position, size, titleBarHeight) {
+        const height = Number.isFinite(titleBarHeight) && titleBarHeight > 0 ? titleBarHeight : 30;
+        const step = 2 * height;
+        function sharesDesktop(other) {
+            return target.onAllDesktops || other.onAllDesktops || !target.desktops.length || !other.desktops.length ||
+                target.desktops.some(function (desktop) { return other.desktops.some(function (d) { return d.id === desktop.id; }); });
+        }
+        function sharesActivity(other) {
+            const a = target.activities || [], b = other.activities || [];
+            return !a.length || !b.length || a.some(function (activity) { return b.indexOf(activity) !== -1; });
+        }
+        // Include windows awaiting their first buffer, so simultaneous openings
+        // also cascade. Read each relevant geometry just once.
+        const occupied = workspace.windowList().filter(function (other) {
+            return other !== target && other.normalWindow && !other.popupWindow && !other.deleted && !other.minimized &&
+                other.output === output && sharesDesktop(other) && sharesActivity(other);
+        }).map(function (other) { return other.frameGeometry; });
+        const maxX = Math.max(area.x, area.x + area.width - size.width);
+        const maxY = Math.max(area.y, area.y + area.height - size.height);
+        let x = position.x, y = position.y;
+        const visited = new Set();
+        for (let attempt = 0; attempt < 64; ++attempt) {
+            const key = x + ":" + y;
+            if (visited.has(key)) break;
+            visited.add(key);
+            if (!occupied.some(function (g) { return Math.abs(g.x - x) < height && Math.abs(g.y - y) < height; })) return {x: x, y: y};
+            // Wrap at the work-area edges rather than clamping repeatedly to
+            // the same occupied corner. Never resize the application window.
+            x = x + step <= maxX ? x + step : area.x;
+            y = y + step <= maxY ? y + step : area.y;
+        }
+        return position;
+    }
+
     function restoreState(target, state) {
         if (!target.normalWindow || target.transient || target.deleted) throw new Error("Target window cannot be restored");
         const position = state && state.position;
@@ -139,6 +173,11 @@ var materialPrepareWindowState;
         const current = target.frameGeometry;
         x = Math.max(area.x, Math.min(x, area.x + area.width - current.width));
         y = Math.max(area.y, Math.min(y, area.y + area.height - current.height));
+        if (!state.tile) {
+            const vacant = vacantPosition(target, output, area, {x: x, y: y}, current, state.titleBarHeight);
+            x = vacant.x;
+            y = vacant.y;
+        }
         // A same-size frameGeometry assignment moves immediately on Wayland.
         // Its position also determines the output; sendClientToScreen() could
         // constrain a normal window's size, so it is not used for this path.
