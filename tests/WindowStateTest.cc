@@ -14,6 +14,7 @@
 #include <QDBusConnection>
 #include <QRectF>
 #include <QScopedValueRollback>
+#include <QScopeGuard>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTest>
@@ -135,7 +136,15 @@ class WindowStateTest : public QObject {
         window.setProperty("frameGeometry", QVariant::fromValue(NativeRectangle{40, 60, 800, 500}));
     }
 private slots:
-    void initTestCase() { QStandardPaths::setTestModeEnabled(true); }
+    void initTestCase() {
+        QStandardPaths::setTestModeEnabled(true);
+        // Direct controller tests simulate a globally enabled feature.
+        // The schema defaults are checked separately below.
+        const auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        config->group("Windeco").writeEntry("RememberWindowState", true);
+        QVERIFY(config->sync());
+        Material::SettingsProvider::self()->reconfigure();
+    }
     void disabledByDefault() {
         Material::InternalSettings settings;
         settings.setDefaults();
@@ -234,6 +243,7 @@ private slots:
         const auto config = KSharedConfig::openConfig(directory.filePath("settingsrc"), KConfig::SimpleConfig);
         Material::InternalSettings settings;
         settings.setSharedConfig(config);
+        settings.load();
         settings.setDefaults();
         settings.setRememberWindowState(true);
         settings.setRememberWindowScreen(false);
@@ -303,6 +313,95 @@ private slots:
             QCOMPARE(loaded.exceptions().first()->excludeWindowPosition(), excluded);
             QCOMPARE(loaded.exceptions().first()->mask(), int(Material::ExceptionMask::ExcludeWindowPosition));
         }
+    }
+    void identityChangesReevaluateExclusions_data() {
+        QTest::addColumn<bool>("excludedAfterChange");
+        QTest::addColumn<bool>("mappedBeforeChange");
+        QTest::addColumn<bool>("withoutDecoration");
+        QTest::addColumn<bool>("snapshot");
+        QTest::addColumn<bool>("desktopFileSignal");
+        for (bool excluded : {false, true}) {
+            for (bool mapped : {false, true}) {
+                for (bool withoutDecoration : {false, true}) {
+                    for (bool snapshot : {false, true}) {
+                        for (bool desktopFile : {false, true}) {
+                            const auto name = QStringLiteral("%1-%2-%3-%4-%5").arg(excluded ? "excluded" : "allowed",
+                                mapped ? "mapped" : "unmapped", withoutDecoration ? "no-decoration" : "decorated",
+                                snapshot ? "snapshot" : "close", desktopFile ? "desktop-file" : "class");
+                            QTest::newRow(qPrintable(name)) << excluded << mapped << withoutDecoration << snapshot << desktopFile;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    void identityChangesReevaluateExclusions() {
+        QFETCH(bool, excludedAfterChange);
+        QFETCH(bool, mappedBeforeChange);
+        QFETCH(bool, withoutDecoration);
+        QFETCH(bool, snapshot);
+        QFETCH(bool, desktopFileSignal);
+        QScopedValueRollback available(immediateAvailable, false);
+        QScopedValueRollback prepareAvailability(prepareAvailable, false);
+        const auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        const auto cleanup = qScopeGuard([config] {
+            config->deleteGroup("Windeco Exception 0");
+            config->sync();
+            Material::SettingsProvider::self()->reconfigure();
+        });
+        const QString app = "org.example.StateTest.ClassExclusion." + QUuid::createUuid().toString();
+        const QString allowed = app + ".Allowed", excluded = app + ".Excluded";
+        auto exception = Material::InternalSettingsPtr::create();
+        exception->setEnabled(true);
+        exception->setExceptionPattern(excluded);
+        exception->setExceptionType(int(Material::ExceptionType::WindowClass));
+        exception->setMatchingMode(int(Material::MatchingMode::ExactMatch));
+        exception->setMask(Material::ExceptionMask::ExcludeWindowPosition);
+        exception->setExcludeWindowPosition(true);
+        Material::ExceptionList list;
+        list.setExceptions({exception});
+        list.writeConfig(config);
+        QVERIFY(config->sync());
+        Material::SettingsProvider::self()->reconfigure();
+        KWin::WaylandWindow window;
+        const QString initialClass = excludedAfterChange ? allowed : excluded;
+        const QString nextClass = excludedAfterChange ? excluded : allowed;
+        setup(window, initialClass);
+        window.setProperty("resourceName", "material-state-test");
+        window.setProperty("resourceClass", initialClass);
+        window.setProperty("caption", "Unchanged title");
+        const auto scope = Material::WindowStateScope::self()->current();
+        const auto originalKey = Material::windowStateKey(&window);
+        QVERIFY(Material::writeWindowState(originalKey, Material::captureWindowState(&window), scope));
+        const auto originalState = Material::readWindowState(originalKey, scope);
+        MaterialTest::Bridge bridge;
+        auto decoration = std::make_unique<StateDecoration>(&window, &bridge);
+        Material::configureWindowState(decoration.get(), excludedAfterChange);
+        if (mappedBeforeChange) window.map();
+        if (withoutDecoration) decoration.reset();
+        // Update both properties as KWin does, without a caption notification.
+        // Exercise either notification independently.
+        window.setProperty("resourceClass", nextClass);
+        window.setProperty("desktopFileName", nextClass);
+        if (desktopFileSignal) Q_EMIT window.desktopFileNameChanged();
+        else Q_EMIT window.windowClassChanged();
+        const auto key = Material::windowStateKey(&window);
+        QVERIFY(key != originalKey);
+        immediateAvailable = true;
+        if (!mappedBeforeChange) window.map();
+        if (excludedAfterChange && mappedBeforeChange) {
+            const auto count = immediateRequests.size();
+            QTest::qWait(300); // A previously queued restore must not run.
+            QCOMPARE(immediateRequests.size(), count);
+        }
+        window.setProperty("frameGeometry", QRectF(400, 250, 800, 500));
+        if (snapshot) Q_EMIT Material::WindowStateScope::self()->snapshotRequested(scope, {});
+        else window.close();
+        const auto saved = Material::readWindowState(key, scope);
+        if (excludedAfterChange) QVERIFY(saved.isEmpty());
+        else QCOMPARE(saved.value("position").toMap().value("x").toInt(), 400);
+        QCOMPARE(Material::readWindowState(originalKey, scope), originalState);
+        QCOMPARE(window.property("caption").toString(), "Unchanged title");
     }
     void capturesNativeValuesAndRoundTrips() {
         KWin::WaylandWindow window;

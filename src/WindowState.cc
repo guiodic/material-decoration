@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "WindowState.h"
 #include "WindowStateScope.h"
+#include "SettingsProvider.h"
 #include "TilingController.h"
 
 #include <KConfigGroup>
@@ -378,9 +379,16 @@ private slots:
     }
     void rememberCurrentIdentity()
     {
+        if (m_window->property("deleted").toBool()) return;
+        // Match KWin's DecoratedWindow::windowClass() even if the decoration
+        // has been removed. Eligibility must follow the current class/title.
+        const QString windowClass = m_window->property("resourceName").toString() + QLatin1Char(' ')
+            + m_window->property("resourceClass").toString();
+        const auto settings = SettingsProvider::self()->internalSettings(windowClass, m_window->property("caption").toString());
+        configure(m_decoration, settings->rememberWindowState(), settings->rememberWindowScreen(), settings->rememberWindowDesktop());
         // Observe entry into an identity before a sibling can create its state.
         // An identity change does not trigger another restore of a mapped window.
-        if (m_enabled && !m_window->property("deleted").toBool()) rememberStatePresence(WindowStateScope::self()->current());
+        if (m_enabled) rememberStatePresence(WindowStateScope::self()->current());
     }
     void userPlacementStepped()
     {
