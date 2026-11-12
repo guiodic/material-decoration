@@ -18,7 +18,7 @@ function fixture(extraWindows = []) {
         set(value) { this.desktops = value ? [] : [workspace.currentDesktop]; }
     });
     function leaf(x, y, width, height) {
-        return {relativeGeometry: {x, y, width, height}, tiles: [], manage(window) { window.tile = this; return true; }, unmanage(window) { window.tile = null; }};
+        return {relativeGeometry: {x, y, width, height}, minimumSize: {width: .15, height: .15}, tiles: [], manage(window) { window.tile = this; return true; }, unmanage(window) { window.tile = null; }};
     }
     const root = {tiles: [leaf(0, 0, 1 / 3, 1), leaf(1 / 3, 0, 1 / 3, 1), leaf(2 / 3, 0, 1 / 3, 1)]};
     const workspace = {activeWindow: other, layoutRoot: root, screens: [output], desktops: [desktop], currentDesktop: desktop,
@@ -69,6 +69,41 @@ function fixture(extraWindows = []) {
     assert.equal(normal.skipSwitcher, false);
     assert.equal(f.workspace.activeWindow, f.other);
     assert.equal(f.calls.length, 0);
+}
+// Model KWin's immediate shared-layout updates, including minimum-size clamping.
+function quickLayoutFixture(f) {
+    const layout = {tiles: [], minimumSize: {width: .15, height: .15}, writes: [], afterResize: null};
+    const initial = [[0,0,.5,1],[.5,0,.5,1],[0,0,1,.5],[0,.5,1,.5],
+        [0,0,.5,.5],[.5,0,.5,.5],[0,.5,.5,.5],[.5,.5,.5,.5]];
+    let updating = false;
+    layout.tiles = initial.map(values => f.leaf(...values));
+    layout.tiles.forEach((tile, index) => {
+        tile.parent = layout;
+        const live = {...tile.relativeGeometry};
+        Object.defineProperty(tile, 'relativeGeometry', {get() {return live;}, set(value) {
+            layout.writes.push({index, value: {...value}});
+            Object.assign(live, value, {width: Math.max(value.width, tile.minimumSize.width), height: Math.max(value.height, tile.minimumSize.height)});
+            if (updating) return;
+            updating = true;
+            try {
+                const horizontal = [0,4,6].includes(index) ? live.x + live.width : [1,5,7].includes(index) ? live.x : null;
+                const vertical = [2,4,5].includes(index) ? live.y + live.height : [3,6,7].includes(index) ? live.y : null;
+                if (horizontal !== null) {
+                    const cut = Math.max(layout.minimumSize.width, Math.min(1-layout.minimumSize.width, horizontal));
+                    for (const i of [0,4,6]) { const r = layout.tiles[i].relativeGeometry; layout.tiles[i].relativeGeometry = {...r, width: cut-r.x}; }
+                    for (const i of [1,5,7]) { const r = layout.tiles[i].relativeGeometry; layout.tiles[i].relativeGeometry = {...r, x: cut, width: r.x+r.width-cut}; }
+                }
+                if (vertical !== null) {
+                    const cut = Math.max(layout.minimumSize.height, Math.min(1-layout.minimumSize.height, vertical));
+                    for (const i of [2,4,5]) { const r = layout.tiles[i].relativeGeometry; layout.tiles[i].relativeGeometry = {...r, height: cut-r.y}; }
+                    for (const i of [3,6,7]) { const r = layout.tiles[i].relativeGeometry; layout.tiles[i].relativeGeometry = {...r, y: cut, height: r.y+r.height-cut}; }
+                }
+            } finally { updating = false; }
+            if (layout.afterResize) layout.afterResize(index, live);
+        }});
+    });
+    f.workspace.quickTiles = layout.tiles;
+    return layout;
 }
 for (const [edges, expected] of [[2,'Left'],[4,'Right'],[1,'Top'],[8,'Bottom'],[3,'TopLeft'],[5,'TopRight'],[10,'BottomLeft'],[12,'BottomRight']]) {
     const f = fixture();
@@ -467,14 +502,56 @@ for (const region of [undefined, {}, {x: 0, y: 0, width: .6}, {x: -.1, y: 0, wid
 }
 {
     const f = fixture();
-    const root = {tiles: Array.from({length: 8}, () => f.leaf(0, 0, .5, .5))};
-    for (const tile of root.tiles) tile.parent = root;
+    const root = quickLayoutFixture(f);
     root.tiles[0].relativeGeometry = {x: 0, y: 0, width: .65, height: .85};
-    f.workspace.quickTiles = root.tiles;
     const region = {x: 0, y: 0, width: .7, height: .9};
     assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2, region}})), true);
     assert.equal(f.target.tile, root.tiles[0], 'an outer-edge resize must not turn a half into a corner');
     assert.deepEqual({...root.tiles[0].relativeGeometry}, region);
+}
+for (const issue of ['target-minimum', 'root-split', 'opposite-minimum', 'partial-outer-edge', 'opposite-height']) {
+    const f = fixture();
+    const layout = quickLayoutFixture(f);
+    let edges = 2, region = {x: 0, y: 0, width: .65, height: 1};
+    if (issue === 'target-minimum') region.width = .1;
+    if (issue === 'root-split') { layout.minimumSize.width = .2; region.width = .85; }
+    if (issue === 'opposite-minimum') { layout.tiles[1].minimumSize.width = .4; region.width = .65; }
+    if (issue === 'partial-outer-edge') { layout.tiles[1].relativeGeometry = {x: .5, y: 0, width: .4, height: 1}; region.width = .8; }
+    if (issue === 'opposite-height') { layout.tiles[6].minimumSize.height = .4; edges = 5; region = {x: .5, y: 0, width: .5, height: .65}; }
+    const before = layout.tiles.map(t => ({...t.relativeGeometry}));
+    layout.writes.length = 0;
+    assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges, region}})), false, issue);
+    assert.equal(layout.writes.length, 0, 'reject incompatible proportions before any shared geometry write: ' + issue);
+    assert.deepEqual(layout.tiles.map(t => ({...t.relativeGeometry})), before);
+}
+for (const failure of ['clamped', 'throws', 'sibling-only']) {
+    const f = fixture();
+    const layout = quickLayoutFixture(f);
+    // Preserve an independently shortened outer edge on the opposite tile.
+    layout.tiles[1].relativeGeometry = {x: .5, y: 0, width: .4, height: 1};
+    const before = layout.tiles.map(t => ({...t.relativeGeometry}));
+    let armed = true;
+    layout.afterResize = (index, region) => {
+        if (!armed || index !== 0 || Math.abs(region.width-.65) > .00001) return;
+        armed = false;
+        if (failure === 'throws') throw new Error('native resize failed after propagation');
+        if (failure === 'clamped') layout.tiles[0].relativeGeometry = {x: 0, y: 0, width: .85, height: 1};
+        else { layout.tiles[1].minimumSize.width = .4; layout.tiles[1].relativeGeometry.width = .4; }
+    };
+    const restore = () => f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2, region: {x: 0, y: 0, width: .65, height: 1}}}));
+    if (failure === 'throws') assert.throws(restore, /native resize failed/);
+    else assert.equal(restore(), false, 'partial shared changes must not report success');
+    assert.equal(armed, false, 'exercise a failure after mutation');
+    assert.deepEqual(layout.tiles.map(t => ({...t.relativeGeometry})), before, 'restore all previous geometry values, not live Qt views');
+}
+{
+    const f = fixture();
+    const layout = quickLayoutFixture(f);
+    assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2,
+        region: {x: 0, y: 0, width: .65, height: 1}}})), true);
+    assert.equal(layout.tiles[0].relativeGeometry.width, .65);
+    assert.equal(layout.tiles[1].relativeGeometry.x, .65);
+    assert.equal(layout.tiles[1].relativeGeometry.width, .35);
 }
 console.log('Tiling and window positions: app sizes/modes preserved, desktop/output fallbacks and validation passed.');
 

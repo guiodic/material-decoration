@@ -34,6 +34,8 @@ Availability after the first frame can still cause a visible repositioning.
 - **Restored data:** position, screen, virtual-desktop membership (including
   all desktops), and native quick or custom tiling. Quick tiling also restores
   saved split proportions, resizing other windows in the same quick-tile layout.
+  Incompatible proportions are rejected before changing that layout; unexpected
+  failures restore its previous geometry.
   Custom tiling requires a compatible layout. Restoration does not activate the window or switch the
   current desktop.
 - **Sizes and modes:** floating sizes belong to the application. For tiled

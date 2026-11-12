@@ -116,10 +116,58 @@ var materialTiling;
         if (!region || !keys.every(function (key) { return typeof region[key] === "number" && Number.isFinite(region[key]); }) ||
             region.x < 0 || region.y < 0 || region.width <= 0 || region.height <= 0 ||
             region.x + region.width > 1.00001 || region.y + region.height > 1.00001) return true;
-        // Do this only after manage() accepted the destination desktop's tile.
-        // KWin propagates the split to other windows in this shared layout.
-        tile.relativeGeometry = {x: region.x, y: region.y, width: region.width, height: region.height};
-        return keys.every(function (key) { return Math.abs(tile.relativeGeometry[key] - region[key]) < 0.00001; });
+        const copy = function (r) { return {x: r.x, y: r.y, width: r.width, height: r.height}; };
+        const same = function (a, b) { return keys.every(function (key) { return Math.abs(a[key] - b[key]) < 0.00001; }); };
+        const fits = function (t, r) {
+            const minimum = t.minimumSize;
+            return keys.every(function (key) { return Number.isFinite(r[key]); }) && r.width > 0 && r.height > 0 &&
+                (!minimum || (Number.isFinite(minimum.width) && Number.isFinite(minimum.height) &&
+                    r.width + 0.00001 >= minimum.width && r.height + 0.00001 >= minimum.height));
+        };
+        const siblings = tile.parent && tile.parent.tiles;
+        const shared = siblings && siblings.length === 8 && Array.from(siblings).indexOf(tile) !== -1;
+        const group = shared ? Array.from(siblings) : [tile];
+        const index = group.indexOf(tile);
+        // Snapshot numeric values: Qt geometry objects can be live property views.
+        const previous = group.map(function (t) { return copy(t.relativeGeometry); });
+        const expected = previous.map(copy);
+        expected[index] = copy(region);
+        const horizontal = saved.edges & 2 ? region.x + region.width : saved.edges & 4 ? region.x : null;
+        const vertical = saved.edges & 1 ? region.y + region.height : saved.edges & 8 ? region.y : null;
+        const minimum = tile.parent && tile.parent.minimumSize || tile.minimumSize;
+        if (minimum && ((horizontal !== null && (horizontal + 0.00001 < minimum.width || horizontal - 0.00001 > 1 - minimum.width)) ||
+            (vertical !== null && (vertical + 0.00001 < minimum.height || vertical - 0.00001 > 1 - minimum.height)))) return false;
+        if (shared) {
+            const modes = [2, 4, 1, 8, 3, 5, 10, 12];
+            // Match QuickRootTile's two splits, preserving each outer edge.
+            expected.forEach(function (r, i) {
+                if (horizontal !== null) {
+                    if (modes[i] & 2) r.width = horizontal - r.x;
+                    else if (modes[i] & 4) { r.width += r.x - horizontal; r.x = horizontal; }
+                }
+                if (vertical !== null) {
+                    if (modes[i] & 1) r.height = vertical - r.y;
+                    else if (modes[i] & 8) { r.height += r.y - vertical; r.y = vertical; }
+                }
+            });
+        }
+        if (!group.every(function (t, i) { return fits(t, expected[i]); })) return false;
+        if (group.every(function (t, i) { return same(t.relativeGeometry, expected[i]); })) return true;
+        let applied = false;
+        try {
+            // Only mutate the shared layout once its predicted geometry fits.
+            tile.relativeGeometry = copy(region);
+            applied = group.every(function (t, i) { return same(t.relativeGeometry, expected[i]); });
+            return applied;
+        } finally {
+            if (!applied) {
+                // Restore the initiating tile first, then any outer edges that
+                // clamping changed elsewhere. Also runs if a setter throws.
+                const order = [index].concat(group.map(function (_, i) { return i; }).filter(function (i) { return i !== index; }));
+                order.forEach(function (i) { if (!same(group[i].relativeGeometry, previous[i])) group[i].relativeGeometry = copy(previous[i]); });
+                if (!group.every(function (t, i) { return same(t.relativeGeometry, previous[i]); })) throw new Error("Could not restore the previous quick-tile layout");
+            }
+        }
     }
 
     function restoreNativeTile(target, saved, output) {
