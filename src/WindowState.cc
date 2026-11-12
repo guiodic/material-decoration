@@ -366,8 +366,10 @@ private slots:
     }
     void userPlacementStepped()
     {
-        if (m_enabled && m_restoreStarted && !m_restoring && !m_previousScope.isEmpty()
-            && WindowStateScope::self()->current() != m_previousScope) m_userAdjustedAfterRemoval = true;
+        if (!m_enabled || !m_restoreStarted || m_restoring) return;
+        const auto scope = WindowStateScope::self()->current();
+        m_userModifiedScopes.insert(scope);
+        if (!m_previousScope.isEmpty() && scope != m_previousScope) m_userAdjustedAfterRemoval = true;
     }
     void updateTile()
     {
@@ -423,6 +425,7 @@ private slots:
         // An interactive move/resize is an explicit user decision. Never let
         // a late script startup override it, even after the interaction ends.
         m_restoreCancelled = true;
+        if (m_enabled) m_userModifiedScopes.insert(WindowStateScope::self()->current());
         m_retryTimer.stop();
         m_prepareRetryTimer.stop();
         releaseVisibilityGuard();
@@ -448,7 +451,7 @@ private slots:
         QScopedValueRollback restoring(m_restoring, true);
         const auto result = restoreWindowStateImmediately(m_decoration, state);
         if (result == WindowRestoreResult::Succeeded) {
-            m_restoreSucceeded = true;
+            m_restoredScopes.insert(m_stateScope);
             updateTile();
         } else if (result == WindowRestoreResult::Unavailable) retry();
     }
@@ -508,7 +511,7 @@ private:
         const auto identity = rememberStatePresence(scope);
         // Other windows sharing this identity may have saved since we opened.
         // Protect only the state we encountered, not their subsequent writes.
-        return m_restoreSucceeded || m_restoreCancelled || m_savedScopes.contains(scope)
+        return m_restoredScopes.contains(scope) || m_userModifiedScopes.contains(scope) || m_savedScopes.contains(scope)
             || !m_statePresentOnEntry.value(identity);
     }
     void saveState(const QString &scope, const QVariantMap &state)
@@ -523,6 +526,9 @@ private:
     {
         if (!m_userAdjustedAfterRemoval || m_previousScope.isEmpty()
             || !m_previousOutputs.contains(state.value("outputName").toString())) return;
+        // This deliberate placement also authorizes the preceding configuration;
+        // unrelated configurations remain protected.
+        m_userModifiedScopes.insert(m_previousScope);
         // Keep the current output origin: restoration translates this position
         // if the surviving screen returns to a different place in the old layout.
         saveState(m_previousScope, state);
@@ -581,7 +587,8 @@ private:
     QPointer<KDecoration3::Decoration> m_decoration;
     bool m_enabled;
     bool m_restoreStarted = false;
-    bool m_restoreSucceeded = false;
+    QSet<QString> m_restoredScopes;
+    QSet<QString> m_userModifiedScopes;
     QSet<QString> m_savedScopes;
     QHash<QString, bool> m_statePresentOnEntry;
     QString m_previousScope;
