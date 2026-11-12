@@ -79,12 +79,15 @@ button) in the application interface associated with that shortcut.
 
 # Restore Window position
 You can enable position restore via the configuration module when windows are 
-closed and reopened.
+closed and reopened. Enable the **Material Tiling Popup** script in
+**System Settings > Window Management > KWin Scripts** to use this feature.
 It works with apps that use Kwin-managed decorations. For other apps 
 (i.e. GNOME apps using GTK’s CSD), you can enable a Kwin rule to add the 
 ‘shadow-only’ decoration that will enable position restoration too.
 The restore process also takes into account any connected displays and the 
 configuration of virtual desktops.
+Windows of the same application without distinct window roles or Wayland tags
+share the state of the last closed window.
 This is an experimental feature not enabled by default. 
 Your feedback is welcome!
 
