@@ -137,6 +137,7 @@ void WindowStateScope::changed()
 {
     if (!m_wrapper) return;
     const auto context = configuration(m_wrapper);
+    const auto previousScope = m_scope;
     m_scope = signature(context);
     m_origins.clear();
     for (const auto &value : context.value("screens").toList()) {
@@ -145,5 +146,6 @@ void WindowStateScope::changed()
     }
     m_changing = false;
     watchOutputs();
+    if (m_scope != previousScope) Q_EMIT scopeChanged(m_scope);
 }
 }

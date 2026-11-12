@@ -250,6 +250,11 @@ public:
         m_prepareRetryTimer.setSingleShot(true);
         connect(&m_prepareRetryTimer, &QTimer::timeout, this, &WindowStateController::prepare);
         auto *scope = WindowStateScope::self();
+        connect(scope, &WindowStateScope::scopeChanged, this, [this](const QString &newScope) {
+            // Capture this for every open window before any sibling can close
+            // and create a state in the newly entered configuration.
+            if (m_enabled && !m_window->property("deleted").toBool()) rememberStatePresence(newScope);
+        });
         connect(scope, &WindowStateScope::snapshotRequested, this, [this](const QString &oldScope, const QVariantMap &origins) {
             if (!m_enabled || !m_restoreStarted || m_window->property("deleted").toBool()) return;
             auto state = stateToSave();
@@ -458,16 +463,21 @@ private:
         const auto identity = key + QLatin1Char(':') + scope;
         if (!m_statePresentOnEntry.contains(identity)) m_statePresentOnEntry.insert(identity, !m_state.isEmpty());
     }
-    bool canSave(const QString &scope)
+    QString rememberStatePresence(const QString &scope)
     {
-        // Preserve an existing placement if startup restoration failed or is
-        // still waiting for the script. New states and explicit user moves or
-        // resizes remain writable; use the same policy for topology snapshots.
         const auto key = windowStateKey(m_window);
         const auto identity = key + QLatin1Char(':') + scope;
         if (!m_statePresentOnEntry.contains(identity)) {
             m_statePresentOnEntry.insert(identity, !readWindowState(key, scope).isEmpty());
         }
+        return identity;
+    }
+    bool canSave(const QString &scope)
+    {
+        // Preserve an existing placement if startup restoration failed or is
+        // still waiting for the script. New states and explicit user moves or
+        // resizes remain writable; use the same policy for topology snapshots.
+        const auto identity = rememberStatePresence(scope);
         // Other windows sharing this identity may have saved since we opened.
         // Protect only the state we encountered, not their subsequent writes.
         return m_restoreSucceeded || m_restoreCancelled || m_savedScopes.contains(scope)

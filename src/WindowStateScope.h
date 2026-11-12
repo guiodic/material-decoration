@@ -20,6 +20,7 @@ public:
     QString current();
 
 signals:
+    void scopeChanged(const QString &scope);
     void snapshotRequested(const QString &scope, const QVariantMap &outputOrigins);
 
 private slots:
