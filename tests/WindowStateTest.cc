@@ -650,6 +650,51 @@ private slots:
         window.close();
         QCOMPARE(Material::readWindowState(key, scope).value("position").toMap().value("x").toInt(), 300);
     }
+    void siblingWindowsSaveInClosingOrder_data() {
+        QTest::addColumn<bool>("available");
+        QTest::addColumn<bool>("savedBeforeOpening");
+        QTest::addColumn<bool>("snapshot");
+        for (bool available : {false, true}) {
+            for (bool saved : {false, true}) {
+                for (bool snapshot : {false, true}) {
+                    const auto name = QStringLiteral("%1-%2-%3").arg(available ? "script" : "no-script",
+                        saved ? "existing" : "new", snapshot ? "snapshot" : "close");
+                    QTest::newRow(qPrintable(name)) << available << saved << snapshot;
+                }
+            }
+        }
+    }
+    void siblingWindowsSaveInClosingOrder() {
+        QFETCH(bool, available);
+        QFETCH(bool, savedBeforeOpening);
+        QFETCH(bool, snapshot);
+        QScopedValueRollback restoreAvailability(immediateAvailable, available);
+        QScopedValueRollback restoreSuccess(immediateSucceeds, true);
+        KWin::WaylandWindow first, last;
+        const QString app = "org.example.StateTest.SiblingSave." + QUuid::createUuid().toString();
+        setup(first, app);
+        setup(last, app);
+        const auto key = Material::windowStateKey(&first);
+        const auto scope = Material::WindowStateScope::self()->current();
+        if (savedBeforeOpening) QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&first), scope));
+        const auto initial = Material::readWindowState(key, scope);
+        MaterialTest::Bridge firstBridge, lastBridge;
+        StateDecoration firstDecoration(&first, &firstBridge), lastDecoration(&last, &lastBridge);
+        Material::configureWindowState(&firstDecoration, true);
+        Material::configureWindowState(&lastDecoration, true);
+        first.map();
+        last.map();
+        // App/KWin placement without a manual move or resize.
+        first.setProperty("frameGeometry", QRectF(300, 200, 800, 500));
+        last.setProperty("frameGeometry", QRectF(500, 400, 800, 500));
+        first.close();
+        first.setProperty("deleted", true);
+        if (snapshot) Q_EMIT Material::WindowStateScope::self()->snapshotRequested(scope, {});
+        last.close();
+        const auto saved = Material::readWindowState(key, scope);
+        if (savedBeforeOpening && !available) QCOMPARE(saved, initial);
+        else QCOMPARE(saved.value("position").toMap().value("x").toInt(), 500);
+    }
     void successfulRestoreStillSavesCurrentState() {
         QScopedValueRollback restoreAvailability(immediateAvailable, true);
         QScopedValueRollback restoreSuccess(immediateSucceeds, true);

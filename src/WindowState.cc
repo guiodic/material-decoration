@@ -7,6 +7,7 @@
 #include <KSharedConfig>
 #include <KDecoration3/Decoration>
 #include <QCryptographicHash>
+#include <QHash>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -454,14 +455,23 @@ private:
             m_stateKey = key;
         }
         if (m_state.isEmpty()) m_state = readWindowState(key, scope);
+        const auto identity = key + QLatin1Char(':') + scope;
+        if (!m_statePresentOnEntry.contains(identity)) m_statePresentOnEntry.insert(identity, !m_state.isEmpty());
     }
-    bool canSave(const QString &scope) const
+    bool canSave(const QString &scope)
     {
         // Preserve an existing placement if startup restoration failed or is
         // still waiting for the script. New states and explicit user moves or
         // resizes remain writable; use the same policy for topology snapshots.
+        const auto key = windowStateKey(m_window);
+        const auto identity = key + QLatin1Char(':') + scope;
+        if (!m_statePresentOnEntry.contains(identity)) {
+            m_statePresentOnEntry.insert(identity, !readWindowState(key, scope).isEmpty());
+        }
+        // Other windows sharing this identity may have saved since we opened.
+        // Protect only the state we encountered, not their subsequent writes.
         return m_restoreSucceeded || m_restoreCancelled || m_savedScopes.contains(scope)
-            || readWindowState(windowStateKey(m_window), scope).isEmpty();
+            || !m_statePresentOnEntry.value(identity);
     }
     void saveState(const QString &scope, const QVariantMap &state)
     {
@@ -527,6 +537,7 @@ private:
     bool m_restoreStarted = false;
     bool m_restoreSucceeded = false;
     QSet<QString> m_savedScopes;
+    QHash<QString, bool> m_statePresentOnEntry;
     bool m_restoreCancelled = false;
     QTimer m_retryTimer;
     bool m_prepared = false;
