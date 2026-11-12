@@ -238,8 +238,9 @@ class WindowStateController : public QObject
 {
     Q_OBJECT
 public:
-    explicit WindowStateController(KDecoration3::Decoration *decoration, bool enabled)
+    explicit WindowStateController(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop)
         : QObject(decoration->parent()), m_window(decoration->parent()), m_decoration(decoration), m_enabled(enabled)
+        , m_rememberScreen(rememberScreen), m_rememberDesktop(rememberDesktop)
     {
         // Read synchronously on closed(), before KWin releases the window.
         connect(m_window, SIGNAL(closed()), this, SLOT(save()), Qt::DirectConnection);
@@ -309,12 +310,14 @@ public:
         // state after creating the decoration. Reassert before its first buffer.
         QTimer::singleShot(0, this, &WindowStateController::prepare);
     }
-    void configure(KDecoration3::Decoration *decoration, bool enabled)
+    void configure(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop)
     {
         m_decoration = decoration;
         m_enabled = enabled;
-        if (!enabled) m_prepareRetryTimer.stop();
-        if (!enabled && !m_restoreStarted) {
+        m_rememberScreen = rememberScreen;
+        m_rememberDesktop = rememberDesktop;
+        if (!enabled || !rememberDesktop) m_prepareRetryTimer.stop();
+        if ((!enabled || !rememberDesktop) && !m_restoreStarted) {
             if (m_prepared && m_originalDesktops.isValid()) m_window->setProperty("desktops", m_originalDesktops);
             releaseVisibilityGuard();
             m_prepared = false;
@@ -328,10 +331,10 @@ private slots:
             || m_prepareAttempts >= 100 || m_window->property("deleted").toBool()) return;
         m_prepareRetryTimer.stop();
         refreshState();
-        if (m_state.isEmpty()) return;
+        if (!m_rememberDesktop || m_state.isEmpty()) return;
         const bool wasMinimized = m_window->property("minimized").toBool();
         ++m_prepareAttempts;
-        const auto result = prepareWindowStateImmediately(m_decoration, m_state);
+        const auto result = prepareWindowStateImmediately(m_decoration, restorationRequest(m_state));
         m_prepared = result == WindowRestoreResult::Succeeded || m_prepared;
         m_prepareFailed = result == WindowRestoreResult::Failed;
         m_visibilityGuard = m_visibilityGuard || (!wasMinimized && m_window->property("minimized").toBool());
@@ -446,7 +449,7 @@ private slots:
         // into an allegedly known normal size.
         if (m_state.contains("tile")) m_normalSize = m_state.value("tile").toMap().value("normalSize").toMap();
         QScopedValueRollback restoring(m_restoring, true);
-        const auto result = restoreWindowStateImmediately(m_decoration, state);
+        const auto result = restoreWindowStateImmediately(m_decoration, restorationRequest(state));
         if (result == WindowRestoreResult::Succeeded) {
             m_restoreSucceeded = true;
             updateTile();
@@ -454,6 +457,13 @@ private slots:
     }
 
 private:
+    QVariantMap restorationRequest(QVariantMap state) const
+    {
+        // Policy belongs to the current settings, never to the persisted state.
+        state.insert("rememberScreen", m_rememberScreen);
+        state.insert("rememberDesktop", m_rememberDesktop);
+        return state;
+    }
     void refreshState()
     {
         const auto scope = WindowStateScope::self()->current();
@@ -580,6 +590,8 @@ private:
     QObject *m_window;
     QPointer<KDecoration3::Decoration> m_decoration;
     bool m_enabled;
+    bool m_rememberScreen;
+    bool m_rememberDesktop;
     bool m_restoreStarted = false;
     bool m_restoreSucceeded = false;
     QSet<QString> m_savedScopes;
@@ -608,18 +620,18 @@ private:
     int m_attempts = 0;
 };
 
-void configureWindowState(KDecoration3::Decoration *decoration, bool enabled)
+void configureWindowState(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop)
 {
     auto *window = decoration->parent();
     // Do not affect XWayland, dialogs, popups or the KCM's preview.
     if (!window || !window->inherits("KWin::WaylandWindow") || !window->property("normalWindow").toBool()
         || window->property("transient").toBool()) return;
     if (auto *controller = window->findChild<WindowStateController *>(QString(), Qt::FindDirectChildrenOnly)) {
-        controller->configure(decoration, enabled);
+        controller->configure(decoration, enabled, rememberScreen, rememberDesktop);
     } else {
         // Owned by the KWin window, so fullscreen/decoration removal cannot lose
         // the close handler. Normal sizes are tracked in memory, never polled.
-        new WindowStateController(decoration, enabled);
+        new WindowStateController(decoration, enabled, rememberScreen, rememberDesktop);
     }
 }
 }

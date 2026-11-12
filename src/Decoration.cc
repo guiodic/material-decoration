@@ -581,7 +581,8 @@ void Decoration::applySettings()
     if (!m_internalSettings) {
         return;
     }
-    configureWindowState(this, m_internalSettings->rememberWindowState());
+    configureWindowState(this, m_internalSettings->rememberWindowState(),
+                         m_internalSettings->rememberWindowScreen(), m_internalSettings->rememberWindowDesktop());
     if (m_tilingPopup) {
         m_tilingPopup->setZoneCornerRadius(m_internalSettings->cornerRadius());
         m_tilingPopup->setSquareCornersTiled(m_internalSettings->squareCornersTiled());

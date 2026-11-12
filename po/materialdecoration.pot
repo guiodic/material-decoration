@@ -641,13 +641,33 @@ msgid "Use accent color for the active window border"
 msgstr ""
 
 #: src/kcm/config.ui
-msgid "Remember window position, desktop and screen (Wayland)"
+msgid "Remember window position (Wayland)"
 msgstr ""
 
 #: src/kcm/config.ui
-msgid "Save window position, desktop and screen when a window closes and restore them when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window."
+msgid "Save window position when a window closes and restore it when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window."
 msgstr ""
 
 #: src/kcm/ExceptionDialog.cc
 msgid "Do not remember window position"
+msgstr ""
+
+#: src/kcm/config.ui
+msgid "Window Management"
+msgstr ""
+
+#: src/kcm/config.ui
+msgid "Remember the screen where the window was last closed"
+msgstr ""
+
+#: src/kcm/config.ui
+msgid "Restore the saved screen. When disabled, use the screen chosen by KWin when the window opens."
+msgstr ""
+
+#: src/kcm/config.ui
+msgid "Remember the virtual desktop where the window was last closed"
+msgstr ""
+
+#: src/kcm/config.ui
+msgid "Restore the saved virtual desktop, switch to it and activate the window. When disabled, keep the desktop chosen when the window opens."
 msgstr ""

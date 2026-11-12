@@ -485,13 +485,33 @@ msgid "Use accent color for the active window border"
 msgstr "为活动窗口边框使用强调色"
 
 #: src/kcm/config.ui
-msgid "Remember window position, desktop and screen (Wayland)"
-msgstr "记住窗口位置、虚拟桌面和屏幕（Wayland）"
+msgid "Remember window position (Wayland)"
+msgstr "记住窗口位置（Wayland）"
 
 #: src/kcm/config.ui
-msgid "Save window position, desktop and screen when a window closes and restore them when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window."
-msgstr "窗口关闭时保存其位置、虚拟桌面和屏幕，并在重新打开时恢复。窗口大小由应用程序控制。需要启用 Material Tiling Popup KWin 脚本。同一应用程序中没有独立标识的窗口共用最后关闭的窗口的状态。"
+msgid "Save window position when a window closes and restore it when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window."
+msgstr "关闭窗口时保存其位置，并在再次打开时恢复。窗口大小由应用程序控制。需要启用 Material Tiling Popup KWin 脚本。同一应用程序中没有独立标识的窗口共享最后关闭窗口的状态。"
 
 #: src/kcm/ExceptionDialog.cc
 msgid "Do not remember window position"
 msgstr "不记住窗口位置"
+
+#: src/kcm/config.ui
+msgid "Window Management"
+msgstr "窗口管理"
+
+#: src/kcm/config.ui
+msgid "Remember the screen where the window was last closed"
+msgstr "记住窗口上次关闭时所在的屏幕"
+
+#: src/kcm/config.ui
+msgid "Restore the saved screen. When disabled, use the screen chosen by KWin when the window opens."
+msgstr "恢复已保存的屏幕。禁用时，使用 KWin 在窗口打开时选择的屏幕。"
+
+#: src/kcm/config.ui
+msgid "Remember the virtual desktop where the window was last closed"
+msgstr "记住窗口上次关闭时所在的虚拟桌面"
+
+#: src/kcm/config.ui
+msgid "Restore the saved virtual desktop, switch to it and activate the window. When disabled, keep the desktop chosen when the window opens."
+msgstr "恢复已保存的虚拟桌面，切换到该桌面并激活窗口。禁用时，保留窗口打开时选择的桌面。"

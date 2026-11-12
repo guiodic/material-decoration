@@ -20,21 +20,28 @@ there is no polling or disk write on every movement.
 
 **Restore the state.** The controller reads the matching entry and calls the
 Material Tiling Popup script synchronously inside KWin's JavaScript engine.
-Desktop membership is prepared before mapping; placement and native tiling are
-restored when the window becomes ready for painting, before rendering resumes.
+When desktop restoration is enabled, membership is prepared before mapping.
+Placement and native tiling are restored when the window becomes ready for
+painting, before rendering resumes.
 If the script is unavailable, bounded retries run for about five seconds.
 Availability after the first frame can still cause a visible repositioning.
 
 ## 2. Current restoration policies
 
 - **Eligibility:** experimental, disabled by default, and enabled in the KCM's
-  Appearance page. Requires the Material Tiling Popup KWin script. Applies to
-  normal, non-transient Wayland windows that use this decoration; excludes
+  Window Management tab. Requires the Material Tiling Popup KWin script. Applies
+  to normal, non-transient Wayland windows that use this decoration; excludes
   X11/XWayland windows, dialogs and popups. Per-window exceptions can disable it.
-- **Restored data:** position, screen, virtual-desktop membership (including
-  all desktops), and native quick or custom tiling. Custom tiling requires a
-  compatible layout. Restoration does not activate the window or switch the
-  current desktop.
+- **Restored data:** position and native quick or custom tiling. Custom tiling
+  requires a compatible layout. The two subordinate options are independent:
+  **Remember the screen where the window was last closed** is on by default;
+  when off, placement uses the screen KWin chose for the new window.
+  **Remember the virtual desktop where the window was last closed** is off by
+  default; when on, it restores membership (including all desktops), switches
+  to a destination desktop and activates the window. Otherwise, membership and
+  focus are left to KWin. For multiple saved desktops, the current one is used
+  if included, otherwise the first available saved desktop. Sticky windows do
+  not require a desktop switch.
 - **Sizes and modes:** floating sizes belong to the application. For tiled
   windows, the known normal size is saved only as tile metadata, allowing
   unsnapping after reopening. A new floating sibling can recover that size if
@@ -58,6 +65,6 @@ Availability after the first frame can still cause a visible repositioning.
 - **Desktop identity:** deleted and recreated desktops receive new UUIDs and
   therefore form a different configuration, even with identical names.
 
-A temporary minimization guard prevents initial activation from moving an
-off-desktop window to the current desktop. Removing it can lose a concurrent
+When desktop restoration is enabled, a temporary minimization guard prevents
+initial activation from moving an off-desktop window to the current desktop. Removing it can lose a concurrent
 application minimize request; the accessible API cannot distinguish the two.

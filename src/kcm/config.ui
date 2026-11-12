@@ -314,10 +314,39 @@
          </item>
         </layout>
        </item>
-       <item row="17" column="1">
+      </layout>
+     </widget>
+     <widget class="QWidget" name="windowManagementTab">
+      <attribute name="title"><string>Window Management</string></attribute>
+      <layout class="QFormLayout" name="windowManagementLayout">
+       <property name="labelAlignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property>
+       <property name="formAlignment"><set>Qt::AlignHCenter|Qt::AlignTop</set></property>
+       <item row="0" column="1">
         <widget class="QCheckBox" name="kcfg_RememberWindowState">
-         <property name="text"><string>Remember window position, desktop and screen (Wayland)</string></property>
-         <property name="toolTip"><string>Save window position, desktop and screen when a window closes and restore them when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window.</string></property>
+         <property name="text"><string>Remember window position (Wayland)</string></property>
+         <property name="toolTip"><string>Save window position when a window closes and restore it when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window.</string></property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QWidget" name="windowRestorationOptions">
+         <layout class="QVBoxLayout" name="windowRestorationOptionsLayout">
+          <property name="leftMargin"><number>20</number></property>
+          <property name="topMargin"><number>0</number></property>
+          <property name="rightMargin"><number>0</number></property>
+          <property name="bottomMargin"><number>0</number></property>
+          <item>
+           <widget class="QCheckBox" name="kcfg_RememberWindowScreen">
+            <property name="text"><string>Remember the screen where the window was last closed</string></property>
+            <property name="toolTip"><string>Restore the saved screen. When disabled, use the screen chosen by KWin when the window opens.</string></property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="kcfg_RememberWindowDesktop">
+            <property name="text"><string>Remember the virtual desktop where the window was last closed</string></property>
+            <property name="toolTip"><string>Restore the saved virtual desktop, switch to it and activate the window. When disabled, keep the desktop chosen when the window opens.</string></property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
       </layout>

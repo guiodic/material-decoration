@@ -176,6 +176,23 @@ var materialTiling;
         return position;
     }
 
+    function restorationOutput(target, state) {
+        const screens = workspace.screens;
+        const saved = state.rememberScreen !== false && (
+            screens.find(function (screen) { return state.outputUuid && String(screen.uuid) === state.outputUuid; }) ||
+            screens.find(function (screen) { return state.outputName && screen.name === state.outputName; }));
+        return saved || target.output || screens[0];
+    }
+
+    function showRestoredDesktop(target, output) {
+        const current = typeof workspace.currentDesktopForScreen === "function" ? workspace.currentDesktopForScreen(output) : workspace.currentDesktop;
+        const desktop = target.onAllDesktops ? current :
+            target.desktops.find(function (d) { return d.id === current.id; }) || target.desktops[0];
+        if (!desktop || desktop.id === current.id) return;
+        if (typeof workspace.setCurrentDesktopForScreen === "function") workspace.setCurrentDesktopForScreen(desktop, output);
+        else workspace.currentDesktop = desktop;
+    }
+
     function restoreState(target, state) {
         if (!target.normalWindow || target.transient || target.deleted) throw new Error("Target window cannot be restored");
         const position = state && state.position;
@@ -197,16 +214,16 @@ var materialTiling;
             state = Object.assign({}, state);
             delete state.tile;
         }
-        const screens = workspace.screens;
-        const output = screens.find(function (screen) { return state.outputUuid && String(screen.uuid) === state.outputUuid; }) ||
-            screens.find(function (screen) { return state.outputName && screen.name === state.outputName; }) || target.output || screens[0];
+        const output = restorationOutput(target, state);
         if (!output) throw new Error("No screen is available");
         const desktops = workspace.desktops.filter(function (desktop) { return state.desktopIds.indexOf(desktop.id) !== -1; });
 
-        // This path deliberately does not activate the window or change the
-        // current desktop. The popup's tiling activation is unrelated.
-        if (state.onAllDesktops) target.onAllDesktops = true;
-        else if (desktops.length) target.desktops = desktops;
+        if (state.rememberDesktop === true) {
+            if (state.onAllDesktops) target.onAllDesktops = true;
+            else if (desktops.length) target.desktops = desktops;
+            // Switch first: activation must not bring the window back here.
+            showRestoredDesktop(target, output);
+        }
         // Let KWin move app-requested fullscreen, maximized and tiled windows
         // between outputs without undoing their mode or assigning a normal size.
         if (target.fullScreen || target.maximizeMode || target.tile) {
@@ -245,6 +262,9 @@ var materialTiling;
     materialPrepareWindowState = function (target, stateJson) {
         const state = JSON.parse(stateJson);
         if (!target.normalWindow || target.transient || target.deleted || state.version !== 3 || !Array.isArray(state.desktopIds)) return false;
+        if (state.rememberDesktop !== true) return true;
+        const output = restorationOutput(target, state);
+        const current = output && typeof workspace.currentDesktopForScreen === "function" ? workspace.currentDesktopForScreen(output) : workspace.currentDesktop;
         if (state.onAllDesktops) {
             target.onAllDesktops = true;
         } else {
@@ -254,7 +274,7 @@ var materialTiling;
                 // window out of its activation policy (including "bring here").
                 // The C++ controller releases only this temporary minimize flag
                 // once the first buffer and complete placement are ready.
-                if (!desktops.some(function (desktop) { return desktop.id === workspace.currentDesktop.id; }) && !target.minimized) target.minimized = true;
+                if (!desktops.some(function (desktop) { return desktop.id === current.id; }) && !target.minimized) target.minimized = true;
                 target.desktops = desktops;
             }
         }
@@ -262,7 +282,12 @@ var materialTiling;
     };
 
     materialRestoreWindowState = function (target, stateJson) {
-        return restoreState(target, JSON.parse(stateJson));
+        const state = JSON.parse(stateJson);
+        const restored = restoreState(target, state);
+        // Even a partial tile failure leaves a real window on its restored
+        // desktop; focus policy is independent of protecting the saved tile.
+        if (state.rememberDesktop === true && !target.deleted) workspace.activeWindow = target;
+        return restored;
     };
 
     materialTiling = function (target, requestJson) {

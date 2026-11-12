@@ -485,13 +485,33 @@ msgid "Use accent color for the active window border"
 msgstr "Usa il colore di accento per il bordo della finestra attiva"
 
 #: src/kcm/config.ui
-msgid "Remember window position, desktop and screen (Wayland)"
-msgstr "Ricorda posizione, desktop e schermo delle finestre (Wayland)"
+msgid "Remember window position (Wayland)"
+msgstr "Ricorda la posizione delle finestre (Wayland)"
 
 #: src/kcm/config.ui
-msgid "Save window position, desktop and screen when a window closes and restore them when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window."
-msgstr "Salva posizione, desktop e schermo della finestra alla chiusura e li ripristina alla riapertura. Le dimensioni sono gestite dall’applicazione. Richiede lo script KWin Material Tiling Popup. Le finestre della stessa applicazione prive di un'identità distinta condividono lo stato dell'ultima finestra chiusa."
+msgid "Save window position when a window closes and restore it when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window."
+msgstr "Salva la posizione della finestra alla chiusura e la ripristina alla riapertura. Le dimensioni sono gestite dall’applicazione. Richiede lo script KWin Material Tiling Popup. Le finestre della stessa applicazione prive di un’identità distinta condividono lo stato dell’ultima finestra chiusa."
 
 #: src/kcm/ExceptionDialog.cc
 msgid "Do not remember window position"
 msgstr "Non ricordare la posizione della finestra"
+
+#: src/kcm/config.ui
+msgid "Window Management"
+msgstr "Gestione Finestre"
+
+#: src/kcm/config.ui
+msgid "Remember the screen where the window was last closed"
+msgstr "Ricorda lo schermo dell'ultima chiusura"
+
+#: src/kcm/config.ui
+msgid "Restore the saved screen. When disabled, use the screen chosen by KWin when the window opens."
+msgstr "Ripristina lo schermo salvato. Se disattivata, usa lo schermo scelto da KWin all’apertura della finestra."
+
+#: src/kcm/config.ui
+msgid "Remember the virtual desktop where the window was last closed"
+msgstr "Ricorda il desktop virtuale dell'ultima chiusura"
+
+#: src/kcm/config.ui
+msgid "Restore the saved virtual desktop, switch to it and activate the window. When disabled, keep the desktop chosen when the window opens."
+msgstr "Ripristina il desktop virtuale salvato, passa a quel desktop e attiva la finestra. Se disattivata, mantiene il desktop scelto all’apertura della finestra."

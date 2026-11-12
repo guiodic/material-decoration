@@ -170,6 +170,7 @@ for (const change of [
 }
 function savedState(extra = {}) {
     return {version: 3, position: {x: 100, y: 80}, desktopIds: ['desktop-1'],
+        rememberScreen: true, rememberDesktop: true,
         onAllDesktops: false, outputUuid: 'output-1', outputName: 'Virtual-1',
         outputPosition: {x: 0, y: 0}, ...extra};
 }
@@ -189,8 +190,8 @@ function savedState(extra = {}) {
     assert.equal(f.restoreImmediately(state), true);
     f.target.minimized = false; // The C++ controller releases its startup guard.
     assert.equal(f.target.desktops[0], destination);
-    assert.equal(f.workspace.currentDesktop.id, 'desktop-1');
-    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(f.workspace.currentDesktop.id, 'desktop-2');
+    assert.equal(f.workspace.activeWindow, f.target);
 }
 for (const extra of [{}, {desktopIds: ['removed']}, {onAllDesktops: true}]) {
     const f = fixture();
@@ -204,7 +205,7 @@ for (const extra of [{}, {desktopIds: ['removed']}, {onAllDesktops: true}]) {
     f.workspace.sendClientToScreen = () => { throw new Error('must not constrain a normal window'); };
     assert.equal(f.restoreImmediately(savedState()), true);
     assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 640, height: 480});
-    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(f.workspace.activeWindow, f.target);
     assert.equal(f.calls.length, 0);
     assert.throws(() => f.restoreImmediately(savedState({version: 4})), /Invalid saved position/);
 }
@@ -231,8 +232,8 @@ for (const extra of [{}, {desktopIds: ['removed']}, {onAllDesktops: true}]) {
     assert.ok(f.send(0, 'target', 'restoreState', {state: savedState({desktopIds: ['desktop-2']})}).success);
     assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 640, height: 480});
     assert.equal(f.target.desktops[0], secondDesktop);
-    assert.equal(f.workspace.activeWindow, f.other);
-    assert.equal(f.workspace.currentDesktop.id, 'desktop-1');
+    assert.equal(f.workspace.activeWindow, f.target);
+    assert.equal(f.workspace.currentDesktop.id, 'desktop-2');
 }
 {
     const f = fixture();
@@ -289,7 +290,7 @@ for (const mode of ['maximized', 'fullscreen', 'tiled']) {
     f.workspace.quickTiles = [wrongDesktop, quick];
     assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2}})), true);
     assert.equal(f.target.tile, quick, 'restore a native quick tile, not just its coordinates');
-    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(f.workspace.activeWindow, f.target);
     assert.equal(f.calls.length, 0, 'no activation or global quick-tile shortcut');
 }
 // Native manage() accepts any root for sticky/multi-desktop windows. Restrict
@@ -321,7 +322,7 @@ for (const allDesktops of [true, false]) {
     assert.equal(f.target.onAllDesktops, allDesktops);
     assert.deepEqual(Array.from(f.target.desktops), allDesktops ? [] : [first, second]);
     assert.equal(f.workspace.currentDesktop, second);
-    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(f.workspace.activeWindow, f.target);
     assert.equal(f.calls.length, 0);
 }
 {
@@ -335,8 +336,8 @@ for (const allDesktops of [true, false]) {
     assert.equal(wrong.owner, undefined);
     assert.equal(destination.owner, f.target);
     assert.deepEqual(Array.from(f.target.desktops), [first, second]);
-    assert.equal(f.workspace.currentDesktop, third);
-    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(f.workspace.currentDesktop, first);
+    assert.equal(f.workspace.activeWindow, f.target);
 }
 {
     const f = fixture();
@@ -365,7 +366,7 @@ for (const behavior of ['missing-tile', 'throws', 'rule-rejects-restriction']) {
     else assert.equal(f.restoreImmediately(state), false);
     assert.equal(f.target.onAllDesktops, true, 'restore sticky membership even after failure');
     assert.deepEqual(Array.from(f.target.desktops), []);
-    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(f.workspace.activeWindow, behavior === 'throws' ? f.other : f.target);
 }
 
 {
@@ -373,7 +374,7 @@ for (const behavior of ['missing-tile', 'throws', 'rule-rejects-restriction']) {
     const region = {x: 1 / 3, y: 0, width: 1 / 3, height: 1};
     assert.equal(f.restoreImmediately(savedState({tile: {kind: 'custom', path: [1], region}})), true);
     assert.equal(f.target.tile, f.root.tiles[1]);
-    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(f.workspace.activeWindow, f.target);
     const changed = fixture();
     assert.equal(changed.restoreImmediately(savedState({tile: {kind: 'custom', path: [1], region: {...region, width: 0.9}}})), false);
     assert.equal(changed.target.tile, null, 'changed layouts must fall back to floating placement');
@@ -399,7 +400,7 @@ for (const kind of ['quick', 'custom']) {
             assert.equal(f.target.output, destination, 'a partial output move does not mean full restoration succeeded');
         }
         assert.equal(f.target.tile, original);
-        assert.equal(f.workspace.activeWindow, f.other);
+        assert.equal(f.workspace.activeWindow, behavior === 'throws' ? f.other : f.target);
     }
 }
 for (const mode of ['maximizeMode', 'fullScreen']) {
@@ -408,6 +409,86 @@ for (const mode of ['maximizeMode', 'fullScreen']) {
     assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2}})), true,
         'an explicit app mode intentionally takes precedence over a saved tile');
     assert.equal(f.target[mode], mode === 'maximizeMode' ? 3 : true);
+}
+for (const rememberScreen of [false, true]) {
+    for (const rememberDesktop of [false, true]) {
+        const f = fixture();
+        const first = f.workspace.currentDesktop, second = {id: 'desktop-2'};
+        const savedOutput = {name: 'Virtual-2', uuid: 'output-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
+        f.workspace.screens.push(savedOutput);
+        f.workspace.desktops.push(second);
+        const state = savedState({rememberScreen, rememberDesktop, desktopIds: [second.id],
+            outputUuid: savedOutput.uuid, outputName: savedOutput.name, outputPosition: {x: 1280, y: 0},
+            position: {x: 1380, y: 80}});
+        assert.equal(f.prepareImmediately(state), true);
+        assert.equal(f.target.desktops[0], rememberDesktop ? second : first);
+        assert.equal(!!f.target.minimized, rememberDesktop, 'only desktop restoration needs a startup guard');
+        let activated = false;
+        Object.defineProperty(f.workspace, 'activeWindow', {
+            get() { return activated ? f.target : f.other; },
+            set(window) {
+                assert.equal(window, f.target);
+                assert.equal(f.workspace.currentDesktop, second, 'switch before activation can bring the window here');
+                assert.equal(window.desktops[0], second);
+                window.minimized = false;
+                activated = true;
+            }
+        });
+        assert.equal(f.restoreImmediately(state), true);
+        assert.equal(activated, rememberDesktop);
+        assert.equal(f.workspace.currentDesktop, rememberDesktop ? second : first);
+        assert.equal(f.workspace.lastClientAreaOutput, rememberScreen ? savedOutput : f.output);
+        assert.equal(f.target.frameGeometry.x, rememberScreen ? 1380 : 100, 'keep the position relative to the selected screen');
+        assert.equal(f.target.frameGeometry.width, 640);
+    }
+}
+for (const extra of [{}, {rememberDesktop: false, onAllDesktops: true}]) {
+    const f = fixture();
+    const state = savedState({desktopIds: ['desktop-2'], ...extra});
+    if (!Object.hasOwn(extra, 'rememberDesktop')) delete state.rememberDesktop;
+    const second = {id: 'desktop-2'};
+    f.workspace.desktops.push(second);
+    assert.equal(f.prepareImmediately(state), true);
+    assert.equal(f.restoreImmediately(state), true);
+    assert.equal(f.target.desktops[0], f.workspace.currentDesktop);
+    assert.equal(f.target.onAllDesktops, false, 'disabled desktop restore also ignores sticky membership');
+    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(!!f.target.minimized, false);
+}
+for (const rememberDesktop of [false, true]) {
+    const f = fixture();
+    const first = f.workspace.currentDesktop, second = {id: 'desktop-2'};
+    f.workspace.desktops.push(second);
+    const wrong = desktopTile(f, rememberDesktop ? first : second);
+    const destination = desktopTile(f, rememberDesktop ? second : first);
+    f.workspace.quickTiles = [wrong, destination];
+    assert.equal(f.restoreImmediately(savedState({rememberDesktop, desktopIds: [second.id], tile: {kind: 'quick', edges: 2}})), true);
+    assert.equal(f.target.tile, destination, 'quick tiles belong to the desktop selected by the policy');
+    assert.equal(wrong.owner, undefined);
+}
+{
+    const f = fixture();
+    const first = f.workspace.currentDesktop, second = {id: 'desktop-2'};
+    const output = {name: 'Virtual-2', uuid: 'output-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
+    f.workspace.screens.push(output);
+    f.workspace.desktops.push(second);
+    let outputDesktop = first;
+    const events = [];
+    f.workspace.currentDesktopForScreen = screen => { assert.equal(screen, output); return outputDesktop; };
+    f.workspace.setCurrentDesktopForScreen = (desktop, screen) => {
+        assert.equal(screen, output);
+        assert.equal(desktop, second);
+        outputDesktop = desktop;
+        events.push('switch');
+    };
+    Object.defineProperty(f.workspace, 'activeWindow', {set(window) {
+        assert.equal(window, f.target);
+        assert.equal(outputDesktop, second);
+        events.push('activate');
+    }});
+    assert.equal(f.restoreImmediately(savedState({outputUuid: output.uuid, desktopIds: [second.id]})), true);
+    assert.deepEqual(events, ['switch', 'activate']);
+    assert.equal(f.workspace.currentDesktop, first, 'use the per-screen API when available');
 }
 console.log('Tiling and window positions: app sizes/modes preserved, desktop/output fallbacks and validation passed.');
 
@@ -421,7 +502,7 @@ for (const [height, step] of [[24, 30], [45.5, 56.875], [0, 37.5], [-1, 37.5], [
     f.workspace.windows.push(blocker(f), blocker(f, 100 + step, 80 + step));
     f.restoreImmediately(savedState({titleBarHeight: height}));
     assert.deepEqual({...f.target.frameGeometry}, {x: 100 + step * 2, y: 80 + step * 2, width: 640, height: 480});
-    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(f.workspace.activeWindow, f.target);
 }
 for (const extra of [{minimized: true}, {deleted: true}, {normalWindow: false}, {popupWindow: true},
     {output: {}}, {desktops: [{id: 'elsewhere'}]}, {activities: ['elsewhere']}]) {
@@ -493,7 +574,7 @@ for (const kind of ['quick', 'custom']) {
     tile.unmanage(f.target);
     assert.equal(f.target.frameGeometry.width, 900.5, 'native unsnap restores the pre-tiling width');
     assert.equal(f.target.frameGeometry.height, 650.25);
-    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(f.workspace.activeWindow, f.target);
 }
 for (const outcome of ['rejected', 'throws', 'missing']) {
     const f = fixture();
@@ -532,7 +613,7 @@ console.log('Restored native tile normal sizes: unsnapping, unavailable tiles an
     }})), true);
     assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 900, height: 600});
     assert.equal(f.target.tile, null, 'a new sibling must not clone the saved tile');
-    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(f.workspace.activeWindow, f.target);
 }
 {
     const f = fixture();
