@@ -182,6 +182,21 @@ var materialTiling;
         if (!state || state.version !== 3 || !position ||
             ![position.x, position.y].every(function (n) { return typeof n === "number" && Number.isFinite(n); })) throw new Error("Invalid saved position");
         if (!Array.isArray(state.desktopIds)) throw new Error("Invalid saved state");
+        const inherited = state.inheritedTileSize;
+        const original = target.frameGeometry;
+        const sizeKeys = ["width", "height"];
+        const inheritedSize = !target.tile && !target.fullScreen && !target.maximizeMode && target.resizeable && inherited &&
+            inherited.normalSize && inherited.tileSize && sizeKeys.every(function (key) {
+                return typeof inherited.normalSize[key] === "number" && Number.isFinite(inherited.normalSize[key]) && inherited.normalSize[key] > 0 &&
+                    typeof inherited.tileSize[key] === "number" && Number.isFinite(inherited.tileSize[key]) && inherited.tileSize[key] > 0 &&
+                    Math.abs(original[key] - inherited.tileSize[key]) <= 2;
+            }) ? inherited.normalSize : null;
+        if (inheritedSize) {
+            // This is a new floating sibling, not a reopening of the old tile.
+            // Keep saved placement, but do not clone a saved snap onto it.
+            state = Object.assign({}, state);
+            delete state.tile;
+        }
         const screens = workspace.screens;
         const output = screens.find(function (screen) { return state.outputUuid && String(screen.uuid) === state.outputUuid; }) ||
             screens.find(function (screen) { return state.outputName && screen.name === state.outputName; }) || target.output || screens[0];
@@ -207,9 +222,9 @@ var materialTiling;
             x += output.geometry.x - before.x;
             y += output.geometry.y - before.y;
         }
-        // Use exactly the app's current frame size, including when it exceeds
-        // the work area. Moving to a smaller screen must not shrink the window.
-        const current = target.frameGeometry;
+        // Preserve the app's size except for a matched inherited tile size.
+        // Moving to a smaller output still must not shrink a normal window.
+        const current = inheritedSize ? {width: inheritedSize.width, height: inheritedSize.height} : original;
         x = Math.max(area.x, Math.min(x, area.x + area.width - current.width));
         y = Math.max(area.y, Math.min(y, area.y + area.height - current.height));
         if (!state.tile) {
@@ -217,10 +232,9 @@ var materialTiling;
             x = vacant.x;
             y = vacant.y;
         }
-        // A same-size frameGeometry assignment moves immediately on Wayland.
-        // Its position also determines the output; sendClientToScreen() could
-        // constrain a normal window's size, so it is not used for this path.
-        if (current.x !== x || current.y !== y) {
+        // Position determines the output; sendClientToScreen() could constrain
+        // an ordinary window's size. Inherited sizes use one combined request.
+        if (original.x !== x || original.y !== y || original.width !== current.width || original.height !== current.height) {
             target.frameGeometry = {x: x, y: y, width: current.width, height: current.height};
         }
         // KWin owns the size of a snapped window; floating app sizes stay intact.

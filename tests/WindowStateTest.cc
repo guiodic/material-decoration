@@ -13,6 +13,7 @@
 #include <QJsonObject>
 #include <QDBusConnection>
 #include <QRectF>
+#include <QScopedValueRollback>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTest>
@@ -383,6 +384,74 @@ private slots:
         QCoreApplication::processEvents();
         window.close();
         QCOMPARE(Material::readWindowState(key).value("tile").toMap().value("normalSize").toMap(), size);
+    }
+    void newSiblingSizeHint_data() {
+        QTest::addColumn<QString>("scenario");
+        for (const auto *scenario : {"matching", "different-size", "different-identity", "excluded-source", "special-target", "fixed-target", "uncommitted-source", "ambiguous-source"})
+            QTest::newRow(scenario) << QString::fromLatin1(scenario);
+    }
+    void newSiblingSizeHint() {
+        QFETCH(QString, scenario);
+        QObject workspace;
+        QScopedValueRollback restoreWorkspace(testWorkspace, &workspace);
+        KWin::WaylandWindow source, target;
+        const auto app = "org.example.StateTest.Sibling." + QUuid::createUuid().toString();
+        setup(source, app);
+        setup(target, app);
+        source.setProperty("resizeable", true);
+        target.setProperty("resizeable", scenario != "fixed-target");
+        workspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&source, &target}));
+        MaterialTest::Bridge sourceBridge, targetBridge;
+        StateDecoration sourceDecoration(&source, &sourceBridge), targetDecoration(&target, &targetBridge);
+        Material::configureWindowState(&sourceDecoration, true);
+        source.map();
+        KWin::QuickRootTile root;
+        KWin::Tile tile;
+        tile.setProperty("parent", QVariant::fromValue<QObject *>(&root));
+        tile.setProperty("relativeGeometry", QRectF(0, 0, 0.5, 1));
+        source.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
+        Q_EMIT source.frameGeometryAboutToChange();
+        Q_EMIT source.requestedTileChanged();
+        source.setProperty("frameGeometry", QRectF(0, 0, 640, 800));
+        Q_EMIT source.frameGeometryChanged();
+        if (scenario != "uncommitted-source") source.changedTile();
+        QCoreApplication::processEvents();
+        target.setProperty("frameGeometry", QRectF(100, 100, scenario == "different-size" ? 700 : 640, 800));
+        if (scenario == "different-identity") target.setProperty("tag", "another-window");
+        if (scenario == "excluded-source") Material::configureWindowState(&sourceDecoration, false);
+        if (scenario == "special-target") target.setProperty("maximizeMode", 3);
+        KWin::WaylandWindow extra;
+        MaterialTest::Bridge extraBridge;
+        StateDecoration extraDecoration(&extra, &extraBridge);
+        if (scenario == "ambiguous-source") {
+            setup(extra, app);
+            extra.setProperty("resizeable", true);
+            extra.setProperty("frameGeometry", QRectF(100, 100, 1000, 700));
+            Material::configureWindowState(&extraDecoration, true);
+            extra.map();
+            extra.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
+            Q_EMIT extra.frameGeometryAboutToChange();
+            Q_EMIT extra.requestedTileChanged();
+            extra.setProperty("frameGeometry", QRectF(0, 0, 640, 800));
+            Q_EMIT extra.frameGeometryChanged();
+            extra.changedTile();
+            QCoreApplication::processEvents();
+            workspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&source, &extra, &target}));
+        }
+        immediateAvailable = true;
+        const auto count = immediateRequests.size();
+        Material::configureWindowState(&targetDecoration, true);
+        target.map();
+        if (scenario == "matching") {
+            QCOMPARE(immediateRequests.size(), count + 1);
+            const auto hint = immediateRequests.last().value("inheritedTileSize").toMap();
+            QCOMPARE(hint.value("normalSize").toMap(), (QVariantMap{{"width", 800}, {"height", 500}}));
+            QCOMPARE(hint.value("tileSize").toMap(), (QVariantMap{{"width", 640}, {"height", 800}}));
+            // A live sibling can provide this information before any close/save.
+            QVERIFY(Material::readWindowState(Material::windowStateKey(&source)).isEmpty());
+        } else {
+            QCOMPARE(immediateRequests.size(), count);
+        }
     }
     void savesOnlyOnCloseAndSurvivesDecorationRemoval() {
         KWin::WaylandWindow window;

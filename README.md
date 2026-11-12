@@ -86,6 +86,9 @@ It works with apps that use Kwin-managed decorations. For other apps
 ‘shadow-only’ decoration that will enable position restoration too.
 The restore process also takes into account any connected displays and the 
 configuration of virtual desktops.
+The normal size of a tiled window is retained for unsnapping after reopening.
+A new floating window with the same identity can also recover that normal size
+if it inherits the dimensions of the tiled window while the latter is still open.
 Windows of the same application without distinct window roles or Wayland tags
 share the state of the last closed window.
 This is an experimental feature not enabled by default. 

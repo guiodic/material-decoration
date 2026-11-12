@@ -493,3 +493,44 @@ for (const size of [undefined, {width: 0, height: 650}, {width: -1, height: 650}
     assert.equal(f.target.frameGeometry.height, 480);
 }
 console.log('Restored native tile normal sizes: unsnapping, unavailable tiles and missing metadata passed.');
+
+// A new floating instance may inherit a live sibling's tile-sized defaults.
+{
+    const f = fixture();
+    f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2}, inheritedTileSize: {
+        tileSize: {width: 640, height: 480}, normalSize: {width: 900, height: 600}
+    }}));
+    assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 900, height: 600});
+    assert.equal(f.target.tile, null, 'a new sibling must not clone the saved tile');
+    assert.equal(f.workspace.activeWindow, f.other);
+}
+{
+    const f = fixture();
+    f.restoreImmediately(savedState({position: {x: 1200, y: 700}, inheritedTileSize: {
+        tileSize: {width: 640, height: 480}, normalSize: {width: 900, height: 600}
+    }}));
+    assert.deepEqual({...f.target.frameGeometry}, {x: 380, y: 200, width: 900, height: 600}, 'bound placement using the recovered size');
+}
+for (const hint of [
+    {tileSize: {width: 700, height: 480}, normalSize: {width: 900, height: 600}},
+    {tileSize: {width: 640, height: 480}, normalSize: {width: 0, height: 600}},
+    {tileSize: {width: 640, height: 480}, normalSize: {width: 900}},
+    {tileSize: {width: 640, height: 480}, normalSize: {width: '900', height: 600}},
+    {normalSize: {width: 900, height: 600}}
+]) {
+    const f = fixture();
+    f.restoreImmediately(savedState({inheritedTileSize: hint}));
+    assert.equal(f.target.frameGeometry.width, 640);
+    assert.equal(f.target.frameGeometry.height, 480);
+}
+for (const mode of ['maximizeMode', 'fullScreen', 'tile', 'fixed']) {
+    const f = fixture();
+    if (mode === 'fixed') f.target.resizeable = false;
+    else f.target[mode] = mode === 'tile' ? {} : 1;
+    f.restoreImmediately(savedState({inheritedTileSize: {
+        tileSize: {width: 640, height: 480}, normalSize: {width: 900, height: 600}
+    }}));
+    assert.equal(f.target.frameGeometry.width, 640, 'preserve explicit app modes and fixed sizes');
+    assert.equal(f.target.frameGeometry.height, 480);
+}
+console.log('Inherited tile sizes: new floating siblings, app modes and mismatched dimensions passed.');

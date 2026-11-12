@@ -79,6 +79,14 @@ bool validSize(const QVariantMap &size)
     return true;
 }
 
+bool sameSize(const QVariantMap &a, const QVariantMap &b)
+{
+    // KDE persists integral sizes; frame borders/scaling can add a fraction.
+    return validSize(a) && validSize(b)
+        && std::abs(a.value("width").toDouble() - b.value("width").toDouble()) <= 2
+        && std::abs(a.value("height").toDouble() - b.value("height").toDouble()) <= 2;
+}
+
 int quickTileEdges(const QVariantMap &region)
 {
     constexpr double epsilon = 0.00001;
@@ -376,18 +384,47 @@ private slots:
             return;
         }
         if (m_state.isEmpty()) m_state = readWindowState(key, WindowStateScope::self()->current());
-        if (m_state.isEmpty()) return;
+        const auto inheritedSize = siblingNormalSize();
+        if (m_state.isEmpty() && inheritedSize.isEmpty()) return;
+        auto state = m_state.isEmpty() ? captureWindowState(m_window) : m_state;
+        if (!inheritedSize.isEmpty()) state.insert("inheritedTileSize", inheritedSize);
         // Ignore synthetic intermediate sizes while seeding KWin's unsnap
         // geometry. Missing metadata must not turn a tile-sized startup frame
         // into an allegedly known normal size.
         if (m_state.contains("tile")) m_normalSize = m_state.value("tile").toMap().value("normalSize").toMap();
         QScopedValueRollback restoring(m_restoring, true);
-        const auto result = restoreWindowStateImmediately(m_decoration, m_state);
+        const auto result = restoreWindowStateImmediately(m_decoration, state);
         if (result == WindowRestoreResult::Succeeded) updateTile();
         else if (result == WindowRestoreResult::Unavailable) retry();
     }
 
 private:
+    QVariantMap siblingNormalSize() const
+    {
+        // Only correct a floating startup frame that looks inherited from a
+        // live native tile of the same application/role/tag. The normal size comes
+        // from that window's controller; excluded windows cannot provide it.
+        if (m_window->property("tile").value<QObject *>() || m_window->property("fullScreen").toBool()
+            || m_window->property("maximizeMode").toInt() || !m_window->property("resizeable").toBool()) return {};
+        auto *workspace = windowStateWorkspace();
+        if (!workspace) return {};
+        const auto initialSize = normalSize(m_window->property("frameGeometry"));
+        const auto key = windowStateKey(m_window);
+        QVariantMap hint;
+        for (const auto &entry : workspace->property("stackingOrder").toList()) {
+            auto *window = entry.value<QObject *>();
+            if (!window || window == m_window || window->property("deleted").toBool() || window->property("fullScreen").toBool()
+                || window->property("maximizeMode").toInt() || windowStateKey(window) != key) continue;
+            auto *controller = window->findChild<WindowStateController *>(QString(), Qt::FindDirectChildrenOnly);
+            if (!controller || !controller->m_enabled || !controller->m_committedTiled || !controller->m_requestedTiled
+                || !validSize(controller->m_normalSize)) continue;
+            const auto tileSize = normalSize(window->property("frameGeometry"));
+            if (!sameSize(initialSize, tileSize) || sameSize(controller->m_normalSize, tileSize)) continue;
+            if (!hint.isEmpty() && !sameSize(hint.value("normalSize").toMap(), controller->m_normalSize)) return {};
+            hint = {{"tileSize", tileSize}, {"normalSize", controller->m_normalSize}};
+        }
+        return hint;
+    }
     QVariantMap stateToSave() const
     {
         auto state = captureWindowState(m_window);
