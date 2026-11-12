@@ -300,7 +300,7 @@ private slots:
         if (!m_enabled || m_restoreCancelled || m_restoreStarted || m_prepareFailed || !m_decoration
             || m_prepareAttempts >= 100 || m_window->property("deleted").toBool()) return;
         m_prepareRetryTimer.stop();
-        if (m_state.isEmpty()) m_state = readWindowState(windowStateKey(m_window), WindowStateScope::self()->current());
+        refreshState();
         if (m_state.isEmpty()) return;
         const bool wasMinimized = m_window->property("minimized").toBool();
         ++m_prepareAttempts;
@@ -402,7 +402,7 @@ private slots:
             retry();
             return;
         }
-        if (m_state.isEmpty()) m_state = readWindowState(key, WindowStateScope::self()->current());
+        refreshState();
         const auto inheritedSize = siblingNormalSize();
         if (m_state.isEmpty() && inheritedSize.isEmpty()) return;
         auto state = m_state.isEmpty() ? captureWindowState(m_window) : m_state;
@@ -420,6 +420,41 @@ private slots:
     }
 
 private:
+    void refreshState()
+    {
+        const auto scope = WindowStateScope::self()->current();
+        const auto key = windowStateKey(m_window);
+        if (m_stateScope != scope || m_stateKey != key) {
+            // Preparation may already have moved the window to a desktop from
+            // the previous topology. Undo it even if the new scope has no state.
+            if (m_prepared && m_originalDesktops.isValid()) {
+                auto original = m_originalDesktops;
+                if (auto *workspace = windowStateWorkspace()) {
+                    QList<QObject *> live;
+                    for (const auto &value : workspace->property("desktops").toList()) live.append(value.value<QObject *>());
+                    QList<QObject *> desktops;
+                    for (const auto &value : original.toList()) {
+                        auto *desktop = value.value<QObject *>();
+                        if (desktop && live.contains(desktop)) desktops.append(desktop);
+                    }
+                    // An empty original list means all desktops; a deleted
+                    // original desktop instead falls back to the current one.
+                    if (desktops.isEmpty() && !original.toList().isEmpty()) {
+                        if (auto *desktop = workspace->property("currentDesktop").value<QObject *>()) desktops.append(desktop);
+                    }
+                    original = QVariant::fromValue(desktops);
+                }
+                m_window->setProperty("desktops", original);
+            }
+            releaseVisibilityGuard();
+            m_prepared = false;
+            m_prepareFailed = false;
+            m_state.clear();
+            m_stateScope = scope;
+            m_stateKey = key;
+        }
+        if (m_state.isEmpty()) m_state = readWindowState(key, scope);
+    }
     bool canSave(const QString &scope) const
     {
         // Preserve an existing placement if startup restoration failed or is
@@ -500,6 +535,8 @@ private:
     QTimer m_prepareRetryTimer;
     bool m_visibilityGuard = false;
     QVariant m_originalDesktops;
+    QString m_stateScope;
+    QString m_stateKey;
     QVariantMap m_state;
     QVariantMap m_lastTile;
     QVariantMap m_normalSize;

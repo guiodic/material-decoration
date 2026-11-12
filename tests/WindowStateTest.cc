@@ -853,6 +853,88 @@ private slots:
         QVERIFY(Material::writeWindowState(unscoped, original));
         QVERIFY(Material::readWindowState(unscoped, ab).isEmpty());
     }
+    void reloadsStateWhenOpeningConfigurationChanges_data() {
+        QTest::addColumn<int>("phase");
+        QTest::addColumn<bool>("hasState");
+        QTest::addColumn<bool>("removeDesktop");
+        for (int phase = 0; phase < 3; ++phase) {
+            for (bool hasState : {false, true}) {
+                for (bool removeDesktop : {false, true}) {
+                    const QByteArray name = QByteArray::number(phase) + (hasState ? "-saved" : "-missing")
+                        + (removeDesktop ? "-removed-desktop" : "-same-desktops");
+                    QTest::newRow(name.constData()) << phase << hasState << removeDesktop;
+                }
+            }
+        }
+    }
+    void reloadsStateWhenOpeningConfigurationChanges() {
+        QFETCH(int, phase); // Reassertion, first frame, or full-restore retry.
+        QFETCH(bool, hasState);
+        QFETCH(bool, removeDesktop);
+        ScopeWorkspace workspace;
+        QObject interface(&workspace), a, b, originalDesktop, savedDesktop;
+        auto bus = QDBusConnection::sessionBus();
+        QVERIFY(bus.registerObject("/KWin", &interface));
+        QScopedValueRollback wrapper(testWorkspace, static_cast<QObject *>(&workspace));
+        QScopedValueRollback available(prepareAvailable, true);
+        QScopedValueRollback minimizes(prepareMinimizes, true);
+        QScopedValueRollback restoreAvailable(immediateAvailable, phase != 2);
+        QScopedValueRollback desktops(preparedDesktops, QVariant::fromValue(QList<QObject *>{&savedDesktop}));
+        a.setProperty("name", "A"); a.setProperty("geometry", QRect(0, 0, 1280, 800));
+        b.setProperty("name", "B"); b.setProperty("geometry", QRect(1280, 0, 1280, 800));
+        originalDesktop.setProperty("id", "original");
+        savedDesktop.setProperty("id", "saved");
+        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a, &b}));
+        workspace.setProperty("desktops", QVariant::fromValue(QList<QObject *>{&originalDesktop, &savedDesktop}));
+        workspace.setProperty("currentDesktop", QVariant::fromValue(&originalDesktop));
+        const auto before = Material::WindowStateScope::self()->current();
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.ChangeWhileOpening." + QUuid::createUuid().toString());
+        const auto original = QVariant::fromValue(QList<QObject *>{&originalDesktop});
+        window.setProperty("desktops", original);
+        window.setProperty("minimized", false);
+        const auto key = Material::windowStateKey(&window);
+        auto state = Material::captureWindowState(&window);
+        state.insert("position", QVariantMap{{"x", 110}, {"y", 90}});
+        QVERIFY(Material::writeWindowState(key, state, before));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        QVERIFY(window.property("minimized").toBool());
+        QCOMPARE(window.property("desktops"), preparedDesktops);
+        if (phase == 2) window.map();
+        const auto prepareCount = prepareRequests.size();
+        const auto restoreCount = immediateRequests.size();
+        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a}));
+        if (removeDesktop) {
+            workspace.setProperty("desktops", QVariant::fromValue(QList<QObject *>{&savedDesktop}));
+            workspace.setProperty("currentDesktop", QVariant::fromValue(&savedDesktop));
+        }
+        workspace.finish();
+        const auto after = Material::WindowStateScope::self()->current();
+        QVERIFY(before != after);
+        if (hasState) {
+            state.insert("position", QVariantMap{{"x", 330}, {"y", 190}});
+            QVERIFY(Material::writeWindowState(key, state, after));
+        }
+        immediateAvailable = true;
+        if (phase == 0) QCoreApplication::processEvents();
+        if (phase != 2) window.map();
+        if (phase == 2) QTest::qWait(350);
+        QCOMPARE(prepareRequests.size(), prepareCount + (phase == 0 && hasState ? 1 : 0));
+        QCOMPARE(immediateRequests.size(), restoreCount + (hasState ? 1 : 0));
+        if (hasState) {
+            QCOMPARE(immediateRequests.last().value("position").toMap().value("x").toInt(), 330);
+            if (phase == 0) QCOMPARE(prepareRequests.last().value("position").toMap().value("x").toInt(), 330);
+        } else {
+            QCOMPARE(window.property("desktops"), removeDesktop ? preparedDesktops : original);
+        }
+        QVERIFY(!window.property("minimized").toBool());
+        // Merely looking up a different scope must not modify either state.
+        QCOMPARE(Material::readWindowState(key, before).value("position").toMap().value("x").toInt(), 110);
+        QCOMPARE(Material::readWindowState(key, after).isEmpty(), !hasState);
+        bus.unregisterObject("/KWin");
+    }
     void snapshotsBeforeOutputEvacuation() {
         ScopeWorkspace workspace;
         QObject interface(&workspace), a, b, desktop;
