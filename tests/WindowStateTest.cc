@@ -1166,22 +1166,27 @@ private slots:
     void manualPlacementAfterOutputRemoval_data() {
         QTest::addColumn<QString>("action");
         QTest::addColumn<bool>("anotherChange");
+        QTest::addColumn<bool>("failedInitialRestore");
         for (const auto &action : {"untouched", "application", "no-step", "move", "resize", "both", "before-removal"}) {
             for (bool anotherChange : {false, true}) {
-                const QByteArray name = QByteArray(action) + (anotherChange ? "-then-topology" : "-then-close");
-                QTest::newRow(name.constData()) << QString::fromLatin1(action) << anotherChange;
+                for (bool failed : {false, true}) {
+                    const QByteArray name = QByteArray(action) + (anotherChange ? "-then-topology" : "-then-close")
+                        + (failed ? "-failed-initial-restore" : "-new");
+                    QTest::newRow(name.constData()) << QString::fromLatin1(action) << anotherChange << failed;
+                }
             }
         }
     }
     void manualPlacementAfterOutputRemoval() {
         QFETCH(QString, action);
         QFETCH(bool, anotherChange);
+        QFETCH(bool, failedInitialRestore);
         ScopeWorkspace workspace;
         QObject interface(&workspace), a, b, desktop;
         auto bus = QDBusConnection::sessionBus();
         QVERIFY(bus.registerObject("/KWin", &interface));
         QScopedValueRollback wrapper(testWorkspace, static_cast<QObject *>(&workspace));
-        QScopedValueRollback available(immediateAvailable, true);
+        QScopedValueRollback available(immediateAvailable, !failedInitialRestore);
         a.setProperty("name", "A"); a.setProperty("geometry", QRect(1920, 0, 1920, 1080));
         b.setProperty("name", "B"); b.setProperty("geometry", QRect(0, 0, 1920, 1080));
         desktop.setProperty("id", "desktop");
@@ -1196,6 +1201,7 @@ private slots:
         window.setProperty("frameGeometry", QRectF(110, 90, 640, 480));
         const auto key = Material::windowStateKey(&window);
         const auto ab = Material::WindowStateScope::self()->current();
+        if (failedInitialRestore) QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), ab));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         Material::configureWindowState(&decoration, true, true, true);
@@ -1255,10 +1261,104 @@ private slots:
         MaterialTest::Bridge reopenedBridge;
         StateDecoration reopenedDecoration(&reopened, &reopenedBridge);
         const auto restores = immediateRequests.size();
+        immediateAvailable = true;
         Material::configureWindowState(&reopenedDecoration, true, true, true);
         reopened.map();
         QCOMPARE(immediateRequests.size(), restores + 1);
         QCOMPARE(immediateRequests.last().value("outputName").toString(), manual ? "A" : "B");
+        bus.unregisterObject("/KWin");
+    }
+    void saveAuthorizationIsScoped_data() {
+        QTest::addColumn<bool>("restored");
+        QTest::addColumn<bool>("manualInNewScope");
+        QTest::addColumn<bool>("snapshot");
+        QTest::addColumn<bool>("screenChange");
+        for (bool restored : {false, true}) {
+            for (bool manual : {false, true}) {
+                for (bool snapshot : {false, true}) {
+                    for (bool screen : {false, true}) {
+                        const auto name = QStringLiteral("%1-%2-%3-%4").arg(restored ? "restored" : "user-moved",
+                            manual ? "new-user-move" : "automatic", snapshot ? "snapshot" : "close", screen ? "screens" : "desktops");
+                        QTest::newRow(qPrintable(name)) << restored << manual << snapshot << screen;
+                    }
+                }
+            }
+        }
+    }
+    void saveAuthorizationIsScoped() {
+        QFETCH(bool, restored);
+        QFETCH(bool, manualInNewScope);
+        QFETCH(bool, snapshot);
+        QFETCH(bool, screenChange);
+        ScopeWorkspace workspace;
+        QObject interface(&workspace), a, b, desktop, otherDesktop;
+        auto bus = QDBusConnection::sessionBus();
+        QVERIFY(bus.registerObject("/KWin", &interface));
+        QScopedValueRollback wrapper(testWorkspace, static_cast<QObject *>(&workspace));
+        QScopedValueRollback available(immediateAvailable, restored);
+        QScopedValueRollback succeeds(immediateSucceeds, true);
+        a.setProperty("name", "A"); a.setProperty("geometry", QRect(0, 0, 1280, 800));
+        b.setProperty("name", "B"); b.setProperty("geometry", QRect(1280, 0, 1280, 800));
+        desktop.setProperty("id", "desktop");
+        otherDesktop.setProperty("id", "other");
+        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a}));
+        workspace.setProperty("desktops", QVariant::fromValue(QList<QObject *>{&desktop}));
+        const auto before = Material::WindowStateScope::self()->current();
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.ScopePermission." + QUuid::createUuid().toString());
+        window.setProperty("output", QVariant::fromValue(&a));
+        window.setProperty("frameGeometry", QRectF(100, 80, 640, 480));
+        const auto key = Material::windowStateKey(&window);
+        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), before));
+        // A separate, pre-existing state belongs to the future configuration.
+        if (screenChange) workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a, &b}));
+        else workspace.setProperty("desktops", QVariant::fromValue(QList<QObject *>{&desktop, &otherDesktop}));
+        const auto after = Material::windowConfigurationScope(&workspace);
+        QVERIFY(before != after);
+        auto protectedState = Material::captureWindowState(&window);
+        protectedState.insert("position", QVariantMap{{"x", screenChange ? 1500 : 500}, {"y", 180}});
+        protectedState.insert("outputName", screenChange ? "B" : "A");
+        protectedState.insert("outputPosition", QVariantMap{{"x", screenChange ? 1280 : 0}, {"y", 0}});
+        protectedState.insert("desktopIds", QStringList{screenChange ? "desktop" : "other"});
+        QVERIFY(Material::writeWindowState(key, protectedState, after));
+        protectedState = Material::readWindowState(key, after);
+        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a}));
+        workspace.setProperty("desktops", QVariant::fromValue(QList<QObject *>{&desktop}));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        if (!restored) {
+            window.startInteraction();
+            window.setProperty("frameGeometry", QRectF(300, 200, 640, 480));
+            window.stepInteraction();
+            window.finishInteraction();
+        }
+        if (screenChange) {
+            workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a, &b}));
+            workspace.addOutput(&b);
+            workspace.finish();
+        } else {
+            workspace.setProperty("desktops", QVariant::fromValue(QList<QObject *>{&desktop, &otherDesktop}));
+            Q_EMIT workspace.desktopLayoutChanged();
+            Q_EMIT workspace.desktopsChanged();
+        }
+        QCOMPARE(Material::WindowStateScope::self()->current(), after);
+        // The original scope remains writable after its restore/user action.
+        QCOMPARE(Material::readWindowState(key, before).value("position").toMap().value("x").toInt(), restored ? 100 : 300);
+        window.setProperty("frameGeometry", QRectF(400, 250, 640, 480));
+        if (manualInNewScope) {
+            window.startInteraction();
+            window.setProperty("frameGeometry", QRectF(500, 350, 640, 480));
+            window.stepInteraction();
+            window.finishInteraction();
+        }
+        if (snapshot) Q_EMIT Material::WindowStateScope::self()->snapshotRequested(after, {});
+        else window.close();
+        const auto saved = Material::readWindowState(key, after);
+        if (manualInNewScope) QCOMPARE(saved.value("position").toMap().value("x").toInt(), 500);
+        else QCOMPARE(saved, protectedState);
+        window.setProperty("deleted", true);
         bus.unregisterObject("/KWin");
     }
     void snapshotsBeforeOutputEvacuation() {
