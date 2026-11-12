@@ -6,9 +6,6 @@
 #include <QCoreApplication>
 #include <QDBusConnection>
 #include <QDebug>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QJSEngine>
 #include <QSet>
 #include <cmath>
@@ -59,12 +56,12 @@ bool canTileWindow(KDecoration3::Decoration *decoration)
         && !decoration->parent()->property("specialWindow").toBool();
 }
 
-static QString windowStateJson(KDecoration3::Decoration *decoration, const QVariantMap &state)
+static QVariantMap windowStateRequest(KDecoration3::Decoration *decoration, const QVariantMap &state)
 {
     auto request = state;
     // Runtime placement hint only; never persisted in the window's state.
     request.insert(QStringLiteral("titleBarHeight"), decoration ? decoration->titleBar().height() : 0);
-    return QString::fromUtf8(QJsonDocument::fromVariant(request).toJson(QJsonDocument::Compact));
+    return request;
 }
 
 static QJSEngine *scriptEngine(const QString &name)
@@ -81,7 +78,7 @@ static QJSEngine *scriptEngine(const QString &name)
     return {};
 }
 
-static QJSValue callScript(KDecoration3::Decoration *decoration, const QString &name, const QString &json, bool *available = nullptr)
+static QJSValue callScript(KDecoration3::Decoration *decoration, const QString &name, const QVariantMap &request, bool *available = nullptr)
 {
     if (available) *available = true;
     if (!decoration || !decoration->parent()) return {};
@@ -98,7 +95,7 @@ static QJSValue callScript(KDecoration3::Decoration *decoration, const QString &
     QJSEngine::setObjectOwnership(owner, QJSEngine::CppOwnership);
     // Activation/tiling can destroy the decoration. Do not access it after
     // entering JavaScript; the KWin window is the actual operation target.
-    auto result = function.call({engine->newQObject(owner), QJSValue(json)});
+    auto result = function.call({engine->newQObject(owner), engine->toScriptValue(request)});
     if (result.isError()) {
         qWarning() << "Material script:" << result.toString();
         return {};
@@ -114,7 +111,7 @@ bool tilingScriptAvailable()
 WindowRestoreResult restoreWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
 {
     bool available = false;
-    const auto result = callScript(decoration, QStringLiteral("materialRestoreWindowState"), windowStateJson(decoration, state), &available);
+    const auto result = callScript(decoration, QStringLiteral("materialRestoreWindowState"), windowStateRequest(decoration, state), &available);
     if (!available) return WindowRestoreResult::Unavailable;
     return result.isBool() && result.toBool() ? WindowRestoreResult::Succeeded : WindowRestoreResult::Failed;
 }
@@ -122,7 +119,7 @@ WindowRestoreResult restoreWindowStateImmediately(KDecoration3::Decoration *deco
 WindowRestoreResult prepareWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
 {
     bool available = false;
-    const auto result = callScript(decoration, QStringLiteral("materialPrepareWindowState"), windowStateJson(decoration, state), &available);
+    const auto result = callScript(decoration, QStringLiteral("materialPrepareWindowState"), windowStateRequest(decoration, state), &available);
     if (!available) return WindowRestoreResult::Unavailable;
     return result.isBool() && result.toBool() ? WindowRestoreResult::Succeeded : WindowRestoreResult::Failed;
 }
@@ -141,19 +138,20 @@ bool fetchTilingLayout(KDecoration3::Decoration *decoration, CustomTilingLayout 
 {
     layout.clear();
     if (!canTileWindow(decoration)) return false;
-    const auto result = callScript(decoration, QStringLiteral("materialTiling"), QStringLiteral("{\"operation\":\"layout\"}"));
-    if (!result.isString()) return false;
-    const auto document = QJsonDocument::fromJson(result.toString().toUtf8());
-    if (!document.isArray()) return false;
+    const auto result = callScript(decoration, QStringLiteral("materialTiling"), {{"operation", "layout"}});
+    if (!result.isArray()) return false;
     CustomTilingLayout parsed;
     QSet<QString> ids;
-    for (const auto &value : document.array()) {
-        const auto zone = value.toObject();
+    const auto length = result.property("length").toUInt();
+    for (quint32 i = 0; i < length; ++i) {
+        const auto zone = result.property(i);
         const auto coordinate = [&zone](const char *name) {
-            return zone.value(QLatin1String(name)).toDouble(std::numeric_limits<double>::quiet_NaN());
+            const auto value = zone.property(QLatin1String(name));
+            return value.isNumber() ? value.toNumber() : std::numeric_limits<double>::quiet_NaN();
         };
         const QRectF rect(coordinate("x"), coordinate("y"), coordinate("width"), coordinate("height"));
-        const auto id = zone.value(QStringLiteral("id")).toString();
+        const auto identifier = zone.property("id");
+        const auto id = identifier.isString() ? identifier.toString() : QString();
         if (id.isEmpty() || ids.contains(id) || !std::isfinite(rect.x()) || !std::isfinite(rect.y()) ||
             !std::isfinite(rect.width()) || !std::isfinite(rect.height()) || rect.isEmpty() ||
             !QRectF(-0.000001, -0.000001, 1.000002, 1.000002).contains(rect)) return false;
@@ -168,16 +166,14 @@ bool tileWindow(KDecoration3::Decoration *decoration, Qt::Edges edges)
 {
     const int mask = int(edges);
     if (!canTileWindow(decoration) || (mask != 1 && mask != 2 && mask != 4 && mask != 8 && mask != 3 && mask != 5 && mask != 10 && mask != 12)) return false;
-    const auto json = QJsonDocument(QJsonObject{{"operation", "tile"}, {"edges", mask}}).toJson(QJsonDocument::Compact);
-    const auto result = callScript(decoration, QStringLiteral("materialTiling"), QString::fromUtf8(json));
+    const auto result = callScript(decoration, QStringLiteral("materialTiling"), {{"operation", "tile"}, {"edges", mask}});
     return result.isBool() && result.toBool();
 }
 
 bool tileCustomWindow(KDecoration3::Decoration *decoration, const QString &tileId)
 {
     if (!canTileWindow(decoration) || tileId.isEmpty()) return false;
-    const auto json = QJsonDocument(QJsonObject{{"operation", "tileCustom"}, {"tileId", tileId}}).toJson(QJsonDocument::Compact);
-    const auto result = callScript(decoration, QStringLiteral("materialTiling"), QString::fromUtf8(json));
+    const auto result = callScript(decoration, QStringLiteral("materialTiling"), {{"operation", "tileCustom"}, {"tileId", tileId}});
     return result.isBool() && result.toBool();
 }
 }

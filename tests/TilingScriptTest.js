@@ -43,14 +43,14 @@ function fixture(extraWindows = []) {
     const context = {workspace, materialWindowStateBridge: {quickTiles(manager) { return manager.quickTiles; }}, KWin: {PlacementArea: 0}};
     vm.runInNewContext(source, context);
     return {workspace, target, other, calls, output, root, leaf,
-        restoreImmediately(state) { return context.materialRestoreWindowState(target, JSON.stringify(state)); },
-        prepareImmediately(state) { return context.materialPrepareWindowState(target, JSON.stringify(state)); },
+        restoreImmediately(state) { return context.materialRestoreWindowState(target, state); },
+        prepareImmediately(state) { return context.materialPrepareWindowState(target, state); },
         send(edges, uuid = 'target', operation = 'tile', extra = {}) {
             const target = workspace.windowList().find(window => String(window.internalId).replace(/[{}]/g, '') === uuid);
             try {
-                if (operation === 'restoreState') return {success: context.materialRestoreWindowState(target, JSON.stringify(extra.state))};
-                const result = context.materialTiling(target, JSON.stringify({edges, operation: operation, ...extra}));
-                return typeof result === 'string' ? {success: true, layout: JSON.parse(result)} : {success: result};
+                if (operation === 'restoreState') return {success: context.materialRestoreWindowState(target, extra.state)};
+                const result = context.materialTiling(target, {edges, operation, ...extra});
+                return Array.isArray(result) ? {success: true, layout: Array.from(result, zone => ({...zone}))} : {success: result};
             } catch (error) { return {success: false, reason: String(error)}; }
         }};
 }

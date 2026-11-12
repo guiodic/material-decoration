@@ -4,9 +4,6 @@
 #include <KDecoration3/Decoration>
 #include <QDBusConnection>
 #include <QJSEngine>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QPointer>
 #include <QTest>
 #include <QUuid>
@@ -45,7 +42,7 @@ private slots:
         auto *unrelated = new QJSEngine(scripting.get());
         unrelated->evaluate("var materialTiling = null;");
         engine = new QJSEngine(scripting.get());
-        evaluate("var requests = [], layout = '[]'; function materialTiling(window, json) { ownerName = window.objectName; var request = JSON.parse(json); requests.push(request); return request.operation === 'layout' ? layout : true; }");
+        evaluate("var requests = [], layout = []; function materialTiling(window, request) { ownerName = window.objectName; requests.push(request); return request.operation === 'layout' ? layout : true; }");
         window.setObjectName("target-window");
         window.setProperty("internalId", QUuid::createUuid());
         window.setProperty("specialWindow", false);
@@ -91,20 +88,20 @@ private slots:
     void validatesLayoutWithoutPartialResults() {
         TestDecoration valid(&window, &bridge);
         Material::CustomTilingLayout layout;
-        engine->globalObject().setProperty("layout", R"([{"id":"snapshot:0","x":0,"y":0,"width":0.4,"height":1}])");
+        evaluate(R"(layout = [{"id":"snapshot:0","x":0,"y":0,"width":0.4,"height":1}];)");
         QVERIFY(Material::fetchTilingLayout(&valid, layout));
         QCOMPARE(layout.size(), 1);
         QCOMPARE(layout[0].rect, QRectF(0, 0, 0.4, 1));
         QCOMPARE(layout[0].id, "snapshot:0");
-        for (const auto &json : {QStringLiteral("not json"), QStringLiteral("{}"),
+        for (const auto &value : {QStringLiteral("null"), QStringLiteral("{}"),
              QStringLiteral(R"([{"id":"missing","width":0.5,"height":1}])"),
              QStringLiteral(R"([{"id":"bad","x":0,"y":0,"width":2,"height":1}])"),
              QStringLiteral(R"([{"id":"same","x":0,"y":0,"width":0.5,"height":1},{"id":"same","x":0.5,"y":0,"width":0.5,"height":1}])")}) {
-            engine->globalObject().setProperty("layout", json);
+            evaluate("layout = " + value + ";");
             QVERIFY(!Material::fetchTilingLayout(&valid, layout));
             QVERIFY(layout.isEmpty());
         }
-        engine->globalObject().setProperty("layout", "[]");
+        evaluate("layout = [];");
         QVERIFY(Material::fetchTilingLayout(&valid, layout));
         QVERIFY(layout.isEmpty());
     }
@@ -125,20 +122,21 @@ private slots:
         TestDecoration valid(&window, &bridge);
         valid.setTitleBar(QRectF(0, 0, 640, 32.5));
         bridge.client->setResizeable(false);
-        const QVariantMap state{{"version", 3}, {"desktopIds", QStringList{"desktop-1"}}};
+        const QVariantMap state{{"version", 3}, {"desktopIds", QVariantList{"desktop-1"}}};
         QCOMPARE(Material::restoreWindowStateImmediately(&valid, state), Material::WindowRestoreResult::Unavailable);
-        evaluate("function materialRestoreWindowState(window, json) { restored = JSON.parse(json); ownerName = window.objectName; return true; }");
+        evaluate("function materialRestoreWindowState(window, state) { restored = state; ownerName = window.objectName; return true; }");
         QCOMPARE(Material::restoreWindowStateImmediately(&valid, state), Material::WindowRestoreResult::Succeeded);
         QCOMPARE(engine->globalObject().property("ownerName").toString(), "target-window");
         QCOMPARE(engine->evaluate("restored.titleBarHeight").toNumber(), 32.5);
         QCOMPARE(engine->evaluate("restored.desktopIds[0]").toString(), "desktop-1");
+        QCOMPARE(engine->evaluate("restored.desktopIds.indexOf('desktop-1')").toInt(), 0);
         QVERIFY(!state.contains("titleBarHeight"));
         for (const auto &body : {QStringLiteral("return false;"), QStringLiteral("return undefined;"), QStringLiteral("throw new Error('invalid state');")}) {
             evaluate("materialRestoreWindowState = function() { " + body + " }; ");
             QCOMPARE(Material::restoreWindowStateImmediately(&valid, state), Material::WindowRestoreResult::Failed);
         }
         QCOMPARE(Material::prepareWindowStateImmediately(&valid, state), Material::WindowRestoreResult::Unavailable);
-        evaluate("function materialPrepareWindowState(window, json) { return true; }");
+        evaluate("function materialPrepareWindowState(window, state) { return true; }");
         QCOMPARE(Material::prepareWindowStateImmediately(&valid, state), Material::WindowRestoreResult::Succeeded);
         for (const auto &body : {QStringLiteral("return false;"), QStringLiteral("return undefined;"), QStringLiteral("throw new Error('prepare failed');")}) {
             evaluate("materialPrepareWindowState = function() { " + body + " }; ");

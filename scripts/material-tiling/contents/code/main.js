@@ -146,7 +146,7 @@ var materialTiling;
             } finally {
                 if (restrictDesktop) target.desktops = originalDesktops;
             }
-        } else if (saved.kind === "custom" && Array.isArray(saved.path) && saved.region && typeof workspace.rootTile === "function") {
+        } else if (saved.kind === "custom" && saved.path && saved.region && typeof workspace.rootTile === "function") {
             let tile = workspace.rootTile(output, target.desktops[0] || workspace.currentDesktop);
             for (const index of saved.path) {
                 if (!Number.isInteger(index) || index < 0 || !tile || !tile.tiles || index >= tile.tiles.length) return false;
@@ -215,7 +215,7 @@ var materialTiling;
         const position = state && state.position;
         if (!state || state.version !== 3 || !position ||
             ![position.x, position.y].every(function (n) { return typeof n === "number" && Number.isFinite(n); })) throw new Error("Invalid saved position");
-        if (!Array.isArray(state.desktopIds)) throw new Error("Invalid saved state");
+        if (!state.desktopIds) throw new Error("Invalid saved state");
         const inherited = state.inheritedTileSize;
         const original = target.frameGeometry;
         const sizeKeys = ["width", "height"];
@@ -276,9 +276,8 @@ var materialTiling;
         return !state.tile || restoreNativeTile(target, state.tile, output);
     }
 
-    materialPrepareWindowState = function (target, stateJson) {
-        const state = JSON.parse(stateJson);
-        if (!target.normalWindow || target.transient || target.deleted || state.version !== 3 || !Array.isArray(state.desktopIds)) return false;
+    materialPrepareWindowState = function (target, state) {
+        if (!target.normalWindow || target.transient || target.deleted || state.version !== 3 || !state.desktopIds) return false;
         if (state.rememberDesktop !== true) return true;
         const output = restorationOutput(target, state);
         const current = output && typeof workspace.currentDesktopForScreen === "function" ? workspace.currentDesktopForScreen(output) : workspace.currentDesktop;
@@ -298,8 +297,7 @@ var materialTiling;
         return true;
     };
 
-    materialRestoreWindowState = function (target, stateJson) {
-        const state = JSON.parse(stateJson);
+    materialRestoreWindowState = function (target, state) {
         const restored = restoreState(target, state);
         // Even a partial tile failure leaves a real window on its restored
         // desktop; focus policy is independent of protecting the saved tile.
@@ -307,11 +305,10 @@ var materialTiling;
         return restored;
     };
 
-    materialTiling = function (target, requestJson) {
-        const request = JSON.parse(requestJson);
+    materialTiling = function (target, request) {
         if (!target || target.deleted || target.specialWindow) throw new Error("Target window is unavailable");
         if (!target.resizeable) throw new Error("Target window is not resizeable");
-        if (request.operation === "layout") return JSON.stringify(captureLayout(target));
+        if (request.operation === "layout") return captureLayout(target);
         const action = tileActions[request.edges];
         const custom = request.operation === "tileCustom";
         if (!custom && (request.operation !== "tile" || !action || typeof workspace[action] !== "function")) throw new Error("Unsupported tiling request");
