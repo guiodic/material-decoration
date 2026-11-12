@@ -306,7 +306,7 @@ function blocker(f, x = 100, y = 80, extra = {}) {
     return {normalWindow: true, output: f.output, desktops: [f.workspace.currentDesktop], activities: [],
         frameGeometry: {x, y, width: 400, height: 300}, ...extra};
 }
-for (const [height, step] of [[24, 48], [45.5, 91], [0, 60], [-1, 60], [undefined, 60]]) {
+for (const [height, step] of [[24, 30], [45.5, 56.875], [0, 37.5], [-1, 37.5], [undefined, 37.5]]) {
     const f = fixture();
     f.workspace.windows.push(blocker(f), blocker(f, 100 + step, 80 + step));
     f.restoreImmediately(savedState({titleBarHeight: height}));
@@ -327,8 +327,8 @@ for (const extra of [{onAllDesktops: true, desktops: []}, {activities: []}, {rea
     f.target.activities = ['work'];
     f.workspace.windows.push(blocker(f, 100, 80, extra));
     f.restoreImmediately(savedState({titleBarHeight: 25}));
-    assert.equal(f.target.frameGeometry.x, 150);
-    assert.equal(f.target.frameGeometry.y, 130);
+    assert.equal(f.target.frameGeometry.x, 131.25);
+    assert.equal(f.target.frameGeometry.y, 111.25);
 }
 {
     const f = fixture();

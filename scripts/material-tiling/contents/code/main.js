@@ -106,7 +106,7 @@ var materialTiling;
 
     function vacantPosition(target, output, area, position, size, titleBarHeight) {
         const height = Number.isFinite(titleBarHeight) && titleBarHeight > 0 ? titleBarHeight : 30;
-        const step = 2 * height;
+        const step = 1.25 * height;
         function sharesDesktop(other) {
             return target.onAllDesktops || other.onAllDesktops || !target.desktops.length || !other.desktops.length ||
                 target.desktops.some(function (desktop) { return other.desktops.some(function (d) { return d.id === desktop.id; }); });
