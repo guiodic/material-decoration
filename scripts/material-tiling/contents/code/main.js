@@ -120,19 +120,9 @@ var materialTiling;
         const same = function (a, b) { return keys.every(function (key) { return Math.abs(a[key] - b[key]) < 0.00001; }); };
         const minimum = tile.minimumSize;
         if (minimum && (region.width < minimum.width || region.height < minimum.height)) return false;
-        const siblings = tile.parent && tile.parent.tiles;
-        const group = siblings && siblings.length === 8 && Array.from(siblings).indexOf(tile) !== -1 ? Array.from(siblings) : [tile];
-        // Copy values rather than retaining Qt's live geometry views.
-        const previous = group.map(function (t) { return copy(t.relativeGeometry); });
-        // Let KWin propagate and constrain the shared split itself.
+        // KWin owns the shared layout and propagates the saved split.
         tile.relativeGeometry = copy(region);
-        if (same(tile.relativeGeometry, region)) return true;
-        // A rejected proportion must not leave the other windows displaced.
-        tile.relativeGeometry = copy(previous[group.indexOf(tile)]);
-        group.forEach(function (t, i) {
-            if (!same(t.relativeGeometry, previous[i])) t.relativeGeometry = copy(previous[i]);
-        });
-        return false;
+        return same(tile.relativeGeometry, region);
     }
 
     function restoreNativeTile(target, saved, output) {

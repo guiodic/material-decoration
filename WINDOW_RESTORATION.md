@@ -25,6 +25,8 @@ Placement and native tiling are restored when the window becomes ready for
 painting, before rendering resumes.
 If the script is unavailable, bounded retries run for about five seconds.
 Availability after the first frame can still cause a visible repositioning.
+An App ID supplied late is handled at the first frame; identity changes do not
+restart early preparation.
 
 ## 2. Current restoration policies
 
@@ -34,8 +36,7 @@ Availability after the first frame can still cause a visible repositioning.
   X11/XWayland windows, dialogs and popups. Per-window exceptions can disable it.
 - **Restored data:** position and native quick or custom tiling. Quick tiling
   also restores saved split proportions, resizing other windows in the same
-  quick-tile layout. KWin applies its own layout constraints; if it rejects the
-  requested proportion, the previous tile geometries are restored.
+  quick-tile layout. KWin applies its own layout constraints.
   Custom tiling requires a compatible layout.
   The two subordinate options are independent:
   **Remember the screen where the window was last closed** is on by default;

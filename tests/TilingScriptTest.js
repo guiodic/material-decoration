@@ -72,7 +72,7 @@ function fixture(extraWindows = []) {
 }
 // Model KWin's immediate shared-layout updates, including minimum-size clamping.
 function quickLayoutFixture(f) {
-    const layout = {tiles: [], minimumSize: {width: .15, height: .15}, writes: [], afterResize: null};
+    const layout = {tiles: [], minimumSize: {width: .15, height: .15}, writes: []};
     const initial = [[0,0,.5,1],[.5,0,.5,1],[0,0,1,.5],[0,.5,1,.5],
         [0,0,.5,.5],[.5,0,.5,.5],[0,.5,.5,.5],[.5,.5,.5,.5]];
     let updating = false;
@@ -99,7 +99,6 @@ function quickLayoutFixture(f) {
                     for (const i of [3,6,7]) { const r = layout.tiles[i].relativeGeometry; layout.tiles[i].relativeGeometry = {...r, y: cut, height: r.y+r.height-cut}; }
                 }
             } finally { updating = false; }
-            if (layout.afterResize) layout.afterResize(index, live);
         }});
     });
     f.workspace.quickTiles = layout.tiles;
@@ -593,35 +592,17 @@ for (const region of [undefined, {}, {x: 0, y: 0, width: .6}, {x: -.1, y: 0, wid
     assert.equal(f.target.tile, root.tiles[0], 'an outer-edge resize must not turn a half into a corner');
     assert.deepEqual({...root.tiles[0].relativeGeometry}, region);
 }
-for (const issue of ['target-minimum', 'root-split']) {
-    const f = fixture();
-    const layout = quickLayoutFixture(f);
-    let edges = 2, region = {x: 0, y: 0, width: .65, height: 1};
-    if (issue === 'target-minimum') region.width = .1;
-    if (issue === 'root-split') { layout.minimumSize.width = .2; region.width = .85; }
-    const before = layout.tiles.map(t => ({...t.relativeGeometry}));
-    layout.writes.length = 0;
-    assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges, region}})), false, issue);
-    if (issue === 'target-minimum') assert.equal(layout.writes.length, 0);
-    assert.deepEqual(layout.tiles.map(t => ({...t.relativeGeometry})), before);
-}
 {
     const f = fixture();
     const layout = quickLayoutFixture(f);
-    // Preserve an independently shortened outer edge on the opposite tile.
-    layout.tiles[1].relativeGeometry = {x: .5, y: 0, width: .4, height: 1};
+    const region = {x: 0, y: 0, width: .1, height: 1};
     const before = layout.tiles.map(t => ({...t.relativeGeometry}));
-    let armed = true;
-    layout.afterResize = (index, region) => {
-        if (!armed || index !== 0 || Math.abs(region.width-.65) > .00001) return;
-        armed = false;
-        layout.tiles[0].relativeGeometry = {x: 0, y: 0, width: .85, height: 1};
-    };
-    const restore = () => f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2, region: {x: 0, y: 0, width: .65, height: 1}}}));
-    assert.equal(restore(), false, 'a rejected proportion must not report success');
-    assert.equal(armed, false, 'exercise a failure after mutation');
-    assert.deepEqual(layout.tiles.map(t => ({...t.relativeGeometry})), before, 'restore all previous geometry values, not live Qt views');
+    layout.writes.length = 0;
+    assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2, region}})), false);
+    assert.equal(layout.writes.length, 0);
+    assert.deepEqual(layout.tiles.map(t => ({...t.relativeGeometry})), before);
 }
+
 {
     const f = fixture();
     const layout = quickLayoutFixture(f);

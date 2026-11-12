@@ -269,7 +269,7 @@ private slots:
         QVERIFY(!merged->rememberWindowScreen());
         QVERIFY(merged->rememberWindowDesktop());
     }
-    void latePreparationRespectsDesktopOption_data() {
+    void lateOptionsApplyAtFirstFrame_data() {
         QTest::addColumn<bool>("enabledInitially");
         QTest::addColumn<bool>("rememberDesktop");
         for (bool enabled : {false, true}) {
@@ -279,7 +279,7 @@ private slots:
             }
         }
     }
-    void latePreparationRespectsDesktopOption() {
+    void lateOptionsApplyAtFirstFrame() {
         QFETCH(bool, enabledInitially);
         QFETCH(bool, rememberDesktop);
         QScopedValueRollback available(prepareAvailable, true);
@@ -304,9 +304,9 @@ private slots:
         QCoreApplication::processEvents();
         const auto calls = prepareCalls;
         Material::configureWindowState(&decoration, true, true, rememberDesktop);
-        QCOMPARE(prepareCalls, calls + int(rememberDesktop));
-        QCOMPARE(window.property("minimized").toBool(), rememberDesktop);
-        QCOMPARE(window.property("desktops"), rememberDesktop ? saved : current);
+        QCOMPARE(prepareCalls, calls);
+        QVERIFY(!window.property("minimized").toBool());
+        QCOMPARE(window.property("desktops"), current);
         window.map();
         QVERIFY(!window.property("minimized").toBool());
         QCOMPARE(immediateRequests.last().value("rememberDesktop").toBool(), rememberDesktop);
@@ -362,17 +362,14 @@ private slots:
         QTest::addColumn<bool>("mappedBeforeChange");
         QTest::addColumn<bool>("withoutDecoration");
         QTest::addColumn<bool>("snapshot");
-        QTest::addColumn<bool>("desktopFileSignal");
         for (bool excluded : {false, true}) {
             for (bool mapped : {false, true}) {
                 for (bool withoutDecoration : {false, true}) {
                     for (bool snapshot : {false, true}) {
-                        for (bool desktopFile : {false, true}) {
-                            const auto name = QStringLiteral("%1-%2-%3-%4-%5").arg(excluded ? "excluded" : "allowed",
-                                mapped ? "mapped" : "unmapped", withoutDecoration ? "no-decoration" : "decorated",
-                                snapshot ? "snapshot" : "close", desktopFile ? "desktop-file" : "class");
-                            QTest::newRow(qPrintable(name)) << excluded << mapped << withoutDecoration << snapshot << desktopFile;
-                        }
+                        const auto name = QStringLiteral("%1-%2-%3-%4").arg(excluded ? "excluded" : "allowed",
+                            mapped ? "mapped" : "unmapped", withoutDecoration ? "no-decoration" : "decorated",
+                            snapshot ? "snapshot" : "close");
+                        QTest::newRow(qPrintable(name)) << excluded << mapped << withoutDecoration << snapshot;
                     }
                 }
             }
@@ -383,7 +380,6 @@ private slots:
         QFETCH(bool, mappedBeforeChange);
         QFETCH(bool, withoutDecoration);
         QFETCH(bool, snapshot);
-        QFETCH(bool, desktopFileSignal);
         QScopedValueRollback available(immediateAvailable, false);
         QScopedValueRollback prepareAvailability(prepareAvailable, false);
         const auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
@@ -422,12 +418,10 @@ private slots:
         Material::configureWindowState(decoration.get(), excludedAfterChange);
         if (mappedBeforeChange) window.map();
         if (withoutDecoration) decoration.reset();
-        // Update both properties as KWin does, without a caption notification.
-        // Exercise either notification independently.
+        // KWin updates the class before notifying the completed App ID change.
         window.setProperty("resourceClass", nextClass);
         window.setProperty("desktopFileName", nextClass);
-        if (desktopFileSignal) Q_EMIT window.desktopFileNameChanged();
-        else Q_EMIT window.windowClassChanged();
+        Q_EMIT window.desktopFileNameChanged();
         const auto key = Material::windowStateKey(&window);
         QVERIFY(key != originalKey);
         immediateAvailable = true;
@@ -446,101 +440,29 @@ private slots:
         QCOMPARE(Material::readWindowState(originalKey, scope), originalState);
         QCOMPARE(window.property("caption").toString(), "Unchanged title");
     }
-    void lateIdentityChangeStartsPreparation_data() {
-        QTest::addColumn<bool>("available");
-        QTest::addColumn<bool>("cancelled");
-        QTest::addColumn<bool>("mapped");
-        QTest::addColumn<bool>("splitNotifications");
-        for (bool available : {false, true}) {
-            for (bool cancelled : {false, true}) {
-                for (bool mapped : {false, true}) {
-                    for (bool split : {false, true}) {
-                        const auto name = QStringLiteral("%1-%2-%3-%4").arg(available ? "script-ready" : "script-late",
-                            cancelled ? "user-cancelled" : "untouched", mapped ? "mapped" : "before-map",
-                            split ? "native-signal-order" : "single-notification");
-                        QTest::newRow(qPrintable(name)) << available << cancelled << mapped << split;
-                    }
-                }
-            }
-        }
-    }
-    void lateIdentityChangeStartsPreparation() {
-        QFETCH(bool, available);
-        QFETCH(bool, cancelled);
-        QFETCH(bool, mapped);
-        QFETCH(bool, splitNotifications);
-        QScopedValueRollback prepareAvailability(prepareAvailable, available);
-        QScopedValueRollback minimize(prepareMinimizes, true);
+    void lateAppIdRestoresAtFirstFrameWithoutRestartingPreparation() {
+        QScopedValueRollback available(prepareAvailable, true);
         QScopedValueRollback restoreAvailability(immediateAvailable, true);
-        const auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
-        auto group = config->group("Windeco");
-        const bool hadDesktop = group.hasKey("RememberWindowDesktop");
-        const bool oldDesktop = group.readEntry("RememberWindowDesktop", false);
-        const auto cleanup = qScopeGuard([config, hadDesktop, oldDesktop] {
-            config->deleteGroup("Windeco Exception 0");
-            auto group = config->group("Windeco");
-            if (hadDesktop) group.writeEntry("RememberWindowDesktop", oldDesktop);
-            else group.deleteEntry("RememberWindowDesktop");
-            config->sync();
-            Material::SettingsProvider::self()->reconfigure();
-        });
-        // Also enables desktop preparation on the branch with separate options.
-        group.writeEntry("RememberWindowDesktop", true);
-        const QString app = "org.example.StateTest.LateEligibility." + QUuid::createUuid().toString();
-        const QString excluded = app + ".Excluded", allowed = app + ".Allowed";
-        auto exception = Material::InternalSettingsPtr::create();
-        exception->setEnabled(true);
-        exception->setExceptionType(int(Material::ExceptionType::WindowClass));
-        exception->setExceptionPattern(excluded);
-        exception->setMask(Material::ExceptionMask::ExcludeWindowPosition);
-        exception->setExcludeWindowPosition(true);
-        Material::ExceptionList exceptions;
-        exceptions.setExceptions({exception});
-        exceptions.writeConfig(config);
-        QVERIFY(config->sync());
-        Material::SettingsProvider::self()->reconfigure();
-        QObject currentDesktop, savedDesktop;
-        currentDesktop.setProperty("id", "current");
-        savedDesktop.setProperty("id", "saved");
-        const auto current = QVariant::fromValue(QList<QObject *>{&currentDesktop});
-        const auto saved = QVariant::fromValue(QList<QObject *>{&savedDesktop});
-        QScopedValueRollback desktops(preparedDesktops, saved);
         KWin::WaylandWindow window, future;
-        setup(window, excluded);
-        window.setProperty("resourceClass", excluded);
-        window.setProperty("desktops", current);
-        window.setProperty("minimized", false);
-        setup(future, allowed);
-        future.setProperty("desktops", saved);
-        const auto scope = Material::WindowStateScope::self()->current();
-        QVERIFY(Material::writeWindowState(Material::windowStateKey(&future), Material::captureWindowState(&future), scope));
+        const QString app = "org.example.StateTest.LateAppId." + QUuid::createUuid().toString();
+        setup(window, app + ".Initial");
+        setup(future, app);
+        future.setProperty("frameGeometry", QRectF(400, 250, 800, 500));
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&future), Material::captureWindowState(&future)));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
-        Material::configureWindowState(&decoration, false);
-        QCoreApplication::processEvents(); // Consume the initial zero timer while excluded.
-        if (mapped) window.map();
-        if (cancelled) window.startInteraction();
+        Material::configureWindowState(&decoration, true, true, true);
+        QCoreApplication::processEvents();
         const auto calls = prepareCalls;
-        if (splitNotifications) {
-            window.changeIdentity("resourceClass", allowed);
-            QCOMPARE(prepareCalls, calls); // desktopFileName still identifies the excluded window.
-        } else window.setProperty("resourceClass", allowed);
-        window.changeIdentity("desktopFileName", allowed);
-        const bool shouldPrepare = !mapped && !cancelled;
-        QCOMPARE(prepareCalls, calls + int(shouldPrepare));
-        prepareAvailable = true;
-        if (shouldPrepare) {
-            QTRY_VERIFY_WITH_TIMEOUT(window.property("minimized").toBool(), 500);
-            QCOMPARE(window.property("desktops"), saved);
-            QCOMPARE(prepareRequests.last().value("desktopIds").toStringList(), QStringList{"saved"});
-        } else {
-            QTest::qWait(80);
-            QCOMPARE(prepareCalls, calls);
-            QVERIFY(!window.property("minimized").toBool());
-            QCOMPARE(window.property("desktops"), current);
-        }
-        if (!mapped) window.map();
-        QVERIFY(!window.property("minimized").toBool());
+        window.setProperty("resourceClass", app);
+        window.changeIdentity("desktopFileName", app);
+        Material::configureWindowState(&decoration, true, true, true);
+        QCoreApplication::processEvents();
+        QCOMPARE(prepareCalls, calls);
+        const auto restores = immediateRequests.size();
+        window.map();
+        QCOMPARE(immediateRequests.size(), restores + 1);
+        QCOMPARE(immediateRequests.last().value("position").toMap().value("x").toInt(), 400);
     }
     void capturesNativeValuesAndRoundTrips() {
         KWin::WaylandWindow window;
@@ -1721,7 +1643,7 @@ private slots:
         QTest::addColumn<QString>("authorization");
         QTest::addColumn<bool>("manualAfterChange");
         QTest::addColumn<bool>("snapshot");
-        for (const auto &property : {"desktopFileName", "resourceClass", "windowRole", "tag"}) {
+        for (const auto &property : {"desktopFileName", "tag"}) {
             for (const auto &authorization : {"restored", "user-moved", "saved"}) {
                 for (bool manual : {false, true}) {
                     for (bool snapshot : {false, true}) {

@@ -327,9 +327,7 @@ public:
                 }
             }
         };
-        connectSignal("windowClassChanged", "rememberCurrentIdentity()");
         connectSignal("desktopFileNameChanged", "rememberCurrentIdentity()");
-        connectSignal("windowRoleChanged", "rememberCurrentIdentity()");
         connectSignal("tagChanged", "rememberCurrentIdentity()");
         connectSignal("interactiveMoveResizeStepped", "userPlacementStepped()");
         connectSignal("tileChanged", "committedTileChanged(KWin::Tile*)");
@@ -347,7 +345,6 @@ public:
     }
     void configure(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop)
     {
-        const bool startPreparation = enabled && rememberDesktop && (!m_enabled || !m_rememberDesktop) && !m_restoreStarted;
         m_decoration = decoration;
         m_enabled = enabled;
         m_rememberScreen = rememberScreen;
@@ -358,7 +355,6 @@ public:
             releaseVisibilityGuard();
             m_prepared = false;
         }
-        if (startPreparation) prepare();
     }
 
 private slots:
@@ -413,13 +409,9 @@ private slots:
             + m_window->property("resourceClass").toString();
         const auto settings = SettingsProvider::self()->internalSettings(windowClass, m_window->property("caption").toString());
         configure(m_decoration, settings->rememberWindowState(), settings->rememberWindowScreen(), settings->rememberWindowDesktop());
-        // Observe entry into an identity before a sibling can create its state.
-        if (m_enabled) {
-            rememberSavePermission(WindowStateScope::self()->current());
-            // KWin updates resourceClass before desktopFileName. Preparation
-            // may need the second notification to find the new saved state.
-            if (!m_restoreStarted && windowStateKey(m_window) != m_stateKey) prepare();
-        }
+        // desktopFileNameChanged follows resourceClass in KWin's App ID handler.
+        // Update exclusions and save eligibility, without restarting preparation.
+        if (m_enabled) rememberSavePermission(WindowStateScope::self()->current());
     }
     void userPlacementStepped()
     {
