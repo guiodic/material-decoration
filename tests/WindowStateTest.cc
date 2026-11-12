@@ -189,30 +189,24 @@ private slots:
         QCOMPARE(saved.value("outputUuid").toString(), "monitor-uuid");
         QVERIFY(!saved.contains("maximizeMode"));
         QVERIFY(!saved.contains("fullScreen"));
-        QVERIFY(!Material::writeWindowState(key, {{"version", 2}, {"position", QVariantMap{{"x", 1}}}}));
+        QVERIFY(!Material::writeWindowState(key, {{"version", 3}, {"position", QVariantMap{{"x", 1}}}}));
         QCOMPARE(Material::readWindowState(key), saved);
     }
-    void importsLegacyPositionsWithoutKeepingDimensions() {
-        const QString key = "legacy-" + QUuid::createUuid().toString();
-        const QVariantMap legacy{{"version", 1}, {"geometry", QVariantMap{{"x", 80}, {"y", 100}, {"width", 1200}, {"height", 900}}},
-            {"desktopIds", QStringList{"desktop-1"}}, {"maximizeMode", 3}, {"fullScreen", true},
-            {"outputGeometry", QVariantMap{{"x", 1920}, {"y", 0}, {"width", 1280}, {"height", 800}}}};
+    void rejectsUnsupportedStateVersions() {
+        const QString key = "unsupported-" + QUuid::createUuid().toString();
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.Unsupported");
+        const auto current = Material::captureWindowState(&window);
         auto config = KSharedConfig::openStateConfig(QStringLiteral("material-window-staterc"));
         KConfigGroup group(config, key);
-        group.writeEntry("State", QJsonDocument::fromVariant(legacy).toJson(QJsonDocument::Compact));
-        QVERIFY(config->sync());
-        const auto imported = Material::readWindowState(key);
-        QCOMPARE(imported.value("version").toInt(), 3);
-        QCOMPARE(imported.value("position").toMap().value("x").toInt(), 80);
-        QCOMPARE(imported.value("outputPosition").toMap().value("x").toInt(), 1920);
-        QVERIFY(!imported.contains("geometry"));
-        QVERIFY(!imported.contains("maximizeMode"));
-        QVERIFY(!imported.contains("fullScreen"));
-        QVERIFY(Material::writeWindowState(key, legacy));
-        const auto written = QJsonDocument::fromJson(group.readEntry("State", QByteArray())).object();
-        QCOMPARE(written.value("version").toInt(), 3);
-        QVERIFY(!QJsonDocument(written).toJson().contains("width"));
-        QVERIFY(!QJsonDocument(written).toJson().contains("height"));
+        for (int version : {1, 2, 4}) {
+            auto state = current;
+            state.insert("version", version);
+            group.writeEntry("State", QJsonDocument::fromVariant(state).toJson(QJsonDocument::Compact));
+            QVERIFY(config->sync());
+            QVERIFY(Material::readWindowState(key).isEmpty());
+            QVERIFY(!Material::writeWindowState(key, state));
+        }
     }
     void capturesNativeTileBindings() {
         KWin::WaylandWindow window;
@@ -412,9 +406,9 @@ private slots:
         QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), onlyA));
         QCOMPARE(Material::readWindowState(key, ab).value("position"), original.value("position"));
         QCOMPARE(Material::readWindowState(key, onlyA).value("position").toMap().value("x").toInt(), 200);
-        const auto legacy = key + "-legacy";
-        QVERIFY(Material::writeWindowState(legacy, original));
-        QCOMPARE(Material::readWindowState(legacy, ab), Material::readWindowState(legacy));
+        const auto unscoped = key + "-unscoped";
+        QVERIFY(Material::writeWindowState(unscoped, original));
+        QVERIFY(Material::readWindowState(unscoped, ab).isEmpty());
     }
     void snapshotsBeforeOutputEvacuation() {
         ScopeWorkspace workspace;

@@ -104,18 +104,17 @@ QVariantMap windowTile(const QObject *window)
     return {{"kind", "custom"}, {"path", path}, {"region", region}};
 }
 
-// Old application dimensions are discarded. Tile region metadata belongs to
-// the compositor's layout and does not impose a size on floating windows.
+// Tile region metadata belongs to the compositor's layout and does not impose
+// a size on floating windows.
 QVariantMap positionState(const QVariantMap &state)
 {
-    const int version = state.value("version").toInt();
-    if (version != 1 && version != 2 && version != 3) return {};
-    const auto coordinates = state.value(version == 1 ? "geometry" : "position").toMap();
+    if (state.value("version").toInt() != 3) return {};
+    const auto coordinates = state.value("position").toMap();
     if (!validPosition(coordinates)) return {};
     QVariantMap saved{{"version", 3}, {"position", QVariantMap{{"x", coordinates.value("x")}, {"y", coordinates.value("y")}}},
                       {"desktopIds", state.value("desktopIds")}, {"onAllDesktops", state.value("onAllDesktops").toBool()},
                       {"outputName", state.value("outputName")}, {"outputUuid", state.value("outputUuid")}};
-    const auto output = state.value(version == 1 ? "outputGeometry" : "outputPosition").toMap();
+    const auto output = state.value("outputPosition").toMap();
     if (validPosition(output)) saved.insert("outputPosition", QVariantMap{{"x", output.value("x")}, {"y", output.value("y")}});
     const auto tile = state.value("tile").toMap();
     const QString kind = tile.value("kind").toString();
@@ -183,14 +182,8 @@ QVariantMap readWindowState(const QString &key, const QString &scope)
 {
     if (key.isEmpty()) return {};
     KConfigGroup group(stateConfig(), key);
-    QByteArray data;
-    if (!scope.isEmpty()) {
-        const auto scoped = group.group(QStringLiteral("Configurations")).group(scope);
-        if (scoped.hasKey("State")) return positionState(QJsonDocument::fromJson(scoped.readEntry("State", QByteArray())).object().toVariantMap());
-    }
-    // Migration only: never substitute another configuration's scoped state.
-    data = group.readEntry("State", QByteArray());
-    const auto state = QJsonDocument::fromJson(data).object().toVariantMap();
+    if (!scope.isEmpty()) group = group.group(QStringLiteral("Configurations")).group(scope);
+    const auto state = QJsonDocument::fromJson(group.readEntry("State", QByteArray())).object().toVariantMap();
     return positionState(state);
 }
 
