@@ -362,7 +362,7 @@ for (const behavior of ['missing-tile', 'throws', 'rule-rejects-restriction']) {
     }
     const state = savedState({onAllDesktops: true, desktopIds: [], tile: {kind: 'quick', edges: 2}});
     if (behavior === 'throws') assert.throws(() => f.restoreImmediately(state), /tile disappeared/);
-    else assert.equal(f.restoreImmediately(state), true);
+    else assert.equal(f.restoreImmediately(state), false);
     assert.equal(f.target.onAllDesktops, true, 'restore sticky membership even after failure');
     assert.deepEqual(Array.from(f.target.desktops), []);
     assert.equal(f.workspace.activeWindow, f.other);
@@ -375,9 +375,39 @@ for (const behavior of ['missing-tile', 'throws', 'rule-rejects-restriction']) {
     assert.equal(f.target.tile, f.root.tiles[1]);
     assert.equal(f.workspace.activeWindow, f.other);
     const changed = fixture();
-    assert.equal(changed.restoreImmediately(savedState({tile: {kind: 'custom', path: [1], region: {...region, width: 0.9}}})), true);
+    assert.equal(changed.restoreImmediately(savedState({tile: {kind: 'custom', path: [1], region: {...region, width: 0.9}}})), false);
     assert.equal(changed.target.tile, null, 'changed layouts must fall back to floating placement');
     assert.equal(changed.target.frameGeometry.width, 640);
+}
+for (const kind of ['quick', 'custom']) {
+    for (const behavior of ['missing', 'rejected', 'throws']) {
+        const f = fixture();
+        const tile = kind === 'quick' ? f.leaf(0, 0, 0.5, 1) : f.root.tiles[1];
+        tile.manage = () => { if (behavior === 'throws') throw new Error('tile unavailable'); return false; };
+        if (kind === 'quick') f.workspace.quickTiles = behavior === 'missing' ? [] : [tile];
+        else if (behavior === 'missing') f.workspace.layoutRoot = null;
+        const state = savedState({tile: kind === 'quick' ? {kind, edges: 2} :
+            {kind, path: [1], region: {x: 1 / 3, y: 0, width: 1 / 3, height: 1}}});
+        // An existing native tile must not hide a failure to restore the saved one.
+        const original = f.target.tile = {unmanage() { throw new Error('must not untile'); }};
+        const destination = {name: 'Virtual-2', uuid: 'output-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
+        f.workspace.screens.push(destination);
+        state.outputUuid = destination.uuid;
+        if (behavior === 'throws') assert.throws(() => f.restoreImmediately(state), /tile unavailable/);
+        else {
+            assert.equal(f.restoreImmediately(state), false);
+            assert.equal(f.target.output, destination, 'a partial output move does not mean full restoration succeeded');
+        }
+        assert.equal(f.target.tile, original);
+        assert.equal(f.workspace.activeWindow, f.other);
+    }
+}
+for (const mode of ['maximizeMode', 'fullScreen']) {
+    const f = fixture();
+    f.target[mode] = mode === 'maximizeMode' ? 3 : true;
+    assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2}})), true,
+        'an explicit app mode intentionally takes precedence over a saved tile');
+    assert.equal(f.target[mode], mode === 'maximizeMode' ? 3 : true);
 }
 console.log('Tiling and window positions: app sizes/modes preserved, desktop/output fallbacks and validation passed.');
 
@@ -472,7 +502,7 @@ for (const outcome of ['rejected', 'throws', 'missing']) {
     f.workspace.quickTiles = outcome === 'missing' ? [] : [tile];
     const state = savedState({tile: {kind: 'quick', edges: 2, normalSize: {width: 900, height: 650}}});
     if (outcome === 'throws') assert.throws(() => f.restoreImmediately(state), /tile unavailable/);
-    else f.restoreImmediately(state);
+    else assert.equal(f.restoreImmediately(state), false);
     assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 640, height: 480}, 'failed native tiling keeps the app-requested size');
 }
 for (const size of [undefined, {width: 0, height: 650}, {width: -1, height: 650}, {width: 900}, {width: '900', height: 650}, {width: Infinity, height: 650}]) {
@@ -497,9 +527,9 @@ console.log('Restored native tile normal sizes: unsnapping, unavailable tiles an
 // A new floating instance may inherit a live sibling's tile-sized defaults.
 {
     const f = fixture();
-    f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2}, inheritedTileSize: {
+    assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2}, inheritedTileSize: {
         tileSize: {width: 640, height: 480}, normalSize: {width: 900, height: 600}
-    }}));
+    }})), true);
     assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 900, height: 600});
     assert.equal(f.target.tile, null, 'a new sibling must not clone the saved tile');
     assert.equal(f.workspace.activeWindow, f.other);

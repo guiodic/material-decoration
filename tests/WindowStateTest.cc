@@ -610,7 +610,10 @@ private slots:
         setup(window, "org.example.StateTest.ProtectSaved." + QUuid::createUuid().toString());
         const auto key = Material::windowStateKey(&window);
         const auto scope = Material::WindowStateScope::self()->current();
-        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), scope));
+        auto state = Material::captureWindowState(&window);
+        state.insert("tile", QVariantMap{{"kind", "quick"}, {"edges", 2},
+            {"normalSize", QVariantMap{{"width", 900}, {"height", 650}}}});
+        QVERIFY(Material::writeWindowState(key, state, scope));
         const auto saved = Material::readWindowState(key, scope);
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);

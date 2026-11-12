@@ -210,9 +210,10 @@ var materialTiling;
         // Let KWin move app-requested fullscreen, maximized and tiled windows
         // between outputs without undoing their mode or assigning a normal size.
         if (target.fullScreen || target.maximizeMode || target.tile) {
-            if (!target.fullScreen && !target.maximizeMode && state.tile && restoreNativeTile(target, state.tile, output)) return;
+            const restoreTile = !target.fullScreen && !target.maximizeMode && state.tile;
+            if (restoreTile && restoreNativeTile(target, state.tile, output)) return true;
             if (target.output !== output) workspace.sendClientToScreen(target, output);
-            return;
+            return !restoreTile;
         }
 
         const area = workspace.clientArea(KWin.PlacementArea, output, target.desktops[0] || workspace.currentDesktop);
@@ -238,7 +239,7 @@ var materialTiling;
             target.frameGeometry = {x: x, y: y, width: current.width, height: current.height};
         }
         // KWin owns the size of a snapped window; floating app sizes stay intact.
-        if (state.tile) restoreNativeTile(target, state.tile, output);
+        return !state.tile || restoreNativeTile(target, state.tile, output);
     }
 
     materialPrepareWindowState = function (target, stateJson) {
@@ -261,8 +262,7 @@ var materialTiling;
     };
 
     materialRestoreWindowState = function (target, stateJson) {
-        restoreState(target, JSON.parse(stateJson));
-        return true;
+        return restoreState(target, JSON.parse(stateJson));
     };
 
     materialTiling = function (target, requestJson) {
