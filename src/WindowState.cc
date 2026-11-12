@@ -346,6 +346,7 @@ public:
     }
     void configure(KDecoration3::Decoration *decoration, bool enabled)
     {
+        const bool startPreparation = enabled && !m_enabled && !m_restoreStarted;
         m_decoration = decoration;
         m_enabled = enabled;
         if (!enabled) m_prepareRetryTimer.stop();
@@ -354,16 +355,17 @@ public:
             releaseVisibilityGuard();
             m_prepared = false;
         }
+        if (startPreparation) prepare();
     }
 
 private slots:
     void prepare()
     {
-        if (!m_enabled || m_restoreCancelled || m_restoreStarted || m_prepareFailed || !m_decoration
+        if (!m_enabled || m_restoreCancelled || m_restoreStarted || !m_decoration
             || m_prepareAttempts >= 100 || m_window->property("deleted").toBool()) return;
         m_prepareRetryTimer.stop();
         refreshState();
-        if (m_state.isEmpty()) return;
+        if (m_prepareFailed || m_state.isEmpty()) return;
         const bool wasMinimized = m_window->property("minimized").toBool();
         ++m_prepareAttempts;
         const auto result = prepareWindowStateImmediately(m_decoration, m_state);
@@ -409,8 +411,12 @@ private slots:
         const auto settings = SettingsProvider::self()->internalSettings(windowClass, m_window->property("caption").toString());
         configure(m_decoration, settings->rememberWindowState());
         // Observe entry into an identity before a sibling can create its state.
-        // An identity change does not trigger another restore of a mapped window.
-        if (m_enabled) rememberStatePresence(WindowStateScope::self()->current());
+        if (m_enabled) {
+            rememberStatePresence(WindowStateScope::self()->current());
+            // KWin updates resourceClass before desktopFileName. Preparation
+            // may need the second notification to find the new saved state.
+            if (!m_restoreStarted && windowStateKey(m_window) != m_stateKey) prepare();
+        }
     }
     void userPlacementStepped()
     {
