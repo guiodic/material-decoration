@@ -264,57 +264,50 @@ bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
     // forceUnpress() can temporarily clear the physical hover state.
     m_tilingPopupOpening = true;
     Q_EMIT tilingPopupVisibilityChanged(true);
-    const auto showPopup = [this, anchor](bool available, const CustomTilingLayout &layout) {
-        if (!canTileWindow(this)) {
-            closeTilingPopup();
-            return;
-        }
-        m_tilingPopupOpening = false;
-        if (!available) {
-            m_tilingPopupHoverMonitor.stop();
-            const QString message = i18nd("materialdecoration", "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts.");
-            Q_EMIT tilingPopupUnavailable(message);
-            Q_EMIT tilingPopupVisibilityChanged(false);
-            QToolTip::showText(QCursor::pos(), message);
-            return;
-        }
-        if (!m_tilingPopup) {
-            m_tilingPopup = std::make_unique<TilingPopup>();
-            const auto updatePalette = [this] {
-                m_tilingPopup->setPalette(m_internalSettings->menusFollowDecorationColors() ? window()->palette() : QPalette());
-            };
-            connect(window(), &KDecoration3::DecoratedWindow::paletteChanged, m_tilingPopup.get(), updatePalette);
-            connect(this, &Decoration::menuPaletteSettingsChanged, m_tilingPopup.get(), updatePalette);
-            connect(m_tilingPopup.get(), &QMenu::aboutToShow, this, [this] { Q_EMIT tilingPopupVisibilityChanged(true); });
-            connect(m_tilingPopup.get(), &QMenu::aboutToHide, this, [this] {
-                m_tilingPopupHoverMonitor.stop();
-                Q_EMIT tilingPopupVisibilityChanged(false);
-            });
-            connect(m_tilingPopup.get(), &TilingPopup::keyboardNavigationStarted, this, [this] {
-                m_tilingPopupHoverMonitor.stop();
-            });
-            connect(m_tilingPopup.get(), &TilingPopup::customZoneSelected, this, [this](const QString &id) {
-                QTimer::singleShot(0, this, [this, id] {
-                    if (!tileCustomWindow(this, id)) QToolTip::showText(QCursor::pos(), i18nd("materialdecoration", "The custom tile is unavailable. Open the popup again."));
-                });
-            });
-            connect(m_tilingPopup.get(), &TilingPopup::zoneSelected, this, [this](Qt::Edges edges) {
-                // Defer the geometry change until the menu has released its grab.
-                QTimer::singleShot(0, this, [this, edges] { tileWindow(this, edges); });
-            });
-        }
-        m_tilingPopup->setCustomLayout(layout);
-        m_tilingPopup->setZoneCornerRadius(m_internalSettings->cornerRadius());
-        m_tilingPopup->setSquareCornersTiled(m_internalSettings->squareCornersTiled());
-        m_tilingPopup->setAnimationSettings(animationsEnabled(), animationsDuration());
-        m_tilingPopup->setPalette(m_internalSettings->menusFollowDecorationColors() ? window()->palette() : QPalette());
-        KDecoration3::Positioner positioner;
-        positioner.setAnchorRect(anchor);
-        popup(positioner, m_tilingPopup.get());
-    };
     CustomTilingLayout layout;
     const bool available = fetchTilingLayout(this, layout);
-    showPopup(available, layout);
+    m_tilingPopupOpening = false;
+    if (!available) {
+        m_tilingPopupHoverMonitor.stop();
+        const QString message = i18nd("materialdecoration", "Enable the Material Tiling Popup script in System Settings > Window Management > KWin Scripts.");
+        Q_EMIT tilingPopupUnavailable(message);
+        Q_EMIT tilingPopupVisibilityChanged(false);
+        QToolTip::showText(QCursor::pos(), message);
+        return true;
+    }
+    if (!m_tilingPopup) {
+        m_tilingPopup = std::make_unique<TilingPopup>();
+        const auto updatePalette = [this] {
+            m_tilingPopup->setPalette(m_internalSettings->menusFollowDecorationColors() ? window()->palette() : QPalette());
+        };
+        connect(window(), &KDecoration3::DecoratedWindow::paletteChanged, m_tilingPopup.get(), updatePalette);
+        connect(this, &Decoration::menuPaletteSettingsChanged, m_tilingPopup.get(), updatePalette);
+        connect(m_tilingPopup.get(), &QMenu::aboutToShow, this, [this] { Q_EMIT tilingPopupVisibilityChanged(true); });
+        connect(m_tilingPopup.get(), &QMenu::aboutToHide, this, [this] {
+            m_tilingPopupHoverMonitor.stop();
+            Q_EMIT tilingPopupVisibilityChanged(false);
+        });
+        connect(m_tilingPopup.get(), &TilingPopup::keyboardNavigationStarted, this, [this] {
+            m_tilingPopupHoverMonitor.stop();
+        });
+        connect(m_tilingPopup.get(), &TilingPopup::customZoneSelected, this, [this](const QString &id) {
+            QTimer::singleShot(0, this, [this, id] {
+                if (!tileCustomWindow(this, id)) QToolTip::showText(QCursor::pos(), i18nd("materialdecoration", "The custom tile is unavailable. Open the popup again."));
+            });
+        });
+        connect(m_tilingPopup.get(), &TilingPopup::zoneSelected, this, [this](Qt::Edges edges) {
+            // Defer the geometry change until the menu has released its grab.
+            QTimer::singleShot(0, this, [this, edges] { tileWindow(this, edges); });
+        });
+    }
+    m_tilingPopup->setCustomLayout(layout);
+    m_tilingPopup->setZoneCornerRadius(m_internalSettings->cornerRadius());
+    m_tilingPopup->setSquareCornersTiled(m_internalSettings->squareCornersTiled());
+    m_tilingPopup->setAnimationSettings(animationsEnabled(), animationsDuration());
+    m_tilingPopup->setPalette(m_internalSettings->menusFollowDecorationColors() ? window()->palette() : QPalette());
+    KDecoration3::Positioner positioner;
+    positioner.setAnchorRect(anchor);
+    popup(positioner, m_tilingPopup.get());
     return true;
 }
 
