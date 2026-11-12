@@ -38,8 +38,8 @@ public:
     {
         QVariantList result;
         if (!manager || !manager->inherits("KWin::TileManager")) return result;
-        // Tile::manage() rejects roots on other desktops before changing them.
-        // This preserves focus and the current desktop during a quick snap.
+        // The script restricts window membership while selecting a root;
+        // Tile::manage() then rejects other desktops before changing them.
         for (auto *root : manager->children()) {
             if (!root->inherits("KWin::QuickRootTile")) continue;
             for (const auto &tile : root->property("tiles").toList()) {

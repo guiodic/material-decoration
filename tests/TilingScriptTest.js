@@ -13,6 +13,10 @@ function fixture(extraWindows = []) {
     const target = {internalId: '{target}', resizeable: true, specialWindow: false, normalWindow: true,
         output, tile: null, desktops: [desktop], frameGeometry: {x: 0, y: 0, width: 640, height: 480},
         setMaximize(vertical, horizontal) { this.maximizeMode = Number(vertical) | (Number(horizontal) << 1); }};
+    Object.defineProperty(target, 'onAllDesktops', {
+        get() { return this.desktops.length === 0; },
+        set(value) { this.desktops = value ? [] : [workspace.currentDesktop]; }
+    });
     function leaf(x, y, width, height) {
         return {relativeGeometry: {x, y, width, height}, tiles: [], manage(window) { window.tile = this; return true; }, unmanage(window) { window.tile = null; }};
     }
@@ -288,6 +292,82 @@ for (const mode of ['maximized', 'fullscreen', 'tiled']) {
     assert.equal(f.workspace.activeWindow, f.other);
     assert.equal(f.calls.length, 0, 'no activation or global quick-tile shortcut');
 }
+// Native manage() accepts any root for sticky/multi-desktop windows. Restrict
+// membership during the call so an inactive desktop cannot win by enumeration.
+function desktopTile(f, desktop) {
+    const tile = f.leaf(0, 0, 0.5, 1);
+    tile.attempts = 0;
+    tile.manage = function (window) {
+        ++this.attempts;
+        if (!window.onAllDesktops && !window.desktops.some(d => d.id === desktop.id)) return false;
+        this.owner = window;
+        // KWin records inactive membership but requests geometry only when active.
+        const current = f.workspace.currentDesktopForScreen ? f.workspace.currentDesktopForScreen(window.output) : f.workspace.currentDesktop;
+        if (desktop === current) window.tile = this;
+        return true;
+    };
+    return tile;
+}
+for (const allDesktops of [true, false]) {
+    const f = fixture();
+    const first = f.workspace.currentDesktop, second = {id: 'desktop-2'};
+    f.workspace.desktops.push(second);
+    f.workspace.currentDesktop = second;
+    const inactive = desktopTile(f, first), active = desktopTile(f, second);
+    f.workspace.quickTiles = [inactive, active];
+    f.restoreImmediately(savedState({onAllDesktops: allDesktops, desktopIds: allDesktops ? [] : [first.id, second.id], tile: {kind: 'quick', edges: 2}}));
+    assert.equal(f.target.tile, active, 'bind the root of the current desktop, even when another root is enumerated first');
+    assert.equal(active.attempts, 1);
+    assert.equal(f.target.onAllDesktops, allDesktops);
+    assert.deepEqual(Array.from(f.target.desktops), allDesktops ? [] : [first, second]);
+    assert.equal(f.workspace.currentDesktop, second);
+    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(f.calls.length, 0);
+}
+{
+    const f = fixture();
+    const first = f.workspace.currentDesktop, second = {id: 'desktop-2'}, third = {id: 'desktop-3'};
+    f.workspace.desktops.push(second, third);
+    f.workspace.currentDesktop = third;
+    const wrong = desktopTile(f, second), destination = desktopTile(f, first);
+    f.workspace.quickTiles = [wrong, destination];
+    f.restoreImmediately(savedState({desktopIds: [first.id, second.id], tile: {kind: 'quick', edges: 2}}));
+    assert.equal(wrong.owner, undefined);
+    assert.equal(destination.owner, f.target);
+    assert.deepEqual(Array.from(f.target.desktops), [first, second]);
+    assert.equal(f.workspace.currentDesktop, third);
+    assert.equal(f.workspace.activeWindow, f.other);
+}
+{
+    const f = fixture();
+    const globalDesktop = f.workspace.currentDesktop, outputDesktop = {id: 'desktop-2'};
+    f.workspace.desktops.push(outputDesktop);
+    f.workspace.currentDesktopForScreen = output => { assert.equal(output, f.output); return outputDesktop; };
+    const inactive = desktopTile(f, globalDesktop), active = desktopTile(f, outputDesktop);
+    f.workspace.quickTiles = [inactive, active];
+    f.restoreImmediately(savedState({onAllDesktops: true, desktopIds: [], tile: {kind: 'quick', edges: 2}}));
+    assert.equal(f.target.tile, active, 'use the output desktop when desktops differ across screens');
+    assert.equal(f.target.onAllDesktops, true);
+    assert.equal(f.workspace.currentDesktop, globalDesktop);
+}
+for (const behavior of ['missing-tile', 'throws', 'rule-rejects-restriction']) {
+    const f = fixture();
+    const tile = f.leaf(0, 0, 0.5, 1);
+    f.workspace.quickTiles = behavior === 'missing-tile' ? [] : [tile];
+    if (behavior === 'throws') tile.manage = () => { throw new Error('tile disappeared'); };
+    if (behavior === 'rule-rejects-restriction') {
+        let desktops = [];
+        Object.defineProperty(f.target, 'desktops', {get() { return desktops; }, set() { desktops = []; }});
+        tile.manage = () => { throw new Error('must not use a root without a desktop restriction'); };
+    }
+    const state = savedState({onAllDesktops: true, desktopIds: [], tile: {kind: 'quick', edges: 2}});
+    if (behavior === 'throws') assert.throws(() => f.restoreImmediately(state), /tile disappeared/);
+    else assert.equal(f.restoreImmediately(state), true);
+    assert.equal(f.target.onAllDesktops, true, 'restore sticky membership even after failure');
+    assert.deepEqual(Array.from(f.target.desktops), []);
+    assert.equal(f.workspace.activeWindow, f.other);
+}
+
 {
     const f = fixture();
     const region = {x: 1 / 3, y: 0, width: 1 / 3, height: 1};

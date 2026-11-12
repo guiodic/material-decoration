@@ -87,8 +87,26 @@ var materialTiling;
         if (saved.kind === "quick") {
             if (!tileActions[saved.edges] || typeof materialWindowStateBridge === "undefined" || typeof workspace.tilingForScreen !== "function") return false;
             const tiles = materialWindowStateBridge.quickTiles(workspace.tilingForScreen(output));
-            for (let i = 0; i < tiles.length; ++i) {
-                if (tileEdges(tiles[i].relativeGeometry) === saved.edges && tiles[i].manage(target)) return true;
+            const currentDesktop = typeof workspace.currentDesktopForScreen === "function" ? workspace.currentDesktopForScreen(output) : workspace.currentDesktop;
+            const originalDesktops = Array.from(target.desktops);
+            const desktop = target.onAllDesktops ? currentDesktop :
+                originalDesktops.find(function (d) { return d.id === currentDesktop.id; }) || originalDesktops[0];
+            if (!desktop) return false;
+            const restrictDesktop = target.onAllDesktops || originalDesktops.length > 1;
+            try {
+                // QuickRootTile's desktop is not exposed through Qt's metaobject.
+                // Narrow membership synchronously so native manage() rejects all
+                // other roots before modifying an association. Restore membership
+                // below without changing the current desktop or activating target.
+                if (restrictDesktop) target.desktops = [desktop];
+                // Window rules may reject the temporary restriction. In that
+                // case leave the window floating instead of choosing a wrong root.
+                if (target.onAllDesktops || target.desktops.length !== 1 || target.desktops[0].id !== desktop.id) return false;
+                for (let i = 0; i < tiles.length; ++i) {
+                    if (tileEdges(tiles[i].relativeGeometry) === saved.edges && tiles[i].manage(target)) return true;
+                }
+            } finally {
+                if (restrictDesktop) target.desktops = originalDesktops;
             }
         } else if (saved.kind === "custom" && Array.isArray(saved.path) && saved.region && typeof workspace.rootTile === "function") {
             let tile = workspace.rootTile(output, target.desktops[0] || workspace.currentDesktop);
