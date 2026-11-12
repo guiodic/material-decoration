@@ -10,6 +10,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMetaProperty>
+#include <QMetaMethod>
 #include <QPointer>
 #include <QRectF>
 #include <QTimer>
@@ -45,19 +46,91 @@ bool validPosition(const QVariantMap &g)
     return true;
 }
 
-// Version 1 also stored dimensions and window modes. Import only its
-// coordinates; every subsequent write uses the position-only format.
+QVariantMap tileRegion(const QVariant &value)
+{
+    auto result = position(value);
+    const auto *meta = value.metaType().metaObject();
+    for (const char *name : {"width", "height"}) {
+        const int index = meta ? meta->indexOfProperty(name) : -1;
+        if (index >= 0) result.insert(QLatin1String(name), meta->property(index).readOnGadget(value.constData()));
+        else result.insert(QLatin1String(name), QByteArray(name) == "width" ? value.toRectF().width() : value.toRectF().height());
+    }
+    return result;
+}
+
+int quickTileEdges(const QVariantMap &region)
+{
+    constexpr double epsilon = 0.00001;
+    const bool left = std::abs(region.value("x").toDouble()) < epsilon;
+    const bool right = std::abs(region.value("x").toDouble() + region.value("width").toDouble() - 1) < epsilon;
+    const bool top = std::abs(region.value("y").toDouble()) < epsilon;
+    const bool bottom = std::abs(region.value("y").toDouble() + region.value("height").toDouble() - 1) < epsilon;
+    return (left && !right ? 2 : 0) | (right && !left ? 4 : 0) | (top && !bottom ? 1 : 0) | (bottom && !top ? 8 : 0);
+}
+
+QVariantMap windowTile(const QObject *window)
+{
+    auto *tile = window->property("tile").value<QObject *>();
+    if (!tile) {
+        // On an inactive desktop requestedTile is null, but the native tile
+        // still owns the window. Look up that association without activating it.
+        if (auto *output = window->property("output").value<QObject *>()) {
+            for (auto *candidate : output->findChildren<QObject *>()) {
+                if (!candidate->inherits("KWin::Tile")) continue;
+                for (const auto &owner : candidate->property("windows").toList()) {
+                    if (owner.value<QObject *>() == window) tile = candidate;
+                }
+                if (tile) break;
+            }
+        }
+    }
+    if (!tile) return {};
+    auto *parent = tile->property("parent").value<QObject *>();
+    const auto region = tileRegion(tile->property("relativeGeometry"));
+    if (parent && parent->inherits("KWin::QuickRootTile")) return {{"kind", "quick"}, {"edges", quickTileEdges(region)}};
+    QVariantList path;
+    auto *node = tile;
+    while (parent && path.size() < 32) {
+        const auto children = parent->property("tiles").toList();
+        int index = -1;
+        for (int i = 0; i < children.size(); ++i) if (children[i].value<QObject *>() == node) index = i;
+        if (index < 0) return {};
+        path.prepend(index);
+        node = parent;
+        parent = node->property("parent").value<QObject *>();
+    }
+    if (parent || path.isEmpty()) return {};
+    return {{"kind", "custom"}, {"path", path}, {"region", region}};
+}
+
+// Old application dimensions are discarded. Tile region metadata belongs to
+// the compositor's layout and does not impose a size on floating windows.
 QVariantMap positionState(const QVariantMap &state)
 {
     const int version = state.value("version").toInt();
-    if (version != 1 && version != 2) return {};
+    if (version != 1 && version != 2 && version != 3) return {};
     const auto coordinates = state.value(version == 1 ? "geometry" : "position").toMap();
     if (!validPosition(coordinates)) return {};
-    QVariantMap saved{{"version", 2}, {"position", QVariantMap{{"x", coordinates.value("x")}, {"y", coordinates.value("y")}}},
+    QVariantMap saved{{"version", 3}, {"position", QVariantMap{{"x", coordinates.value("x")}, {"y", coordinates.value("y")}}},
                       {"desktopIds", state.value("desktopIds")}, {"onAllDesktops", state.value("onAllDesktops").toBool()},
                       {"outputName", state.value("outputName")}, {"outputUuid", state.value("outputUuid")}};
     const auto output = state.value(version == 1 ? "outputGeometry" : "outputPosition").toMap();
     if (validPosition(output)) saved.insert("outputPosition", QVariantMap{{"x", output.value("x")}, {"y", output.value("y")}});
+    const auto tile = state.value("tile").toMap();
+    const QString kind = tile.value("kind").toString();
+    if (kind == QLatin1String("quick")) {
+        const int edges = tile.value("edges").toInt();
+        if (QList<int>{1, 2, 4, 8, 3, 5, 10, 12}.contains(edges)) saved.insert("tile", QVariantMap{{"kind", kind}, {"edges", edges}});
+    } else if (kind == QLatin1String("custom")) {
+        const auto path = tile.value("path").toList();
+        const auto region = tile.value("region").toMap();
+        const double w = region.value("width").toDouble(), h = region.value("height").toDouble();
+        bool valid = !path.isEmpty() && path.size() <= 32 && validPosition(region) && std::isfinite(w) && std::isfinite(h)
+            && w > 0 && h > 0 && region.value("x").toDouble() >= 0 && region.value("y").toDouble() >= 0
+            && region.value("x").toDouble() + w <= 1.00001 && region.value("y").toDouble() + h <= 1.00001;
+        for (const auto &index : path) if (index.toDouble() != index.toInt() || index.toInt() < 0) valid = false;
+        if (valid) saved.insert("tile", QVariantMap{{"kind", kind}, {"path", path}, {"region", region}});
+    }
     return saved;
 }
 
@@ -93,13 +166,15 @@ QVariantMap captureWindowState(const QObject *window)
             if (!id.isEmpty()) desktops.append(id);
         }
     }
-    QVariantMap state{{"version", 2}, {"position", coordinates}, {"desktopIds", desktops},
+    QVariantMap state{{"version", 3}, {"position", coordinates}, {"desktopIds", desktops},
                       {"onAllDesktops", window->property("onAllDesktops").toBool()}};
     if (auto *output = window->property("output").value<QObject *>()) {
         state.insert("outputName", output->property("name").toString());
         state.insert("outputUuid", output->property("uuid").toString());
         state.insert("outputPosition", position(output->property("geometry")));
     }
+    const auto tile = windowTile(window);
+    if (!tile.isEmpty()) state.insert("tile", tile);
     return state;
 }
 
@@ -129,6 +204,14 @@ public:
         // Read synchronously on closed(), before KWin releases the window.
         connect(m_window, SIGNAL(closed()), this, SLOT(save()), Qt::DirectConnection);
         connect(m_window, SIGNAL(readyForPaintingChanged()), this, SLOT(scheduleRestore()));
+        const auto slot = metaObject()->method(metaObject()->indexOfSlot("updateTile()"));
+        for (int i = 0; i < m_window->metaObject()->methodCount(); ++i) {
+            const auto signal = m_window->metaObject()->method(i);
+            if (signal.methodType() == QMetaMethod::Signal && signal.name() == "tileChanged") {
+                connect(m_window, signal, this, slot, Qt::DirectConnection);
+                break;
+            }
+        }
         m_originalDesktops = m_window->property("desktops");
         prepare();
         // Initialization may still apply the app's initial desktop/minimized
@@ -168,7 +251,15 @@ private slots:
     }
     void save()
     {
-        if (m_enabled) writeWindowState(windowStateKey(m_window), captureWindowState(m_window));
+        if (m_enabled) {
+            auto state = captureWindowState(m_window);
+            if (!state.contains("tile") && !m_lastTile.isEmpty()) state.insert("tile", m_lastTile);
+            writeWindowState(windowStateKey(m_window), state);
+        }
+    }
+    void updateTile()
+    {
+        if (!m_window->property("deleted").toBool()) m_lastTile = windowTile(m_window);
     }
     void restore()
     {
@@ -181,9 +272,13 @@ private slots:
         }
         if (m_state.isEmpty()) m_state = readWindowState(key);
         if (m_state.isEmpty()) return;
-        if (restoreWindowStateImmediately(m_decoration, m_state)) return;
+        if (restoreWindowStateImmediately(m_decoration, m_state)) {
+            updateTile();
+            return;
+        }
         restoreWindowState(m_decoration, m_state, [this](bool success) {
             if (!success) retry();
+            else updateTile();
         });
     }
 
@@ -208,6 +303,7 @@ private:
     bool m_visibilityGuard = false;
     QVariant m_originalDesktops;
     QVariantMap m_state;
+    QVariantMap m_lastTile;
     int m_attempts = 0;
 };
 

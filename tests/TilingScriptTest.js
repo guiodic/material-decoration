@@ -19,7 +19,8 @@ function fixture(extraWindows = []) {
     const root = {tiles: [leaf(0, 0, 1 / 3, 1), leaf(1 / 3, 0, 1 / 3, 1), leaf(2 / 3, 0, 1 / 3, 1)]};
     const workspace = {activeWindow: other, layoutRoot: root, screens: [output], desktops: [desktop], currentDesktop: desktop,
         clientArea(option, screen) { this.lastClientAreaOutput = screen; return screen.geometry; },
-        tilingForScreen() { return {rootTile: this.layoutRoot}; },
+        tilingForScreen() { return {rootTile: this.layoutRoot, quickTiles: this.quickTiles || []}; },
+        rootTile() { return this.layoutRoot; },
         windows: [target, other, ...extraWindows], windowList() { return this.windows; },
         windowAdded: {connect(callback) { this.callback = callback; }},
         windowRemoved: {connect(callback) { this.callback = callback; }},
@@ -32,7 +33,7 @@ function fixture(extraWindows = []) {
             workspace.activeWindow.tile = {unmanage(window) { window.tile = null; }};
         };
     }
-    const context = {workspace, KWin: {PlacementArea: 0},
+    const context = {workspace, materialWindowStateBridge: {quickTiles(manager) { return manager.quickTiles; }}, KWin: {PlacementArea: 0},
         registerShortcut(name, text, key, callback) { assert.equal(key, ''); shortcut = callback; },
         callDBus(service, objectPath, iface, method, ...args) {
             if (method === 'takeRequest') args[0](request);
@@ -167,7 +168,7 @@ for (const change of [
     assert.equal(f.target.tile, null);
 }
 function savedState(extra = {}) {
-    return {version: 2, position: {x: 100, y: 80}, desktopIds: ['desktop-1'],
+    return {version: 3, position: {x: 100, y: 80}, desktopIds: ['desktop-1'],
         onAllDesktops: false, outputUuid: 'output-1', outputName: 'Virtual-1',
         outputPosition: {x: 0, y: 0}, ...extra};
 }
@@ -204,7 +205,7 @@ for (const extra of [{}, {desktopIds: ['removed']}, {onAllDesktops: true}]) {
     assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 640, height: 480});
     assert.equal(f.workspace.activeWindow, f.other);
     assert.equal(f.calls.length, 0);
-    assert.throws(() => f.restoreImmediately(savedState({version: 3})), /Invalid saved position/);
+    assert.throws(() => f.restoreImmediately(savedState({version: 4})), /Invalid saved position/);
 }
 {
     const f = fixture();
@@ -279,5 +280,26 @@ for (const mode of ['maximized', 'fullscreen', 'tiled']) {
     assert.deepEqual({...f.target.frameGeometry}, {x: 0, y: 0, width: 640, height: 480});
     f.target.normalWindow = false;
     assert.ok(!f.send(0, 'target', 'restoreState', {state: savedState()}).success);
+}
+{
+    const f = fixture();
+    const wrongDesktop = {relativeGeometry: {x: 0, y: 0, width: 0.5, height: 1}, manage() { return false; }};
+    const quick = f.leaf(0, 0, 0.5, 1);
+    f.workspace.quickTiles = [wrongDesktop, quick];
+    assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2}})), true);
+    assert.equal(f.target.tile, quick, 'restore a native quick tile, not just its coordinates');
+    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(f.calls.length, 0, 'no activation or global quick-tile shortcut');
+}
+{
+    const f = fixture();
+    const region = {x: 1 / 3, y: 0, width: 1 / 3, height: 1};
+    assert.equal(f.restoreImmediately(savedState({tile: {kind: 'custom', path: [1], region}})), true);
+    assert.equal(f.target.tile, f.root.tiles[1]);
+    assert.equal(f.workspace.activeWindow, f.other);
+    const changed = fixture();
+    assert.equal(changed.restoreImmediately(savedState({tile: {kind: 'custom', path: [1], region: {...region, width: 0.9}}})), true);
+    assert.equal(changed.target.tile, null, 'changed layouts must fall back to floating placement');
+    assert.equal(changed.target.frameGeometry.width, 640);
 }
 console.log('Tiling and window positions: app sizes/modes preserved, desktop/output fallbacks and validation passed.');

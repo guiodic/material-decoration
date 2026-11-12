@@ -35,6 +35,30 @@ QUuid windowId(KDecoration3::Decoration *decoration)
 }
 }
 
+class WindowStateScriptBridge : public QObject
+{
+    Q_OBJECT
+public:
+    using QObject::QObject;
+    Q_INVOKABLE QVariantList quickTiles(QObject *manager) const
+    {
+        QVariantList result;
+        if (!manager || !manager->inherits("KWin::TileManager")) return result;
+        // Tile::manage() rejects roots on other desktops before changing them.
+        // This preserves focus and the current desktop during a quick snap.
+        for (auto *root : manager->children()) {
+            if (!root->inherits("KWin::QuickRootTile")) continue;
+            for (const auto &tile : root->property("tiles").toList()) {
+                if (auto *object = tile.value<QObject *>()) {
+                    QJSEngine::setObjectOwnership(object, QJSEngine::CppOwnership);
+                    result.append(QVariant::fromValue(object));
+                }
+            }
+        }
+        return result;
+    }
+};
+
 class TilingBridge : public QObject, protected QDBusContext
 {
     Q_OBJECT
@@ -187,6 +211,9 @@ static bool callWindowStateScript(KDecoration3::Decoration *decoration, const QV
     for (auto *engine : scripting->findChildren<QJSEngine *>()) {
         auto restore = engine->globalObject().property(entryPoint);
         if (!restore.isCallable()) continue;
+        static auto *stateBridge = new WindowStateScriptBridge(QCoreApplication::instance());
+        QJSEngine::setObjectOwnership(stateBridge, QJSEngine::CppOwnership);
+        engine->globalObject().setProperty(QStringLiteral("materialWindowStateBridge"), engine->newQObject(stateBridge));
         QJSEngine::setObjectOwnership(decoration->parent(), QJSEngine::CppOwnership);
         const auto result = restore.call({engine->newQObject(decoration->parent()), QJSValue(json)});
         return !result.isError() && result.isBool() && result.toBool();

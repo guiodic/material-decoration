@@ -18,14 +18,17 @@
 
 // Match the runtime base-class name without including any private KWin header.
 namespace KWin {
+class QuickRootTile : public QObject { Q_OBJECT public: using QObject::QObject; };
 class WaylandWindow : public QObject {
     Q_OBJECT
 public:
     void close() { Q_EMIT closed(); }
     void map() { Q_EMIT readyForPaintingChanged(); }
+    void changedTile() { Q_EMIT tileChanged(); }
 signals:
     void closed();
     void readyForPaintingChanged();
+    void tileChanged();
 };
 }
 
@@ -181,7 +184,7 @@ private slots:
         group.writeEntry("State", QJsonDocument::fromVariant(legacy).toJson(QJsonDocument::Compact));
         QVERIFY(config->sync());
         const auto imported = Material::readWindowState(key);
-        QCOMPARE(imported.value("version").toInt(), 2);
+        QCOMPARE(imported.value("version").toInt(), 3);
         QCOMPARE(imported.value("position").toMap().value("x").toInt(), 80);
         QCOMPARE(imported.value("outputPosition").toMap().value("x").toInt(), 1920);
         QVERIFY(!imported.contains("geometry"));
@@ -189,9 +192,55 @@ private slots:
         QVERIFY(!imported.contains("fullScreen"));
         QVERIFY(Material::writeWindowState(key, legacy));
         const auto written = QJsonDocument::fromJson(group.readEntry("State", QByteArray())).object();
-        QCOMPARE(written.value("version").toInt(), 2);
+        QCOMPARE(written.value("version").toInt(), 3);
         QVERIFY(!QJsonDocument(written).toJson().contains("width"));
         QVERIFY(!QJsonDocument(written).toJson().contains("height"));
+    }
+    void capturesNativeTileBindings() {
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.Tile");
+        KWin::QuickRootTile quickRoot;
+        QObject quick;
+        quick.setProperty("parent", QVariant::fromValue<QObject *>(&quickRoot));
+        quick.setProperty("relativeGeometry", QRectF(0, 0, 0.4, 1));
+        window.setProperty("tile", QVariant::fromValue(&quick));
+        auto state = Material::captureWindowState(&window);
+        QCOMPARE(state.value("tile").toMap().value("kind").toString(), "quick");
+        QCOMPARE(state.value("tile").toMap().value("edges").toInt(), 2);
+        const auto key = Material::windowStateKey(&window);
+        QVERIFY(Material::writeWindowState(key, state));
+        QCOMPARE(Material::readWindowState(key).value("tile"), state.value("tile"));
+        QObject root, first, custom;
+        root.setProperty("tiles", QVariant::fromValue(QList<QObject *>{&first, &custom}));
+        custom.setProperty("parent", QVariant::fromValue(&root));
+        custom.setProperty("relativeGeometry", QRectF(0.4, 0, 0.6, 1));
+        window.setProperty("tile", QVariant::fromValue(&custom));
+        state = Material::captureWindowState(&window);
+        QCOMPARE(state.value("tile").toMap().value("kind").toString(), "custom");
+        QCOMPARE(state.value("tile").toMap().value("path").toList().first().toInt(), 1);
+        QVERIFY(Material::writeWindowState(key, state));
+        QCOMPARE(Material::readWindowState(key).value("tile"), state.value("tile"));
+    }
+    void keepsTileBindingWhenCloseCleanupClearsTheProperty() {
+        for (bool unsnap : {false, true}) {
+            KWin::WaylandWindow window;
+            setup(window, "org.example.StateTest.CloseTile." + QUuid::createUuid().toString());
+            MaterialTest::Bridge bridge;
+            StateDecoration decoration(&window, &bridge);
+            Material::configureWindowState(&decoration, true);
+            window.map();
+            KWin::QuickRootTile root;
+            QObject tile;
+            tile.setProperty("parent", QVariant::fromValue<QObject *>(&root));
+            tile.setProperty("relativeGeometry", QRectF(0, 0, 0.5, 1));
+            window.setProperty("tile", QVariant::fromValue(&tile));
+            window.changedTile();
+            window.setProperty("tile", QVariant());
+            if (unsnap) window.changedTile();
+            window.setProperty("deleted", true);
+            window.close();
+            QCOMPARE(Material::readWindowState(Material::windowStateKey(&window)).contains("tile"), !unsnap);
+        }
     }
     void savesOnlyOnCloseAndSurvivesDecorationRemoval() {
         KWin::WaylandWindow window;

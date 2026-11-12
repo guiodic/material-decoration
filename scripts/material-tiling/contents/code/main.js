@@ -74,10 +74,39 @@ var materialPrepareWindowState;
         return current.tiles[index];
     }
 
+    function tileEdges(r) {
+        const near = function (a, b) { return Math.abs(a - b) < 0.00001; };
+        const left = near(r.x, 0), right = near(r.x + r.width, 1);
+        const top = near(r.y, 0), bottom = near(r.y + r.height, 1);
+        return (left && !right ? 2 : 0) | (right && !left ? 4 : 0) | (top && !bottom ? 1 : 0) | (bottom && !top ? 8 : 0);
+    }
+
+    function restoreNativeTile(target, saved, output) {
+        if (!saved || !target.resizeable) return false;
+        if (saved.kind === "quick") {
+            if (!tileActions[saved.edges] || typeof materialWindowStateBridge === "undefined" || typeof workspace.tilingForScreen !== "function") return false;
+            const tiles = materialWindowStateBridge.quickTiles(workspace.tilingForScreen(output));
+            for (let i = 0; i < tiles.length; ++i) {
+                if (tileEdges(tiles[i].relativeGeometry) === saved.edges && tiles[i].manage(target)) return true;
+            }
+        } else if (saved.kind === "custom" && Array.isArray(saved.path) && saved.region && typeof workspace.rootTile === "function") {
+            let tile = workspace.rootTile(output, target.desktops[0] || workspace.currentDesktop);
+            for (const index of saved.path) {
+                if (!Number.isInteger(index) || index < 0 || !tile || !tile.tiles || index >= tile.tiles.length) return false;
+                tile = tile.tiles[index];
+            }
+            if (!tile || tile.tiles.length || !["x", "y", "width", "height"].every(function (key) {
+                return typeof saved.region[key] === "number" && Math.abs(tile.relativeGeometry[key] - saved.region[key]) < 0.00001;
+            })) return false;
+            return tile.manage(target);
+        }
+        return false;
+    }
+
     function restoreState(target, state) {
         if (!target.normalWindow || target.transient || target.deleted) throw new Error("Target window cannot be restored");
         const position = state && state.position;
-        if (!state || state.version !== 2 || !position ||
+        if (!state || state.version !== 3 || !position ||
             ![position.x, position.y].every(function (n) { return typeof n === "number" && Number.isFinite(n); })) throw new Error("Invalid saved position");
         if (!Array.isArray(state.desktopIds)) throw new Error("Invalid saved state");
         const screens = workspace.screens;
@@ -93,6 +122,7 @@ var materialPrepareWindowState;
         // Let KWin move app-requested fullscreen, maximized and tiled windows
         // between outputs without undoing their mode or assigning a normal size.
         if (target.fullScreen || target.maximizeMode || target.tile) {
+            if (!target.fullScreen && !target.maximizeMode && state.tile && restoreNativeTile(target, state.tile, output)) return;
             if (target.output !== output) workspace.sendClientToScreen(target, output);
             return;
         }
@@ -115,11 +145,13 @@ var materialPrepareWindowState;
         if (current.x !== x || current.y !== y) {
             target.frameGeometry = {x: x, y: y, width: current.width, height: current.height};
         }
+        // KWin owns the size of a snapped window; floating app sizes stay intact.
+        if (state.tile) restoreNativeTile(target, state.tile, output);
     }
 
     materialPrepareWindowState = function (target, stateJson) {
         const state = JSON.parse(stateJson);
-        if (!target.normalWindow || target.transient || target.deleted || state.version !== 2 || !Array.isArray(state.desktopIds)) return false;
+        if (!target.normalWindow || target.transient || target.deleted || state.version !== 3 || !Array.isArray(state.desktopIds)) return false;
         if (state.onAllDesktops) {
             target.onAllDesktops = true;
         } else {
