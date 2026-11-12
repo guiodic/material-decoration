@@ -5,9 +5,13 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '../scripts/material-tiling/contents/code/main.js'), 'utf8');
-let assertions = 0;
+function quickTile(tile, edges = 2) {
+    const parent = {tiles: [2, 4, 1, 8, 3, 5, 10, 12].map(mode => mode === edges ? tile : {})};
+    if (!tile.parent) tile.parent = parent;
+    return tile;
+}
 function fixture(extraWindows = []) {
-    const output = {name: 'Virtual-1', uuid: 'output-1', geometry: {x: 0, y: 0, width: 1280, height: 800}};
+    const output = {name: 'Virtual-1', geometry: {x: 0, y: 0, width: 1280, height: 800}};
     const other = {internalId: '{other}', caption: 'other'};
     const desktop = {id: 'desktop-1'};
     const target = {internalId: '{target}', resizeable: true, specialWindow: false, normalWindow: true,
@@ -42,11 +46,10 @@ function fixture(extraWindows = []) {
         restoreImmediately(state) { return context.materialRestoreWindowState(target, JSON.stringify(state)); },
         prepareImmediately(state) { return context.materialPrepareWindowState(target, JSON.stringify(state)); },
         send(edges, uuid = 'target', operation = 'tile', extra = {}) {
-            ++assertions;
             const target = workspace.windowList().find(window => String(window.internalId).replace(/[{}]/g, '') === uuid);
             try {
                 if (operation === 'restoreState') return {success: context.materialRestoreWindowState(target, JSON.stringify(extra.state))};
-                const result = context.materialTiling(target, JSON.stringify({edges, operation: operation === 'ping' ? 'layout' : operation, ...extra}));
+                const result = context.materialTiling(target, JSON.stringify({edges, operation: operation, ...extra}));
                 return typeof result === 'string' ? {success: true, layout: JSON.parse(result)} : {success: result};
             } catch (error) { return {success: false, reason: String(error)}; }
         }};
@@ -115,7 +118,7 @@ for (const [edges, expected] of [[2,'Left'],[4,'Right'],[1,'Top'],[8,'Bottom'],[
 }
 {
     const f = fixture();
-    assert.ok(f.send(0, 'target', 'ping').success);
+    assert.ok(f.send(0, 'target', 'layout').success);
     assert.equal(f.calls.length, 0);
     assert.equal(f.workspace.activeWindow, f.other, 'availability check must not change focus');
     assert.ok(!f.send(2, 'closed-window').success);
@@ -140,7 +143,7 @@ for (const [edges, expected] of [[2,'Left'],[4,'Right'],[1,'Top'],[8,'Bottom'],[
 {
     const f = fixture();
     const before = JSON.stringify(f.root.tiles.map(tile => tile.relativeGeometry));
-    const result = f.send(0, 'target', 'ping', {layout: true});
+    const result = f.send(0, 'target', 'layout');
     assert.equal(result.layout.length, 3);
     assert.equal(f.workspace.activeWindow, f.other, 'reading the layout must not steal focus');
     assert.equal(f.target.tile, null);
@@ -158,7 +161,7 @@ for (const [edges, expected] of [[2,'Left'],[4,'Right'],[1,'Top'],[8,'Bottom'],[
 {
     const f = fixture();
     f.root.tiles = [f.leaf(0, 0, 0.5, 1), {tiles: [f.leaf(0.5, 0, 0.5, 0.5), f.leaf(0.5, 0.5, 0.5, 0.5)]}];
-    const result = f.send(0, 'target', 'ping', {layout: true});
+    const result = f.send(0, 'target', 'layout');
     assert.equal(result.layout.length, 3, 'only leaf tiles should become popup zones');
     assert.equal(result.layout[2].y, 0.5);
     assert.ok(f.send(0, 'target', 'tileCustom', {tileId: result.layout[2].id}).success);
@@ -170,16 +173,16 @@ for (const change of [
     f => { f.root.tiles.pop(); },
     f => { f.target.output = {}; },
     f => { f.workspace.layoutRoot = {tiles: f.root.tiles}; },
-    f => { f.send(0, 'target', 'ping', {layout: true}); }
+    f => { f.send(0, 'target', 'layout'); }
 ]) {
     const f = fixture();
     assert.ok(f.send(2).success);
     const previousTile = f.target.tile;
-    const result = f.send(0, 'target', 'ping', {layout: true});
+    const result = f.send(0, 'target', 'layout');
     change(f);
     assert.ok(!f.send(0, 'target', 'tileCustom', {tileId: result.layout[0].id}).success);
     assert.equal(f.target.tile, previousTile, 'a stale selection must leave the previous tile untouched');
-    const refreshed = f.send(0, 'target', 'ping', {layout: true});
+    const refreshed = f.send(0, 'target', 'layout');
     assert.ok(f.send(0, 'target', 'tileCustom', {tileId: refreshed.layout[0].id}).success,
         'reopening the popup must allow selection from the current layout');
 }
@@ -187,12 +190,12 @@ for (const change of [
     const f = fixture();
     assert.ok(!f.send(0, 'target', 'tileCustom', {tileId: 'invented'}).success);
     delete f.workspace.tilingForScreen;
-    assert.deepEqual(f.send(0, 'target', 'ping', {layout: true}).layout, []);
+    assert.deepEqual(f.send(0, 'target', 'layout').layout, []);
     assert.ok(f.send(2).success, 'native quick tiling remains available without the custom-layout API');
 }
 {
     const f = fixture();
-    const result = f.send(0, 'target', 'ping', {layout: true});
+    const result = f.send(0, 'target', 'layout');
     let active = f.other;
     Object.defineProperty(f.workspace, 'activeWindow', {
         get() { return active; },
@@ -205,7 +208,7 @@ for (const change of [
 function savedState(extra = {}) {
     return {version: 3, position: {x: 100, y: 80}, desktopIds: ['desktop-1'],
         rememberScreen: true, rememberDesktop: true,
-        onAllDesktops: false, outputUuid: 'output-1', outputName: 'Virtual-1',
+        onAllDesktops: false, outputName: 'Virtual-1',
         outputPosition: {x: 0, y: 0}, ...extra};
 }
 {
@@ -271,12 +274,12 @@ for (const extra of [{}, {desktopIds: ['removed']}, {onAllDesktops: true}]) {
 }
 {
     const f = fixture();
-    const movedOutput = {name: 'Virtual-1', uuid: 'output-1', geometry: {x: 1920, y: 50, width: 800, height: 600}};
+    const movedOutput = {name: 'Virtual-1', geometry: {x: 1920, y: 50, width: 800, height: 600}};
     f.workspace.screens = [movedOutput];
     assert.ok(f.send(0, 'target', 'restoreState', {state: savedState()}).success);
     assert.equal(f.workspace.lastClientAreaOutput, movedOutput);
     assert.deepEqual({...f.target.frameGeometry}, {x: 2020, y: 130, width: 640, height: 480});
-    const tinyOutput = {name: 'Virtual-1', uuid: 'output-1', geometry: {x: 1920, y: 50, width: 400, height: 300}};
+    const tinyOutput = {name: 'Virtual-1', geometry: {x: 1920, y: 50, width: 400, height: 300}};
     f.workspace.screens = [tinyOutput];
     assert.ok(f.send(0, 'target', 'restoreState', {state: savedState()}).success);
     assert.deepEqual({...f.target.frameGeometry}, {x: 1920, y: 50, width: 640, height: 480}, 'a smaller output must not shrink the app');
@@ -284,7 +287,7 @@ for (const extra of [{}, {desktopIds: ['removed']}, {onAllDesktops: true}]) {
 {
     const f = fixture();
     f.target.resizeable = false;
-    assert.ok(f.send(0, 'target', 'restoreState', {state: savedState({desktopIds: ['removed'], outputUuid: 'removed', outputName: 'removed'})}).success);
+    assert.ok(f.send(0, 'target', 'restoreState', {state: savedState({desktopIds: ['removed'], outputName: 'removed'})}).success);
     assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 640, height: 480});
     assert.equal(f.target.desktops[0], f.workspace.currentDesktop);
     assert.equal(f.workspace.lastClientAreaOutput, f.output);
@@ -297,9 +300,9 @@ for (const mode of ['maximized', 'fullscreen', 'tiled']) {
     if (mode === 'tiled') f.target.tile = {unmanage() { throw new Error('must not untile'); }};
     f.target.setMaximize = () => { throw new Error('must not maximize or restore'); };
     const tile = f.target.tile;
-    const destination = {name: 'Virtual-2', uuid: 'output-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
+    const destination = {name: 'Virtual-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
     f.workspace.screens.push(destination);
-    assert.ok(f.send(0, 'target', 'restoreState', {state: savedState({outputUuid: 'output-2', onAllDesktops: true})}).success);
+    assert.ok(f.send(0, 'target', 'restoreState', {state: savedState({outputName: 'Virtual-2', onAllDesktops: true})}).success);
     assert.deepEqual({...f.target.frameGeometry}, original);
     assert.equal(f.target.output, destination);
     assert.equal(f.target.onAllDesktops, true);
@@ -321,7 +324,7 @@ for (const mode of ['maximized', 'fullscreen', 'tiled']) {
     const f = fixture();
     const wrongDesktop = {relativeGeometry: {x: 0, y: 0, width: 0.5, height: 1}, manage() { return false; }};
     const quick = f.leaf(0, 0, 0.5, 1);
-    f.workspace.quickTiles = [wrongDesktop, quick];
+    f.workspace.quickTiles = [quickTile(wrongDesktop), quickTile(quick)];
     assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2}})), true);
     assert.equal(f.target.tile, quick, 'restore a native quick tile, not just its coordinates');
     assert.equal(f.workspace.activeWindow, f.target);
@@ -349,7 +352,7 @@ for (const allDesktops of [true, false]) {
     f.workspace.desktops.push(second);
     f.workspace.currentDesktop = second;
     const inactive = desktopTile(f, first), active = desktopTile(f, second);
-    f.workspace.quickTiles = [inactive, active];
+    f.workspace.quickTiles = [quickTile(inactive), quickTile(active)];
     f.restoreImmediately(savedState({onAllDesktops: allDesktops, desktopIds: allDesktops ? [] : [first.id, second.id], tile: {kind: 'quick', edges: 2}}));
     assert.equal(f.target.tile, active, 'bind the root of the current desktop, even when another root is enumerated first');
     assert.equal(active.attempts, 1);
@@ -365,7 +368,7 @@ for (const allDesktops of [true, false]) {
     f.workspace.desktops.push(second, third);
     f.workspace.currentDesktop = third;
     const wrong = desktopTile(f, second), destination = desktopTile(f, first);
-    f.workspace.quickTiles = [wrong, destination];
+    f.workspace.quickTiles = [quickTile(wrong), quickTile(destination)];
     f.restoreImmediately(savedState({desktopIds: [first.id, second.id], tile: {kind: 'quick', edges: 2}}));
     assert.equal(wrong.owner, undefined);
     assert.equal(destination.owner, f.target);
@@ -379,7 +382,7 @@ for (const allDesktops of [true, false]) {
     f.workspace.desktops.push(outputDesktop);
     f.workspace.currentDesktopForScreen = output => { assert.equal(output, f.output); return outputDesktop; };
     const inactive = desktopTile(f, globalDesktop), active = desktopTile(f, outputDesktop);
-    f.workspace.quickTiles = [inactive, active];
+    f.workspace.quickTiles = [quickTile(inactive), quickTile(active)];
     f.restoreImmediately(savedState({onAllDesktops: true, desktopIds: [], tile: {kind: 'quick', edges: 2}}));
     assert.equal(f.target.tile, active, 'use the output desktop when desktops differ across screens');
     assert.equal(f.target.onAllDesktops, true);
@@ -388,7 +391,7 @@ for (const allDesktops of [true, false]) {
 for (const behavior of ['missing-tile', 'throws', 'rule-rejects-restriction']) {
     const f = fixture();
     const tile = f.leaf(0, 0, 0.5, 1);
-    f.workspace.quickTiles = behavior === 'missing-tile' ? [] : [tile];
+    f.workspace.quickTiles = behavior === 'missing-tile' ? [] : [quickTile(tile)];
     if (behavior === 'throws') tile.manage = () => { throw new Error('tile disappeared'); };
     if (behavior === 'rule-rejects-restriction') {
         let desktops = [];
@@ -419,15 +422,15 @@ for (const kind of ['quick', 'custom']) {
         const f = fixture();
         const tile = kind === 'quick' ? f.leaf(0, 0, 0.5, 1) : f.root.tiles[1];
         tile.manage = () => { if (behavior === 'throws') throw new Error('tile unavailable'); return false; };
-        if (kind === 'quick') f.workspace.quickTiles = behavior === 'missing' ? [] : [tile];
+        if (kind === 'quick') f.workspace.quickTiles = behavior === 'missing' ? [] : [quickTile(tile)];
         else if (behavior === 'missing') f.workspace.layoutRoot = null;
         const state = savedState({tile: kind === 'quick' ? {kind, edges: 2} :
             {kind, path: [1], region: {x: 1 / 3, y: 0, width: 1 / 3, height: 1}}});
         // An existing native tile must not hide a failure to restore the saved one.
         const original = f.target.tile = {unmanage() { throw new Error('must not untile'); }};
-        const destination = {name: 'Virtual-2', uuid: 'output-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
+        const destination = {name: 'Virtual-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
         f.workspace.screens.push(destination);
-        state.outputUuid = destination.uuid;
+        state.outputName = destination.name;
         if (behavior === 'throws') assert.throws(() => f.restoreImmediately(state), /tile unavailable/);
         else {
             assert.equal(f.restoreImmediately(state), false);
@@ -448,11 +451,11 @@ for (const rememberScreen of [false, true]) {
     for (const rememberDesktop of [false, true]) {
         const f = fixture();
         const first = f.workspace.currentDesktop, second = {id: 'desktop-2'};
-        const savedOutput = {name: 'Virtual-2', uuid: 'output-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
+        const savedOutput = {name: 'Virtual-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
         f.workspace.screens.push(savedOutput);
         f.workspace.desktops.push(second);
         const state = savedState({rememberScreen, rememberDesktop, desktopIds: [second.id],
-            outputUuid: savedOutput.uuid, outputName: savedOutput.name, outputPosition: {x: 1280, y: 0},
+            outputName: savedOutput.name, outputPosition: {x: 1280, y: 0},
             position: {x: 1380, y: 80}});
         assert.equal(f.prepareImmediately(state), true);
         assert.equal(f.target.desktops[0], rememberDesktop ? second : first);
@@ -495,7 +498,7 @@ for (const rememberDesktop of [false, true]) {
     f.workspace.desktops.push(second);
     const wrong = desktopTile(f, rememberDesktop ? first : second);
     const destination = desktopTile(f, rememberDesktop ? second : first);
-    f.workspace.quickTiles = [wrong, destination];
+    f.workspace.quickTiles = [quickTile(wrong), quickTile(destination)];
     assert.equal(f.restoreImmediately(savedState({rememberDesktop, desktopIds: [second.id], tile: {kind: 'quick', edges: 2,
         region: {x: 0, y: 0, width: .65, height: 1}}})), true);
     assert.equal(f.target.tile, destination, 'quick tiles belong to the desktop selected by the policy');
@@ -506,7 +509,7 @@ for (const rememberDesktop of [false, true]) {
 {
     const f = fixture();
     const first = f.workspace.currentDesktop, second = {id: 'desktop-2'};
-    const output = {name: 'Virtual-2', uuid: 'output-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
+    const output = {name: 'Virtual-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
     f.workspace.screens.push(output);
     f.workspace.desktops.push(second);
     let outputDesktop = first;
@@ -523,7 +526,7 @@ for (const rememberDesktop of [false, true]) {
         assert.equal(outputDesktop, second);
         events.push('activate');
     }});
-    assert.equal(f.restoreImmediately(savedState({outputUuid: output.uuid, desktopIds: [second.id]})), true);
+    assert.equal(f.restoreImmediately(savedState({outputName: output.name, desktopIds: [second.id]})), true);
     assert.deepEqual(events, ['switch', 'activate']);
     assert.equal(f.workspace.currentDesktop, first, 'use the per-screen API when available');
 }
@@ -538,7 +541,7 @@ for (const [edges, initial, region] of [
     [12, [.5, .5, .5, .5], {x: .65, y: .4, width: .35, height: .6}]
 ]) {
     const f = fixture();
-    const wrong = f.leaf(...initial), tile = f.leaf(...initial);
+    const wrong = quickTile(f.leaf(...initial), edges), tile = quickTile(f.leaf(...initial), edges);
     const rejectedRegion = wrong.relativeGeometry;
     wrong.manage = () => false;
     Object.defineProperty(wrong, 'relativeGeometry', {get() {return rejectedRegion;}, set() {throw new Error('wrong desktop must not be resized');}});
@@ -559,7 +562,7 @@ for (const region of [undefined, {}, {x: 0, y: 0, width: .6}, {x: -.1, y: 0, wid
     {x: 0, y: 0, width: Infinity, height: 1}]) {
     const f = fixture();
     const tile = f.leaf(0, 0, .5, 1);
-    f.workspace.quickTiles = [tile];
+    f.workspace.quickTiles = [quickTile(tile)];
     assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2, region}})), true);
     assert.deepEqual({...tile.relativeGeometry}, {x: 0, y: 0, width: .5, height: 1}, 'missing/invalid proportions keep native layout');
 }
@@ -568,7 +571,7 @@ for (const region of [undefined, {}, {x: 0, y: 0, width: .6}, {x: -.1, y: 0, wid
     const tile = f.leaf(0, 0, .5, 1);
     const initial = tile.relativeGeometry;
     Object.defineProperty(tile, 'relativeGeometry', {get() {return initial;}, set() {}});
-    f.workspace.quickTiles = [tile];
+    f.workspace.quickTiles = [quickTile(tile)];
     assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2,
         region: {x: 0, y: 0, width: .65, height: 1}}})), false, 'a rejected split must protect the saved state');
 }
@@ -576,7 +579,7 @@ for (const region of [undefined, {}, {x: 0, y: 0, width: .6}, {x: -.1, y: 0, wid
     const f = fixture();
     const tile = f.leaf(0, 0, .5, 1);
     Object.defineProperty(tile, 'relativeGeometry', {set() {throw new Error('floating sibling must not resize existing tiles');}});
-    f.workspace.quickTiles = [tile];
+    f.workspace.quickTiles = [quickTile(tile)];
     assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2,
         region: {x: 0, y: 0, width: .65, height: 1}}, inheritedTileSize: {
         tileSize: {width: 640, height: 480}, normalSize: {width: 900, height: 600}}})), true);
@@ -666,7 +669,7 @@ for (const extra of [{onAllDesktops: true, desktops: []}, {activities: []}, {rea
     const f = fixture();
     f.workspace.windows.push(blocker(f));
     const tile = f.leaf(0, 0, 0.5, 1);
-    f.workspace.quickTiles = [tile];
+    f.workspace.quickTiles = [quickTile(tile)];
     f.restoreImmediately(savedState({titleBarHeight: 25, tile: {kind: 'quick', edges: 2}}));
     assert.equal(f.target.tile, tile);
     assert.equal(f.target.frameGeometry.x, 100, 'saved native snap bypasses cascading');
@@ -685,7 +688,7 @@ for (const kind of ['quick', 'custom']) {
         return true;
     };
     tile.unmanage = function (window) { window.tile = null; window.frameGeometry = normal; };
-    if (kind === 'quick') f.workspace.quickTiles = [tile];
+    if (kind === 'quick') f.workspace.quickTiles = [quickTile(tile)];
     else f.workspace.layoutRoot = {tiles: [tile]};
     const saved = kind === 'quick' ? {kind, edges: 2} : {kind, path: [0], region: {...tile.relativeGeometry}};
     saved.normalSize = {width: 900.5, height: 650.25};
@@ -702,7 +705,7 @@ for (const outcome of ['rejected', 'throws', 'missing']) {
     const f = fixture();
     const tile = f.leaf(0, 0, 0.5, 1);
     tile.manage = () => { if (outcome === 'throws') throw new Error('tile unavailable'); return false; };
-    f.workspace.quickTiles = outcome === 'missing' ? [] : [tile];
+    f.workspace.quickTiles = outcome === 'missing' ? [] : [quickTile(tile)];
     const state = savedState({tile: {kind: 'quick', edges: 2, normalSize: {width: 900, height: 650}}});
     if (outcome === 'throws') assert.throws(() => f.restoreImmediately(state), /tile unavailable/);
     else assert.equal(f.restoreImmediately(state), false);
@@ -713,14 +716,14 @@ for (const size of [undefined, {width: 0, height: 650}, {width: -1, height: 650}
     const tile = f.leaf(0, 0, 0.5, 1);
     let initial;
     tile.manage = window => { initial = {...window.frameGeometry}; window.tile = tile; return true; };
-    f.workspace.quickTiles = [tile];
+    f.workspace.quickTiles = [quickTile(tile)];
     f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2, normalSize: size}}));
     assert.equal(initial.width, 640);
     assert.equal(initial.height, 480);
 }
 {
     const f = fixture();
-    f.workspace.quickTiles = [f.leaf(0, 0, 0.5, 1)];
+    f.workspace.quickTiles = [quickTile(f.leaf(0, 0, 0.5, 1))];
     f.restoreImmediately(savedState({normalSize: {width: 900, height: 650}}));
     assert.equal(f.target.frameGeometry.width, 640, 'floating states never resize the app');
     assert.equal(f.target.frameGeometry.height, 480);

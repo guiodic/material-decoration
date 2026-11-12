@@ -4,7 +4,7 @@
 
 **Identify the window.** The decoration reads Qt properties from its parent,
 the KWin window. A SHA-256 key combines the application's `desktopFileName`
-(falling back to `resourceClass`), window role and Wayland tag. Window titles
+(falling back to `resourceClass`) and Wayland tag. Window titles
 are not used. Windows without distinct roles or tags share the same state.
 
 **Save the state.** KConfig stores JSON in

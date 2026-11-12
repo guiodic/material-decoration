@@ -25,7 +25,17 @@
 // Match the runtime base-class name without including any private KWin header.
 namespace KWin {
 class Tile : public QObject { Q_OBJECT public: using QObject::QObject; };
-class QuickRootTile : public QObject { Q_OBJECT public: using QObject::QObject; };
+class QuickRootTile : public QObject {
+    Q_OBJECT
+public:
+    void bind(QObject *tile, int edges = 2) {
+        const QList<int> modes{2, 4, 1, 8, 3, 5, 10, 12};
+        QVariantList tiles;
+        for (int mode : modes) tiles.append(QVariant::fromValue(mode == edges ? tile : new QObject(this)));
+        setProperty("tiles", tiles);
+        tile->setProperty("parent", QVariant::fromValue<QObject *>(this));
+    }
+};
 class WaylandWindow : public QObject {
     Q_OBJECT
 public:
@@ -38,14 +48,10 @@ public:
     void changeIdentity(const QByteArray &name, const QString &value) {
         setProperty(name.constData(), value);
         if (name == "desktopFileName") Q_EMIT desktopFileNameChanged();
-        else if (name == "resourceClass") Q_EMIT windowClassChanged();
-        else if (name == "windowRole") Q_EMIT windowRoleChanged();
         else if (name == "tag") Q_EMIT tagChanged();
     }
 signals:
     void desktopFileNameChanged();
-    void windowClassChanged();
-    void windowRoleChanged();
     void tagChanged();
     void closed();
     void readyForPaintingChanged();
@@ -469,7 +475,6 @@ private slots:
         setup(window, "org.example.StateTest.RoundTrip");
         QObject output, desktop;
         output.setProperty("name", "DP-1");
-        output.setProperty("uuid", "monitor-uuid");
         output.setProperty("geometry", QRect(1920, 0, 1280, 800));
         desktop.setProperty("id", "desktop-uuid");
         window.setProperty("output", QVariant::fromValue(&output));
@@ -486,7 +491,6 @@ private slots:
         const auto key = Material::windowStateKey(&window);
         QVERIFY(Material::writeWindowState(key, state));
         const auto saved = Material::readWindowState(key);
-        QCOMPARE(saved.value("outputUuid").toString(), "monitor-uuid");
         QVERIFY(!saved.contains("maximizeMode"));
         QVERIFY(!saved.contains("fullScreen"));
         QVERIFY(!Material::writeWindowState(key, {{"version", 3}, {"position", QVariantMap{{"x", 1}}}}));
@@ -513,7 +517,7 @@ private slots:
         setup(window, "org.example.StateTest.Tile");
         KWin::QuickRootTile quickRoot;
         QObject quick;
-        quick.setProperty("parent", QVariant::fromValue<QObject *>(&quickRoot));
+        quickRoot.bind(&quick);
         quick.setProperty("relativeGeometry", QRectF(0, 0, 0.4, 1));
         window.setProperty("tile", QVariant::fromValue(&quick));
         auto state = Material::captureWindowState(&window);
@@ -543,7 +547,7 @@ private slots:
             window.map();
             KWin::QuickRootTile root;
             QObject tile;
-            tile.setProperty("parent", QVariant::fromValue<QObject *>(&root));
+            root.bind(&tile);
             tile.setProperty("relativeGeometry", QRectF(0, 0, 0.5, 1));
             window.setProperty("tile", QVariant::fromValue(&tile));
             window.changedTile();
@@ -573,7 +577,7 @@ private slots:
         setup(window, "org.example.StateTest.TileProportions." + QUuid::createUuid().toString());
         KWin::QuickRootTile root;
         KWin::Tile tile;
-        tile.setProperty("parent", QVariant::fromValue<QObject *>(&root));
+        root.bind(&tile, edges);
         tile.setProperty("relativeGeometry", region);
         window.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
         const auto state = Material::captureWindowState(&window);
@@ -639,7 +643,7 @@ private slots:
         window.map();
         KWin::QuickRootTile root;
         KWin::Tile tile;
-        tile.setProperty("parent", QVariant::fromValue<QObject *>(&root));
+        root.bind(&tile);
         tile.setProperty("relativeGeometry", QRectF(0, 0, 0.5, 1));
         window.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
         Q_EMIT window.requestedTileChanged();
@@ -706,7 +710,7 @@ private slots:
         }
         KWin::QuickRootTile root;
         KWin::Tile tile;
-        tile.setProperty("parent", QVariant::fromValue<QObject *>(&root));
+        root.bind(&tile);
         tile.setProperty("relativeGeometry", QRectF(0, 0, 0.5, 1));
         window.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
         Q_EMIT window.frameGeometryAboutToChange();
@@ -756,7 +760,7 @@ private slots:
         QVERIFY(Material::writeWindowState(key, state));
         KWin::QuickRootTile root;
         KWin::Tile tile;
-        tile.setProperty("parent", QVariant::fromValue<QObject *>(&root));
+        root.bind(&tile);
         tile.setProperty("relativeGeometry", QRectF(0, 0, 0.5, 1));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
@@ -802,7 +806,7 @@ private slots:
         source.map();
         KWin::QuickRootTile root;
         KWin::Tile tile;
-        tile.setProperty("parent", QVariant::fromValue<QObject *>(&root));
+        root.bind(&tile);
         tile.setProperty("relativeGeometry", QRectF(0, 0, 0.5, 1));
         source.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
         Q_EMIT source.frameGeometryAboutToChange();
@@ -1667,10 +1671,6 @@ private slots:
         const QString app = "org.example.StateTest.IdentityPermission." + QUuid::createUuid().toString();
         for (auto *w : {&window, &future}) {
             setup(*w, app);
-            if (property == "resourceClass") {
-                w->setProperty("desktopFileName", "");
-                w->setProperty("resourceClass", app);
-            }
         }
         future.setProperty(property.constData(), QString(app + ".new"));
         const auto key = Material::windowStateKey(&window);

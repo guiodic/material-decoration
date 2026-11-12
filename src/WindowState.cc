@@ -98,16 +98,6 @@ bool validTileRegion(const QVariantMap &region)
         && x >= 0 && y >= 0 && x + w <= 1.00001 && y + h <= 1.00001;
 }
 
-int quickTileEdges(const QVariantMap &region)
-{
-    constexpr double epsilon = 0.00001;
-    const bool left = std::abs(region.value("x").toDouble()) < epsilon;
-    const bool right = std::abs(region.value("x").toDouble() + region.value("width").toDouble() - 1) < epsilon;
-    const bool top = std::abs(region.value("y").toDouble()) < epsilon;
-    const bool bottom = std::abs(region.value("y").toDouble() + region.value("height").toDouble() - 1) < epsilon;
-    return (left && !right ? 2 : 0) | (right && !left ? 4 : 0) | (top && !bottom ? 1 : 0) | (bottom && !top ? 8 : 0);
-}
-
 QVariantMap windowTile(const QObject *window)
 {
     auto *tile = window->property("tile").value<QObject *>();
@@ -128,15 +118,15 @@ QVariantMap windowTile(const QObject *window)
     auto *parent = tile->property("parent").value<QObject *>();
     const auto region = tileRegion(tile->property("relativeGeometry"));
     if (parent && parent->inherits("KWin::QuickRootTile")) {
-        int edges = quickTileEdges(region);
         // KWin 6.8 creates these children in mode order. Geometry alone can
         // misidentify a half as a quarter after resizing its outer edge.
         constexpr int modes[]{2, 4, 1, 8, 3, 5, 10, 12};
         const auto siblings = parent->property("tiles").toList();
-        if (siblings.size() == 8) {
-            for (int i = 0; i < 8; ++i) if (siblings[i].value<QObject *>() == tile) edges = modes[i];
+        if (siblings.size() != 8) return {};
+        for (int i = 0; i < 8; ++i) {
+            if (siblings[i].value<QObject *>() == tile) return {{"kind", "quick"}, {"edges", modes[i]}, {"region", region}};
         }
-        return {{"kind", "quick"}, {"edges", edges}, {"region", region}};
+        return {};
     }
     QVariantList path;
     auto *node = tile;
@@ -162,7 +152,7 @@ QVariantMap positionState(const QVariantMap &state)
     if (!validPosition(coordinates)) return {};
     QVariantMap saved{{"version", 3}, {"position", QVariantMap{{"x", coordinates.value("x")}, {"y", coordinates.value("y")}}},
                       {"desktopIds", state.value("desktopIds")}, {"onAllDesktops", state.value("onAllDesktops").toBool()},
-                      {"outputName", state.value("outputName")}, {"outputUuid", state.value("outputUuid")}};
+                      {"outputName", state.value("outputName")}};
     const auto output = state.value("outputPosition").toMap();
     if (validPosition(output)) saved.insert("outputPosition", QVariantMap{{"x", output.value("x")}, {"y", output.value("y")}});
     const auto tile = state.value("tile").toMap();
@@ -214,7 +204,7 @@ QString windowStateKey(const QObject *window)
     if (app.isEmpty()) return {};
     // A Wayland tag, when supplied, distinguishes windows of the same app.
     // Otherwise all indistinguishable main windows share the last closed state.
-    const QJsonArray identity{app, window->property("windowRole").toString(), window->property("tag").toString()};
+    const QJsonArray identity{app, window->property("tag").toString()};
     return QString::fromLatin1(QCryptographicHash::hash(QJsonDocument(identity).toJson(QJsonDocument::Compact),
                                                        QCryptographicHash::Sha256).toHex());
 }
@@ -236,7 +226,6 @@ QVariantMap captureWindowState(const QObject *window)
                       {"onAllDesktops", window->property("onAllDesktops").toBool()}};
     if (auto *output = window->property("output").value<QObject *>()) {
         state.insert("outputName", output->property("name").toString());
-        state.insert("outputUuid", output->property("uuid").toString());
         state.insert("outputPosition", position(output->property("geometry")));
     }
     const auto tile = windowTile(window);
@@ -592,7 +581,7 @@ private:
     QVariantMap siblingNormalSize() const
     {
         // Only correct a floating startup frame that looks inherited from a
-        // live native tile of the same application/role/tag. The normal size comes
+        // live native tile of the same application/tag. The normal size comes
         // from that window's controller; excluded windows cannot provide it.
         if (m_window->property("tile").value<QObject *>() || m_window->property("fullScreen").toBool()
             || m_window->property("maximizeMode").toInt() || !m_window->property("resizeable").toBool()) return {};

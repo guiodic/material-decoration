@@ -75,13 +75,6 @@ var materialTiling;
         return current.tiles[index];
     }
 
-    function tileEdges(r) {
-        const near = function (a, b) { return Math.abs(a - b) < 0.00001; };
-        const left = near(r.x, 0), right = near(r.x + r.width, 1);
-        const top = near(r.y, 0), bottom = near(r.y + r.height, 1);
-        return (left && !right ? 2 : 0) | (right && !left ? 4 : 0) | (top && !bottom ? 1 : 0) | (bottom && !top ? 8 : 0);
-    }
-
     function manageRestoredTile(target, saved, tile) {
         const size = saved.normalSize;
         const original = target.frameGeometry;
@@ -106,7 +99,7 @@ var materialTiling;
         // The native mode survives resizing an outer edge away from the screen.
         const siblings = tile.parent && tile.parent.tiles;
         const index = siblings && siblings.length === 8 ? Array.from(siblings).indexOf(tile) : -1;
-        return index >= 0 ? [2, 4, 1, 8, 3, 5, 10, 12][index] : tileEdges(tile.relativeGeometry);
+        return index >= 0 ? [2, 4, 1, 8, 3, 5, 10, 12][index] : 0;
     }
 
     function restoreQuickTileRegion(saved, tile) {
@@ -203,9 +196,8 @@ var materialTiling;
 
     function restorationOutput(target, state) {
         const screens = workspace.screens;
-        const saved = state.rememberScreen !== false && (
-            screens.find(function (screen) { return state.outputUuid && String(screen.uuid) === state.outputUuid; }) ||
-            screens.find(function (screen) { return state.outputName && screen.name === state.outputName; }));
+        const saved = state.rememberScreen !== false &&
+            screens.find(function (screen) { return screen.name === state.outputName; });
         return saved || target.output || screens[0];
     }
 
