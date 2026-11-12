@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "WindowState.h"
+#include "WindowStateScope.h"
 #include "InternalSettings.h"
 #include "ExceptionList.h"
 #include "SettingsProvider.h"
@@ -9,6 +10,7 @@
 #include <KSharedConfig>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QDBusConnection>
 #include <QRectF>
 #include <QStandardPaths>
 #include <QTemporaryDir>
@@ -43,6 +45,20 @@ public:
 };
 Q_DECLARE_METATYPE(NativeRectangle)
 
+class ScopeWorkspace : public QObject {
+    Q_OBJECT
+public:
+    void removeOutput(QObject *output) { Q_EMIT outputRemoved(output); }
+    void addOutput(QObject *output) { Q_EMIT outputAdded(output); }
+    void finish() { Q_EMIT outputsChanged(); }
+signals:
+    void outputRemoved(QObject *output);
+    void outputAdded(QObject *output);
+    void outputsChanged();
+    void desktopsChanged();
+    void desktopLayoutChanged();
+};
+
 class StateDecoration : public KDecoration3::Decoration {
 public:
     StateDecoration(QObject *owner, MaterialTest::Bridge *bridge)
@@ -58,7 +74,9 @@ static QList<QVariantMap> prepareRequests;
 static bool prepareAvailable = false;
 static bool prepareMinimizes = false;
 static QVariant preparedDesktops;
+static QObject *testWorkspace = nullptr;
 namespace Material {
+QObject *windowStateWorkspace() { return testWorkspace; }
 bool prepareWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
 {
     if (!prepareAvailable) return false;
@@ -361,6 +379,93 @@ private slots:
         QCOMPARE(restoreRequests.size(), count);
         prepareAvailable = prepareMinimizes = false;
         preparedDesktops.clear();
+    }
+    void configurationIdentityAndScopedStorage() {
+        ScopeWorkspace workspace;
+        QObject a, b, desktop;
+        a.setProperty("name", "A"); a.setProperty("geometry", QRect(0, 0, 1280, 800));
+        b.setProperty("name", "B"); b.setProperty("geometry", QRect(1280, 0, 1280, 800));
+        desktop.setProperty("id", "desktop-1");
+        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a, &b}));
+        workspace.setProperty("desktops", QVariant::fromValue(QList<QObject *>{&desktop}));
+        workspace.setProperty("desktopGridWidth", 1);
+        workspace.setProperty("desktopGridHeight", 1);
+        const auto ab = Material::windowConfigurationScope(&workspace);
+        QVERIFY(!ab.isEmpty());
+        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&b, &a}));
+        QCOMPARE(Material::windowConfigurationScope(&workspace), ab);
+        workspace.setProperty("currentDesktop", QVariant::fromValue(&desktop));
+        desktop.setProperty("name", "renamed");
+        QCOMPARE(Material::windowConfigurationScope(&workspace), ab);
+        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a}));
+        const auto onlyA = Material::windowConfigurationScope(&workspace);
+        QVERIFY(onlyA != ab);
+        workspace.setProperty("desktopGridHeight", 2);
+        QVERIFY(Material::windowConfigurationScope(&workspace) != onlyA);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.Scopes." + QUuid::createUuid().toString());
+        const auto key = Material::windowStateKey(&window);
+        const auto original = Material::captureWindowState(&window);
+        QVERIFY(Material::writeWindowState(key, original, ab));
+        QVERIFY(Material::readWindowState(key, onlyA).isEmpty());
+        window.setProperty("frameGeometry", QRectF(200, 100, 900, 600));
+        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), onlyA));
+        QCOMPARE(Material::readWindowState(key, ab).value("position"), original.value("position"));
+        QCOMPARE(Material::readWindowState(key, onlyA).value("position").toMap().value("x").toInt(), 200);
+        const auto legacy = key + "-legacy";
+        QVERIFY(Material::writeWindowState(legacy, original));
+        QCOMPARE(Material::readWindowState(legacy, ab), Material::readWindowState(legacy));
+    }
+    void snapshotsBeforeOutputEvacuation() {
+        ScopeWorkspace workspace;
+        QObject interface(&workspace), a, b, desktop;
+        auto bus = QDBusConnection::sessionBus();
+        QVERIFY(bus.registerObject("/KWin", &interface));
+        a.setProperty("name", "A"); a.setProperty("geometry", QRect(0, 0, 1280, 800));
+        b.setProperty("name", "B"); b.setProperty("geometry", QRect(1280, 0, 1280, 800));
+        desktop.setProperty("id", "desktop-1");
+        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a, &b}));
+        workspace.setProperty("desktops", QVariant::fromValue(QList<QObject *>{&desktop}));
+        testWorkspace = &workspace;
+        KWin::WaylandWindow window;
+        const QString app = "org.example.StateTest.Unplug." + QUuid::createUuid().toString();
+        setup(window, app);
+        window.setProperty("output", QVariant::fromValue(&b));
+        window.setProperty("frameGeometry", QRectF(1390, 90, 640, 480));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        const auto ab = Material::windowConfigurationScope(&workspace);
+        const auto key = Material::windowStateKey(&window);
+        QVERIFY(Material::readWindowState(key, ab).isEmpty());
+        // KWin changes its output list, announces removal, then moves windows.
+        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a}));
+        workspace.removeOutput(&b);
+        window.setProperty("output", QVariant::fromValue(&a));
+        window.setProperty("frameGeometry", QRectF(110, 90, 640, 480));
+        workspace.finish();
+        const auto onlyA = Material::windowConfigurationScope(&workspace);
+        window.close();
+        window.setProperty("deleted", true);
+        QCOMPARE(Material::readWindowState(key, ab).value("outputName").toString(), "B");
+        QCOMPARE(Material::readWindowState(key, ab).value("position").toMap().value("x").toInt(), 1390);
+        QCOMPARE(Material::readWindowState(key, onlyA).value("outputName").toString(), "A");
+        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a, &b}));
+        workspace.addOutput(&b);
+        workspace.finish();
+        KWin::WaylandWindow reopened;
+        setup(reopened, app);
+        MaterialTest::Bridge reopenedBridge;
+        StateDecoration reopenedDecoration(&reopened, &reopenedBridge);
+        immediateAvailable = true;
+        Material::configureWindowState(&reopenedDecoration, true);
+        reopened.map();
+        QCOMPARE(immediateRequests.last().value("outputName").toString(), "B");
+        QCOMPARE(immediateRequests.last().value("position").toMap().value("x").toInt(), 1390);
+        immediateAvailable = false;
+        testWorkspace = nullptr;
+        bus.unregisterObject("/KWin");
     }
 };
 

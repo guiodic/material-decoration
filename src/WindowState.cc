@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "WindowState.h"
+#include "WindowStateScope.h"
 #include "TilingController.h"
 
 #include <KConfigGroup>
@@ -178,19 +179,29 @@ QVariantMap captureWindowState(const QObject *window)
     return state;
 }
 
-QVariantMap readWindowState(const QString &key)
+QVariantMap readWindowState(const QString &key, const QString &scope)
 {
     if (key.isEmpty()) return {};
-    const auto state = QJsonDocument::fromJson(KConfigGroup(stateConfig(), key).readEntry("State", QByteArray())).object().toVariantMap();
+    KConfigGroup group(stateConfig(), key);
+    QByteArray data;
+    if (!scope.isEmpty()) {
+        const auto scoped = group.group(QStringLiteral("Configurations")).group(scope);
+        if (scoped.hasKey("State")) return positionState(QJsonDocument::fromJson(scoped.readEntry("State", QByteArray())).object().toVariantMap());
+    }
+    // Migration only: never substitute another configuration's scoped state.
+    data = group.readEntry("State", QByteArray());
+    const auto state = QJsonDocument::fromJson(data).object().toVariantMap();
     return positionState(state);
 }
 
-bool writeWindowState(const QString &key, const QVariantMap &state)
+bool writeWindowState(const QString &key, const QVariantMap &state, const QString &scope)
 {
     const auto saved = positionState(state);
     if (key.isEmpty() || saved.isEmpty()) return false;
     const auto config = stateConfig();
-    KConfigGroup(config, key).writeEntry("State", QJsonDocument::fromVariant(saved).toJson(QJsonDocument::Compact));
+    KConfigGroup group(config, key);
+    if (!scope.isEmpty()) group = group.group(QStringLiteral("Configurations")).group(scope);
+    group.writeEntry("State", QJsonDocument::fromVariant(saved).toJson(QJsonDocument::Compact));
     return config->sync();
 }
 
@@ -204,6 +215,14 @@ public:
         // Read synchronously on closed(), before KWin releases the window.
         connect(m_window, SIGNAL(closed()), this, SLOT(save()), Qt::DirectConnection);
         connect(m_window, SIGNAL(readyForPaintingChanged()), this, SLOT(scheduleRestore()));
+        auto *scope = WindowStateScope::self();
+        connect(scope, &WindowStateScope::snapshotRequested, this, [this](const QString &oldScope, const QVariantMap &origins) {
+            if (!m_enabled || !m_restoreStarted || m_window->property("deleted").toBool()) return;
+            auto state = stateToSave();
+            const auto origin = origins.value(state.value("outputName").toString()).toMap();
+            if (!origin.isEmpty()) state.insert("outputPosition", origin);
+            writeWindowState(windowStateKey(m_window), state, oldScope);
+        });
         const auto slot = metaObject()->method(metaObject()->indexOfSlot("updateTile()"));
         for (int i = 0; i < m_window->metaObject()->methodCount(); ++i) {
             const auto signal = m_window->metaObject()->method(i);
@@ -233,7 +252,7 @@ private slots:
     void prepare()
     {
         if (!m_enabled || m_restoreStarted || !m_decoration || m_window->property("deleted").toBool()) return;
-        if (m_state.isEmpty()) m_state = readWindowState(windowStateKey(m_window));
+        if (m_state.isEmpty()) m_state = readWindowState(windowStateKey(m_window), WindowStateScope::self()->current());
         if (m_state.isEmpty()) return;
         const bool wasMinimized = m_window->property("minimized").toBool();
         m_prepared = prepareWindowStateImmediately(m_decoration, m_state) || m_prepared;
@@ -252,9 +271,7 @@ private slots:
     void save()
     {
         if (m_enabled) {
-            auto state = captureWindowState(m_window);
-            if (!state.contains("tile") && !m_lastTile.isEmpty()) state.insert("tile", m_lastTile);
-            writeWindowState(windowStateKey(m_window), state);
+            writeWindowState(windowStateKey(m_window), stateToSave(), WindowStateScope::self()->current());
         }
     }
     void updateTile()
@@ -270,7 +287,7 @@ private slots:
             retry();
             return;
         }
-        if (m_state.isEmpty()) m_state = readWindowState(key);
+        if (m_state.isEmpty()) m_state = readWindowState(key, WindowStateScope::self()->current());
         if (m_state.isEmpty()) return;
         if (restoreWindowStateImmediately(m_decoration, m_state)) {
             updateTile();
@@ -283,6 +300,12 @@ private slots:
     }
 
 private:
+    QVariantMap stateToSave() const
+    {
+        auto state = captureWindowState(m_window);
+        if (!state.contains("tile") && !m_lastTile.isEmpty()) state.insert("tile", m_lastTile);
+        return state;
+    }
     void releaseVisibilityGuard()
     {
         if (!m_visibilityGuard) return;

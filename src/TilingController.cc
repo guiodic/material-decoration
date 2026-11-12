@@ -231,6 +231,16 @@ bool prepareWindowStateImmediately(KDecoration3::Decoration *decoration, const Q
     return callWindowStateScript(decoration, state, QStringLiteral("materialPrepareWindowState"));
 }
 
+QObject *windowStateWorkspace()
+{
+    auto *scripting = QDBusConnection::sessionBus().objectRegisteredAt(QStringLiteral("/Scripting"));
+    if (!scripting) return nullptr;
+    for (auto *object : scripting->findChildren<QObject *>()) {
+        if (object->inherits("KWin::WorkspaceWrapper")) return object;
+    }
+    return nullptr;
+}
+
 void fetchTilingLayout(KDecoration3::Decoration *decoration, std::function<void(bool, const CustomTilingLayout &)> callback)
 {
     bridge()->enqueue(decoration, {{QStringLiteral("operation"), QStringLiteral("ping")}, {QStringLiteral("layout"), true}},

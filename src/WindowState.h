@@ -12,7 +12,7 @@ namespace Material
 // These helpers use only QObject's metaobject, never KWin's private C++ ABI.
 QString windowStateKey(const QObject *window);
 QVariantMap captureWindowState(const QObject *window);
-QVariantMap readWindowState(const QString &key);
-bool writeWindowState(const QString &key, const QVariantMap &state);
+QVariantMap readWindowState(const QString &key, const QString &scope = QString());
+bool writeWindowState(const QString &key, const QVariantMap &state, const QString &scope = QString());
 void configureWindowState(KDecoration3::Decoration *decoration, bool enabled);
 }

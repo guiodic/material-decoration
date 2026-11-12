@@ -93,6 +93,7 @@ set (decoration_SRCS
     LongPressAction.cc
     TilingController.cc
     WindowState.cc
+    WindowStateScope.cc
     plugin.cc
 )
 
