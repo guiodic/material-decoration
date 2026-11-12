@@ -15,6 +15,7 @@
 #include <QPointer>
 #include <QRectF>
 #include <QScopedValueRollback>
+#include <QSet>
 #include <QTimer>
 #include <cmath>
 
@@ -251,7 +252,7 @@ public:
             auto state = stateToSave();
             const auto origin = origins.value(state.value("outputName").toString()).toMap();
             if (!origin.isEmpty()) state.insert("outputPosition", origin);
-            writeWindowState(windowStateKey(m_window), state, oldScope);
+            saveState(oldScope, state);
         });
         m_normalSizeTimer.setSingleShot(true);
         connect(&m_normalSizeTimer, &QTimer::timeout, this, &WindowStateController::rememberSettledNormalSize);
@@ -313,9 +314,9 @@ private slots:
     }
     void save()
     {
-        if (m_enabled) {
-            writeWindowState(windowStateKey(m_window), stateToSave(), WindowStateScope::self()->current());
-        }
+        if (!m_enabled) return;
+        const auto scope = WindowStateScope::self()->current();
+        saveState(scope, stateToSave());
     }
     void updateTile()
     {
@@ -394,11 +395,29 @@ private slots:
         if (m_state.contains("tile")) m_normalSize = m_state.value("tile").toMap().value("normalSize").toMap();
         QScopedValueRollback restoring(m_restoring, true);
         const auto result = restoreWindowStateImmediately(m_decoration, state);
-        if (result == WindowRestoreResult::Succeeded) updateTile();
-        else if (result == WindowRestoreResult::Unavailable) retry();
+        if (result == WindowRestoreResult::Succeeded) {
+            m_restoreSucceeded = true;
+            updateTile();
+        } else if (result == WindowRestoreResult::Unavailable) retry();
     }
 
 private:
+    bool canSave(const QString &scope) const
+    {
+        // Preserve an existing placement if startup restoration failed or is
+        // still waiting for the script. New states and explicit user moves or
+        // resizes remain writable; use the same policy for topology snapshots.
+        return m_restoreSucceeded || m_restoreCancelled || m_savedScopes.contains(scope)
+            || readWindowState(windowStateKey(m_window), scope).isEmpty();
+    }
+    void saveState(const QString &scope, const QVariantMap &state)
+    {
+        if (canSave(scope) && writeWindowState(windowStateKey(m_window), state, scope)) {
+            // A first snapshot made by this window is not an unrestored state
+            // from a previous opening; its later saves remain legitimate.
+            m_savedScopes.insert(scope);
+        }
+    }
     QVariantMap siblingNormalSize() const
     {
         // Only correct a floating startup frame that looks inherited from a
@@ -453,6 +472,8 @@ private:
     QPointer<KDecoration3::Decoration> m_decoration;
     bool m_enabled;
     bool m_restoreStarted = false;
+    bool m_restoreSucceeded = false;
+    QSet<QString> m_savedScopes;
     bool m_restoreCancelled = false;
     QTimer m_retryTimer;
     bool m_prepared = false;

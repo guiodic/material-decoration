@@ -582,6 +582,89 @@ private slots:
         QTest::qWait(600);
         QCOMPARE(immediateRequests.size(), count + 1);
     }
+    void preservesPreviousStateWhenRestoreFails_data() {
+        QTest::addColumn<bool>("available");
+        QTest::addColumn<bool>("manual");
+        QTest::addColumn<bool>("snapshot");
+        for (bool available : {false, true}) {
+            for (bool manual : {false, true}) {
+                for (bool snapshot : {false, true}) {
+                    const auto name = QStringLiteral("%1-%2-%3").arg(available ? "execution-failed" : "unavailable",
+                        manual ? "user-moved" : "untouched", snapshot ? "snapshot" : "close");
+                    QTest::newRow(qPrintable(name)) << available << manual << snapshot;
+                }
+            }
+        }
+    }
+    void preservesPreviousStateWhenRestoreFails() {
+        QFETCH(bool, available);
+        QFETCH(bool, manual);
+        QFETCH(bool, snapshot);
+        QScopedValueRollback restoreAvailability(immediateAvailable, available);
+        QScopedValueRollback restoreSuccess(immediateSucceeds, false);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.ProtectSaved." + QUuid::createUuid().toString());
+        const auto key = Material::windowStateKey(&window);
+        const auto scope = Material::WindowStateScope::self()->current();
+        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), scope));
+        const auto saved = Material::readWindowState(key, scope);
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        // KWin/app startup placement is not a manual user decision.
+        window.setProperty("frameGeometry", QRectF(300, 200, 800, 500));
+        window.map();
+        if (manual) {
+            window.startInteraction();
+            window.setProperty("frameGeometry", QRectF(500, 400, 900, 650));
+            window.finishInteraction();
+        }
+        if (snapshot) Q_EMIT Material::WindowStateScope::self()->snapshotRequested(scope, {});
+        else window.close();
+        if (manual) {
+            QCOMPARE(Material::readWindowState(key, scope).value("position").toMap().value("x").toInt(), 500);
+            QCOMPARE(Material::readWindowState(key, scope).value("position").toMap().value("y").toInt(), 400);
+        } else {
+            QCOMPARE(Material::readWindowState(key, scope), saved);
+        }
+    }
+    void newWindowStillSavesWithoutScript() {
+        QScopedValueRollback restoreAvailability(immediateAvailable, false);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.NewWithoutScript." + QUuid::createUuid().toString());
+        const auto key = Material::windowStateKey(&window);
+        const auto scope = Material::WindowStateScope::self()->current();
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        Q_EMIT Material::WindowStateScope::self()->snapshotRequested(scope, {});
+        QVERIFY(!Material::readWindowState(key, scope).isEmpty());
+        // A snapshot created by this same new window must not prevent its
+        // later close from recording the final placement.
+        window.setProperty("frameGeometry", QRectF(300, 200, 800, 500));
+        window.close();
+        QCOMPARE(Material::readWindowState(key, scope).value("position").toMap().value("x").toInt(), 300);
+    }
+    void successfulRestoreStillSavesCurrentState() {
+        QScopedValueRollback restoreAvailability(immediateAvailable, true);
+        QScopedValueRollback restoreSuccess(immediateSucceeds, true);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.SaveAfterRestore." + QUuid::createUuid().toString());
+        const auto key = Material::windowStateKey(&window);
+        const auto scope = Material::WindowStateScope::self()->current();
+        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), scope));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        window.setProperty("frameGeometry", QRectF(600, 450, 800, 500));
+        Q_EMIT Material::WindowStateScope::self()->snapshotRequested(scope, {});
+        QCOMPARE(Material::readWindowState(key, scope).value("position").toMap().value("x").toInt(), 600);
+        window.setProperty("frameGeometry", QRectF(620, 470, 800, 500));
+        window.close();
+        QCOMPARE(Material::readWindowState(key, scope).value("position").toMap().value("x").toInt(), 620);
+    }
     void restoresBeforeMappingSignalReturns() {
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.Immediate." + QUuid::createUuid().toString());
