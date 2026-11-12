@@ -286,7 +286,7 @@ public:
             // Capture this for every open window before any sibling can close
             // and create a state in the newly entered configuration.
             if (!m_enabled || m_window->property("deleted").toBool()) return;
-            rememberStatePresence(newScope);
+            rememberSavePermission(newScope);
             // Only carry a deliberate placement back across output removal.
             // Adding a screen or changing desktops keeps independent states.
             auto *workspace = windowStateWorkspace();
@@ -415,7 +415,7 @@ private slots:
         configure(m_decoration, settings->rememberWindowState(), settings->rememberWindowScreen(), settings->rememberWindowDesktop());
         // Observe entry into an identity before a sibling can create its state.
         if (m_enabled) {
-            rememberStatePresence(WindowStateScope::self()->current());
+            rememberSavePermission(WindowStateScope::self()->current());
             // KWin updates resourceClass before desktopFileName. Preparation
             // may need the second notification to find the new saved state.
             if (!m_restoreStarted && windowStateKey(m_window) != m_stateKey) prepare();
@@ -426,7 +426,7 @@ private slots:
         if (!m_enabled || !m_restoreStarted || m_restoring) return;
         const auto scope = WindowStateScope::self()->current();
         const auto key = windowStateKey(m_window);
-        m_userModifiedStates.insert(stateIdentity(key, scope));
+        m_saveAllowed.insert(stateIdentity(key, scope), true);
         if (!m_previousScope.isEmpty() && scope != m_previousScope) m_userAdjustedWindowKey = key;
     }
     void updateTile()
@@ -486,7 +486,7 @@ private slots:
         // An interactive move/resize is an explicit user decision. Never let
         // a late script startup override it, even after the interaction ends.
         m_restoreCancelled = true;
-        if (m_enabled) m_userModifiedStates.insert(stateIdentity(windowStateKey(m_window), WindowStateScope::self()->current()));
+        if (m_enabled) m_saveAllowed.insert(stateIdentity(windowStateKey(m_window), WindowStateScope::self()->current()), true);
         m_retryTimer.stop();
         m_prepareRetryTimer.stop();
         releaseVisibilityGuard();
@@ -512,7 +512,7 @@ private slots:
         QScopedValueRollback restoring(m_restoring, true);
         const auto result = restoreWindowStateImmediately(m_decoration, restorationRequest(state));
         if (result == WindowRestoreResult::Succeeded) {
-            m_restoredStates.insert(stateIdentity(m_stateKey, m_stateScope));
+            m_saveAllowed.insert(stateIdentity(m_stateKey, m_stateScope), true);
             updateTile();
         } else if (result == WindowRestoreResult::Unavailable) retry();
     }
@@ -560,14 +560,14 @@ private:
         }
         if (m_state.isEmpty()) m_state = readWindowState(key, scope);
         const auto identity = stateIdentity(key, scope);
-        if (!m_statePresentOnEntry.contains(identity)) m_statePresentOnEntry.insert(identity, !m_state.isEmpty());
+        if (!m_saveAllowed.contains(identity)) m_saveAllowed.insert(identity, m_state.isEmpty());
     }
-    QString rememberStatePresence(const QString &scope)
+    QString rememberSavePermission(const QString &scope)
     {
         const auto key = windowStateKey(m_window);
         const auto identity = stateIdentity(key, scope);
-        if (!m_statePresentOnEntry.contains(identity)) {
-            m_statePresentOnEntry.insert(identity, !readWindowState(key, scope).isEmpty());
+        if (!m_saveAllowed.contains(identity)) {
+            m_saveAllowed.insert(identity, readWindowState(key, scope).isEmpty());
         }
         return identity;
     }
@@ -576,20 +576,14 @@ private:
         // Preserve an existing placement if startup restoration failed or is
         // still waiting for the script. New states and explicit user moves or
         // resizes remain writable; use the same policy for topology snapshots.
-        const auto identity = rememberStatePresence(scope);
+        const auto identity = rememberSavePermission(scope);
         // Other windows sharing this identity may have saved since we opened.
         // Protect only the state we encountered, not their subsequent writes.
-        return m_restoredStates.contains(identity) || m_userModifiedStates.contains(identity) || m_savedStates.contains(identity)
-            || !m_statePresentOnEntry.value(identity);
+        return m_saveAllowed.value(identity);
     }
     void saveState(const QString &scope, const QVariantMap &state)
     {
-        const auto key = windowStateKey(m_window);
-        if (canSave(scope) && writeWindowState(key, state, scope)) {
-            // A first snapshot made by this window is not an unrestored state
-            // from a previous opening; its later saves remain legitimate.
-            m_savedStates.insert(stateIdentity(key, scope));
-        }
+        if (canSave(scope)) writeWindowState(windowStateKey(m_window), state, scope);
     }
     void saveUserPlacementInPreviousScope(const QVariantMap &state)
     {
@@ -598,7 +592,7 @@ private:
             || !m_previousOutputs.contains(state.value("outputName").toString())) return;
         // This deliberate placement also authorizes the preceding configuration;
         // unrelated configurations remain protected.
-        m_userModifiedStates.insert(stateIdentity(key, m_previousScope));
+        m_saveAllowed.insert(stateIdentity(key, m_previousScope), true);
         // Keep the current output origin: restoration translates this position
         // if the surviving screen returns to a different place in the old layout.
         saveState(m_previousScope, state);
@@ -659,10 +653,8 @@ private:
     bool m_rememberScreen;
     bool m_rememberDesktop;
     bool m_restoreStarted = false;
-    QSet<QString> m_restoredStates;
-    QSet<QString> m_userModifiedStates;
-    QSet<QString> m_savedStates;
-    QHash<QString, bool> m_statePresentOnEntry;
+    // New states are writable; existing ones need a successful restore or a user move.
+    QHash<QString, bool> m_saveAllowed;
     QString m_previousScope;
     QStringList m_previousOutputs;
     QString m_userAdjustedWindowKey;
