@@ -20,6 +20,7 @@
 #include <QTest>
 #include <QUuid>
 #include <functional>
+#include <limits>
 
 // Match the runtime base-class name without including any private KWin header.
 namespace KWin {
@@ -492,6 +493,112 @@ private slots:
             window.close();
             QCOMPARE(Material::readWindowState(Material::windowStateKey(&window)).contains("tile"), !unsnap);
         }
+    }
+    void persistsQuickTileProportions_data() {
+        QTest::addColumn<int>("edges");
+        QTest::addColumn<QRectF>("region");
+        QTest::newRow("left") << 2 << QRectF(0, 0, 0.65, 1);
+        QTest::newRow("right") << 4 << QRectF(0.65, 0, 0.35, 1);
+        QTest::newRow("top") << 1 << QRectF(0, 0, 1, 0.4);
+        QTest::newRow("bottom") << 8 << QRectF(0, 0.4, 1, 0.6);
+        QTest::newRow("top-left") << 3 << QRectF(0, 0, 0.65, 0.4);
+        QTest::newRow("top-right") << 5 << QRectF(0.65, 0, 0.35, 0.4);
+        QTest::newRow("bottom-left") << 10 << QRectF(0, 0.4, 0.65, 0.6);
+        QTest::newRow("bottom-right") << 12 << QRectF(0.65, 0.4, 0.35, 0.6);
+    }
+    void persistsQuickTileProportions() {
+        QFETCH(int, edges);
+        QFETCH(QRectF, region);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.TileProportions." + QUuid::createUuid().toString());
+        KWin::QuickRootTile root;
+        KWin::Tile tile;
+        tile.setProperty("parent", QVariant::fromValue<QObject *>(&root));
+        tile.setProperty("relativeGeometry", region);
+        window.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
+        const auto state = Material::captureWindowState(&window);
+        const auto key = Material::windowStateKey(&window);
+        QVERIFY(Material::writeWindowState(key, state));
+        const auto savedTile = Material::readWindowState(key).value("tile").toMap();
+        QCOMPARE(savedTile.value("edges").toInt(), edges);
+        const auto saved = savedTile.value("region").toMap();
+        QCOMPARE(saved.value("x").toDouble(), region.x());
+        QCOMPARE(saved.value("y").toDouble(), region.y());
+        QCOMPARE(saved.value("width").toDouble(), region.width());
+        QCOMPARE(saved.value("height").toDouble(), region.height());
+    }
+    void preservesQuickTileModeWhenAnOuterEdgeIsResized() {
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.TileMode." + QUuid::createUuid().toString());
+        KWin::QuickRootTile root;
+        KWin::Tile tiles[8];
+        QVariantList siblings;
+        for (auto &tile : tiles) siblings.append(QVariant::fromValue<QObject *>(&tile));
+        root.setProperty("tiles", siblings);
+        tiles[0].setProperty("parent", QVariant::fromValue<QObject *>(&root));
+        tiles[0].setProperty("relativeGeometry", QRectF(0, 0, 0.65, 0.85));
+        window.setProperty("tile", QVariant::fromValue<QObject *>(&tiles[0]));
+        const auto key = Material::windowStateKey(&window);
+        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window)));
+        const auto saved = Material::readWindowState(key).value("tile").toMap();
+        QCOMPARE(saved.value("edges").toInt(), 2); // Still left, not top-left.
+        QCOMPARE(saved.value("region").toMap().value("height").toDouble(), 0.85);
+    }
+    void rejectsInvalidQuickTileProportions() {
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.InvalidProportions." + QUuid::createUuid().toString());
+        const auto key = Material::windowStateKey(&window);
+        auto state = Material::captureWindowState(&window);
+        for (const auto &region : QList<QVariantMap>{ {}, {{"x", 0}, {"y", 0}, {"width", 0.6}},
+                {{"x", -0.1}, {"y", 0}, {"width", 0.7}, {"height", 1}},
+                {{"x", 0}, {"y", 0}, {"width", 1.2}, {"height", 1}},
+                {{"x", 0}, {"y", 0}, {"width", 0}, {"height", 1}},
+                {{"x", 0}, {"y", 0}, {"width", 0.6}, {"height", 1.2}},
+                {{"x", 0}, {"y", 0}, {"width", std::numeric_limits<double>::infinity()}, {"height", 1}}}) {
+            state.insert("tile", QVariantMap{{"kind", "quick"}, {"edges", 2}, {"region", region}});
+            QVERIFY(Material::writeWindowState(key, state));
+            const auto saved = Material::readWindowState(key).value("tile").toMap();
+            QCOMPARE(saved.value("kind").toString(), "quick");
+            QCOMPARE(saved.value("edges").toInt(), 2);
+            QVERIFY(!saved.contains("region"));
+        }
+    }
+    void remembersResizedTileBeforeCloseCleanup_data() {
+        QTest::addColumn<bool>("interactiveFinish");
+        QTest::newRow("interactive-finish-before-buffer") << true;
+        QTest::newRow("frame-committed") << false;
+    }
+    void remembersResizedTileBeforeCloseCleanup() {
+        QFETCH(bool, interactiveFinish);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.ResizedTileCleanup." + QUuid::createUuid().toString());
+        window.setProperty("frameGeometry", QRectF(100, 100, 900, 650));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        KWin::QuickRootTile root;
+        KWin::Tile tile;
+        tile.setProperty("parent", QVariant::fromValue<QObject *>(&root));
+        tile.setProperty("relativeGeometry", QRectF(0, 0, 0.5, 1));
+        window.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
+        Q_EMIT window.requestedTileChanged();
+        window.changedTile();
+        tile.setProperty("relativeGeometry", QRectF(0, 0, 0.65, 1));
+        window.setProperty("frameGeometry", QRectF(0, 0, 832, 800));
+        if (interactiveFinish) window.finishInteraction();
+        else {
+            Q_EMIT window.frameGeometryChanged();
+            QCoreApplication::processEvents();
+        }
+        const auto key = Material::windowStateKey(&window);
+        const auto scope = Material::WindowStateScope::self()->current();
+        QVERIFY(Material::readWindowState(key, scope).isEmpty());
+        window.setProperty("tile", QVariant::fromValue<QObject *>(nullptr));
+        window.close();
+        const auto saved = Material::readWindowState(key, scope).value("tile").toMap();
+        QCOMPARE(saved.value("region").toMap().value("width").toDouble(), 0.65);
+        QCOMPARE(saved.value("normalSize").toMap().value("width").toDouble(), 900);
     }
     void savesNormalSizeOnlyWithValidTileMetadata() {
         KWin::WaylandWindow window;

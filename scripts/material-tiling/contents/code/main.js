@@ -102,6 +102,26 @@ var materialTiling;
         }
     }
 
+    function quickTileMode(tile) {
+        // The native mode survives resizing an outer edge away from the screen.
+        const siblings = tile.parent && tile.parent.tiles;
+        const index = siblings && siblings.length === 8 ? Array.from(siblings).indexOf(tile) : -1;
+        return index >= 0 ? [2, 4, 1, 8, 3, 5, 10, 12][index] : tileEdges(tile.relativeGeometry);
+    }
+
+    function restoreQuickTileRegion(saved, tile) {
+        const region = saved.region;
+        const keys = ["x", "y", "width", "height"];
+        // Old states need only their edge; invalid optional proportions are ignored.
+        if (!region || !keys.every(function (key) { return typeof region[key] === "number" && Number.isFinite(region[key]); }) ||
+            region.x < 0 || region.y < 0 || region.width <= 0 || region.height <= 0 ||
+            region.x + region.width > 1.00001 || region.y + region.height > 1.00001) return true;
+        // Do this only after manage() accepted the destination desktop's tile.
+        // KWin propagates the split to other windows in this shared layout.
+        tile.relativeGeometry = {x: region.x, y: region.y, width: region.width, height: region.height};
+        return keys.every(function (key) { return Math.abs(tile.relativeGeometry[key] - region[key]) < 0.00001; });
+    }
+
     function restoreNativeTile(target, saved, output) {
         if (!saved || !target.resizeable) return false;
         if (saved.kind === "quick") {
@@ -123,7 +143,9 @@ var materialTiling;
                 // case leave the window floating instead of choosing a wrong root.
                 if (target.onAllDesktops || target.desktops.length !== 1 || target.desktops[0].id !== desktop.id) return false;
                 for (let i = 0; i < tiles.length; ++i) {
-                    if (tileEdges(tiles[i].relativeGeometry) === saved.edges && manageRestoredTile(target, saved, tiles[i])) return true;
+                    if (quickTileMode(tiles[i]) === saved.edges && manageRestoredTile(target, saved, tiles[i])) {
+                        return restoreQuickTileRegion(saved, tiles[i]);
+                    }
                 }
             } finally {
                 if (restrictDesktop) target.desktops = originalDesktops;

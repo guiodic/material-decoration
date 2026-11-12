@@ -90,6 +90,14 @@ bool sameSize(const QVariantMap &a, const QVariantMap &b)
         && std::abs(a.value("height").toDouble() - b.value("height").toDouble()) <= 2;
 }
 
+bool validTileRegion(const QVariantMap &region)
+{
+    const double x = region.value("x").toDouble(), y = region.value("y").toDouble();
+    const double w = region.value("width").toDouble(), h = region.value("height").toDouble();
+    return validPosition(region) && std::isfinite(w) && std::isfinite(h) && w > 0 && h > 0
+        && x >= 0 && y >= 0 && x + w <= 1.00001 && y + h <= 1.00001;
+}
+
 int quickTileEdges(const QVariantMap &region)
 {
     constexpr double epsilon = 0.00001;
@@ -119,7 +127,17 @@ QVariantMap windowTile(const QObject *window)
     if (!tile) return {};
     auto *parent = tile->property("parent").value<QObject *>();
     const auto region = tileRegion(tile->property("relativeGeometry"));
-    if (parent && parent->inherits("KWin::QuickRootTile")) return {{"kind", "quick"}, {"edges", quickTileEdges(region)}};
+    if (parent && parent->inherits("KWin::QuickRootTile")) {
+        int edges = quickTileEdges(region);
+        // KWin 6.8 creates these children in mode order. Geometry alone can
+        // misidentify a half as a quarter after resizing its outer edge.
+        constexpr int modes[]{2, 4, 1, 8, 3, 5, 10, 12};
+        const auto siblings = parent->property("tiles").toList();
+        if (siblings.size() == 8) {
+            for (int i = 0; i < 8; ++i) if (siblings[i].value<QObject *>() == tile) edges = modes[i];
+        }
+        return {{"kind", "quick"}, {"edges", edges}, {"region", region}};
+    }
     QVariantList path;
     auto *node = tile;
     while (parent && path.size() < 32) {
@@ -151,14 +169,20 @@ QVariantMap positionState(const QVariantMap &state)
     const QString kind = tile.value("kind").toString();
     if (kind == QLatin1String("quick")) {
         const int edges = tile.value("edges").toInt();
-        if (QList<int>{1, 2, 4, 8, 3, 5, 10, 12}.contains(edges)) saved.insert("tile", QVariantMap{{"kind", kind}, {"edges", edges}});
+        if (QList<int>{1, 2, 4, 8, 3, 5, 10, 12}.contains(edges)) {
+            QVariantMap savedTile{{"kind", kind}, {"edges", edges}};
+            const auto region = tile.value("region").toMap();
+            if (validTileRegion(region)) {
+                QVariantMap normalized;
+                for (const char *key : {"x", "y", "width", "height"}) normalized.insert(QLatin1String(key), region.value(QLatin1String(key)).toDouble());
+                savedTile.insert("region", normalized);
+            }
+            saved.insert("tile", savedTile);
+        }
     } else if (kind == QLatin1String("custom")) {
         const auto path = tile.value("path").toList();
         const auto region = tile.value("region").toMap();
-        const double w = region.value("width").toDouble(), h = region.value("height").toDouble();
-        bool valid = !path.isEmpty() && path.size() <= 32 && validPosition(region) && std::isfinite(w) && std::isfinite(h)
-            && w > 0 && h > 0 && region.value("x").toDouble() >= 0 && region.value("y").toDouble() >= 0
-            && region.value("x").toDouble() + w <= 1.00001 && region.value("y").toDouble() + h <= 1.00001;
+        bool valid = !path.isEmpty() && path.size() <= 32 && validTileRegion(region);
         for (const auto &index : path) if (index.toDouble() != index.toInt() || index.toInt() < 0) valid = false;
         if (valid) saved.insert("tile", QVariantMap{{"kind", kind}, {"path", path}, {"region", region}});
     }
@@ -252,6 +276,7 @@ public:
         connect(m_window, SIGNAL(closed()), this, SLOT(save()), Qt::DirectConnection);
         connect(m_window, SIGNAL(readyForPaintingChanged()), this, SLOT(scheduleRestore()));
         connect(m_window, SIGNAL(interactiveMoveResizeStarted()), this, SLOT(cancelRestore()), Qt::DirectConnection);
+        connect(m_window, SIGNAL(interactiveMoveResizeFinished()), this, SLOT(updateTile()), Qt::DirectConnection);
         m_retryTimer.setSingleShot(true);
         connect(&m_retryTimer, &QTimer::timeout, this, &WindowStateController::restore);
         m_prepareRetryTimer.setSingleShot(true);
@@ -427,6 +452,9 @@ private slots:
         // maximizedChanged need not fire. At this point committed properties
         // classify the frame and no transient "about to" flag is needed.
         m_maximizeChanging = false;
+        // Resizing a quick tile changes its proportions without rebinding it.
+        // Keep the close-cleanup fallback current without changing normal size.
+        if (m_requestedTiled || m_committedTiled || !m_lastTile.isEmpty()) updateTile();
         rememberNormalSize();
     }
     void rememberNormalSize()
