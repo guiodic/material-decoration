@@ -170,6 +170,11 @@ QVariantMap positionState(const QVariantMap &state)
     return saved;
 }
 
+QString stateIdentity(const QString &windowKey, const QString &scope)
+{
+    return windowKey + QLatin1Char(':') + scope;
+}
+
 KSharedConfig::Ptr stateConfig()
 {
     return KSharedConfig::openStateConfig(QStringLiteral("material-window-staterc"));
@@ -268,7 +273,7 @@ public:
             if (!removed) {
                 m_previousScope.clear();
                 m_previousOutputs.clear();
-                m_userAdjustedAfterRemoval = false;
+                m_userAdjustedWindowKey.clear();
             }
         });
         connect(scope, &WindowStateScope::snapshotRequested, this, [this](const QString &oldScope, const QVariantMap &origins) {
@@ -280,7 +285,7 @@ public:
             saveState(oldScope, state);
             m_previousScope = oldScope;
             m_previousOutputs = origins.keys();
-            m_userAdjustedAfterRemoval = false;
+            m_userAdjustedWindowKey.clear();
         });
         m_normalSizeTimer.setSingleShot(true);
         connect(&m_normalSizeTimer, &QTimer::timeout, this, &WindowStateController::rememberSettledNormalSize);
@@ -295,6 +300,10 @@ public:
                 }
             }
         };
+        connectSignal("windowClassChanged", "rememberCurrentIdentity()");
+        connectSignal("desktopFileNameChanged", "rememberCurrentIdentity()");
+        connectSignal("windowRoleChanged", "rememberCurrentIdentity()");
+        connectSignal("tagChanged", "rememberCurrentIdentity()");
         connectSignal("interactiveMoveResizeStepped", "userPlacementStepped()");
         connectSignal("tileChanged", "committedTileChanged(KWin::Tile*)");
         connectSignal("requestedTileChanged", "requestedTileChanged()");
@@ -364,12 +373,19 @@ private slots:
         saveState(scope, state);
         saveUserPlacementInPreviousScope(state);
     }
+    void rememberCurrentIdentity()
+    {
+        // Observe entry into an identity before a sibling can create its state.
+        // An identity change does not trigger another restore of a mapped window.
+        if (m_enabled && !m_window->property("deleted").toBool()) rememberStatePresence(WindowStateScope::self()->current());
+    }
     void userPlacementStepped()
     {
         if (!m_enabled || !m_restoreStarted || m_restoring) return;
         const auto scope = WindowStateScope::self()->current();
-        m_userModifiedScopes.insert(scope);
-        if (!m_previousScope.isEmpty() && scope != m_previousScope) m_userAdjustedAfterRemoval = true;
+        const auto key = windowStateKey(m_window);
+        m_userModifiedStates.insert(stateIdentity(key, scope));
+        if (!m_previousScope.isEmpty() && scope != m_previousScope) m_userAdjustedWindowKey = key;
     }
     void updateTile()
     {
@@ -425,7 +441,7 @@ private slots:
         // An interactive move/resize is an explicit user decision. Never let
         // a late script startup override it, even after the interaction ends.
         m_restoreCancelled = true;
-        if (m_enabled) m_userModifiedScopes.insert(WindowStateScope::self()->current());
+        if (m_enabled) m_userModifiedStates.insert(stateIdentity(windowStateKey(m_window), WindowStateScope::self()->current()));
         m_retryTimer.stop();
         m_prepareRetryTimer.stop();
         releaseVisibilityGuard();
@@ -451,7 +467,7 @@ private slots:
         QScopedValueRollback restoring(m_restoring, true);
         const auto result = restoreWindowStateImmediately(m_decoration, state);
         if (result == WindowRestoreResult::Succeeded) {
-            m_restoredScopes.insert(m_stateScope);
+            m_restoredStates.insert(stateIdentity(m_stateKey, m_stateScope));
             updateTile();
         } else if (result == WindowRestoreResult::Unavailable) retry();
     }
@@ -491,13 +507,13 @@ private:
             m_stateKey = key;
         }
         if (m_state.isEmpty()) m_state = readWindowState(key, scope);
-        const auto identity = key + QLatin1Char(':') + scope;
+        const auto identity = stateIdentity(key, scope);
         if (!m_statePresentOnEntry.contains(identity)) m_statePresentOnEntry.insert(identity, !m_state.isEmpty());
     }
     QString rememberStatePresence(const QString &scope)
     {
         const auto key = windowStateKey(m_window);
-        const auto identity = key + QLatin1Char(':') + scope;
+        const auto identity = stateIdentity(key, scope);
         if (!m_statePresentOnEntry.contains(identity)) {
             m_statePresentOnEntry.insert(identity, !readWindowState(key, scope).isEmpty());
         }
@@ -511,24 +527,26 @@ private:
         const auto identity = rememberStatePresence(scope);
         // Other windows sharing this identity may have saved since we opened.
         // Protect only the state we encountered, not their subsequent writes.
-        return m_restoredScopes.contains(scope) || m_userModifiedScopes.contains(scope) || m_savedScopes.contains(scope)
+        return m_restoredStates.contains(identity) || m_userModifiedStates.contains(identity) || m_savedStates.contains(identity)
             || !m_statePresentOnEntry.value(identity);
     }
     void saveState(const QString &scope, const QVariantMap &state)
     {
-        if (canSave(scope) && writeWindowState(windowStateKey(m_window), state, scope)) {
+        const auto key = windowStateKey(m_window);
+        if (canSave(scope) && writeWindowState(key, state, scope)) {
             // A first snapshot made by this window is not an unrestored state
             // from a previous opening; its later saves remain legitimate.
-            m_savedScopes.insert(scope);
+            m_savedStates.insert(stateIdentity(key, scope));
         }
     }
     void saveUserPlacementInPreviousScope(const QVariantMap &state)
     {
-        if (!m_userAdjustedAfterRemoval || m_previousScope.isEmpty()
+        const auto key = windowStateKey(m_window);
+        if (m_userAdjustedWindowKey.isEmpty() || m_userAdjustedWindowKey != key || m_previousScope.isEmpty()
             || !m_previousOutputs.contains(state.value("outputName").toString())) return;
         // This deliberate placement also authorizes the preceding configuration;
         // unrelated configurations remain protected.
-        m_userModifiedScopes.insert(m_previousScope);
+        m_userModifiedStates.insert(stateIdentity(key, m_previousScope));
         // Keep the current output origin: restoration translates this position
         // if the surviving screen returns to a different place in the old layout.
         saveState(m_previousScope, state);
@@ -587,13 +605,13 @@ private:
     QPointer<KDecoration3::Decoration> m_decoration;
     bool m_enabled;
     bool m_restoreStarted = false;
-    QSet<QString> m_restoredScopes;
-    QSet<QString> m_userModifiedScopes;
-    QSet<QString> m_savedScopes;
+    QSet<QString> m_restoredStates;
+    QSet<QString> m_userModifiedStates;
+    QSet<QString> m_savedStates;
     QHash<QString, bool> m_statePresentOnEntry;
     QString m_previousScope;
     QStringList m_previousOutputs;
-    bool m_userAdjustedAfterRemoval = false;
+    QString m_userAdjustedWindowKey;
     bool m_restoreCancelled = false;
     QTimer m_retryTimer;
     bool m_prepared = false;

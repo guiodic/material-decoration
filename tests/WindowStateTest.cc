@@ -33,7 +33,18 @@ public:
     void startInteraction() { Q_EMIT interactiveMoveResizeStarted(); }
     void finishInteraction() { Q_EMIT interactiveMoveResizeFinished(); }
     void stepInteraction() { Q_EMIT interactiveMoveResizeStepped(property("frameGeometry").toRectF()); }
+    void changeIdentity(const QByteArray &name, const QString &value) {
+        setProperty(name.constData(), value);
+        if (name == "desktopFileName") Q_EMIT desktopFileNameChanged();
+        else if (name == "resourceClass") Q_EMIT windowClassChanged();
+        else if (name == "windowRole") Q_EMIT windowRoleChanged();
+        else if (name == "tag") Q_EMIT tagChanged();
+    }
 signals:
+    void desktopFileNameChanged();
+    void windowClassChanged();
+    void windowRoleChanged();
+    void tagChanged();
     void closed();
     void readyForPaintingChanged();
     void tileChanged(KWin::Tile *tile);
@@ -1247,6 +1258,157 @@ private slots:
         if (manualInNewScope) QCOMPARE(saved.value("position").toMap().value("x").toInt(), 500);
         else QCOMPARE(saved, protectedState);
         window.setProperty("deleted", true);
+        bus.unregisterObject("/KWin");
+    }
+    void saveAuthorizationFollowsWindowIdentity_data() {
+        QTest::addColumn<QByteArray>("property");
+        QTest::addColumn<QString>("authorization");
+        QTest::addColumn<bool>("manualAfterChange");
+        QTest::addColumn<bool>("snapshot");
+        for (const auto &property : {"desktopFileName", "resourceClass", "windowRole", "tag"}) {
+            for (const auto &authorization : {"restored", "user-moved", "saved"}) {
+                for (bool manual : {false, true}) {
+                    for (bool snapshot : {false, true}) {
+                        const QByteArray name = QByteArray(property) + "-" + authorization
+                            + (manual ? "-new-user-move" : "-automatic") + (snapshot ? "-snapshot" : "-close");
+                        QTest::newRow(name.constData()) << QByteArray(property) << QString::fromLatin1(authorization) << manual << snapshot;
+                    }
+                }
+            }
+        }
+    }
+    void saveAuthorizationFollowsWindowIdentity() {
+        QFETCH(QByteArray, property);
+        QFETCH(QString, authorization);
+        QFETCH(bool, manualAfterChange);
+        QFETCH(bool, snapshot);
+        QScopedValueRollback available(immediateAvailable, authorization == "restored");
+        QScopedValueRollback succeeds(immediateSucceeds, true);
+        QScopedValueRollback prepareAvailability(prepareAvailable, false);
+        KWin::WaylandWindow window, future;
+        const QString app = "org.example.StateTest.IdentityPermission." + QUuid::createUuid().toString();
+        for (auto *w : {&window, &future}) {
+            setup(*w, app);
+            if (property == "resourceClass") {
+                w->setProperty("desktopFileName", "");
+                w->setProperty("resourceClass", app);
+            }
+        }
+        future.setProperty(property.constData(), QString(app + ".new"));
+        const auto key = Material::windowStateKey(&window);
+        const auto newKey = Material::windowStateKey(&future);
+        QVERIFY(key != newKey);
+        const auto scope = Material::WindowStateScope::self()->current();
+        future.setProperty("frameGeometry", QRectF(880, 450, 800, 500));
+        QVERIFY(Material::writeWindowState(newKey, Material::captureWindowState(&future), scope));
+        const auto protectedState = Material::readWindowState(newKey, scope);
+        if (authorization != "saved") QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), scope));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        if (authorization == "user-moved") {
+            window.startInteraction();
+            window.setProperty("frameGeometry", QRectF(300, 200, 800, 500));
+            window.stepInteraction();
+            window.finishInteraction();
+        } else if (authorization == "saved") {
+            Q_EMIT Material::WindowStateScope::self()->snapshotRequested(scope, {});
+        }
+        const auto originalState = Material::readWindowState(key, scope);
+        window.changeIdentity(property, app + ".new");
+        QCOMPARE(Material::windowStateKey(&window), newKey);
+        window.setProperty("frameGeometry", QRectF(400, 250, 800, 500));
+        if (manualAfterChange) {
+            window.startInteraction();
+            window.setProperty("frameGeometry", QRectF(500, 350, 800, 500));
+            window.stepInteraction();
+            window.finishInteraction();
+        }
+        if (snapshot) Q_EMIT Material::WindowStateScope::self()->snapshotRequested(scope, {});
+        else window.close();
+        const auto saved = Material::readWindowState(newKey, scope);
+        if (manualAfterChange) QCOMPARE(saved.value("position").toMap().value("x").toInt(), 500);
+        else QCOMPARE(saved, protectedState);
+        QCOMPARE(Material::readWindowState(key, scope), originalState);
+    }
+    void siblingWindowsEnteringNewIdentitySaveInClosingOrder() {
+        QScopedValueRollback available(immediateAvailable, false);
+        KWin::WaylandWindow first, last;
+        const QString app = "org.example.StateTest.SharedNewIdentity." + QUuid::createUuid().toString();
+        setup(first, app + ".first");
+        setup(last, app + ".last");
+        MaterialTest::Bridge firstBridge, lastBridge;
+        StateDecoration firstDecoration(&first, &firstBridge), lastDecoration(&last, &lastBridge);
+        Material::configureWindowState(&firstDecoration, true);
+        Material::configureWindowState(&lastDecoration, true);
+        first.map();
+        last.map();
+        first.changeIdentity("desktopFileName", app);
+        last.changeIdentity("desktopFileName", app);
+        const auto key = Material::windowStateKey(&first);
+        const auto scope = Material::WindowStateScope::self()->current();
+        QCOMPARE(Material::windowStateKey(&last), key);
+        QVERIFY(Material::readWindowState(key, scope).isEmpty());
+        first.setProperty("frameGeometry", QRectF(300, 200, 800, 500));
+        last.setProperty("frameGeometry", QRectF(500, 350, 800, 500));
+        first.close();
+        last.close();
+        QCOMPARE(Material::readWindowState(key, scope).value("position").toMap().value("x").toInt(), 500);
+    }
+    void previousConfigurationPlacementFollowsIdentity_data() {
+        QTest::addColumn<bool>("changeBeforeMove");
+        QTest::newRow("new-identity-before-user-move") << true;
+        QTest::newRow("new-identity-after-user-move") << false;
+    }
+    void previousConfigurationPlacementFollowsIdentity() {
+        QFETCH(bool, changeBeforeMove);
+        ScopeWorkspace workspace;
+        QObject interface(&workspace), a, b, desktop;
+        auto bus = QDBusConnection::sessionBus();
+        QVERIFY(bus.registerObject("/KWin", &interface));
+        QScopedValueRollback wrapper(testWorkspace, static_cast<QObject *>(&workspace));
+        QScopedValueRollback available(immediateAvailable, true);
+        a.setProperty("name", "A"); a.setProperty("geometry", QRect(0, 0, 1280, 800));
+        b.setProperty("name", "B"); b.setProperty("geometry", QRect(1280, 0, 1280, 800));
+        desktop.setProperty("id", "desktop");
+        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a, &b}));
+        workspace.setProperty("desktops", QVariant::fromValue(QList<QObject *>{&desktop}));
+        KWin::WaylandWindow window, future;
+        const QString app = "org.example.StateTest.PreviousIdentity." + QUuid::createUuid().toString();
+        setup(window, app);
+        setup(future, app + ".new");
+        window.setProperty("output", QVariant::fromValue(&b));
+        window.setProperty("frameGeometry", QRectF(1400, 90, 800, 500));
+        future.setProperty("output", QVariant::fromValue(&b));
+        future.setProperty("frameGeometry", QRectF(1500, 100, 800, 500));
+        const auto key = Material::windowStateKey(&window);
+        const auto newKey = Material::windowStateKey(&future);
+        const auto ab = Material::WindowStateScope::self()->current();
+        QVERIFY(Material::writeWindowState(newKey, Material::captureWindowState(&future), ab));
+        const auto protectedState = Material::readWindowState(newKey, ab);
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a}));
+        workspace.removeOutput(&b);
+        window.setProperty("output", QVariant::fromValue(&a));
+        window.setProperty("frameGeometry", QRectF(120, 90, 800, 500));
+        workspace.finish();
+        if (changeBeforeMove) window.changeIdentity("desktopFileName", app + ".new");
+        window.startInteraction();
+        window.setProperty("frameGeometry", QRectF(300, 200, 800, 500));
+        window.stepInteraction();
+        window.finishInteraction();
+        if (!changeBeforeMove) window.changeIdentity("desktopFileName", app + ".new");
+        window.close();
+        const auto saved = Material::readWindowState(newKey, ab);
+        if (changeBeforeMove) {
+            QCOMPARE(saved.value("outputName").toString(), "A");
+            QCOMPARE(saved.value("position").toMap().value("x").toInt(), 300);
+        } else QCOMPARE(saved, protectedState);
+        QCOMPARE(Material::readWindowState(key, ab).value("outputName").toString(), "B");
         bus.unregisterObject("/KWin");
     }
     void snapshotsBeforeOutputEvacuation() {
