@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "WindowState.h"
 #include "WindowStateScope.h"
-#include "SettingsProvider.h"
 #include "TilingController.h"
 
 #include <KConfigGroup>
@@ -306,8 +305,6 @@ public:
                 }
             }
         };
-        connectSignal("desktopFileNameChanged", "rememberCurrentIdentity()");
-        connectSignal("tagChanged", "rememberCurrentIdentity()");
         connectSignal("interactiveMoveResizeStepped", "userPlacementStepped()");
         connectSignal("tileChanged", "committedTileChanged(KWin::Tile*)");
         connectSignal("requestedTileChanged", "requestedTileChanged()");
@@ -378,19 +375,6 @@ private slots:
         const auto state = stateToSave();
         saveState(scope, state);
         saveUserPlacementInPreviousScope(state);
-    }
-    void rememberCurrentIdentity()
-    {
-        if (m_window->property("deleted").toBool()) return;
-        // Match KWin's DecoratedWindow::windowClass() even if the decoration
-        // has been removed. Eligibility must follow the current class/title.
-        const QString windowClass = m_window->property("resourceName").toString() + QLatin1Char(' ')
-            + m_window->property("resourceClass").toString();
-        const auto settings = SettingsProvider::self()->internalSettings(windowClass, m_window->property("caption").toString());
-        configure(m_decoration, settings->rememberWindowState(), settings->rememberWindowScreen(), settings->rememberWindowDesktop());
-        // desktopFileNameChanged follows resourceClass in KWin's App ID handler.
-        // Update exclusions and save eligibility, without restarting preparation.
-        if (m_enabled) rememberSavePermission(WindowStateScope::self()->current());
     }
     void userPlacementStepped()
     {

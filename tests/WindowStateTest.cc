@@ -14,7 +14,6 @@
 #include <QDBusConnection>
 #include <QRectF>
 #include <QScopedValueRollback>
-#include <QScopeGuard>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTest>
@@ -45,14 +44,7 @@ public:
     void startInteraction() { Q_EMIT interactiveMoveResizeStarted(); }
     void finishInteraction() { Q_EMIT interactiveMoveResizeFinished(); }
     void stepInteraction() { Q_EMIT interactiveMoveResizeStepped(property("frameGeometry").toRectF()); }
-    void changeIdentity(const QByteArray &name, const QString &value) {
-        setProperty(name.constData(), value);
-        if (name == "desktopFileName") Q_EMIT desktopFileNameChanged();
-        else if (name == "tag") Q_EMIT tagChanged();
-    }
 signals:
-    void desktopFileNameChanged();
-    void tagChanged();
     void closed();
     void readyForPaintingChanged();
     void tileChanged(KWin::Tile *tile);
@@ -147,12 +139,6 @@ class WindowStateTest : public QObject {
 private slots:
     void initTestCase() {
         QStandardPaths::setTestModeEnabled(true);
-        // Direct controller tests simulate a globally enabled feature.
-        // The schema defaults are checked separately below.
-        const auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
-        config->group("Windeco").writeEntry("RememberWindowState", true);
-        QVERIFY(config->sync());
-        Material::SettingsProvider::self()->reconfigure();
     }
     void init() {
         defaultOutput.setProperty("name", "Virtual-0");
@@ -371,89 +357,6 @@ private slots:
             QCOMPARE(loaded.exceptions().first()->mask(), int(Material::ExceptionMask::ExcludeWindowPosition));
         }
     }
-    void identityChangesReevaluateExclusions_data() {
-        QTest::addColumn<bool>("excludedAfterChange");
-        QTest::addColumn<bool>("mappedBeforeChange");
-        QTest::addColumn<bool>("withoutDecoration");
-        QTest::addColumn<bool>("snapshot");
-        for (bool excluded : {false, true}) {
-            for (bool mapped : {false, true}) {
-                for (bool withoutDecoration : {false, true}) {
-                    for (bool snapshot : {false, true}) {
-                        const auto name = QStringLiteral("%1-%2-%3-%4").arg(excluded ? "excluded" : "allowed",
-                            mapped ? "mapped" : "unmapped", withoutDecoration ? "no-decoration" : "decorated",
-                            snapshot ? "snapshot" : "close");
-                        QTest::newRow(qPrintable(name)) << excluded << mapped << withoutDecoration << snapshot;
-                    }
-                }
-            }
-        }
-    }
-    void identityChangesReevaluateExclusions() {
-        QFETCH(bool, excludedAfterChange);
-        QFETCH(bool, mappedBeforeChange);
-        QFETCH(bool, withoutDecoration);
-        QFETCH(bool, snapshot);
-        QScopedValueRollback available(immediateAvailable, false);
-        QScopedValueRollback prepareAvailability(prepareAvailable, false);
-        const auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
-        const auto cleanup = qScopeGuard([config] {
-            config->deleteGroup("Windeco Exception 0");
-            config->sync();
-            Material::SettingsProvider::self()->reconfigure();
-        });
-        const QString app = "org.example.StateTest.ClassExclusion." + QUuid::createUuid().toString();
-        const QString allowed = app + ".Allowed", excluded = app + ".Excluded";
-        auto exception = Material::InternalSettingsPtr::create();
-        exception->setEnabled(true);
-        exception->setExceptionPattern(excluded);
-        exception->setExceptionType(int(Material::ExceptionType::WindowClass));
-        exception->setMatchingMode(int(Material::MatchingMode::ExactMatch));
-        exception->setMask(Material::ExceptionMask::ExcludeWindowPosition);
-        exception->setExcludeWindowPosition(true);
-        Material::ExceptionList list;
-        list.setExceptions({exception});
-        list.writeConfig(config);
-        QVERIFY(config->sync());
-        Material::SettingsProvider::self()->reconfigure();
-        KWin::WaylandWindow window;
-        const QString initialClass = excludedAfterChange ? allowed : excluded;
-        const QString nextClass = excludedAfterChange ? excluded : allowed;
-        setup(window, initialClass);
-        window.setProperty("resourceName", "material-state-test");
-        window.setProperty("resourceClass", initialClass);
-        window.setProperty("caption", "Unchanged title");
-        const auto scope = Material::WindowStateScope::self()->current();
-        const auto originalKey = Material::windowStateKey(&window);
-        QVERIFY(Material::writeWindowState(originalKey, Material::captureWindowState(&window), scope));
-        const auto originalState = Material::readWindowState(originalKey, scope);
-        MaterialTest::Bridge bridge;
-        auto decoration = std::make_unique<StateDecoration>(&window, &bridge);
-        Material::configureWindowState(decoration.get(), excludedAfterChange);
-        if (mappedBeforeChange) window.map();
-        if (withoutDecoration) decoration.reset();
-        // KWin updates the class before notifying the completed App ID change.
-        window.setProperty("resourceClass", nextClass);
-        window.setProperty("desktopFileName", nextClass);
-        Q_EMIT window.desktopFileNameChanged();
-        const auto key = Material::windowStateKey(&window);
-        QVERIFY(key != originalKey);
-        immediateAvailable = true;
-        if (!mappedBeforeChange) window.map();
-        if (excludedAfterChange && mappedBeforeChange) {
-            const auto count = immediateRequests.size();
-            QTest::qWait(300); // A previously queued restore must not run.
-            QCOMPARE(immediateRequests.size(), count);
-        }
-        window.setProperty("frameGeometry", QRectF(400, 250, 800, 500));
-        if (snapshot) Q_EMIT Material::WindowStateScope::self()->snapshotRequested(scope, {});
-        else window.close();
-        const auto saved = Material::readWindowState(key, scope);
-        if (excludedAfterChange) QVERIFY(saved.isEmpty());
-        else QCOMPARE(saved.value("position").toMap().value("x").toInt(), 400);
-        QCOMPARE(Material::readWindowState(originalKey, scope), originalState);
-        QCOMPARE(window.property("caption").toString(), "Unchanged title");
-    }
     void lateAppIdRestoresAtFirstFrameWithoutRestartingPreparation() {
         QScopedValueRollback available(prepareAvailable, true);
         QScopedValueRollback restoreAvailability(immediateAvailable, true);
@@ -469,7 +372,7 @@ private slots:
         QCoreApplication::processEvents();
         const auto calls = prepareCalls;
         window.setProperty("resourceClass", app);
-        window.changeIdentity("desktopFileName", app);
+        window.setProperty("desktopFileName", app);
         Material::configureWindowState(&decoration, true, true, true);
         QCoreApplication::processEvents();
         QCOMPARE(prepareCalls, calls);
@@ -1703,7 +1606,7 @@ private slots:
             Q_EMIT Material::WindowStateScope::self()->snapshotRequested(scope, {});
         }
         const auto originalState = Material::readWindowState(key, scope);
-        window.changeIdentity(property, app + ".new");
+        window.setProperty(property.constData(), QString(app + ".new"));
         QCOMPARE(Material::windowStateKey(&window), newKey);
         window.setProperty("frameGeometry", QRectF(400, 250, 800, 500));
         if (manualAfterChange) {
@@ -1718,30 +1621,6 @@ private slots:
         if (manualAfterChange) QCOMPARE(saved.value("position").toMap().value("x").toInt(), 500);
         else QCOMPARE(saved, protectedState);
         QCOMPARE(Material::readWindowState(key, scope), originalState);
-    }
-    void siblingWindowsEnteringNewIdentitySaveInClosingOrder() {
-        QScopedValueRollback available(immediateAvailable, false);
-        KWin::WaylandWindow first, last;
-        const QString app = "org.example.StateTest.SharedNewIdentity." + QUuid::createUuid().toString();
-        setup(first, app + ".first");
-        setup(last, app + ".last");
-        MaterialTest::Bridge firstBridge, lastBridge;
-        StateDecoration firstDecoration(&first, &firstBridge), lastDecoration(&last, &lastBridge);
-        Material::configureWindowState(&firstDecoration, true);
-        Material::configureWindowState(&lastDecoration, true);
-        first.map();
-        last.map();
-        first.changeIdentity("desktopFileName", app);
-        last.changeIdentity("desktopFileName", app);
-        const auto key = Material::windowStateKey(&first);
-        const auto scope = Material::WindowStateScope::self()->current();
-        QCOMPARE(Material::windowStateKey(&last), key);
-        QVERIFY(Material::readWindowState(key, scope).isEmpty());
-        first.setProperty("frameGeometry", QRectF(300, 200, 800, 500));
-        last.setProperty("frameGeometry", QRectF(500, 350, 800, 500));
-        first.close();
-        last.close();
-        QCOMPARE(Material::readWindowState(key, scope).value("position").toMap().value("x").toInt(), 500);
     }
     void previousConfigurationPlacementFollowsIdentity_data() {
         QTest::addColumn<bool>("changeBeforeMove");
@@ -1783,12 +1662,12 @@ private slots:
         window.setProperty("output", QVariant::fromValue(&a));
         window.setProperty("frameGeometry", QRectF(120, 90, 800, 500));
         workspace.finish();
-        if (changeBeforeMove) window.changeIdentity("desktopFileName", app + ".new");
+        if (changeBeforeMove) window.setProperty("desktopFileName", QString(app + ".new"));
         window.startInteraction();
         window.setProperty("frameGeometry", QRectF(300, 200, 800, 500));
         window.stepInteraction();
         window.finishInteraction();
-        if (!changeBeforeMove) window.changeIdentity("desktopFileName", app + ".new");
+        if (!changeBeforeMove) window.setProperty("desktopFileName", QString(app + ".new"));
         window.close();
         const auto saved = Material::readWindowState(newKey, ab);
         if (changeBeforeMove) {

@@ -33,7 +33,8 @@ restart early preparation.
 - **Eligibility:** experimental, disabled by default, and enabled in the KCM's
   Window Management tab. Requires the Material Tiling Popup KWin script. Applies
   to normal, non-transient Wayland windows that use this decoration; excludes
-  X11/XWayland windows, dialogs and popups. Per-window exceptions can disable it.
+  X11/XWayland windows, dialogs and popups. Per-window exceptions can disable it
+  through normal decoration settings updates; App ID changes are not monitored.
 - **Restored data:** position and native quick or custom tiling. Quick tiling
   also restores saved split proportions, resizing other windows in the same
   quick-tile layout. KWin applies its own layout constraints.
