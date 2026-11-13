@@ -81,18 +81,11 @@ var materialTiling;
         const prepareSize = !target.tile && !target.fullScreen && !target.maximizeMode && size &&
             [size.width, size.height].every(function (n) { return typeof n === "number" && Number.isFinite(n) && n > 0; }) &&
             (original.width !== size.width || original.height !== size.height);
-        let managed = false;
-        try {
-            // moveResizeGeometry updates synchronously on Wayland, even when
-            // the client has not acknowledged the resized buffer yet. Native
-            // manage() stores this as KWin's geometry for a later unsnap.
-            if (prepareSize) target.frameGeometry = {x: original.x, y: original.y, width: size.width, height: size.height};
-            managed = tile.manage(target);
-            return managed;
-        } finally {
-            // A rejected/missing tile must leave a floating app's size intact.
-            if (!managed && prepareSize) target.frameGeometry = original;
-        }
+        // Native manage() stores the synchronous moveResizeGeometry for unsnapping.
+        if (prepareSize) target.frameGeometry = {x: original.x, y: original.y, width: size.width, height: size.height};
+        const managed = tile.manage(target);
+        if (!managed && prepareSize) target.frameGeometry = original;
+        return managed;
     }
 
     function quickTileMode(tile) {

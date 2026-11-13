@@ -176,11 +176,6 @@ QVariantMap positionState(const QVariantMap &state)
     return saved;
 }
 
-QString stateIdentity(const QString &windowKey, const QString &scope)
-{
-    return windowKey + QLatin1Char(':') + scope;
-}
-
 KSharedConfig::Ptr stateConfig()
 {
     return KSharedConfig::openStateConfig(QStringLiteral("material-window-staterc"));
@@ -278,7 +273,7 @@ public:
             if (!removed) {
                 m_previousScope.clear();
                 m_previousOutputs.clear();
-                m_userAdjustedWindowKey.clear();
+                m_userAdjustedAfterRemoval = false;
             }
         });
         connect(scope, &WindowStateScope::snapshotRequested, this, [this](const QString &oldScope, const QVariantMap &origins) {
@@ -290,7 +285,7 @@ public:
             saveState(oldScope, state);
             m_previousScope = oldScope;
             m_previousOutputs = origins.keys();
-            m_userAdjustedWindowKey.clear();
+            m_userAdjustedAfterRemoval = false;
         });
         m_normalSizeTimer.setSingleShot(true);
         connect(&m_normalSizeTimer, &QTimer::timeout, this, &WindowStateController::rememberSettledNormalSize);
@@ -315,9 +310,6 @@ public:
         connectSignal("fullScreenChanged", "queueNormalSizeUpdate()");
         m_originalDesktops = m_window->property("desktops");
         prepare();
-        // Initialization may still apply the app's initial desktop/minimized
-        // state after creating the decoration. Reassert before its first buffer.
-        QTimer::singleShot(0, this, &WindowStateController::prepare);
     }
     void configure(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop)
     {
@@ -348,8 +340,7 @@ private slots:
         m_prepareFailed = result == WindowRestoreResult::Failed;
         m_visibilityGuard = m_visibilityGuard || (!wasMinimized && m_window->property("minimized").toBool());
         // A short pre-map interval covers script startup without delaying the
-        // first buffer. Stop on success/error; the initial zero-timer reassertion
-        // above is deliberately retained even after an immediate success.
+        // first buffer. Stop on success or error.
         if (result == WindowRestoreResult::Unavailable && !m_prepared && m_prepareAttempts < 100) {
             m_prepareRetryTimer.start(50); // At most about five seconds in total.
         }
@@ -380,9 +371,8 @@ private slots:
     {
         if (!m_enabled || !m_restoreStarted || m_restoring) return;
         const auto scope = WindowStateScope::self()->current();
-        const auto key = windowStateKey(m_window);
-        m_saveAllowed.insert(stateIdentity(key, scope), true);
-        if (!m_previousScope.isEmpty() && scope != m_previousScope) m_userAdjustedWindowKey = key;
+        m_saveAllowed.insert(scope, true);
+        if (!m_previousScope.isEmpty() && scope != m_previousScope) m_userAdjustedAfterRemoval = true;
     }
     void updateTile()
     {
@@ -441,7 +431,7 @@ private slots:
         // An interactive move/resize is an explicit user decision. Never let
         // a late script startup override it, even after the interaction ends.
         m_restoreCancelled = true;
-        if (m_enabled) m_saveAllowed.insert(stateIdentity(windowStateKey(m_window), WindowStateScope::self()->current()), true);
+        if (m_enabled) m_saveAllowed.insert(WindowStateScope::self()->current(), true);
         m_retryTimer.stop();
         m_prepareRetryTimer.stop();
         releaseVisibilityGuard();
@@ -467,7 +457,7 @@ private slots:
         QScopedValueRollback restoring(m_restoring, true);
         const auto result = restoreWindowStateImmediately(m_decoration, restorationRequest(state));
         if (result == WindowRestoreResult::Succeeded) {
-            m_saveAllowed.insert(stateIdentity(m_stateKey, m_stateScope), true);
+            m_saveAllowed.insert(m_stateScope, true);
             updateTile();
         } else if (result == WindowRestoreResult::Unavailable) retry();
     }
@@ -485,26 +475,13 @@ private:
         const auto scope = WindowStateScope::self()->current();
         const auto key = windowStateKey(m_window);
         if (m_stateScope != scope || m_stateKey != key) {
-            // Preparation may already have moved the window to a desktop from
-            // the previous topology. Undo it even if the new scope has no state.
-            if (m_prepared && m_originalDesktops.isValid()) {
-                auto original = m_originalDesktops;
+            // After a configuration change, start from the current desktop
+            // rather than reconstructing memberships from the old topology.
+            if (m_prepared) {
                 if (auto *workspace = windowStateWorkspace()) {
-                    QList<QObject *> live;
-                    for (const auto &value : workspace->property("desktops").toList()) live.append(value.value<QObject *>());
-                    QList<QObject *> desktops;
-                    for (const auto &value : original.toList()) {
-                        auto *desktop = value.value<QObject *>();
-                        if (desktop && live.contains(desktop)) desktops.append(desktop);
-                    }
-                    // An empty original list means all desktops; a deleted
-                    // original desktop instead falls back to the current one.
-                    if (desktops.isEmpty() && !original.toList().isEmpty()) {
-                        if (auto *desktop = workspace->property("currentDesktop").value<QObject *>()) desktops.append(desktop);
-                    }
-                    original = QVariant::fromValue(desktops);
+                    if (auto *desktop = workspace->property("currentDesktop").value<QObject *>())
+                        m_window->setProperty("desktops", QVariant::fromValue(QList<QObject *>{desktop}));
                 }
-                m_window->setProperty("desktops", original);
             }
             releaseVisibilityGuard();
             m_prepared = false;
@@ -514,27 +491,23 @@ private:
             m_stateKey = key;
         }
         if (m_state.isEmpty()) m_state = readWindowState(key, scope);
-        const auto identity = stateIdentity(key, scope);
-        if (!m_saveAllowed.contains(identity)) m_saveAllowed.insert(identity, m_state.isEmpty());
+        if (!m_saveAllowed.contains(scope)) m_saveAllowed.insert(scope, m_state.isEmpty());
     }
-    QString rememberSavePermission(const QString &scope)
+    void rememberSavePermission(const QString &scope)
     {
-        const auto key = windowStateKey(m_window);
-        const auto identity = stateIdentity(key, scope);
-        if (!m_saveAllowed.contains(identity)) {
-            m_saveAllowed.insert(identity, readWindowState(key, scope).isEmpty());
+        if (!m_saveAllowed.contains(scope)) {
+            m_saveAllowed.insert(scope, readWindowState(windowStateKey(m_window), scope).isEmpty());
         }
-        return identity;
     }
     bool canSave(const QString &scope)
     {
         // Preserve an existing placement if startup restoration failed or is
         // still waiting for the script. New states and explicit user moves or
         // resizes remain writable; use the same policy for topology snapshots.
-        const auto identity = rememberSavePermission(scope);
+        rememberSavePermission(scope);
         // Other windows sharing this identity may have saved since we opened.
         // Protect only the state we encountered, not their subsequent writes.
-        return m_saveAllowed.value(identity);
+        return m_saveAllowed.value(scope);
     }
     void saveState(const QString &scope, const QVariantMap &state)
     {
@@ -542,12 +515,11 @@ private:
     }
     void saveUserPlacementInPreviousScope(const QVariantMap &state)
     {
-        const auto key = windowStateKey(m_window);
-        if (m_userAdjustedWindowKey.isEmpty() || m_userAdjustedWindowKey != key || m_previousScope.isEmpty()
+        if (!m_userAdjustedAfterRemoval || m_previousScope.isEmpty()
             || !m_previousOutputs.contains(state.value("outputName").toString())) return;
         // This deliberate placement also authorizes the preceding configuration;
         // unrelated configurations remain protected.
-        m_saveAllowed.insert(stateIdentity(key, m_previousScope), true);
+        m_saveAllowed.insert(m_previousScope, true);
         // Keep the current output origin: restoration translates this position
         // if the surviving screen returns to a different place in the old layout.
         saveState(m_previousScope, state);
@@ -612,7 +584,7 @@ private:
     QHash<QString, bool> m_saveAllowed;
     QString m_previousScope;
     QStringList m_previousOutputs;
-    QString m_userAdjustedWindowKey;
+    bool m_userAdjustedAfterRemoval = false;
     bool m_restoreCancelled = false;
     QTimer m_retryTimer;
     bool m_prepared = false;

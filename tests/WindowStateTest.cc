@@ -1138,25 +1138,6 @@ private slots:
         QTest::qWait(120);
         QCOMPARE(prepareCalls, count + 1);
     }
-    void immediatePreparationIsReassertedOnce() {
-        QScopedValueRollback available(prepareAvailable, true);
-        QScopedValueRollback minimizes(prepareMinimizes, true);
-        KWin::WaylandWindow window;
-        setup(window, "org.example.StateTest.ReassertPrepare." + QUuid::createUuid().toString());
-        window.setProperty("minimized", false);
-        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
-        MaterialTest::Bridge bridge;
-        StateDecoration decoration(&window, &bridge);
-        const auto count = prepareCalls;
-        Material::configureWindowState(&decoration, true, true, true);
-        QCOMPARE(prepareCalls, count + 1);
-        window.setProperty("minimized", false); // Simulate KWin applying initial client state.
-        QTest::qWait(120);
-        QCOMPARE(prepareCalls, count + 2);
-        QVERIFY(window.property("minimized").toBool());
-        window.map();
-        QVERIFY(!window.property("minimized").toBool());
-    }
     void preparationRetriesHaveABoundedBudget() {
         QScopedValueRollback available(prepareAvailable, false);
         KWin::WaylandWindow window;
@@ -1211,21 +1192,16 @@ private slots:
     void reloadsStateWhenOpeningConfigurationChanges_data() {
         QTest::addColumn<int>("phase");
         QTest::addColumn<bool>("hasState");
-        QTest::addColumn<bool>("removeDesktop");
-        for (int phase = 0; phase < 3; ++phase) {
+        for (int phase : {1, 2}) {
             for (bool hasState : {false, true}) {
-                for (bool removeDesktop : {false, true}) {
-                    const QByteArray name = QByteArray::number(phase) + (hasState ? "-saved" : "-missing")
-                        + (removeDesktop ? "-removed-desktop" : "-same-desktops");
-                    QTest::newRow(name.constData()) << phase << hasState << removeDesktop;
-                }
+                const QByteArray name = QByteArray::number(phase) + (hasState ? "-saved" : "-missing");
+                QTest::newRow(name.constData()) << phase << hasState;
             }
         }
     }
     void reloadsStateWhenOpeningConfigurationChanges() {
-        QFETCH(int, phase); // Reassertion, first frame, or full-restore retry.
+        QFETCH(int, phase); // First frame or full-restore retry.
         QFETCH(bool, hasState);
-        QFETCH(bool, removeDesktop);
         ScopeWorkspace workspace;
         QObject interface(&workspace), a, b, originalDesktop, savedDesktop;
         auto bus = QDBusConnection::sessionBus();
@@ -1261,10 +1237,6 @@ private slots:
         const auto prepareCount = prepareRequests.size();
         const auto restoreCount = immediateRequests.size();
         workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a}));
-        if (removeDesktop) {
-            workspace.setProperty("desktops", QVariant::fromValue(QList<QObject *>{&savedDesktop}));
-            workspace.setProperty("currentDesktop", QVariant::fromValue(&savedDesktop));
-        }
         workspace.finish();
         const auto after = Material::WindowStateScope::self()->current();
         QVERIFY(before != after);
@@ -1273,16 +1245,14 @@ private slots:
             QVERIFY(Material::writeWindowState(key, state, after));
         }
         immediateAvailable = true;
-        if (phase == 0) QCoreApplication::processEvents();
         if (phase != 2) window.map();
         if (phase == 2) QTest::qWait(350);
-        QCOMPARE(prepareRequests.size(), prepareCount + (phase == 0 && hasState ? 1 : 0));
+        QCOMPARE(prepareRequests.size(), prepareCount);
         QCOMPARE(immediateRequests.size(), restoreCount + (hasState ? 1 : 0));
         if (hasState) {
             QCOMPARE(immediateRequests.last().value("position").toMap().value("x").toInt(), 330);
-            if (phase == 0) QCOMPARE(prepareRequests.last().value("position").toMap().value("x").toInt(), 330);
         } else {
-            QCOMPARE(window.property("desktops"), removeDesktop ? preparedDesktops : original);
+            QCOMPARE(window.property("desktops"), original);
         }
         QVERIFY(!window.property("minimized").toBool());
         // Merely looking up a different scope must not modify either state.
@@ -1552,129 +1522,6 @@ private slots:
         if (manualInNewScope) QCOMPARE(saved.value("position").toMap().value("x").toInt(), 500);
         else QCOMPARE(saved, protectedState);
         window.setProperty("deleted", true);
-        bus.unregisterObject("/KWin");
-    }
-    void saveAuthorizationFollowsWindowIdentity_data() {
-        QTest::addColumn<QByteArray>("property");
-        QTest::addColumn<QString>("authorization");
-        QTest::addColumn<bool>("manualAfterChange");
-        QTest::addColumn<bool>("snapshot");
-        for (const auto &property : {"desktopFileName", "tag"}) {
-            for (const auto &authorization : {"restored", "user-moved", "saved"}) {
-                for (bool manual : {false, true}) {
-                    for (bool snapshot : {false, true}) {
-                        const QByteArray name = QByteArray(property) + "-" + authorization
-                            + (manual ? "-new-user-move" : "-automatic") + (snapshot ? "-snapshot" : "-close");
-                        QTest::newRow(name.constData()) << QByteArray(property) << QString::fromLatin1(authorization) << manual << snapshot;
-                    }
-                }
-            }
-        }
-    }
-    void saveAuthorizationFollowsWindowIdentity() {
-        QFETCH(QByteArray, property);
-        QFETCH(QString, authorization);
-        QFETCH(bool, manualAfterChange);
-        QFETCH(bool, snapshot);
-        QScopedValueRollback available(immediateAvailable, authorization == "restored");
-        QScopedValueRollback succeeds(immediateSucceeds, true);
-        QScopedValueRollback prepareAvailability(prepareAvailable, false);
-        KWin::WaylandWindow window, future;
-        const QString app = "org.example.StateTest.IdentityPermission." + QUuid::createUuid().toString();
-        for (auto *w : {&window, &future}) {
-            setup(*w, app);
-        }
-        future.setProperty(property.constData(), QString(app + ".new"));
-        const auto key = Material::windowStateKey(&window);
-        const auto newKey = Material::windowStateKey(&future);
-        QVERIFY(key != newKey);
-        const auto scope = Material::WindowStateScope::self()->current();
-        future.setProperty("frameGeometry", QRectF(880, 450, 800, 500));
-        QVERIFY(Material::writeWindowState(newKey, Material::captureWindowState(&future), scope));
-        const auto protectedState = Material::readWindowState(newKey, scope);
-        if (authorization != "saved") QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), scope));
-        MaterialTest::Bridge bridge;
-        StateDecoration decoration(&window, &bridge);
-        Material::configureWindowState(&decoration, true);
-        window.map();
-        if (authorization == "user-moved") {
-            window.startInteraction();
-            window.setProperty("frameGeometry", QRectF(300, 200, 800, 500));
-            window.stepInteraction();
-            window.finishInteraction();
-        } else if (authorization == "saved") {
-            Q_EMIT Material::WindowStateScope::self()->snapshotRequested(scope, {});
-        }
-        const auto originalState = Material::readWindowState(key, scope);
-        window.setProperty(property.constData(), QString(app + ".new"));
-        QCOMPARE(Material::windowStateKey(&window), newKey);
-        window.setProperty("frameGeometry", QRectF(400, 250, 800, 500));
-        if (manualAfterChange) {
-            window.startInteraction();
-            window.setProperty("frameGeometry", QRectF(500, 350, 800, 500));
-            window.stepInteraction();
-            window.finishInteraction();
-        }
-        if (snapshot) Q_EMIT Material::WindowStateScope::self()->snapshotRequested(scope, {});
-        else window.close();
-        const auto saved = Material::readWindowState(newKey, scope);
-        if (manualAfterChange) QCOMPARE(saved.value("position").toMap().value("x").toInt(), 500);
-        else QCOMPARE(saved, protectedState);
-        QCOMPARE(Material::readWindowState(key, scope), originalState);
-    }
-    void previousConfigurationPlacementFollowsIdentity_data() {
-        QTest::addColumn<bool>("changeBeforeMove");
-        QTest::newRow("new-identity-before-user-move") << true;
-        QTest::newRow("new-identity-after-user-move") << false;
-    }
-    void previousConfigurationPlacementFollowsIdentity() {
-        QFETCH(bool, changeBeforeMove);
-        ScopeWorkspace workspace;
-        QObject interface(&workspace), a, b, desktop;
-        auto bus = QDBusConnection::sessionBus();
-        QVERIFY(bus.registerObject("/KWin", &interface));
-        QScopedValueRollback wrapper(testWorkspace, static_cast<QObject *>(&workspace));
-        QScopedValueRollback available(immediateAvailable, true);
-        a.setProperty("name", "A"); a.setProperty("geometry", QRect(0, 0, 1280, 800));
-        b.setProperty("name", "B"); b.setProperty("geometry", QRect(1280, 0, 1280, 800));
-        desktop.setProperty("id", "desktop");
-        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a, &b}));
-        workspace.setProperty("desktops", QVariant::fromValue(QList<QObject *>{&desktop}));
-        KWin::WaylandWindow window, future;
-        const QString app = "org.example.StateTest.PreviousIdentity." + QUuid::createUuid().toString();
-        setup(window, app);
-        setup(future, app + ".new");
-        window.setProperty("output", QVariant::fromValue(&b));
-        window.setProperty("frameGeometry", QRectF(1400, 90, 800, 500));
-        future.setProperty("output", QVariant::fromValue(&b));
-        future.setProperty("frameGeometry", QRectF(1500, 100, 800, 500));
-        const auto key = Material::windowStateKey(&window);
-        const auto newKey = Material::windowStateKey(&future);
-        const auto ab = Material::WindowStateScope::self()->current();
-        QVERIFY(Material::writeWindowState(newKey, Material::captureWindowState(&future), ab));
-        const auto protectedState = Material::readWindowState(newKey, ab);
-        MaterialTest::Bridge bridge;
-        StateDecoration decoration(&window, &bridge);
-        Material::configureWindowState(&decoration, true);
-        window.map();
-        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&a}));
-        workspace.removeOutput(&b);
-        window.setProperty("output", QVariant::fromValue(&a));
-        window.setProperty("frameGeometry", QRectF(120, 90, 800, 500));
-        workspace.finish();
-        if (changeBeforeMove) window.setProperty("desktopFileName", QString(app + ".new"));
-        window.startInteraction();
-        window.setProperty("frameGeometry", QRectF(300, 200, 800, 500));
-        window.stepInteraction();
-        window.finishInteraction();
-        if (!changeBeforeMove) window.setProperty("desktopFileName", QString(app + ".new"));
-        window.close();
-        const auto saved = Material::readWindowState(newKey, ab);
-        if (changeBeforeMove) {
-            QCOMPARE(saved.value("outputName").toString(), "A");
-            QCOMPARE(saved.value("position").toMap().value("x").toInt(), 300);
-        } else QCOMPARE(saved, protectedState);
-        QCOMPARE(Material::readWindowState(key, ab).value("outputName").toString(), "B");
         bus.unregisterObject("/KWin");
     }
     void snapshotsBeforeOutputEvacuation() {

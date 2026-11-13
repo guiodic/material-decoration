@@ -26,7 +26,8 @@ painting, before rendering resumes.
 If the script is unavailable, bounded retries run for about five seconds.
 Availability after the first frame can still cause a visible repositioning.
 An App ID supplied late is handled at the first frame; identity changes do not
-restart early preparation.
+restart early preparation. After opening, the application/tag identity is treated
+as stable.
 
 ## 2. Current restoration policies
 
@@ -68,6 +69,8 @@ restart early preparation.
   the shared state. A failed restoration protects pre-existing data, including
   a tile that could not be restored. Interactive movement/resizing cancels
   pending restoration and permits saving the user's placement.
+- **Configuration changes during startup:** restoration reloads the matching
+  state, using the current desktop as fallback.
 - **Desktop identity:** deleted and recreated desktops receive new UUIDs and
   therefore form a different configuration, even with identical names.
 

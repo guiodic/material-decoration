@@ -388,22 +388,20 @@ for (const allDesktops of [true, false]) {
     assert.equal(f.target.onAllDesktops, true);
     assert.equal(f.workspace.currentDesktop, globalDesktop);
 }
-for (const behavior of ['missing-tile', 'throws', 'rule-rejects-restriction']) {
+for (const behavior of ['missing-tile', 'rule-rejects-restriction']) {
     const f = fixture();
     const tile = f.leaf(0, 0, 0.5, 1);
     f.workspace.quickTiles = behavior === 'missing-tile' ? [] : [quickTile(tile)];
-    if (behavior === 'throws') tile.manage = () => { throw new Error('tile disappeared'); };
     if (behavior === 'rule-rejects-restriction') {
         let desktops = [];
         Object.defineProperty(f.target, 'desktops', {get() { return desktops; }, set() { desktops = []; }});
         tile.manage = () => { throw new Error('must not use a root without a desktop restriction'); };
     }
     const state = savedState({onAllDesktops: true, desktopIds: [], tile: {kind: 'quick', edges: 2}});
-    if (behavior === 'throws') assert.throws(() => f.restoreImmediately(state), /tile disappeared/);
-    else assert.equal(f.restoreImmediately(state), false);
+    assert.equal(f.restoreImmediately(state), false);
     assert.equal(f.target.onAllDesktops, true, 'restore sticky membership even after failure');
     assert.deepEqual(Array.from(f.target.desktops), []);
-    assert.equal(f.workspace.activeWindow, behavior === 'throws' ? f.other : f.target);
+    assert.equal(f.workspace.activeWindow, f.target);
 }
 
 {
@@ -418,10 +416,10 @@ for (const behavior of ['missing-tile', 'throws', 'rule-rejects-restriction']) {
     assert.equal(changed.target.frameGeometry.width, 640);
 }
 for (const kind of ['quick', 'custom']) {
-    for (const behavior of ['missing', 'rejected', 'throws']) {
+    for (const behavior of ['missing', 'rejected']) {
         const f = fixture();
         const tile = kind === 'quick' ? f.leaf(0, 0, 0.5, 1) : f.root.tiles[1];
-        tile.manage = () => { if (behavior === 'throws') throw new Error('tile unavailable'); return false; };
+        tile.manage = () => false;
         if (kind === 'quick') f.workspace.quickTiles = behavior === 'missing' ? [] : [quickTile(tile)];
         else if (behavior === 'missing') f.workspace.layoutRoot = null;
         const state = savedState({tile: kind === 'quick' ? {kind, edges: 2} :
@@ -431,13 +429,10 @@ for (const kind of ['quick', 'custom']) {
         const destination = {name: 'Virtual-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
         f.workspace.screens.push(destination);
         state.outputName = destination.name;
-        if (behavior === 'throws') assert.throws(() => f.restoreImmediately(state), /tile unavailable/);
-        else {
-            assert.equal(f.restoreImmediately(state), false);
-            assert.equal(f.target.output, destination, 'a partial output move does not mean full restoration succeeded');
-        }
+        assert.equal(f.restoreImmediately(state), false);
+        assert.equal(f.target.output, destination, 'a partial output move does not mean full restoration succeeded');
         assert.equal(f.target.tile, original);
-        assert.equal(f.workspace.activeWindow, behavior === 'throws' ? f.other : f.target);
+        assert.equal(f.workspace.activeWindow, f.target);
     }
 }
 for (const mode of ['maximizeMode', 'fullScreen']) {
@@ -701,14 +696,13 @@ for (const kind of ['quick', 'custom']) {
     assert.equal(f.target.frameGeometry.height, 650.25);
     assert.equal(f.workspace.activeWindow, f.target);
 }
-for (const outcome of ['rejected', 'throws', 'missing']) {
+for (const outcome of ['rejected', 'missing']) {
     const f = fixture();
     const tile = f.leaf(0, 0, 0.5, 1);
-    tile.manage = () => { if (outcome === 'throws') throw new Error('tile unavailable'); return false; };
+    tile.manage = () => false;
     f.workspace.quickTiles = outcome === 'missing' ? [] : [quickTile(tile)];
     const state = savedState({tile: {kind: 'quick', edges: 2, normalSize: {width: 900, height: 650}}});
-    if (outcome === 'throws') assert.throws(() => f.restoreImmediately(state), /tile unavailable/);
-    else assert.equal(f.restoreImmediately(state), false);
+    assert.equal(f.restoreImmediately(state), false);
     assert.deepEqual({...f.target.frameGeometry}, {x: 100, y: 80, width: 640, height: 480}, 'failed native tiling keeps the app-requested size');
 }
 for (const size of [undefined, {width: 0, height: 650}, {width: -1, height: 650}, {width: 900}, {width: '900', height: 650}, {width: Infinity, height: 650}]) {
