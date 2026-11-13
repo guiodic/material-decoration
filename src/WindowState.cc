@@ -330,14 +330,18 @@ public:
             for (const auto &value : workspace->property("stackingOrder").toList()) {
                 if (value.value<QObject *>() != m_window) continue;
                 m_restoreStarted = true;
-                m_saveAllowed.insert(scope->current(), true);
+                const auto currentScope = scope->current();
+                m_saveAllowed.insert(currentScope, true);
                 rememberNormalSize();
                 updateTile();
-                const auto saved = readWindowState(windowStateKey(m_window), scope->current());
+                const auto saved = readWindowState(windowStateKey(m_window), currentScope);
                 const auto tile = saved.value("tile").toMap();
-                if (!tile.isEmpty() && matchesSavedWindowState(decoration, saved)) {
-                    if (tile.value("kind") == QLatin1String("quick")) m_customQuickTile = tile;
-                    m_normalSize = tile.value("normalSize").toMap();
+                if (!tile.isEmpty()) {
+                    const auto match = matchesSavedWindowState(decoration, saved);
+                    if (match == WindowRestoreResult::Succeeded) {
+                        if (tile.value("kind") == QLatin1String("quick")) m_customQuickTile = tile;
+                        m_normalSize = tile.value("normalSize").toMap();
+                    } else if (match == WindowRestoreResult::Unavailable) m_saveAllowed.insert(currentScope, false);
                 }
                 return;
             }

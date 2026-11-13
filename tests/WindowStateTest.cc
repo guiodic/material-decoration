@@ -122,11 +122,13 @@ static QVariant preparedDesktops;
 static QObject *testWorkspace = nullptr;
 static int workspaceLookups = 0;
 static bool savedWindowMatches = false;
+static bool savedWindowMatchAvailable = true;
 static QList<QVariantMap> matchRequests;
 namespace Material {
-bool matchesSavedWindowState(KDecoration3::Decoration *, const QVariantMap &state) {
+WindowRestoreResult matchesSavedWindowState(KDecoration3::Decoration *, const QVariantMap &state) {
     matchRequests.append(state);
-    return savedWindowMatches;
+    if (!savedWindowMatchAvailable) return WindowRestoreResult::Unavailable;
+    return savedWindowMatches ? WindowRestoreResult::Succeeded : WindowRestoreResult::Failed;
 }
 QObject *windowStateWorkspace() { ++workspaceLookups; return testWorkspace; }
 WindowRestoreResult prepareWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
@@ -939,6 +941,46 @@ private slots:
         QCOMPARE(saved.value("kind").toString(), "custom");
         QCOMPARE(saved.contains("normalSize"), matches);
         if (matches) QCOMPARE(saved.value("normalSize").toMap().value("width").toInt(), 900);
+    }
+    void missingScriptProtectsSavedTile_data() {
+        QTest::addColumn<bool>("manualResize");
+        QTest::newRow("unchanged") << false;
+        QTest::newRow("new-user-choice") << true;
+    }
+    void missingScriptProtectsSavedTile() {
+        QFETCH(bool, manualResize);
+        QScopedValueRollback unavailable(savedWindowMatchAvailable, false);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.NoMatchingScript." + QUuid::createUuid().toString());
+        KWin::QuickRootTile root;
+        KWin::Tile tile;
+        root.bind(&tile);
+        tile.setProperty("relativeGeometry", QRectF(0, 0, .5, 1));
+        window.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
+        auto state = Material::captureWindowState(&window);
+        auto savedTile = state.value("tile").toMap();
+        savedTile.insert("region", QVariantMap{{"x", 0}, {"y", 0}, {"width", .65}, {"height", 1}});
+        savedTile.insert("normalSize", QVariantMap{{"width", 900}, {"height", 650}});
+        state.insert("tile", savedTile);
+        const auto key = Material::windowStateKey(&window);
+        const auto scope = Material::WindowStateScope::self()->current();
+        QVERIFY(Material::writeWindowState(key, state, scope));
+        const auto before = Material::readWindowState(key, scope);
+        defaultWorkspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&window}));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        if (manualResize) {
+            window.setProperty("resize", true);
+            window.startInteraction();
+            tile.setProperty("relativeGeometry", QRectF(0, 0, .7, 1));
+            window.setProperty("frameGeometry", QRectF(0, 0, 896, 800));
+            window.finishInteraction();
+        }
+        window.close();
+        const auto after = Material::readWindowState(key, scope);
+        if (manualResize) QCOMPARE(after.value("tile").toMap().value("region").toMap().value("width").toDouble(), .7);
+        else QCOMPARE(after, before);
     }
     void savesNormalSizeOnlyWithValidTileMetadata() {
         KWin::WaylandWindow window;

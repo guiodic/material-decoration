@@ -27,7 +27,9 @@ painting, before rendering resumes. A controller attached to an already visible
 window tracks its state without restoring or minimizing it. Saved custom
 proportions are retained only when its output, desktops, snap mode and current
 frame match the saved state (within two logical pixels). Disabling restoration
-saves the current state before removing the controller.
+saves the current state before removing the controller. If the script is
+unavailable when tracking an existing tiled window, its saved state is protected
+until a new user placement permits saving it.
 If the script is unavailable, bounded retries run for about five seconds.
 Availability after the first frame can still cause a visible repositioning.
 An App ID supplied late is handled at the first frame; identity changes do not

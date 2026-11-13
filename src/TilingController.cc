@@ -108,12 +108,14 @@ bool tilingScriptAvailable()
     return scriptEngine(QStringLiteral("materialTiling")) != nullptr;
 }
 
-bool matchesSavedWindowState(KDecoration3::Decoration *decoration, const QVariantMap &state)
+WindowRestoreResult matchesSavedWindowState(KDecoration3::Decoration *decoration, const QVariantMap &state)
 {
     auto request = state;
     request.insert(QStringLiteral("operation"), QStringLiteral("matchWindowState"));
-    const auto result = callScript(decoration, QStringLiteral("materialTiling"), request);
-    return result.isBool() && result.toBool();
+    bool available = false;
+    const auto result = callScript(decoration, QStringLiteral("materialTiling"), request, &available);
+    if (!available) return WindowRestoreResult::Unavailable;
+    return result.isBool() && result.toBool() ? WindowRestoreResult::Succeeded : WindowRestoreResult::Failed;
 }
 
 WindowRestoreResult restoreWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)

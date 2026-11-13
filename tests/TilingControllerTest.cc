@@ -122,13 +122,13 @@ private slots:
         TestDecoration valid(&window, &bridge);
         const QVariantMap state{{"version", 3}, {"desktopIds", QVariantList{"desktop-1"}}};
         evaluate("materialTiling = undefined;");
-        QVERIFY(!Material::matchesSavedWindowState(&valid, state));
+        QCOMPARE(Material::matchesSavedWindowState(&valid, state), Material::WindowRestoreResult::Unavailable);
         evaluate("materialTiling = function(window, state) { checked = state; return state.operation === 'matchWindowState'; };");
-        QVERIFY(Material::matchesSavedWindowState(&valid, state));
+        QCOMPARE(Material::matchesSavedWindowState(&valid, state), Material::WindowRestoreResult::Succeeded);
         QCOMPARE(engine->evaluate("checked.desktopIds[0]").toString(), "desktop-1");
         QVERIFY(!state.contains("operation"));
         evaluate("materialTiling = function() { return 'true'; };");
-        QVERIFY(!Material::matchesSavedWindowState(&valid, state));
+        QCOMPARE(Material::matchesSavedWindowState(&valid, state), Material::WindowRestoreResult::Failed);
     }
     void restoresFixedSizeWindowsSynchronously() {
         TestDecoration valid(&window, &bridge);
