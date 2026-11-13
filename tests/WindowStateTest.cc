@@ -351,6 +351,9 @@ private slots:
         QVERIFY(immediateRequests.last().value("resizeOtherTiledWindows").toBool());
         auto *context = immediateRequests.last().value("restoreContext").value<QObject *>();
         QVERIFY(context->property("resizeOtherTiledWindows").toBool());
+        QSignalSpy stopped(context, SIGNAL(restorationStopped()));
+        window.startInteraction();
+        QCOMPARE(stopped.count(), 1);
         Material::configureWindowState(&decoration, true, true, false, false);
         QVERIFY(!context->property("resizeOtherTiledWindows").toBool());
         window.close();
@@ -979,8 +982,12 @@ private slots:
         }
         window.close();
         const auto after = Material::readWindowState(key, scope);
-        if (manualResize) QCOMPARE(after.value("tile").toMap().value("region").toMap().value("width").toDouble(), .7);
-        else QCOMPARE(after, before);
+        if (manualResize) {
+            const auto tile = after.value("tile").toMap();
+            QCOMPARE(tile.value("region").toMap().value("width").toDouble(), .7);
+            QCOMPARE(tile.value("kind").toString(), "quick");
+            QCOMPARE(tile.value("edges").toInt(), 2);
+        } else QCOMPARE(after, before);
     }
     void savesNormalSizeOnlyWithValidTileMetadata() {
         KWin::WaylandWindow window;

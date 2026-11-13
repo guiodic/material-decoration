@@ -485,6 +485,7 @@ private slots:
         m_resizeFrame = windowRectangle(m_window->property("frameGeometry"));
         // Cancel pending restoration when the user takes control.
         m_restoreCancelled = true;
+        Q_EMIT restorationStopped();
         if (m_enabled) m_saveAllowed.insert(WindowStateScope::self()->current(), true);
         m_retryTimer.stop();
         m_prepareRetryTimer.stop();
