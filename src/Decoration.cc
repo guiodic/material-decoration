@@ -234,6 +234,7 @@ NavigableMenu *Decoration::createNavigableMenu(QWidget *parent)
 
 bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
 {
+    if (!m_internalSettings || !(fromHover ? m_internalSettings->tilingPopupHoverEnabled() : m_internalSettings->longPressEnabled())) return false;
     const bool scriptAvailable = tilingScriptAvailable();
     if (scriptAvailable && !canTileWindow(this)) return false;
     if (isTilingPopupVisible()) return true;
