@@ -95,6 +95,9 @@ A new floating window with the same identity can also recover that normal size
 if it inherits the dimensions of the tiled window while the latter is still open.
 Windows of the same application without distinct Wayland tags
 share the state of the last closed window.
+
+After updating the Decoration, it is strongly recommended that you log out and log back in.
+
 This is an experimental feature not enabled by default. 
 Your feedback is welcome!
 
