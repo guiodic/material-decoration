@@ -19,6 +19,22 @@
 #include <QSignalSpy>
 #include <QTest>
 #include <QMenu>
+#include <QDBusConnection>
+#include <QJSEngine>
+#include <QUuid>
+
+class TilingAccessWindow : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(QUuid internalId READ internalId)
+    Q_PROPERTY(bool specialWindow READ specialWindow)
+public:
+    mutable int propertyReads = 0;
+    QUuid internalId() const { ++propertyReads; return id; }
+    bool specialWindow() const { ++propertyReads; return false; }
+private:
+    const QUuid id = QUuid::createUuid();
+};
 
 class DecorationStateTest : public QObject
 {
@@ -26,9 +42,9 @@ class DecorationStateTest : public QObject
     QPluginLoader m_loader;
     KPluginFactory *m_factory = nullptr;
 
-    std::unique_ptr<KDecoration3::Decoration> create(MaterialTest::Bridge &bridge)
+    std::unique_ptr<KDecoration3::Decoration> create(MaterialTest::Bridge &bridge, QObject *owner = nullptr)
     {
-        return std::unique_ptr<KDecoration3::Decoration>(m_factory->create<KDecoration3::Decoration>(nullptr,
+        return std::unique_ptr<KDecoration3::Decoration>(m_factory->create<KDecoration3::Decoration>(owner,
             {QVariantMap{{QStringLiteral("bridge"), QVariant::fromValue<KDecoration3::DecorationBridge *>(&bridge)}}}));
     }
 
@@ -45,6 +61,68 @@ private slots:
         auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
         config->deleteGroup(QStringLiteral("Windeco"));
         QVERIFY(config->sync());
+    }
+
+    void inactiveTilingAccess_data()
+    {
+        QTest::addColumn<bool>("longPress");
+        QTest::addColumn<bool>("hoverPopup");
+        QTest::addColumn<bool>("scriptAvailable");
+        QTest::newRow("disabled") << false << false << true;
+        QTest::newRow("tooltip-without-script") << true << false << false;
+        QTest::newRow("hover-without-script") << false << true << false;
+        QTest::newRow("tooltip-with-script") << true << false << true;
+    }
+
+    void inactiveTilingAccess()
+    {
+        QFETCH(bool, longPress);
+        QFETCH(bool, hoverPopup);
+        QFETCH(bool, scriptAvailable);
+        auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        auto group = config->group(QStringLiteral("Windeco"));
+        group.writeEntry("RememberWindowState", false);
+        group.writeEntry("LongPressEnabled", longPress);
+        group.writeEntry("TilingPopupHoverEnabled", hoverPopup);
+        group.writeEntry("TilingPopupHoverDelay", 500);
+        QVERIFY(config->sync());
+
+        QObject scripting;
+        auto bus = QDBusConnection::sessionBus();
+        QVERIFY(bus.registerObject(QStringLiteral("/Scripting"), &scripting));
+        const auto unregister = qScopeGuard([&] { bus.unregisterObject(QStringLiteral("/Scripting")); });
+        QJSEngine engine(&scripting);
+        const auto result = engine.evaluate(QStringLiteral(
+            "var lookups = 0; Object.defineProperty(this, 'materialTiling', {get: function() {"
+            "++lookups; return %1; }});").arg(scriptAvailable ? QStringLiteral("function() { return []; }") : QStringLiteral("undefined")));
+        QVERIFY(!result.isError());
+        TilingAccessWindow owner;
+        MaterialTest::Bridge bridge;
+        auto decoration = create(bridge, &owner);
+        QVERIFY(decoration);
+        decoration->create();
+        decoration->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&bridge));
+        bridge.options->rightButtons = {KDecoration3::DecorationButtonType::Maximize};
+        QVERIFY(decoration->init());
+        Q_EMIT decoration->settings()->reconfigured();
+        decoration->apply(decoration->nextState()->clone());
+        QCoreApplication::processEvents();
+        QCOMPARE(owner.propertyReads, 0);
+        QCOMPARE(engine.globalObject().property("lookups").toInt(), 0);
+        const auto buttons = decoration->findChildren<KDecoration3::DecorationButton *>();
+        QCOMPARE(buttons.size(), 1);
+        auto *button = buttons.first();
+        QHoverEvent hover(QEvent::HoverEnter, button->geometry().center(), button->geometry().center(), QPointF(-1, -1));
+        QCoreApplication::sendEvent(button, &hover);
+        QVERIFY(button->isHovered());
+        if (longPress || hoverPopup) {
+            QTRY_VERIFY(engine.globalObject().property("lookups").toInt() > 0);
+        } else {
+            QTest::qWait(600);
+            QCOMPARE(engine.globalObject().property("lookups").toInt(), 0);
+        }
+        if (scriptAvailable && longPress) QVERIFY(owner.propertyReads > 0);
+        else QCOMPARE(owner.propertyReads, 0);
     }
 
     void shadowReuse_data()
