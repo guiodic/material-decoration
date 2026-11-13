@@ -26,7 +26,15 @@
 
 // Match the runtime base-class name without including any private KWin header.
 namespace KWin {
-class Tile : public QObject { Q_OBJECT public: using QObject::QObject; };
+class Tile : public QObject {
+    Q_OBJECT
+    Q_PROPERTY(QRectF relativeGeometry MEMBER m_region NOTIFY relativeGeometryChanged)
+    QRectF m_region;
+public:
+    using QObject::QObject;
+Q_SIGNALS:
+    void relativeGeometryChanged();
+};
 class QuickRootTile : public QObject {
     Q_OBJECT
 public:
@@ -807,11 +815,14 @@ private slots:
     }
     void resizeIndividualFrameBackToSharedTile_data() {
         QTest::addColumn<bool>("changed");
-        QTest::newRow("resize-back") << true;
-        QTest::newRow("no-change") << false;
+        QTest::addColumn<bool>("delayedFrame");
+        QTest::newRow("resize-back") << true << false;
+        QTest::newRow("resize-back-delayed-buffer") << true << true;
+        QTest::newRow("no-change") << false << false;
     }
     void resizeIndividualFrameBackToSharedTile() {
         QFETCH(bool, changed);
+        QFETCH(bool, delayedFrame);
         QScopedValueRollback available(immediateAvailable, true);
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.ResizeBack." + QUuid::createUuid().toString());
@@ -837,9 +848,14 @@ private slots:
         window.map();
         window.setProperty("resize", true);
         window.startInteraction();
-        if (changed) window.setProperty("frameGeometry", QRectF(0, 0, 640, 800));
+        if (changed) {
+            tile.setProperty("relativeGeometry", QRectF(0, 0, .6, 1));
+            tile.setProperty("relativeGeometry", QRectF(0, 0, .5, 1));
+            if (!delayedFrame) window.setProperty("frameGeometry", QRectF(0, 0, 640, 800));
+        }
         window.finishInteraction();
         window.setProperty("resize", false);
+        if (changed && delayedFrame) window.setProperty("frameGeometry", QRectF(0, 0, 640, 800));
         window.close();
         QCOMPARE(Material::readWindowState(key, scope).value("tile").toMap().value("region").toMap().value("width").toDouble(),
             changed ? .5 : .65);

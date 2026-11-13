@@ -481,8 +481,11 @@ private slots:
     }
     void startUserInteraction()
     {
-        m_resizeTile = m_window->property("resize").toBool() ? windowTile(m_window) : QVariantMap();
-        m_resizeFrame = windowRectangle(m_window->property("frameGeometry"));
+        auto *tile = m_window->property("tile").value<QObject *>();
+        m_resizeEdges = m_window->property("resize").toBool() ? windowTile(m_window).value("edges").toInt() : 0;
+        m_tileResized = false;
+        if (m_resizeEdges && tile) m_resizeConnection = connect(tile, SIGNAL(relativeGeometryChanged()),
+            this, SLOT(markTileResized()), Qt::DirectConnection);
         // Cancel pending restoration when the user takes control.
         m_restoreCancelled = true;
         Q_EMIT restorationStopped();
@@ -491,15 +494,14 @@ private slots:
         m_prepareRetryTimer.stop();
         releaseVisibilityGuard();
     }
+    void markTileResized() { m_tileResized = true; }
     void finishUserInteraction()
     {
+        disconnect(m_resizeConnection);
         updateTile();
-        if (m_enabled && m_resizeTile.contains("edges")
-            && m_resizeTile.value("edges") == m_lastTile.value("edges")
-            && (m_resizeTile.value("region") != m_lastTile.value("region")
-                || m_resizeFrame != windowRectangle(m_window->property("frameGeometry")))) m_customQuickTile = m_lastTile;
-        m_resizeTile.clear();
-        m_resizeFrame.clear();
+        if (m_enabled && m_tileResized && m_resizeEdges == m_lastTile.value("edges").toInt()) m_customQuickTile = m_lastTile;
+        m_resizeEdges = 0;
+        m_tileResized = false;
     }
     void restore()
     {
@@ -673,8 +675,9 @@ private:
     QVariantMap m_state;
     QVariantMap m_lastTile;
     QVariantMap m_customQuickTile;
-    QVariantMap m_resizeTile;
-    QVariantMap m_resizeFrame;
+    QMetaObject::Connection m_resizeConnection;
+    int m_resizeEdges = 0;
+    bool m_tileResized = false;
     QVariantMap m_normalSize;
     QTimer m_normalSizeTimer;
     bool m_requestedTiled = false;
