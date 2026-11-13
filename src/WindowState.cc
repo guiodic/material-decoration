@@ -228,13 +228,22 @@ QVariantMap readWindowState(const QString &key, const QString &scope)
     return positionState(state);
 }
 
-bool writeWindowState(const QString &key, const QVariantMap &state, const QString &scope)
+bool writeWindowState(const QString &key, const QVariantMap &state, const QString &scope, bool sync)
 {
     const auto saved = positionState(state);
     if (key.isEmpty() || scope.isEmpty() || saved.isEmpty()) return false;
     const auto config = stateConfig();
     auto group = KConfigGroup(config, key).group(QStringLiteral("Configurations")).group(scope);
     group.writeEntry("State", QJsonDocument::fromVariant(saved).toJson(QJsonDocument::Compact));
+    return !sync || config->sync();
+}
+
+bool snapshotWindowStates(const QString &scope, const QVariantMap &outputOrigins)
+{
+    if (scope.isEmpty()) return false;
+    // Keep the shared config alive until every direct snapshot handler finishes.
+    const auto config = stateConfig();
+    Q_EMIT WindowStateScope::self()->snapshotRequested(scope, outputOrigins);
     return config->sync();
 }
 
@@ -280,10 +289,10 @@ public:
         connect(scope, &WindowStateScope::snapshotRequested, this, [this](const QString &oldScope, const QVariantMap &origins) {
             if (!m_enabled || !m_restoreStarted || m_window->property("deleted").toBool()) return;
             auto state = stateToSave();
-            saveUserPlacementInPreviousScope(state);
+            saveUserPlacementInPreviousScope(state, false);
             const auto origin = origins.value(state.value("outputName").toString()).toMap();
             if (!origin.isEmpty()) state.insert("outputPosition", origin);
-            saveState(oldScope, state);
+            saveState(oldScope, state, false);
             m_previousScope = oldScope;
             m_previousOutputs = origins.keys();
             m_userAdjustedAfterRemoval = false;
@@ -530,11 +539,11 @@ private:
         // Protect only the state we encountered, not their subsequent writes.
         return m_saveAllowed.value(scope);
     }
-    void saveState(const QString &scope, const QVariantMap &state)
+    void saveState(const QString &scope, const QVariantMap &state, bool sync = true)
     {
-        if (canSave(scope)) writeWindowState(windowStateKey(m_window), state, scope);
+        if (canSave(scope)) writeWindowState(windowStateKey(m_window), state, scope, sync);
     }
-    void saveUserPlacementInPreviousScope(const QVariantMap &state)
+    void saveUserPlacementInPreviousScope(const QVariantMap &state, bool sync = true)
     {
         if (!m_userAdjustedAfterRemoval || m_previousScope.isEmpty()
             || !m_previousOutputs.contains(state.value("outputName").toString())) return;
@@ -543,7 +552,7 @@ private:
         m_saveAllowed.insert(m_previousScope, true);
         // Keep the current output origin: restoration translates this position
         // if the surviving screen returns to a different place in the old layout.
-        saveState(m_previousScope, state);
+        saveState(m_previousScope, state, sync);
     }
     QVariantMap siblingNormalSize() const
     {

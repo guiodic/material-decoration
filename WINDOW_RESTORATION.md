@@ -15,7 +15,8 @@ screen identity, geometry and scale, plus desktop UUIDs and grid dimensions.
 The current desktop and desktop names do not affect it.
 
 State is written synchronously when a window closes and before configuration
-changes relocate windows. Signals maintain the necessary information in memory;
+changes relocate windows. Configuration snapshots collect all window states
+before synchronizing the file once. Signals maintain the necessary information in memory;
 there is no polling or disk write on every movement.
 
 **Restore the state.** The controller reads the matching entry and calls the

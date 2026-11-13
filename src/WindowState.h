@@ -14,7 +14,8 @@ QVariantMap windowRectangle(const QVariant &value);
 QString windowStateKey(const QObject *window);
 QVariantMap captureWindowState(const QObject *window);
 QVariantMap readWindowState(const QString &key, const QString &scope);
-bool writeWindowState(const QString &key, const QVariantMap &state, const QString &scope);
+bool writeWindowState(const QString &key, const QVariantMap &state, const QString &scope, bool sync = true);
+bool snapshotWindowStates(const QString &scope, const QVariantMap &outputOrigins);
 void configureWindowState(KDecoration3::Decoration *decoration, bool enabled,
                           bool rememberScreen = true, bool rememberDesktop = false);
 }

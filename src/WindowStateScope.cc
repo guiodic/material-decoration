@@ -114,7 +114,7 @@ void WindowStateScope::changing()
 {
     if (m_changing || m_scope.isEmpty()) return;
     m_changing = true;
-    Q_EMIT snapshotRequested(m_scope, m_origins);
+    snapshotWindowStates(m_scope, m_origins);
     // Also handles grid/layout changes without an outputsChanged notification.
     QTimer::singleShot(0, this, &WindowStateScope::changed);
 }

@@ -21,6 +21,7 @@
 #include <functional>
 #include <limits>
 #include <memory>
+#include <vector>
 
 // Match the runtime base-class name without including any private KWin header.
 namespace KWin {
@@ -1018,7 +1019,7 @@ private slots:
             window.setProperty("frameGeometry", QRectF(500, 400, 900, 650));
             window.finishInteraction();
         }
-        if (snapshot) Q_EMIT Material::WindowStateScope::self()->snapshotRequested(scope, {});
+        if (snapshot) Material::snapshotWindowStates(scope, {});
         else window.close();
         if (manual) {
             QCOMPARE(Material::readWindowState(key, scope).value("position").toMap().value("x").toInt(), 500);
@@ -1037,7 +1038,7 @@ private slots:
         StateDecoration decoration(&window, &bridge);
         Material::configureWindowState(&decoration, true, true, true);
         window.map();
-        Q_EMIT Material::WindowStateScope::self()->snapshotRequested(scope, {});
+        Material::snapshotWindowStates(scope, {});
         QVERIFY(!Material::readWindowState(key, scope).isEmpty());
         // A snapshot created by this same new window must not prevent its
         // later close from recording the final placement.
@@ -1084,11 +1085,55 @@ private slots:
         last.setProperty("frameGeometry", QRectF(500, 400, 800, 500));
         first.close();
         first.setProperty("deleted", true);
-        if (snapshot) Q_EMIT Material::WindowStateScope::self()->snapshotRequested(scope, {});
+        if (snapshot) Material::snapshotWindowStates(scope, {});
         last.close();
         const auto saved = Material::readWindowState(key, scope);
         if (savedBeforeOpening && !available) QCOMPARE(saved, initial);
         else QCOMPARE(saved.value("position").toMap().value("x").toInt(), 500);
+    }
+    void snapshotBatchesWindowsAndCloseStillSyncs() {
+        const auto config = KSharedConfig::openStateConfig(QStringLiteral("material-window-staterc"));
+        QVERIFY(config->sync());
+        const auto scope = Material::WindowStateScope::self()->current();
+        KWin::WaylandWindow windows[3];
+        MaterialTest::Bridge bridges[3];
+        QStringList keys;
+        std::vector<std::unique_ptr<StateDecoration>> decorations;
+        for (int i = 0; i < 3; ++i) {
+            setup(windows[i], "org.example.StateTest.Batch." + QUuid::createUuid().toString());
+            windows[i].setProperty("frameGeometry", QRectF(100 + i * 50, 80, 800, 500));
+            keys.append(Material::windowStateKey(&windows[i]));
+            decorations.push_back(std::make_unique<StateDecoration>(&windows[i], &bridges[i]));
+            Material::configureWindowState(decorations.back().get(), true);
+            windows[i].map();
+        }
+        const auto diskState = [&](const QString &key) {
+            KConfig disk(config->name(), KConfig::SimpleConfig);
+            const auto group = KConfigGroup(&disk, key).group("Configurations").group(scope);
+            return QJsonDocument::fromJson(group.readEntry("State", QByteArray())).object().toVariantMap();
+        };
+        bool dirtyDuringSnapshot = false;
+        int queued = 0, onDiskDuringSnapshot = 0;
+        QObject observer;
+        connect(Material::WindowStateScope::self(), &Material::WindowStateScope::snapshotRequested, &observer,
+            [&](const QString &, const QVariantMap &) {
+                dirtyDuringSnapshot = config->isDirty();
+                for (const auto &key : keys) {
+                    queued += !Material::readWindowState(key, scope).isEmpty();
+                    onDiskDuringSnapshot += !diskState(key).isEmpty();
+                }
+            });
+        QVERIFY(Material::snapshotWindowStates(scope, {}));
+        QVERIFY(dirtyDuringSnapshot);
+        QCOMPARE(queued, 3);
+        QCOMPARE(onDiskDuringSnapshot, 0);
+        QVERIFY(!config->isDirty());
+        for (int i = 0; i < 3; ++i)
+            QCOMPARE(diskState(keys[i]).value("position").toMap().value("x").toInt(), 100 + i * 50);
+        windows[0].setProperty("frameGeometry", QRectF(400, 200, 800, 500));
+        windows[0].close();
+        QVERIFY(!config->isDirty());
+        QCOMPARE(diskState(keys[0]).value("position").toMap().value("x").toInt(), 400);
     }
     void successfulRestoreStillSavesCurrentState() {
         QScopedValueRollback restoreAvailability(immediateAvailable, true);
@@ -1103,7 +1148,7 @@ private slots:
         Material::configureWindowState(&decoration, true, true, true);
         window.map();
         window.setProperty("frameGeometry", QRectF(600, 450, 800, 500));
-        Q_EMIT Material::WindowStateScope::self()->snapshotRequested(scope, {});
+        Material::snapshotWindowStates(scope, {});
         QCOMPARE(Material::readWindowState(key, scope).value("position").toMap().value("x").toInt(), 600);
         window.setProperty("frameGeometry", QRectF(620, 470, 800, 500));
         window.close();
@@ -1601,7 +1646,7 @@ private slots:
             window.stepInteraction();
             window.finishInteraction();
         }
-        if (snapshot) Q_EMIT Material::WindowStateScope::self()->snapshotRequested(after, {});
+        if (snapshot) Material::snapshotWindowStates(after, {});
         else window.close();
         const auto saved = Material::readWindowState(key, after);
         if (manualInNewScope) QCOMPARE(saved.value("position").toMap().value("x").toInt(), 500);
