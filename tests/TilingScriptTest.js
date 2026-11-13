@@ -854,7 +854,10 @@ for (const resizeOthers of [undefined, false, true]) {
 }
 
 // An inactive root records membership before requesting the native tile.
-for (const [resizeOthers, canceled] of [[false, false], [true, false], [false, true], [true, true]]) {
+for (const [resizeOthers, currentPolicy, canceled] of [
+    [false, false, false], [true, true, false], [true, false, false], [false, true, false],
+    [false, false, true], [true, true, true]
+]) {
     const f = fixture();
     const layout = quickLayoutFixture(f);
     const tile = layout.tiles[0];
@@ -863,7 +866,7 @@ for (const [resizeOthers, canceled] of [[false, false], [true, false], [false, t
     layout.tiles[2].relativeGeometry = {x: 0, y: 0, width: 1, height: .4};
     layout.writes.length = 0;
     const callbacks = new Set(), cancellations = new Set();
-    const context = {restorationStopped: {
+    const context = {resizeOtherTiledWindows: resizeOthers, restorationStopped: {
         connect(callback) { cancellations.add(callback); },
         disconnect(callback) { cancellations.delete(callback); }
     }};
@@ -897,6 +900,7 @@ for (const [resizeOthers, canceled] of [[false, false], [true, false], [false, t
         assert.equal(layout.writes.length, 0);
         continue;
     }
+    context.resizeOtherTiledWindows = currentPolicy;
     active = true;
     unsnap = {...f.target.frameGeometry};
     f.target.tile = tile;
@@ -904,7 +908,7 @@ for (const [resizeOthers, canceled] of [[false, false], [true, false], [false, t
     for (const callback of [...callbacks]) callback();
     assert.equal(callbacks.size, 0, 'disconnect after the native request');
     assert.equal(cancellations.size, 0);
-    if (resizeOthers) assert.equal(tile.relativeGeometry.width, .65);
+    if (currentPolicy) assert.equal(tile.relativeGeometry.width, .65);
     else {
         assert.equal(tile.relativeGeometry.width, .6);
         assert.equal(f.target.frameGeometry.width, 832);

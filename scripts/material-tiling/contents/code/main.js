@@ -151,12 +151,12 @@ var materialTiling;
                 if (target.onAllDesktops || target.desktops.length !== 1 || target.desktops[0].id !== desktop.id) return false;
                 for (let i = 0; i < tiles.length; ++i) {
                     if (quickTileMode(tiles[i]) === saved.edges && manageRestoredTile(target, saved, tiles[i])) {
-                        const restoreRegion = function () {
-                            const restored = restoreQuickTileRegion(target, saved, tiles[i], output, resizeOthers);
+                        const restoreRegion = function (policy) {
+                            const restored = restoreQuickTileRegion(target, saved, tiles[i], output, policy);
                             if (restored) lastSelection[id(target)] = {edges: saved.edges, tile: tiles[i], output: output};
                             return restored;
                         };
-                        if (target.tile === tiles[i]) return restoreRegion();
+                        if (target.tile === tiles[i]) return restoreRegion(resizeOthers);
                         // An inactive desktop owns the association but requests
                         // the tile only when shown. Keep the normal frame until then.
                         const cancel = function () {
@@ -176,7 +176,7 @@ var materialTiling;
                             if (manageRestoredTile(target, saved, tiles[i])) {
                                 // Removing the last owner resets the shared splits.
                                 layout.forEach(function (entry) { entry.tile.relativeGeometry = entry.region; });
-                                restoreRegion();
+                                restoreRegion(context.resizeOtherTiledWindows);
                             }
                         };
                         context.restorationStopped.connect(cancel);

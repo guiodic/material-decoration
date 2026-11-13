@@ -347,6 +347,10 @@ private slots:
         Material::configureWindowState(&decoration, true, true, false, true);
         window.map();
         QVERIFY(immediateRequests.last().value("resizeOtherTiledWindows").toBool());
+        auto *context = immediateRequests.last().value("restoreContext").value<QObject *>();
+        QVERIFY(context->property("resizeOtherTiledWindows").toBool());
+        Material::configureWindowState(&decoration, true, true, false, false);
+        QVERIFY(!context->property("resizeOtherTiledWindows").toBool());
         window.close();
         QVERIFY(!Material::readWindowState(key, scope).contains("resizeOtherTiledWindows"));
     }

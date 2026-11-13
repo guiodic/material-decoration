@@ -250,7 +250,9 @@ bool snapshotWindowStates(const QString &scope, const QVariantMap &outputOrigins
 class WindowStateController : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(bool resizeOtherTiledWindows READ resizeOtherTiledWindows)
 public:
+    bool resizeOtherTiledWindows() const { return m_resizeOtherTiledWindows; }
     explicit WindowStateController(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows)
         : QObject(decoration->parent()), m_window(decoration->parent()), m_decoration(decoration), m_enabled(enabled)
         , m_rememberScreen(rememberScreen), m_rememberDesktop(rememberDesktop), m_resizeOtherTiledWindows(resizeOtherTiledWindows)
