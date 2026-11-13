@@ -852,3 +852,80 @@ for (const resizeOthers of [undefined, false, true]) {
     assert.equal(layout.tiles[0].relativeGeometry.width, .5);
     assert.equal(f.target.frameGeometry.width, 832, 'saved proportions apply only to the target by default');
 }
+
+// An inactive root records membership before requesting the native tile.
+for (const [resizeOthers, canceled] of [[false, false], [true, false], [false, true], [true, true]]) {
+    const f = fixture();
+    const layout = quickLayoutFixture(f);
+    const tile = layout.tiles[0];
+    const defaults = layout.tiles.map(tile => ({...tile.relativeGeometry}));
+    tile.relativeGeometry = {x: 0, y: 0, width: .6, height: 1};
+    layout.tiles[2].relativeGeometry = {x: 0, y: 0, width: 1, height: .4};
+    layout.writes.length = 0;
+    const callbacks = new Set(), cancellations = new Set();
+    const context = {restorationStopped: {
+        connect(callback) { cancellations.add(callback); },
+        disconnect(callback) { cancellations.delete(callback); }
+    }};
+    f.target.requestedTileChanged = {
+        connect(callback) { callbacks.add(callback); },
+        disconnect(callback) { callbacks.delete(callback); }
+    };
+    let active = false, unsnap;
+    tile.manage = window => {
+        if (active) {
+            unsnap = {...window.frameGeometry};
+            window.tile = tile;
+            window.frameGeometry = {x: 0, y: 0, width: 640, height: 800};
+        }
+        return true;
+    };
+    tile.unmanage = window => {
+        window.tile = null;
+        if (unsnap) window.frameGeometry = {...unsnap};
+        if (active) defaults.forEach((region, i) => { layout.tiles[i].relativeGeometry = {...region}; });
+    };
+    assert.equal(f.restoreImmediately(savedState({resizeOtherTiledWindows: resizeOthers, restoreContext: context,
+        tile: {kind: 'quick', edges: 2, region: {x: 0, y: 0, width: .65, height: 1},
+            normalSize: {width: 900, height: 650}}})), true);
+    assert.equal(f.target.frameGeometry.width, 900, 'inactive association must preserve the unsnap size');
+    assert.equal(layout.writes.length, 0);
+    if (canceled) {
+        for (const callback of [...cancellations]) callback();
+        assert.equal(callbacks.size, 0, 'disabling restoration cancels the pending request');
+        assert.equal(cancellations.size, 0);
+        assert.equal(layout.writes.length, 0);
+        continue;
+    }
+    active = true;
+    unsnap = {...f.target.frameGeometry};
+    f.target.tile = tile;
+    f.target.frameGeometry = {x: 0, y: 0, width: 640, height: 800};
+    for (const callback of [...callbacks]) callback();
+    assert.equal(callbacks.size, 0, 'disconnect after the native request');
+    assert.equal(cancellations.size, 0);
+    if (resizeOthers) assert.equal(tile.relativeGeometry.width, .65);
+    else {
+        assert.equal(tile.relativeGeometry.width, .6);
+        assert.equal(f.target.frameGeometry.width, 832);
+    }
+    assert.equal(f.target.tile, tile);
+    assert.equal(layout.tiles[2].relativeGeometry.height, .4, 'rebinding preserves the other shared split');
+    tile.unmanage(f.target);
+    assert.equal(f.target.frameGeometry.width, 900);
+}
+
+// Match KWin's maximize-area coordinates and padding on an offset screen.
+{
+    const f = fixture();
+    f.output.geometry = {x: 1920, y: 0, width: 1920, height: 1080};
+    f.workspace.clientArea = option => option === 1
+        ? {x: 1920, y: 40, width: 1920, height: 1040} : f.output.geometry;
+    const tile = quickTile(f.leaf(.5, 0, .5, .5), 5);
+    tile.padding = 8;
+    f.workspace.quickTiles = [tile];
+    assert.equal(f.restoreImmediately(savedState({resizeOtherTiledWindows: false,
+        tile: {kind: 'quick', edges: 5, region: {x: .35, y: 0, width: .65, height: .5}}})), true);
+    assert.deepEqual({...f.target.frameGeometry}, {x: 2596, y: 48, width: 1236, height: 508});
+    assert.equal(tile.relativeGeometry.width, .5);
+}

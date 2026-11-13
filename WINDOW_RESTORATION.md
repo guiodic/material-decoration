@@ -48,7 +48,9 @@ independently.
   by the user. User-resized proportions are restored to that window only.
   **Resize other snapped windows when restoring saved proportions** (off by
   default) applies them to the shared quick-tile layout as well.
-  KWin applies its own layout constraints.
+  KWin applies its own layout constraints. On an inactive desktop, individual
+  proportions are applied when KWin activates the native tile association;
+  disabling restoration cancels this deferred step.
   Custom tiling requires a compatible layout.
   The screen and desktop options are independent:
   **Remember the screen where the window was last closed** is on by default;

@@ -340,6 +340,7 @@ public:
     {
         m_decoration = decoration;
         m_enabled = enabled;
+        if (!enabled) Q_EMIT restorationStopped();
         m_rememberScreen = rememberScreen;
         m_rememberDesktop = rememberDesktop;
         m_resizeOtherTiledWindows = resizeOtherTiledWindows;
@@ -357,6 +358,9 @@ public:
             m_prepared = false;
         }
     }
+
+Q_SIGNALS:
+    void restorationStopped();
 
 private slots:
     void prepare()
@@ -446,7 +450,7 @@ private slots:
     }
     void rememberNormalSize()
     {
-        if (!m_enabled || !m_restoreStarted || m_restoring || m_requestedTiled || m_committedTiled || m_maximizeChanging
+        if (!m_enabled || !m_restoreStarted || m_restoring || m_requestedTiled || m_committedTiled || !m_lastTile.isEmpty() || m_maximizeChanging
             || m_window->property("deleted").toBool() || m_window->property("fullScreen").toBool()
             || m_window->property("maximizeMode").toInt()) return;
         const auto size = normalSize(m_window->property("frameGeometry"));
@@ -512,12 +516,13 @@ private slots:
     }
 
 private:
-    QVariantMap restorationRequest(QVariantMap state) const
+    QVariantMap restorationRequest(QVariantMap state)
     {
         // Policy belongs to the current settings, never to the persisted state.
         state.insert("rememberScreen", m_rememberScreen);
         state.insert("rememberDesktop", m_rememberDesktop);
         state.insert("resizeOtherTiledWindows", m_resizeOtherTiledWindows);
+        state.insert("restoreContext", QVariant::fromValue<QObject *>(this));
         return state;
     }
     void refreshState()
