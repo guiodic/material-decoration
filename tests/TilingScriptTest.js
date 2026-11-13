@@ -960,3 +960,25 @@ for (const mismatch of [null, 'rounding', 'outside-tolerance', 'size', 'position
     assert.equal(f.workspace.activeWindow, active);
     assert.equal(tile.relativeGeometry.width, .5);
 }
+
+for (const mismatch of [null, 'other-tile', 'layout', 'path', 'frame', 'inactive']) {
+    const f = fixture();
+    f.root.tiles.forEach(tile => { tile.windows = []; });
+    const tile = f.root.tiles[0];
+    f.target.tile = tile;
+    f.target.frameGeometry = {x: 0, y: 0, width: 427, height: 800};
+    const state = savedState({tile: {kind: 'custom', path: [0], region: {...tile.relativeGeometry}}});
+    if (mismatch === 'other-tile') f.target.tile = f.root.tiles[1];
+    if (mismatch === 'layout') state.tile.region.width = .5;
+    if (mismatch === 'path') state.tile.path = [9];
+    if (mismatch === 'frame') f.target.frameGeometry.width = 600;
+    if (mismatch === 'inactive') {
+        f.target.tile = null;
+        tile.windows = [f.target];
+        f.workspace.currentDesktop = {id: 'other-desktop'};
+    }
+    const frame = {...f.target.frameGeometry}, active = f.workspace.activeWindow;
+    assert.equal(f.send(0, 'target', 'matchWindowState', state).success, mismatch === null || mismatch === 'inactive', mismatch);
+    assert.deepEqual({...f.target.frameGeometry}, frame);
+    assert.equal(f.workspace.activeWindow, active);
+}

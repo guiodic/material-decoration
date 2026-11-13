@@ -335,8 +335,8 @@ public:
                 updateTile();
                 const auto saved = readWindowState(windowStateKey(m_window), scope->current());
                 const auto tile = saved.value("tile").toMap();
-                if (tile.value("kind") == QLatin1String("quick") && matchesSavedWindowState(decoration, saved)) {
-                    m_customQuickTile = tile;
+                if (!tile.isEmpty() && matchesSavedWindowState(decoration, saved)) {
+                    if (tile.value("kind") == QLatin1String("quick")) m_customQuickTile = tile;
                     m_normalSize = tile.value("normalSize").toMap();
                 }
                 return;

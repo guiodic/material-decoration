@@ -906,6 +906,40 @@ private slots:
         QCOMPARE(saved.contains("region"), customProportions && !changedWhileDisabled);
         if (!changedWhileDisabled) QCOMPARE(saved, before);
     }
+    void reenableRetainsCustomLayoutNormalSize_data() {
+        QTest::addColumn<bool>("matches");
+        QTest::newRow("compatible") << true;
+        QTest::newRow("changed") << false;
+    }
+    void reenableRetainsCustomLayoutNormalSize() {
+        QFETCH(bool, matches);
+        QScopedValueRollback matching(savedWindowMatches, matches);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.CustomReenable." + QUuid::createUuid().toString());
+        window.setProperty("frameGeometry", QRectF(40, 60, 900, 650));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        QObject root;
+        KWin::Tile tile;
+        root.setProperty("tiles", QVariant::fromValue(QList<QObject *>{&tile}));
+        tile.setProperty("parent", QVariant::fromValue<QObject *>(&root));
+        tile.setProperty("relativeGeometry", QRectF(0, 0, .5, 1));
+        window.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
+        Q_EMIT window.requestedTileChanged();
+        window.changedTile();
+        window.setProperty("frameGeometry", QRectF(0, 0, 640, 800));
+        defaultWorkspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&window}));
+        Material::configureWindowState(&decoration, false);
+        Material::configureWindowState(&decoration, true);
+        window.close();
+        const auto saved = Material::readWindowState(Material::windowStateKey(&window),
+            Material::WindowStateScope::self()->current()).value("tile").toMap();
+        QCOMPARE(saved.value("kind").toString(), "custom");
+        QCOMPARE(saved.contains("normalSize"), matches);
+        if (matches) QCOMPARE(saved.value("normalSize").toMap().value("width").toInt(), 900);
+    }
     void savesNormalSizeOnlyWithValidTileMetadata() {
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.NormalSizeValidation." + QUuid::createUuid().toString());

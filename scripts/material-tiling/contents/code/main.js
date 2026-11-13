@@ -95,7 +95,7 @@ var materialTiling;
         return index >= 0 ? [2, 4, 1, 8, 3, 5, 10, 12][index] : 0;
     }
 
-    function quickTileFrame(target, region, tile, output) {
+    function tileFrame(target, region, tile, output) {
         const area = workspace.clientArea(KWin.MaximizeArea, output, restorationDesktop(target, output));
         const padding = tile.padding || 0;
         const x = Math.round(area.x + region.x * area.width);
@@ -123,12 +123,25 @@ var materialTiling;
         if (!resizeOthers) {
             // Keep the native association and unsnap geometry, but apply the
             // saved frame only to this window without changing the shared tile.
-            target.frameGeometry = quickTileFrame(target, region, tile, output);
+            target.frameGeometry = tileFrame(target, region, tile, output);
             return true;
         }
         // KWin owns the shared layout and propagates the saved split.
         tile.relativeGeometry = copy(region);
         return same(tile.relativeGeometry, region);
+    }
+
+    function compatibleCustomTile(target, saved, output) {
+        if (!saved.path || !saved.region || typeof workspace.rootTile !== "function") return null;
+        let tile = workspace.rootTile(output, restorationDesktop(target, output));
+        for (const index of saved.path) {
+            if (!Number.isInteger(index) || index < 0 || !tile || !tile.tiles || index >= tile.tiles.length) return null;
+            tile = tile.tiles[index];
+        }
+        if (!tile || tile.tiles.length || !["x", "y", "width", "height"].every(function (key) {
+            return typeof saved.region[key] === "number" && Math.abs(tile.relativeGeometry[key] - saved.region[key]) < 0.00001;
+        })) return null;
+        return tile;
     }
 
     function restoreNativeTile(target, saved, output, resizeOthers, context) {
@@ -187,16 +200,9 @@ var materialTiling;
             } finally {
                 if (restrictDesktop) target.desktops = originalDesktops;
             }
-        } else if (saved.kind === "custom" && saved.path && saved.region && typeof workspace.rootTile === "function") {
-            let tile = workspace.rootTile(output, restorationDesktop(target, output));
-            for (const index of saved.path) {
-                if (!Number.isInteger(index) || index < 0 || !tile || !tile.tiles || index >= tile.tiles.length) return false;
-                tile = tile.tiles[index];
-            }
-            if (!tile || tile.tiles.length || !["x", "y", "width", "height"].every(function (key) {
-                return typeof saved.region[key] === "number" && Math.abs(tile.relativeGeometry[key] - saved.region[key]) < 0.00001;
-            })) return false;
-            return manageRestoredTile(target, saved, tile);
+        } else if (saved.kind === "custom") {
+            const tile = compatibleCustomTile(target, saved, output);
+            return !!tile && manageRestoredTile(target, saved, tile);
         }
         return false;
     }
@@ -356,15 +362,17 @@ var materialTiling;
 
     function matchesWindowState(target, state) {
         const saved = state.tile, output = target.output;
-        if (!saved || saved.kind !== "quick" || !output || output.name !== state.outputName ||
+        if (!saved || !["quick", "custom"].includes(saved.kind) || !output || output.name !== state.outputName ||
             target.onAllDesktops !== state.onAllDesktops) return false;
         const ids = Array.from(target.desktops, function (desktop) { return desktop.id; }).sort();
         if (ids.join() !== Array.from(state.desktopIds).sort().join()) return false;
-        const tile = target.tile || materialWindowStateBridge.quickTiles(workspace.tilingForScreen(output)).find(function (tile) {
+        const tile = saved.kind === "custom" ? compatibleCustomTile(target, saved, output) :
+            target.tile || materialWindowStateBridge.quickTiles(workspace.tilingForScreen(output)).find(function (tile) {
             return Array.from(tile.windows).indexOf(target) !== -1;
         });
-        if (!tile || quickTileMode(tile) !== saved.edges) return false;
-        const expected = quickTileFrame(target, saved.region || tile.relativeGeometry, tile, output), frame = target.frameGeometry;
+        if (!tile || (saved.kind === "quick" && quickTileMode(tile) !== saved.edges)) return false;
+        if (saved.kind === "custom" && target.tile !== tile && Array.from(tile.windows).indexOf(target) === -1) return false;
+        const expected = tileFrame(target, saved.region || tile.relativeGeometry, tile, output), frame = target.frameGeometry;
         return ["x", "y", "width", "height"].every(function (key) { return Math.abs(frame[key] - expected[key]) <= 2; });
     }
 
