@@ -157,6 +157,7 @@ private slots:
         defaultOutput.setProperty("name", "Virtual-0");
         defaultOutput.setProperty("geometry", QRect(0, 0, 1280, 800));
         defaultWorkspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&defaultOutput}));
+        defaultWorkspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{}));
         testWorkspace = &defaultWorkspace;
     }
     void disabledByDefault() {
@@ -174,6 +175,35 @@ private slots:
         QVERIFY(copy->rememberWindowState());
         QVERIFY(!copy->rememberWindowScreen());
         QVERIFY(copy->rememberWindowDesktop());
+    }
+    void mappedWindowStartsTrackingWithoutRestoration() {
+        QScopedValueRollback available(prepareAvailable, true);
+        QScopedValueRollback minimizes(prepareMinimizes, true);
+        QScopedValueRollback restoreAvailability(immediateAvailable, true);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.AlreadyMapped." + QUuid::createUuid().toString());
+        QObject currentDesktop, savedDesktop;
+        const auto current = QVariant::fromValue(QList<QObject *>{&currentDesktop});
+        QScopedValueRollback desktops(preparedDesktops, QVariant::fromValue(QList<QObject *>{&savedDesktop}));
+        window.setProperty("desktops", current);
+        window.setProperty("minimized", false);
+        defaultWorkspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&window}));
+        const auto key = Material::windowStateKey(&window);
+        const auto scope = Material::WindowStateScope::self()->current();
+        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), scope));
+        const auto preparations = prepareCalls;
+        const auto restores = immediateRequests.size();
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true, true, true);
+        QCOMPARE(prepareCalls, preparations);
+        QCOMPARE(window.property("desktops"), current);
+        QVERIFY(!window.property("minimized").toBool());
+        window.setProperty("frameGeometry", QRectF(400, 250, 800, 500));
+        window.close();
+        QCOMPARE(immediateRequests.size(), restores);
+        QCOMPARE(Material::readWindowState(key, scope).value("position").toMap().value("x").toInt(), 400);
+        defaultWorkspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{}));
     }
     void defaultPolicyKeepsTheOpeningDesktop() {
         QScopedValueRollback prepareAvailability(prepareAvailable, true);
@@ -762,11 +792,12 @@ private slots:
         setup(target, app);
         source.setProperty("resizeable", true);
         target.setProperty("resizeable", scenario != "fixed-target");
-        workspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&source, &target}));
+        workspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{}));
         MaterialTest::Bridge sourceBridge, targetBridge;
         StateDecoration sourceDecoration(&source, &sourceBridge), targetDecoration(&target, &targetBridge);
         Material::configureWindowState(&sourceDecoration, true, true, true);
         source.map();
+        workspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&source}));
         KWin::QuickRootTile root;
         KWin::Tile tile;
         root.bind(&tile);
@@ -798,11 +829,14 @@ private slots:
             Q_EMIT extra.frameGeometryChanged();
             extra.changedTile();
             QCoreApplication::processEvents();
-            workspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&source, &extra, &target}));
+            workspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&source, &extra}));
         }
         immediateAvailable = true;
         const auto count = immediateRequests.size();
         Material::configureWindowState(&targetDecoration, true, true, true);
+        auto stacking = workspace.property("stackingOrder").toList();
+        stacking.append(QVariant::fromValue<QObject *>(&target));
+        workspace.setProperty("stackingOrder", stacking);
         target.map();
         if (scenario == "matching") {
             QCOMPARE(immediateRequests.size(), count + 1);
@@ -1098,9 +1132,9 @@ private slots:
             QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
             MaterialTest::Bridge bridge;
             StateDecoration decoration(&window, &bridge);
-            prepareAvailable = true;
-            prepareMinimizes = true;
-            immediateAvailable = true;
+            QScopedValueRollback available(prepareAvailable, true);
+            QScopedValueRollback minimizes(prepareMinimizes, true);
+            QScopedValueRollback restoreAvailability(immediateAvailable, true);
             const auto count = prepareRequests.size();
             Material::configureWindowState(&decoration, true, true, true);
             QCOMPARE(prepareRequests.size(), count + 1); // Already prepared, no event loop.
@@ -1109,7 +1143,6 @@ private slots:
             QCOMPARE(window.property("minimized").toBool(), initiallyMinimized);
             QCoreApplication::processEvents();
             QCOMPARE(prepareRequests.size(), count + 1); // No late preparation after map.
-            prepareAvailable = prepareMinimizes = immediateAvailable = false;
         }
     }
     void disablingBeforeMappingCancelsPreparation() {
@@ -1122,8 +1155,10 @@ private slots:
         QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
-        preparedDesktops = QVariant::fromValue(QList<QObject *>{&newDesktop});
-        prepareAvailable = prepareMinimizes = true;
+        QScopedValueRollback desktops(preparedDesktops, QVariant::fromValue(QList<QObject *>{&newDesktop}));
+        QScopedValueRollback available(prepareAvailable, true);
+        QScopedValueRollback minimizes(prepareMinimizes, true);
+        QScopedValueRollback restoreAvailability(immediateAvailable, true);
         Material::configureWindowState(&decoration, true, true, true);
         QVERIFY(window.property("minimized").toBool());
         QCOMPARE(window.property("desktops"), preparedDesktops);
@@ -1134,8 +1169,6 @@ private slots:
         window.map();
         QCoreApplication::processEvents();
         QCOMPARE(immediateRequests.size(), count);
-        prepareAvailable = prepareMinimizes = false;
-        preparedDesktops.clear();
     }
     void retriesPreparationWhenScriptStartsBeforeMapping() {
         QScopedValueRollback available(prepareAvailable, false);

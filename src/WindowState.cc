@@ -311,6 +311,18 @@ public:
         connectSignal("fullScreenChanged", "queueNormalSizeUpdate()");
         for (const auto &value : m_window->property("desktops").toList())
             m_originalDesktops.append(value.value<QObject *>());
+        // Already mapped windows appear in KWin's stacking order. There is no
+        // readyForPainting Qt property, and its signal will not fire again.
+        if (auto *workspace = windowStateWorkspace()) {
+            for (const auto &value : workspace->property("stackingOrder").toList()) {
+                if (value.value<QObject *>() != m_window) continue;
+                m_restoreStarted = true;
+                m_saveAllowed.insert(scope->current(), true);
+                rememberNormalSize();
+                updateTile();
+                return;
+            }
+        }
         prepare();
     }
     void configure(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop)

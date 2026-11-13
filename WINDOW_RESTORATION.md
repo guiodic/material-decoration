@@ -22,7 +22,8 @@ there is no polling or disk write on every movement.
 Material Tiling Popup script synchronously inside KWin's JavaScript engine.
 When desktop restoration is enabled, membership is prepared before mapping.
 Placement and native tiling are restored when the window becomes ready for
-painting, before rendering resumes.
+painting, before rendering resumes. A controller attached to an already visible
+window tracks its state without restoring or minimizing it.
 If the script is unavailable, bounded retries run for about five seconds.
 Availability after the first frame can still cause a visible repositioning.
 An App ID supplied late is handled at the first frame; identity changes do not
