@@ -409,8 +409,7 @@ private slots:
     {
         if (m_window->property("deleted").toBool()) return;
         const auto tile = windowTile(m_window);
-        if (!m_restoring && (tile.value("kind") != QLatin1String("quick")
-            || tile.value("edges") != m_lastTile.value("edges"))) m_customQuickTile.clear();
+        if (!m_restoring && tile.value("edges") != m_lastTile.value("edges")) m_customQuickTile.clear();
         m_lastTile = tile;
     }
     void requestedTileChanged()
@@ -463,27 +462,21 @@ private slots:
     }
     void startUserInteraction()
     {
-        cancelRestore();
         m_resizeTile = m_window->property("resize").toBool() ? windowTile(m_window) : QVariantMap();
-    }
-    void finishUserInteraction()
-    {
-        updateTile();
-        if (m_enabled && m_resizeTile.value("kind") == QLatin1String("quick")
-            && m_lastTile.value("kind") == QLatin1String("quick")
-            && m_resizeTile.value("edges") == m_lastTile.value("edges")
-            && m_resizeTile.value("region") != m_lastTile.value("region")) m_customQuickTile = m_lastTile;
-        m_resizeTile.clear();
-    }
-    void cancelRestore()
-    {
-        // An interactive move/resize is an explicit user decision. Never let
-        // a late script startup override it, even after the interaction ends.
+        // Cancel pending restoration when the user takes control.
         m_restoreCancelled = true;
         if (m_enabled) m_saveAllowed.insert(WindowStateScope::self()->current(), true);
         m_retryTimer.stop();
         m_prepareRetryTimer.stop();
         releaseVisibilityGuard();
+    }
+    void finishUserInteraction()
+    {
+        updateTile();
+        if (m_enabled && m_resizeTile.contains("edges")
+            && m_resizeTile.value("edges") == m_lastTile.value("edges")
+            && m_resizeTile.value("region") != m_lastTile.value("region")) m_customQuickTile = m_lastTile;
+        m_resizeTile.clear();
     }
     void restore()
     {
