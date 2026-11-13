@@ -18,6 +18,8 @@ class WindowStateScope : public QObject
 public:
     static WindowStateScope *self();
     QString current();
+    void retain();
+    void release();
 
 signals:
     void scopeChanged(const QString &scope);
@@ -37,5 +39,6 @@ private:
     QString m_scope;
     QVariantMap m_origins;
     bool m_changing = false;
+    int m_users = 0;
 };
 }

@@ -118,6 +118,23 @@ private slots:
         QVERIFY(!Material::tilingScriptAvailable());
         QVERIFY(!Material::tileWindow(&valid, Qt::LeftEdge));
     }
+    void matchesSavedWindowStateWithoutRestoring() {
+        TestDecoration valid(&window, &bridge);
+        const QVariantMap state{{"version", 3}, {"desktopIds", QVariantList{"desktop-1"}}};
+        evaluate("materialTiling = undefined;");
+        QCOMPARE(Material::matchesSavedWindowState(&valid, state), Material::WindowRestoreResult::Unavailable);
+        evaluate("materialTiling = function(window, state) { checked = state; return state.operation === 'matchWindowState'; };");
+        QCOMPARE(Material::matchesSavedWindowState(&valid, state), Material::WindowRestoreResult::Succeeded);
+        QCOMPARE(engine->evaluate("checked.desktopIds[0]").toString(), "desktop-1");
+        QVERIFY(!state.contains("operation"));
+        evaluate("materialTiling = function() { return false; };");
+        QCOMPARE(Material::matchesSavedWindowState(&valid, state), Material::WindowRestoreResult::Failed);
+        for (const auto &body : {QStringLiteral("return 'true';"), QStringLiteral("return undefined;"),
+                                 QStringLiteral("throw new Error('matcher failed');")}) {
+            evaluate("materialTiling = function() { " + body + " };");
+            QCOMPARE(Material::matchesSavedWindowState(&valid, state), Material::WindowRestoreResult::Unavailable);
+        }
+    }
     void restoresFixedSizeWindowsSynchronously() {
         TestDecoration valid(&window, &bridge);
         valid.setTitleBar(QRectF(0, 0, 640, 32.5));

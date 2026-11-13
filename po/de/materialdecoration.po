@@ -515,3 +515,11 @@ msgstr "Die virtuelle Arbeitsfläche merken, auf der das Fenster zuletzt geschlo
 #: src/kcm/config.ui
 msgid "Restore the saved virtual desktop, switch to it and activate the window. When disabled, keep the desktop chosen when the window opens."
 msgstr "Die gespeicherte virtuelle Arbeitsfläche wiederherstellen, dorthin wechseln und das Fenster aktivieren. Wenn deaktiviert, bleibt die beim Öffnen gewählte Arbeitsfläche erhalten."
+
+#: src/kcm/config.ui
+msgid "Resize other snapped windows when restoring saved proportions"
+msgstr "Andere angedockte Fenster beim Wiederherstellen gespeicherter Proportionen skalieren"
+
+#: src/kcm/config.ui
+msgid "Allow restoring a snapped window's saved proportions to resize other windows in the same quick-tile layout. When disabled, restore the saved proportions only to the reopened window."
+msgstr "Erlaubt beim Wiederherstellen der gespeicherten Proportionen eines angedockten Fensters die Größenänderung anderer Fenster im selben Schnellkachellayout. Wenn deaktiviert, werden die gespeicherten Proportionen nur für das erneut geöffnete Fenster wiederhergestellt."

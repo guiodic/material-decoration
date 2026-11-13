@@ -73,9 +73,28 @@ WindowStateScope *WindowStateScope::self()
     return instance;
 }
 
+void WindowStateScope::retain()
+{
+    if (++m_users == 1) attach();
+}
+
+void WindowStateScope::release()
+{
+    if (--m_users) return;
+    if (m_wrapper) disconnect(m_wrapper, nullptr, this, nullptr);
+    if (m_workspace) disconnect(m_workspace, nullptr, this, nullptr);
+    for (auto *output : m_watched) disconnect(output, nullptr, this, nullptr);
+    m_watched.clear();
+    m_wrapper = nullptr;
+    m_workspace = nullptr;
+    m_scope.clear();
+    m_origins.clear();
+    m_changing = false;
+}
+
 QString WindowStateScope::current()
 {
-    attach();
+    if (m_users) attach();
     return m_scope;
 }
 

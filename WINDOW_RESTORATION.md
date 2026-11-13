@@ -24,12 +24,22 @@ Material Tiling Popup script synchronously inside KWin's JavaScript engine.
 When desktop restoration is enabled, membership is prepared before mapping.
 Placement and native tiling are restored when the window becomes ready for
 painting, before rendering resumes. A controller attached to an already visible
-window tracks its state without restoring or minimizing it.
+window tracks its state without restoring or minimizing it. Saved custom
+proportions are retained only when its output, desktops, snap mode and current
+frame match the saved state (within two logical pixels). Disabling restoration
+saves the current state before removing the controller. If the script is
+unavailable when tracking an existing tiled window, its saved state is protected
+until a new user placement permits saving it.
 If the script is unavailable, bounded retries run for about five seconds.
 Availability after the first frame can still cause a visible repositioning.
 An App ID supplied late is handled at the first frame; identity changes do not
 restart early preparation. After opening, the application/tag identity is treated
 as stable.
+
+When disabled, restoration controllers are not created. Disabling the feature
+removes existing controllers after cancelling pending restoration. Topology
+monitoring stops when no active controllers remain. The tiling popup operates
+independently.
 
 ## 2. Current restoration policies
 
@@ -39,10 +49,15 @@ as stable.
   X11/XWayland windows, dialogs and popups. Per-window exceptions can disable it
   through normal decoration settings updates; App ID changes are not monitored.
 - **Restored data:** position and native quick or custom tiling. Quick tiling
-  also restores saved split proportions, resizing other windows in the same
-  quick-tile layout. KWin applies its own layout constraints.
+  uses the current tile proportions unless the window was explicitly resized
+  by the user. User-resized proportions are restored to that window only.
+  **Resize other snapped windows when restoring saved proportions** (off by
+  default) applies them to the shared quick-tile layout as well.
+  KWin applies its own layout constraints. On an inactive desktop, individual
+  proportions are applied when KWin activates the native tile association;
+  disabling restoration cancels this deferred step.
   Custom tiling requires a compatible layout.
-  The two subordinate options are independent:
+  The screen and desktop options are independent:
   **Remember the screen where the window was last closed** is on by default;
   when off, placement uses the screen KWin chose for the new window.
   **Remember the virtual desktop where the window was last closed** is off by

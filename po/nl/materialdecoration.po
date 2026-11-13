@@ -515,3 +515,11 @@ msgstr "Het virtuele bureaublad onthouden waarop het venster voor het laatst is 
 #: src/kcm/config.ui
 msgid "Restore the saved virtual desktop, switch to it and activate the window. When disabled, keep the desktop chosen when the window opens."
 msgstr "Het opgeslagen virtuele bureaublad herstellen, ernaartoe schakelen en het venster activeren. Indien uitgeschakeld, blijft het bij het openen gekozen bureaublad behouden."
+
+#: src/kcm/config.ui
+msgid "Resize other snapped windows when restoring saved proportions"
+msgstr "Andere vastgezette vensters schalen bij het herstellen van opgeslagen verhoudingen"
+
+#: src/kcm/config.ui
+msgid "Allow restoring a snapped window's saved proportions to resize other windows in the same quick-tile layout. When disabled, restore the saved proportions only to the reopened window."
+msgstr "Sta toe dat het herstellen van de opgeslagen verhoudingen van een vastgezet venster ook andere vensters in dezelfde snelle tegelindeling schaalt. Indien uitgeschakeld, worden de opgeslagen verhoudingen alleen voor het opnieuw geopende venster hersteld."

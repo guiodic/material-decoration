@@ -40,15 +40,20 @@ function fixture(extraWindows = []) {
             workspace.activeWindow.tile = {unmanage(window) { window.tile = null; }};
         };
     }
-    const context = {workspace, materialWindowStateBridge: {quickTiles(manager) { return manager.quickTiles; }}, KWin: {PlacementArea: 0}};
+    const context = {workspace, materialWindowStateBridge: {quickTiles(manager) { return manager.quickTiles; }}, KWin: {PlacementArea: 0, MaximizeArea: 1}};
     vm.runInNewContext(source, context);
+    function restore(target, state) {
+        const {resizeOtherTiledWindows, restoreContext, ...request} = state;
+        request.restoreContext = restoreContext || {resizeOtherTiledWindows: resizeOtherTiledWindows === true};
+        return context.materialRestoreWindowState(target, request);
+    }
     return {workspace, target, other, calls, output, root, leaf,
-        restoreImmediately(state) { return context.materialRestoreWindowState(target, state); },
+        restoreImmediately(state) { return restore(target, state); },
         prepareImmediately(state) { return context.materialPrepareWindowState(target, state); },
         send(edges, uuid = 'target', operation = 'tile', extra = {}) {
             const target = workspace.windowList().find(window => String(window.internalId).replace(/[{}]/g, '') === uuid);
             try {
-                if (operation === 'restoreState') return {success: context.materialRestoreWindowState(target, extra.state)};
+                if (operation === 'restoreState') return {success: restore(target, extra.state)};
                 const result = context.materialTiling(target, {edges, operation, ...extra});
                 return Array.isArray(result) ? {success: true, layout: Array.from(result, zone => ({...zone}))} : {success: result};
             } catch (error) { return {success: false, reason: String(error)}; }
@@ -207,7 +212,7 @@ for (const change of [
 }
 function savedState(extra = {}) {
     return {version: 3, position: {x: 100, y: 80}, desktopIds: ['desktop-1'],
-        rememberScreen: true, rememberDesktop: true,
+        rememberScreen: true, rememberDesktop: true, resizeOtherTiledWindows: true,
         onAllDesktops: false, outputName: 'Virtual-1',
         outputPosition: {x: 0, y: 0}, ...extra};
 }
@@ -824,4 +829,191 @@ for (const sticky of [false, true]) {
     assert.deepEqual(Array.from(f.target.desktops), [second]);
     assert.equal(pending.width, 900);
     assert.equal(pending.height, 600);
+}
+
+// Existing quick-tile proportions are changed only with explicit permission.
+for (const resizeOthers of [undefined, false, true]) {
+    for (const occupiedIndex of [0, 1, 4]) {
+        const f = fixture();
+        const layout = quickLayoutFixture(f);
+        const other = {internalId: '{snapped-other}'};
+        layout.tiles[occupiedIndex].windows = [other];
+        layout.tiles[0].windows = [...(layout.tiles[0].windows || []), f.target];
+        assert.equal(f.restoreImmediately(savedState({resizeOtherTiledWindows: resizeOthers,
+            tile: {kind: 'quick', edges: 2, region: {x: 0, y: 0, width: .65, height: 1}}})), true);
+        assert.equal(f.target.tile, layout.tiles[0]);
+        assert.equal(layout.tiles[0].relativeGeometry.width, resizeOthers === true ? .65 : .5);
+        if (resizeOthers !== true) assert.equal(f.target.frameGeometry.width, 832);
+        assert.equal(layout.tiles[1].relativeGeometry.width, resizeOthers === true ? .35 : .5);
+        if (resizeOthers !== true) assert.equal(layout.writes.length, 0);
+    }
+}
+{
+    const f = fixture();
+    const layout = quickLayoutFixture(f);
+    layout.tiles[0].windows = [f.target];
+    assert.equal(f.restoreImmediately(savedState({resizeOtherTiledWindows: false, tile: {kind: 'quick', edges: 2,
+        region: {x: 0, y: 0, width: .65, height: 1}}})), true);
+    assert.equal(layout.tiles[0].relativeGeometry.width, .5);
+    assert.equal(f.target.frameGeometry.width, 832, 'saved proportions apply only to the target by default');
+}
+
+// An inactive root records membership before requesting the native tile.
+for (const [resizeOthers, currentPolicy, canceled] of [
+    [false, false, false], [true, true, false], [true, false, false], [false, true, false],
+    [false, false, true], [true, true, true]
+]) {
+    const f = fixture();
+    const layout = quickLayoutFixture(f);
+    const tile = layout.tiles[0];
+    const defaults = layout.tiles.map(tile => ({...tile.relativeGeometry}));
+    tile.relativeGeometry = {x: 0, y: 0, width: .6, height: 1};
+    layout.tiles[2].relativeGeometry = {x: 0, y: 0, width: 1, height: .4};
+    layout.writes.length = 0;
+    const callbacks = new Set(), cancellations = new Set();
+    const context = {resizeOtherTiledWindows: resizeOthers, restorationStopped: {
+        connect(callback) { cancellations.add(callback); },
+        disconnect(callback) { cancellations.delete(callback); }
+    }};
+    f.target.requestedTileChanged = {
+        connect(callback) { callbacks.add(callback); },
+        disconnect(callback) { callbacks.delete(callback); }
+    };
+    let active = false, unsnap;
+    tile.manage = window => {
+        if (active) {
+            unsnap = {...window.frameGeometry};
+            window.tile = tile;
+            window.frameGeometry = {x: 0, y: 0, width: 640, height: 800};
+        }
+        return true;
+    };
+    tile.unmanage = window => {
+        window.tile = null;
+        if (unsnap) window.frameGeometry = {...unsnap};
+        if (active) defaults.forEach((region, i) => { layout.tiles[i].relativeGeometry = {...region}; });
+    };
+    assert.equal(f.restoreImmediately(savedState({resizeOtherTiledWindows: resizeOthers, restoreContext: context,
+        tile: {kind: 'quick', edges: 2, region: {x: 0, y: 0, width: .65, height: 1},
+            normalSize: {width: 900, height: 650}}})), true);
+    assert.equal(f.target.frameGeometry.width, 900, 'inactive association must preserve the unsnap size');
+    assert.equal(layout.writes.length, 0);
+    if (canceled) {
+        for (const callback of [...cancellations]) callback();
+        assert.equal(callbacks.size, 0, 'disabling restoration cancels the pending request');
+        assert.equal(cancellations.size, 0);
+        assert.equal(layout.writes.length, 0);
+        continue;
+    }
+    context.resizeOtherTiledWindows = currentPolicy;
+    active = true;
+    unsnap = {...f.target.frameGeometry};
+    f.target.tile = tile;
+    f.target.frameGeometry = {x: 0, y: 0, width: 640, height: 800};
+    for (const callback of [...callbacks]) callback();
+    assert.equal(callbacks.size, 0, 'disconnect after the native request');
+    assert.equal(cancellations.size, 0);
+    if (currentPolicy) assert.equal(tile.relativeGeometry.width, .65);
+    else {
+        assert.equal(tile.relativeGeometry.width, .6);
+        assert.equal(f.target.frameGeometry.width, 832);
+    }
+    assert.equal(f.target.tile, tile);
+    assert.equal(layout.tiles[2].relativeGeometry.height, .4, 'rebinding preserves the other shared split');
+    tile.unmanage(f.target);
+    assert.equal(f.target.frameGeometry.width, 900);
+}
+
+// Match KWin's maximize-area coordinates and padding on an offset screen.
+{
+    const f = fixture();
+    f.output.geometry = {x: 1920, y: 0, width: 1920, height: 1080};
+    f.workspace.clientArea = option => option === 1
+        ? {x: 1920, y: 40, width: 1920, height: 1040} : f.output.geometry;
+    const tile = quickTile(f.leaf(.5, 0, .5, .5), 5);
+    tile.padding = 8;
+    f.workspace.quickTiles = [tile];
+    assert.equal(f.restoreImmediately(savedState({resizeOtherTiledWindows: false,
+        tile: {kind: 'quick', edges: 5, region: {x: .35, y: 0, width: .65, height: .5}}})), true);
+    assert.deepEqual({...f.target.frameGeometry}, {x: 2596, y: 48, width: 1236, height: 508});
+    assert.equal(tile.relativeGeometry.width, .5);
+}
+
+// Matching an already mapped window is read-only and compares saved geometry.
+for (const mismatch of [null, 'rounding', 'outside-tolerance', 'size', 'position', 'edges', 'output', 'desktop', 'sticky', 'no-region', 'standard', 'floating']) {
+    const f = fixture();
+    const tile = quickTile(f.leaf(0, 0, .5, 1));
+    tile.windows = [];
+    f.workspace.quickTiles = [tile];
+    f.target.tile = tile;
+    f.target.frameGeometry = {x: 0, y: 0, width: 832, height: 800};
+    const state = savedState({tile: {kind: 'quick', edges: 2, region: {x: 0, y: 0, width: .65, height: 1}}});
+    if (mismatch === 'rounding') f.target.frameGeometry.height += .5;
+    if (mismatch === 'outside-tolerance') f.target.frameGeometry.width += 2.1;
+    if (mismatch === 'size') f.target.frameGeometry.width = 640;
+    if (mismatch === 'position') f.target.frameGeometry.x = 50;
+    if (mismatch === 'edges') state.tile.edges = 4;
+    if (mismatch === 'output') state.outputName = 'other-screen';
+    if (mismatch === 'desktop') state.desktopIds = ['other-desktop'];
+    if (mismatch === 'sticky') state.onAllDesktops = true;
+    if (mismatch === 'no-region' || mismatch === 'standard') delete state.tile.region;
+    if (mismatch === 'standard') f.target.frameGeometry.width = 640;
+    if (mismatch === 'floating') f.target.tile = null;
+    const frame = {...f.target.frameGeometry}, active = f.workspace.activeWindow;
+    assert.equal(f.send(0, 'target', 'matchWindowState', state).success, mismatch === null || mismatch === 'rounding' || mismatch === 'standard', mismatch);
+    assert.deepEqual({...f.target.frameGeometry}, frame);
+    assert.equal(f.workspace.activeWindow, active);
+    assert.equal(tile.relativeGeometry.width, .5);
+}
+
+for (const mismatch of [null, 'other-tile', 'layout', 'path', 'frame', 'inactive']) {
+    const f = fixture();
+    f.root.tiles.forEach(tile => { tile.windows = []; });
+    const tile = f.root.tiles[0];
+    f.target.tile = tile;
+    f.target.frameGeometry = {x: 0, y: 0, width: 427, height: 800};
+    const state = savedState({tile: {kind: 'custom', path: [0], region: {...tile.relativeGeometry}}});
+    if (mismatch === 'other-tile') f.target.tile = f.root.tiles[1];
+    if (mismatch === 'layout') state.tile.region.width = .5;
+    if (mismatch === 'path') state.tile.path = [9];
+    if (mismatch === 'frame') f.target.frameGeometry.width = 600;
+    if (mismatch === 'inactive') {
+        f.target.tile = null;
+        tile.windows = [f.target];
+        f.workspace.currentDesktop = {id: 'other-desktop'};
+    }
+    const frame = {...f.target.frameGeometry}, active = f.workspace.activeWindow;
+    assert.equal(f.send(0, 'target', 'matchWindowState', state).success, mismatch === null || mismatch === 'inactive', mismatch);
+    assert.deepEqual({...f.target.frameGeometry}, frame);
+    assert.equal(f.workspace.activeWindow, active);
+}
+
+// A requested tile takes precedence over associations on other desktops.
+for (const requested of ['quick', 'none', 'custom']) {
+    const f = fixture();
+    const left = quickTile(f.leaf(0, 0, .5, 1));
+    const right = quickTile(f.leaf(.5, 0, .5, 1), 4);
+    left.windows = right.windows = [f.target];
+    f.workspace.quickTiles = [left, right];
+    f.target.desktops.push({id: 'desktop-2'});
+    f.target.tile = requested === 'quick' ? right : requested === 'custom' ? f.root.tiles[0] : null;
+    const tile = requested === 'none' ? left : right;
+    f.target.frameGeometry = {x: tile.relativeGeometry.x * 1280, y: 0, width: 640, height: 800};
+    const state = savedState({desktopIds: ['desktop-1', 'desktop-2'],
+        tile: {kind: 'quick', edges: requested === 'none' ? 2 : 4}});
+    assert.equal(f.send(0, 'target', 'matchWindowState', state).success, requested !== 'custom', requested);
+}
+
+// A custom grid with eight siblings is not a native quick-tile layout.
+{
+    const f = fixture();
+    const custom = {tiles: Array.from({length: 8}, (_, i) => f.leaf((i % 4) / 4, i < 4 ? 0 : .5, .25, .5))};
+    custom.tiles.forEach(tile => { tile.parent = custom; tile.windows = []; });
+    f.workspace.layoutRoot = custom;
+    f.workspace.quickTiles = [];
+    f.target.tile = custom.tiles[4];
+    f.target.frameGeometry = {x: 0, y: 400, width: 320, height: 400};
+    assert.equal(f.send(0, 'target', 'matchWindowState', savedState({tile: {
+        kind: 'quick', edges: 3, normalSize: {width: 900, height: 650}
+    }})).success, false);
 }

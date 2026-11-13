@@ -250,21 +250,25 @@ bool snapshotWindowStates(const QString &scope, const QVariantMap &outputOrigins
 class WindowStateController : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(bool resizeOtherTiledWindows READ resizeOtherTiledWindows)
 public:
-    explicit WindowStateController(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop)
-        : QObject(decoration->parent()), m_window(decoration->parent()), m_decoration(decoration), m_enabled(enabled)
-        , m_rememberScreen(rememberScreen), m_rememberDesktop(rememberDesktop)
+    bool resizeOtherTiledWindows() const { return m_resizeOtherTiledWindows; }
+    explicit WindowStateController(KDecoration3::Decoration *decoration, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows)
+        : QObject(decoration->parent()), m_window(decoration->parent()), m_decoration(decoration), m_enabled(true)
+        , m_rememberScreen(rememberScreen), m_rememberDesktop(rememberDesktop), m_resizeOtherTiledWindows(resizeOtherTiledWindows)
     {
         // Read synchronously on closed(), before KWin releases the window.
         connect(m_window, SIGNAL(closed()), this, SLOT(save()), Qt::DirectConnection);
         connect(m_window, SIGNAL(readyForPaintingChanged()), this, SLOT(scheduleRestore()));
-        connect(m_window, SIGNAL(interactiveMoveResizeStarted()), this, SLOT(cancelRestore()), Qt::DirectConnection);
-        connect(m_window, SIGNAL(interactiveMoveResizeFinished()), this, SLOT(updateTile()), Qt::DirectConnection);
+        connect(m_window, SIGNAL(interactiveMoveResizeStarted()), this, SLOT(startUserInteraction()), Qt::DirectConnection);
+        connect(m_window, SIGNAL(interactiveMoveResizeFinished()), this, SLOT(finishUserInteraction()), Qt::DirectConnection);
         m_retryTimer.setSingleShot(true);
         connect(&m_retryTimer, &QTimer::timeout, this, &WindowStateController::restore);
         m_prepareRetryTimer.setSingleShot(true);
         connect(&m_prepareRetryTimer, &QTimer::timeout, this, &WindowStateController::prepare);
         auto *scope = WindowStateScope::self();
+        scope->retain();
+        connect(this, &QObject::destroyed, scope, &WindowStateScope::release);
         connect(scope, &WindowStateScope::scopeChanged, this, [this](const QString &newScope) {
             // Capture this for every open window before any sibling can close
             // and create a state in the newly entered configuration.
@@ -326,20 +330,33 @@ public:
             for (const auto &value : workspace->property("stackingOrder").toList()) {
                 if (value.value<QObject *>() != m_window) continue;
                 m_restoreStarted = true;
-                m_saveAllowed.insert(scope->current(), true);
+                const auto currentScope = scope->current();
+                m_saveAllowed.insert(currentScope, true);
                 rememberNormalSize();
                 updateTile();
+                const auto saved = readWindowState(windowStateKey(m_window), currentScope);
+                const auto tile = saved.value("tile").toMap();
+                if (!tile.isEmpty()) {
+                    const auto match = matchesSavedWindowState(decoration, saved);
+                    if (match == WindowRestoreResult::Succeeded) {
+                        if (tile.value("kind") == QLatin1String("quick")) m_customQuickTile = tile;
+                        m_normalSize = tile.value("normalSize").toMap();
+                    } else if (match == WindowRestoreResult::Unavailable) m_saveAllowed.insert(currentScope, false);
+                }
                 return;
             }
         }
         prepare();
     }
-    void configure(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop)
+    void configure(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows)
     {
         m_decoration = decoration;
+        if (!enabled && m_restoreStarted) save();
         m_enabled = enabled;
+        if (!enabled) Q_EMIT restorationStopped();
         m_rememberScreen = rememberScreen;
         m_rememberDesktop = rememberDesktop;
+        m_resizeOtherTiledWindows = resizeOtherTiledWindows;
         if (!enabled || !rememberDesktop) m_prepareRetryTimer.stop();
         if ((!enabled || !rememberDesktop) && !m_restoreStarted) {
             if (m_prepared) {
@@ -354,6 +371,9 @@ public:
             m_prepared = false;
         }
     }
+
+Q_SIGNALS:
+    void restorationStopped();
 
 private slots:
     void prepare()
@@ -406,7 +426,10 @@ private slots:
     }
     void updateTile()
     {
-        if (!m_window->property("deleted").toBool()) m_lastTile = windowTile(m_window);
+        if (m_window->property("deleted").toBool()) return;
+        const auto tile = windowTile(m_window);
+        if (!m_restoring && tile.value("edges") != m_lastTile.value("edges")) m_customQuickTile.clear();
+        m_lastTile = tile;
     }
     void requestedTileChanged()
     {
@@ -440,7 +463,7 @@ private slots:
     }
     void rememberNormalSize()
     {
-        if (!m_enabled || !m_restoreStarted || m_restoring || m_requestedTiled || m_committedTiled || m_maximizeChanging
+        if (!m_enabled || !m_restoreStarted || m_restoring || m_requestedTiled || m_committedTiled || !m_lastTile.isEmpty() || m_maximizeChanging
             || m_window->property("deleted").toBool() || m_window->property("fullScreen").toBool()
             || m_window->property("maximizeMode").toInt()) return;
         const auto size = normalSize(m_window->property("frameGeometry"));
@@ -456,15 +479,29 @@ private slots:
         m_maximizeChanging = false;
         queueNormalSizeUpdate();
     }
-    void cancelRestore()
+    void startUserInteraction()
     {
-        // An interactive move/resize is an explicit user decision. Never let
-        // a late script startup override it, even after the interaction ends.
+        // Tile changes are synchronous; client buffers can arrive after release.
+        auto *tile = m_window->property("tile").value<QObject *>();
+        m_resizeEdges = m_window->property("resize").toBool() ? windowTile(m_window).value("edges").toInt() : 0;
+        m_tileResized = false;
+        if (m_resizeEdges && tile) m_resizeConnection = connect(tile, SIGNAL(relativeGeometryChanged()),
+            this, SLOT(markTileResized()), Qt::DirectConnection);
         m_restoreCancelled = true;
+        Q_EMIT restorationStopped();
         if (m_enabled) m_saveAllowed.insert(WindowStateScope::self()->current(), true);
         m_retryTimer.stop();
         m_prepareRetryTimer.stop();
         releaseVisibilityGuard();
+    }
+    void markTileResized() { m_tileResized = true; }
+    void finishUserInteraction()
+    {
+        disconnect(m_resizeConnection);
+        updateTile();
+        if (m_enabled && m_tileResized && m_resizeEdges == m_lastTile.value("edges").toInt()) m_customQuickTile = m_lastTile;
+        m_resizeEdges = 0;
+        m_tileResized = false;
     }
     void restore()
     {
@@ -489,15 +526,18 @@ private slots:
         if (result == WindowRestoreResult::Succeeded) {
             m_saveAllowed.insert(m_stateScope, true);
             updateTile();
+            const auto tile = state.value("tile").toMap();
+            m_customQuickTile = tile.value("kind") == QLatin1String("quick") ? tile : QVariantMap();
         } else if (result == WindowRestoreResult::Unavailable) retry();
     }
 
 private:
-    QVariantMap restorationRequest(QVariantMap state) const
+    QVariantMap restorationRequest(QVariantMap state)
     {
         // Policy belongs to the current settings, never to the persisted state.
         state.insert("rememberScreen", m_rememberScreen);
         state.insert("rememberDesktop", m_rememberDesktop);
+        state.insert("restoreContext", QVariant::fromValue<QObject *>(this));
         return state;
     }
     void refreshState()
@@ -584,9 +624,14 @@ private:
     {
         auto state = captureWindowState(m_window);
         if (!state.contains("tile") && !m_lastTile.isEmpty()) state.insert("tile", m_lastTile);
-        if (state.contains("tile") && validSize(m_normalSize)) {
+        if (state.contains("tile")) {
             auto tile = state.value("tile").toMap();
-            tile.insert("normalSize", m_normalSize);
+            if (tile.value("kind") == QLatin1String("quick")) {
+                tile.remove("region");
+                if (tile.value("edges") == m_customQuickTile.value("edges") && m_customQuickTile.contains("region"))
+                    tile.insert("region", m_customQuickTile.value("region"));
+            }
+            if (validSize(m_normalSize)) tile.insert("normalSize", m_normalSize);
             state.insert("tile", tile);
         }
         return state;
@@ -609,6 +654,7 @@ private:
     bool m_enabled;
     bool m_rememberScreen;
     bool m_rememberDesktop;
+    bool m_resizeOtherTiledWindows;
     bool m_restoreStarted = false;
     // New states are writable; existing ones need a successful restore or a user move.
     QHash<QString, bool> m_saveAllowed;
@@ -627,6 +673,10 @@ private:
     QString m_stateKey;
     QVariantMap m_state;
     QVariantMap m_lastTile;
+    QVariantMap m_customQuickTile;
+    QMetaObject::Connection m_resizeConnection;
+    int m_resizeEdges = 0;
+    bool m_tileResized = false;
     QVariantMap m_normalSize;
     QTimer m_normalSizeTimer;
     bool m_requestedTiled = false;
@@ -636,18 +686,27 @@ private:
     int m_attempts = 0;
 };
 
-void configureWindowState(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop)
+void configureWindowState(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows)
 {
     auto *window = decoration->parent();
+    if (!window) return;
+    auto *controller = window->findChild<WindowStateController *>(QString(), Qt::FindDirectChildrenOnly);
+    if (!enabled) {
+        if (controller) {
+            controller->configure(decoration, false, rememberScreen, rememberDesktop, resizeOtherTiledWindows);
+            delete controller;
+        }
+        return;
+    }
     // Do not affect XWayland, dialogs, popups or the KCM's preview.
-    if (!window || !window->inherits("KWin::WaylandWindow") || !window->property("normalWindow").toBool()
+    if (!window->inherits("KWin::WaylandWindow") || !window->property("normalWindow").toBool()
         || window->property("transient").toBool()) return;
-    if (auto *controller = window->findChild<WindowStateController *>(QString(), Qt::FindDirectChildrenOnly)) {
-        controller->configure(decoration, enabled, rememberScreen, rememberDesktop);
+    if (controller) {
+        controller->configure(decoration, true, rememberScreen, rememberDesktop, resizeOtherTiledWindows);
     } else {
         // Owned by the KWin window, so fullscreen/decoration removal cannot lose
         // the close handler. Normal sizes are tracked in memory, never polled.
-        new WindowStateController(decoration, enabled, rememberScreen, rememberDesktop);
+        new WindowStateController(decoration, rememberScreen, rememberDesktop, resizeOtherTiledWindows);
     }
 }
 }

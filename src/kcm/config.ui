@@ -679,6 +679,12 @@
             <property name="toolTip"><string>Restore the saved virtual desktop, switch to it and activate the window. When disabled, keep the desktop chosen when the window opens.</string></property>
            </widget>
           </item>
+          <item>
+           <widget class="QCheckBox" name="kcfg_ResizeOtherTiledWindows">
+            <property name="text"><string>Resize other snapped windows when restoring saved proportions</string></property>
+            <property name="toolTip"><string>Allow restoring a snapped window's saved proportions to resize other windows in the same quick-tile layout. When disabled, restore the saved proportions only to the reopened window.</string></property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>

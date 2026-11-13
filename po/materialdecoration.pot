@@ -671,3 +671,11 @@ msgstr ""
 #: src/kcm/config.ui
 msgid "Restore the saved virtual desktop, switch to it and activate the window. When disabled, keep the desktop chosen when the window opens."
 msgstr ""
+
+#: src/kcm/config.ui
+msgid "Resize other snapped windows when restoring saved proportions"
+msgstr ""
+
+#: src/kcm/config.ui
+msgid "Allow restoring a snapped window's saved proportions to resize other windows in the same quick-tile layout. When disabled, restore the saved proportions only to the reopened window."
+msgstr ""

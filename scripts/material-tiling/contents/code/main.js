@@ -95,7 +95,21 @@ var materialTiling;
         return index >= 0 ? [2, 4, 1, 8, 3, 5, 10, 12][index] : 0;
     }
 
-    function restoreQuickTileRegion(saved, tile) {
+    function tileFrame(target, region, tile, output) {
+        const area = workspace.clientArea(KWin.MaximizeArea, output, restorationDesktop(target, output));
+        const padding = tile.padding || 0;
+        const x = Math.round(area.x + region.x * area.width);
+        const y = Math.round(area.y + region.y * area.height);
+        const right = Math.min(output.geometry.x + output.geometry.width, x + Math.round(region.width * area.width)) -
+            (region.x + region.width < 1 ? padding / 2 : padding);
+        const bottom = Math.min(output.geometry.y + output.geometry.height, y + Math.round(region.height * area.height)) -
+            (region.y + region.height < 1 ? padding / 2 : padding);
+        const left = Math.max(output.geometry.x, x) + (region.x > 0 ? padding / 2 : padding);
+        const top = Math.max(output.geometry.y, y) + (region.y > 0 ? padding / 2 : padding);
+        return {x: left, y: top, width: right - left, height: bottom - top};
+    }
+
+    function restoreQuickTileRegion(target, saved, tile, output, resizeOthers) {
         const region = saved.region;
         const keys = ["x", "y", "width", "height"];
         // Old states need only their edge; invalid optional proportions are ignored.
@@ -106,12 +120,31 @@ var materialTiling;
         const same = function (a, b) { return keys.every(function (key) { return Math.abs(a[key] - b[key]) < 0.00001; }); };
         const minimum = tile.minimumSize;
         if (minimum && (region.width < minimum.width || region.height < minimum.height)) return false;
+        if (!resizeOthers) {
+            // Keep the native association and unsnap geometry, but apply the
+            // saved frame only to this window without changing the shared tile.
+            target.frameGeometry = tileFrame(target, region, tile, output);
+            return true;
+        }
         // KWin owns the shared layout and propagates the saved split.
         tile.relativeGeometry = copy(region);
         return same(tile.relativeGeometry, region);
     }
 
-    function restoreNativeTile(target, saved, output) {
+    function compatibleCustomTile(target, saved, output) {
+        if (!saved.path || !saved.region || typeof workspace.rootTile !== "function") return null;
+        let tile = workspace.rootTile(output, restorationDesktop(target, output));
+        for (const index of saved.path) {
+            if (!Number.isInteger(index) || index < 0 || !tile || !tile.tiles || index >= tile.tiles.length) return null;
+            tile = tile.tiles[index];
+        }
+        if (!tile || tile.tiles.length || !["x", "y", "width", "height"].every(function (key) {
+            return typeof saved.region[key] === "number" && Math.abs(tile.relativeGeometry[key] - saved.region[key]) < 0.00001;
+        })) return null;
+        return tile;
+    }
+
+    function restoreNativeTile(target, saved, output, context) {
         if (!saved || !target.resizeable) return false;
         if (saved.kind === "quick") {
             if (!tileActions[saved.edges] || typeof materialWindowStateBridge === "undefined" || typeof workspace.tilingForScreen !== "function") return false;
@@ -131,24 +164,45 @@ var materialTiling;
                 if (target.onAllDesktops || target.desktops.length !== 1 || target.desktops[0].id !== desktop.id) return false;
                 for (let i = 0; i < tiles.length; ++i) {
                     if (quickTileMode(tiles[i]) === saved.edges && manageRestoredTile(target, saved, tiles[i])) {
-                        const restored = restoreQuickTileRegion(saved, tiles[i]);
-                        if (restored) lastSelection[id(target)] = {edges: saved.edges, tile: tiles[i], output: output};
-                        return restored;
+                        const restoreRegion = function () {
+                            const restored = restoreQuickTileRegion(target, saved, tiles[i], output, context.resizeOtherTiledWindows);
+                            if (restored) lastSelection[id(target)] = {edges: saved.edges, tile: tiles[i], output: output};
+                            return restored;
+                        };
+                        if (target.tile === tiles[i]) return restoreRegion();
+                        // An inactive desktop owns the association but requests
+                        // the tile only when shown. Keep the normal frame until then.
+                        const cancel = function () {
+                            target.requestedTileChanged.disconnect(whenRequested);
+                            context.restorationStopped.disconnect(cancel);
+                        };
+                        const whenRequested = function () {
+                            cancel();
+                            if (target.tile !== tiles[i]) return;
+                            // Rebind now, while active, so KWin captures the
+                            // normal size immediately before requesting the tile.
+                            const layout = Array.from(tiles[i].parent.tiles).map(function (tile) {
+                                const region = tile.relativeGeometry;
+                                return {tile: tile, region: {x: region.x, y: region.y, width: region.width, height: region.height}};
+                            });
+                            tiles[i].unmanage(target);
+                            if (manageRestoredTile(target, saved, tiles[i])) {
+                                // Removing the last owner resets the shared splits.
+                                layout.forEach(function (entry) { entry.tile.relativeGeometry = entry.region; });
+                                restoreRegion();
+                            }
+                        };
+                        context.restorationStopped.connect(cancel);
+                        target.requestedTileChanged.connect(whenRequested);
+                        return true;
                     }
                 }
             } finally {
                 if (restrictDesktop) target.desktops = originalDesktops;
             }
-        } else if (saved.kind === "custom" && saved.path && saved.region && typeof workspace.rootTile === "function") {
-            let tile = workspace.rootTile(output, restorationDesktop(target, output));
-            for (const index of saved.path) {
-                if (!Number.isInteger(index) || index < 0 || !tile || !tile.tiles || index >= tile.tiles.length) return false;
-                tile = tile.tiles[index];
-            }
-            if (!tile || tile.tiles.length || !["x", "y", "width", "height"].every(function (key) {
-                return typeof saved.region[key] === "number" && Math.abs(tile.relativeGeometry[key] - saved.region[key]) < 0.00001;
-            })) return false;
-            return manageRestoredTile(target, saved, tile);
+        } else if (saved.kind === "custom") {
+            const tile = compatibleCustomTile(target, saved, output);
+            return !!tile && manageRestoredTile(target, saved, tile);
         }
         return false;
     }
@@ -243,7 +297,7 @@ var materialTiling;
         // between outputs without undoing their mode or assigning a normal size.
         if (target.fullScreen || target.maximizeMode || target.tile) {
             const restoreTile = !target.fullScreen && !target.maximizeMode && state.tile;
-            if (restoreTile && restoreNativeTile(target, state.tile, output)) return true;
+            if (restoreTile && restoreNativeTile(target, state.tile, output, state.restoreContext)) return true;
             if (target.output !== output) workspace.sendClientToScreen(target, output);
             return !restoreTile;
         }
@@ -274,7 +328,7 @@ var materialTiling;
             target.frameGeometry = {x: x, y: y, width: current.width, height: current.height};
         }
         // KWin owns the size of a snapped window; floating app sizes stay intact.
-        return !state.tile || restoreNativeTile(target, state.tile, output);
+        return !state.tile || restoreNativeTile(target, state.tile, output, state.restoreContext);
     }
 
     materialPrepareWindowState = function (target, state) {
@@ -306,10 +360,27 @@ var materialTiling;
         return restored;
     };
 
+    function matchesWindowState(target, state) {
+        const saved = state.tile, output = target.output;
+        if (!saved || !["quick", "custom"].includes(saved.kind) || !output || output.name !== state.outputName ||
+            target.onAllDesktops !== state.onAllDesktops) return false;
+        const ids = Array.from(target.desktops, function (desktop) { return desktop.id; }).sort();
+        if (ids.join() !== Array.from(state.desktopIds).sort().join()) return false;
+        const tile = saved.kind === "custom" ? compatibleCustomTile(target, saved, output) :
+            materialWindowStateBridge.quickTiles(workspace.tilingForScreen(output)).find(function (tile) {
+            return target.tile ? tile === target.tile : Array.from(tile.windows).indexOf(target) !== -1;
+        });
+        if (!tile || (saved.kind === "quick" && quickTileMode(tile) !== saved.edges)) return false;
+        if (saved.kind === "custom" && target.tile !== tile && Array.from(tile.windows).indexOf(target) === -1) return false;
+        const expected = tileFrame(target, saved.region || tile.relativeGeometry, tile, output), frame = target.frameGeometry;
+        return ["x", "y", "width", "height"].every(function (key) { return Math.abs(frame[key] - expected[key]) <= 2; });
+    }
+
     materialTiling = function (target, request) {
         if (!target || target.deleted || target.specialWindow) throw new Error("Target window is unavailable");
         if (!target.resizeable) throw new Error("Target window is not resizeable");
         if (request.operation === "layout") return captureLayout(target);
+        if (request.operation === "matchWindowState") return matchesWindowState(target, request);
         const action = tileActions[request.edges];
         const custom = request.operation === "tileCustom";
         if (!custom && (request.operation !== "tile" || !action || typeof workspace[action] !== "function")) throw new Error("Unsupported tiling request");
