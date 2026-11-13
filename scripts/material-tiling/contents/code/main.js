@@ -116,10 +116,8 @@ var materialTiling;
         if (saved.kind === "quick") {
             if (!tileActions[saved.edges] || typeof materialWindowStateBridge === "undefined" || typeof workspace.tilingForScreen !== "function") return false;
             const tiles = materialWindowStateBridge.quickTiles(workspace.tilingForScreen(output));
-            const currentDesktop = typeof workspace.currentDesktopForScreen === "function" ? workspace.currentDesktopForScreen(output) : workspace.currentDesktop;
             const originalDesktops = Array.from(target.desktops);
-            const desktop = target.onAllDesktops ? currentDesktop :
-                originalDesktops.find(function (d) { return d.id === currentDesktop.id; }) || originalDesktops[0];
+            const desktop = restorationDesktop(target, output);
             if (!desktop) return false;
             const restrictDesktop = target.onAllDesktops || originalDesktops.length > 1;
             try {
@@ -133,14 +131,16 @@ var materialTiling;
                 if (target.onAllDesktops || target.desktops.length !== 1 || target.desktops[0].id !== desktop.id) return false;
                 for (let i = 0; i < tiles.length; ++i) {
                     if (quickTileMode(tiles[i]) === saved.edges && manageRestoredTile(target, saved, tiles[i])) {
-                        return restoreQuickTileRegion(saved, tiles[i]);
+                        const restored = restoreQuickTileRegion(saved, tiles[i]);
+                        if (restored) lastSelection[id(target)] = {edges: saved.edges, tile: tiles[i], output: output};
+                        return restored;
                     }
                 }
             } finally {
                 if (restrictDesktop) target.desktops = originalDesktops;
             }
         } else if (saved.kind === "custom" && saved.path && saved.region && typeof workspace.rootTile === "function") {
-            let tile = workspace.rootTile(output, target.desktops[0] || workspace.currentDesktop);
+            let tile = workspace.rootTile(output, restorationDesktop(target, output));
             for (const index of saved.path) {
                 if (!Number.isInteger(index) || index < 0 || !tile || !tile.tiles || index >= tile.tiles.length) return false;
                 tile = tile.tiles[index];
@@ -194,10 +194,15 @@ var materialTiling;
         return saved || target.output || screens[0];
     }
 
+    function restorationDesktop(target, output) {
+        const current = typeof workspace.currentDesktopForScreen === "function" ? workspace.currentDesktopForScreen(output) : workspace.currentDesktop;
+        return target.onAllDesktops ? current :
+            target.desktops.find(function (d) { return d.id === current.id; }) || target.desktops[0];
+    }
+
     function showRestoredDesktop(target, output) {
         const current = typeof workspace.currentDesktopForScreen === "function" ? workspace.currentDesktopForScreen(output) : workspace.currentDesktop;
-        const desktop = target.onAllDesktops ? current :
-            target.desktops.find(function (d) { return d.id === current.id; }) || target.desktops[0];
+        const desktop = restorationDesktop(target, output);
         if (!desktop || desktop.id === current.id) return;
         if (typeof workspace.setCurrentDesktopForScreen === "function") workspace.setCurrentDesktopForScreen(desktop, output);
         else workspace.currentDesktop = desktop;
@@ -260,8 +265,11 @@ var materialTiling;
             x = vacant.x;
             y = vacant.y;
         }
-        // Position determines the output; sendClientToScreen() could constrain
-        // an ordinary window's size. Inherited sizes use one combined request.
+        // Move first so activation sees the destination output even if the
+        // subsequent resize needs a new Wayland buffer. Preserve the app's size.
+        if (target.output !== output && (original.width !== current.width || original.height !== current.height)) {
+            target.frameGeometry = {x: x, y: y, width: original.width, height: original.height};
+        }
         if (original.x !== x || original.y !== y || original.width !== current.width || original.height !== current.height) {
             target.frameGeometry = {x: x, y: y, width: current.width, height: current.height};
         }

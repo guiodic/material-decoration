@@ -764,3 +764,64 @@ for (const mode of ['maximizeMode', 'fullScreen', 'tile', 'fixed']) {
     assert.equal(f.target.frameGeometry.height, 480);
 }
 console.log('Inherited tile sizes: new floating siblings, app modes and mismatched dimensions passed.');
+
+// Re-selecting a restored quick tile must not unmanage/reset its split.
+{
+    const f = fixture();
+    const layout = quickLayoutFixture(f);
+    assert.equal(f.restoreImmediately(savedState({tile: {kind: 'quick', edges: 2,
+        region: {x: 0, y: 0, width: .65, height: 1}}})), true);
+    layout.tiles[0].unmanage = () => { throw new Error('must preserve restored split'); };
+    assert.equal(f.send(2).success, true);
+    assert.equal(f.calls.length, 0);
+    assert.equal(layout.tiles[0].relativeGeometry.width, .65);
+}
+for (const sticky of [false, true]) {
+    for (const perOutput of [false, true]) {
+        const f = fixture();
+        const first = f.workspace.currentDesktop, second = {id: 'desktop-2'};
+        f.workspace.desktops.push(second);
+        if (perOutput) f.workspace.currentDesktopForScreen = () => second;
+        else f.workspace.currentDesktop = second;
+        f.workspace.rootTile = (output, desktop) => {
+            assert.equal(desktop, second, 'custom tiles must use the visible destination desktop');
+            return f.root;
+        };
+        const tile = f.root.tiles[0];
+        assert.equal(f.restoreImmediately(savedState({onAllDesktops: sticky,
+            desktopIds: sticky ? [] : [first.id, second.id],
+            tile: {kind: 'custom', path: [0], region: {...tile.relativeGeometry}}})), true);
+        assert.equal(f.target.tile, tile);
+    }
+}
+
+// KWin defers a resize until the client supplies a new buffer. A move-only
+// request must establish the output before BringToCurrentDesktop activation.
+{
+    const f = fixture();
+    const first = f.workspace.currentDesktop, second = {id: 'desktop-2'};
+    const destination = {name: 'Virtual-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
+    f.workspace.screens.push(destination);
+    f.workspace.desktops.push(second);
+    f.workspace.currentDesktopForScreen = output => output === destination ? second : first;
+    let geometry = {...f.target.frameGeometry}, pending;
+    Object.defineProperty(f.target, 'frameGeometry', {
+        get() { return geometry; },
+        set(next) {
+            if (next.width === geometry.width && next.height === geometry.height) {
+                geometry = {...next};
+                f.target.output = destination;
+            } else pending = {...next};
+        }
+    });
+    Object.defineProperty(f.workspace, 'activeWindow', {set(window) {
+        const current = f.workspace.currentDesktopForScreen(window.output);
+        if (!window.desktops.some(d => d.id === current.id)) window.desktops.push(current);
+        assert.equal(window.output, destination, 'activation must see the new output');
+    }});
+    assert.equal(f.restoreImmediately(savedState({outputName: destination.name, desktopIds: [second.id],
+        inheritedTileSize: {tileSize: {width: 640, height: 480}, normalSize: {width: 900, height: 600}}})), true);
+    assert.deepEqual(Array.from(f.target.desktops), [second]);
+    assert.equal(pending.width, 900);
+    assert.equal(pending.height, 600);
+}
