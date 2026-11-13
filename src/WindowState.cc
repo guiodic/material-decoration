@@ -465,6 +465,7 @@ private slots:
     void startUserInteraction()
     {
         m_resizeTile = m_window->property("resize").toBool() ? windowTile(m_window) : QVariantMap();
+        m_resizeFrame = windowRectangle(m_window->property("frameGeometry"));
         // Cancel pending restoration when the user takes control.
         m_restoreCancelled = true;
         if (m_enabled) m_saveAllowed.insert(WindowStateScope::self()->current(), true);
@@ -477,8 +478,10 @@ private slots:
         updateTile();
         if (m_enabled && m_resizeTile.contains("edges")
             && m_resizeTile.value("edges") == m_lastTile.value("edges")
-            && m_resizeTile.value("region") != m_lastTile.value("region")) m_customQuickTile = m_lastTile;
+            && (m_resizeTile.value("region") != m_lastTile.value("region")
+                || m_resizeFrame != windowRectangle(m_window->property("frameGeometry")))) m_customQuickTile = m_lastTile;
         m_resizeTile.clear();
+        m_resizeFrame.clear();
     }
     void restore()
     {
@@ -652,6 +655,7 @@ private:
     QVariantMap m_lastTile;
     QVariantMap m_customQuickTile;
     QVariantMap m_resizeTile;
+    QVariantMap m_resizeFrame;
     QVariantMap m_normalSize;
     QTimer m_normalSizeTimer;
     bool m_requestedTiled = false;

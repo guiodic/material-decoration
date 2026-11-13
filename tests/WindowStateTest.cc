@@ -790,6 +790,45 @@ private slots:
         QCOMPARE(saved.contains("region"), action == "resize");
         if (action == "resize") QCOMPARE(saved.value("region").toMap().value("width").toDouble(), .65);
     }
+    void resizeIndividualFrameBackToSharedTile_data() {
+        QTest::addColumn<bool>("changed");
+        QTest::newRow("resize-back") << true;
+        QTest::newRow("no-change") << false;
+    }
+    void resizeIndividualFrameBackToSharedTile() {
+        QFETCH(bool, changed);
+        QScopedValueRollback available(immediateAvailable, true);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.ResizeBack." + QUuid::createUuid().toString());
+        KWin::QuickRootTile root;
+        KWin::Tile tile;
+        root.bind(&tile);
+        tile.setProperty("relativeGeometry", QRectF(0, 0, .5, 1));
+        auto state = Material::captureWindowState(&window);
+        state.insert("tile", QVariantMap{{"kind", "quick"}, {"edges", 2},
+            {"region", QVariantMap{{"x", 0}, {"y", 0}, {"width", .65}, {"height", 1}}}});
+        const auto key = Material::windowStateKey(&window);
+        const auto scope = Material::WindowStateScope::self()->current();
+        QVERIFY(Material::writeWindowState(key, state, scope));
+        QScopedValueRollback hook(immediateHook, std::function<void()>([&] {
+            window.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
+            window.setProperty("frameGeometry", QRectF(0, 0, 832, 800));
+            Q_EMIT window.requestedTileChanged();
+            window.changedTile();
+        }));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        window.setProperty("resize", true);
+        window.startInteraction();
+        if (changed) window.setProperty("frameGeometry", QRectF(0, 0, 640, 800));
+        window.finishInteraction();
+        window.setProperty("resize", false);
+        window.close();
+        QCOMPARE(Material::readWindowState(key, scope).value("tile").toMap().value("region").toMap().value("width").toDouble(),
+            changed ? .5 : .65);
+    }
     void savesNormalSizeOnlyWithValidTileMetadata() {
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.NormalSizeValidation." + QUuid::createUuid().toString());
