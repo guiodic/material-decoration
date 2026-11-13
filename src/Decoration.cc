@@ -234,7 +234,8 @@ NavigableMenu *Decoration::createNavigableMenu(QWidget *parent)
 
 bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
 {
-    if (!canTileWindow(this)) return false;
+    const bool scriptAvailable = tilingScriptAvailable();
+    if (scriptAvailable && !canTileWindow(this)) return false;
     if (isTilingPopupVisible()) return true;
     m_tilingPopupHoverMonitor.stop();
     m_tilingPopupOutsideTime.invalidate();
@@ -265,7 +266,7 @@ bool Decoration::showTilingPopup(const QRectF &anchor, bool fromHover)
     m_tilingPopupOpening = true;
     Q_EMIT tilingPopupVisibilityChanged(true);
     CustomTilingLayout layout;
-    const bool available = fetchTilingLayout(this, layout);
+    const bool available = scriptAvailable && fetchTilingLayout(this, layout);
     m_tilingPopupOpening = false;
     if (!available) {
         m_tilingPopupHoverMonitor.stop();
