@@ -988,6 +988,22 @@ for (const mismatch of [null, 'other-tile', 'layout', 'path', 'frame', 'inactive
     assert.equal(f.workspace.activeWindow, active);
 }
 
+// A requested tile takes precedence over associations on other desktops.
+for (const requested of ['quick', 'none', 'custom']) {
+    const f = fixture();
+    const left = quickTile(f.leaf(0, 0, .5, 1));
+    const right = quickTile(f.leaf(.5, 0, .5, 1), 4);
+    left.windows = right.windows = [f.target];
+    f.workspace.quickTiles = [left, right];
+    f.target.desktops.push({id: 'desktop-2'});
+    f.target.tile = requested === 'quick' ? right : requested === 'custom' ? f.root.tiles[0] : null;
+    const tile = requested === 'none' ? left : right;
+    f.target.frameGeometry = {x: tile.relativeGeometry.x * 1280, y: 0, width: 640, height: 800};
+    const state = savedState({desktopIds: ['desktop-1', 'desktop-2'],
+        tile: {kind: 'quick', edges: requested === 'none' ? 2 : 4}});
+    assert.equal(f.send(0, 'target', 'matchWindowState', state).success, requested !== 'custom', requested);
+}
+
 // A custom grid with eight siblings is not a native quick-tile layout.
 {
     const f = fixture();

@@ -368,7 +368,7 @@ var materialTiling;
         if (ids.join() !== Array.from(state.desktopIds).sort().join()) return false;
         const tile = saved.kind === "custom" ? compatibleCustomTile(target, saved, output) :
             materialWindowStateBridge.quickTiles(workspace.tilingForScreen(output)).find(function (tile) {
-            return tile === target.tile || Array.from(tile.windows).indexOf(target) !== -1;
+            return target.tile ? tile === target.tile : Array.from(tile.windows).indexOf(target) !== -1;
         });
         if (!tile || (saved.kind === "quick" && quickTileMode(tile) !== saved.edges)) return false;
         if (saved.kind === "custom" && target.tile !== tile && Array.from(tile.windows).indexOf(target) === -1) return false;
