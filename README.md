@@ -81,6 +81,7 @@ button) in the application interface associated with that shortcut.
 You can enable position restore in the configuration module's **Window Management**
 tab when windows are closed and reopened. Enable the **Material Tiling Popup** script in
 **System Settings > Window Management > KWin Scripts** to use this feature.
+It supports native Wayland windows only; X11 and XWayland windows are excluded.
 It works with apps that use Kwin-managed decorations. For other apps 
 (i.e. GNOME apps using GTK’s CSD), you can enable a Kwin rule to add the 
 ‘shadow-only’ decoration that will enable position restoration too.
