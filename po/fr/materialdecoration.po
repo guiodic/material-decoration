@@ -515,3 +515,11 @@ msgstr "Mémoriser le bureau virtuel sur lequel la fenêtre a été fermée en d
 #: src/kcm/config.ui
 msgid "Restore the saved virtual desktop, switch to it and activate the window. When disabled, keep the desktop chosen when the window opens."
 msgstr "Restaurer le bureau virtuel enregistré, y accéder et activer la fenêtre. Si cette option est désactivée, conserver le bureau choisi à l’ouverture de la fenêtre."
+
+#: src/kcm/config.ui
+msgid "Resize other snapped windows when restoring saved proportions"
+msgstr "Redimensionner les autres fenêtres ancrées lors de la restauration des proportions enregistrées"
+
+#: src/kcm/config.ui
+msgid "Allow restoring a snapped window's saved proportions to resize other windows in the same quick-tile layout. When disabled, restore the saved proportions only to the reopened window."
+msgstr "Autorise la restauration des proportions enregistrées d’une fenêtre ancrée à redimensionner les autres fenêtres du même agencement en mosaïque rapide. Si désactivé, les proportions enregistrées sont restaurées uniquement pour la fenêtre rouverte."

@@ -40,7 +40,7 @@ function fixture(extraWindows = []) {
             workspace.activeWindow.tile = {unmanage(window) { window.tile = null; }};
         };
     }
-    const context = {workspace, materialWindowStateBridge: {quickTiles(manager) { return manager.quickTiles; }}, KWin: {PlacementArea: 0}};
+    const context = {workspace, materialWindowStateBridge: {quickTiles(manager) { return manager.quickTiles; }}, KWin: {PlacementArea: 0, MaximizeArea: 1}};
     vm.runInNewContext(source, context);
     return {workspace, target, other, calls, output, root, leaf,
         restoreImmediately(state) { return context.materialRestoreWindowState(target, state); },
@@ -207,7 +207,7 @@ for (const change of [
 }
 function savedState(extra = {}) {
     return {version: 3, position: {x: 100, y: 80}, desktopIds: ['desktop-1'],
-        rememberScreen: true, rememberDesktop: true,
+        rememberScreen: true, rememberDesktop: true, resizeOtherTiledWindows: true,
         onAllDesktops: false, outputName: 'Virtual-1',
         outputPosition: {x: 0, y: 0}, ...extra};
 }
@@ -824,4 +824,31 @@ for (const sticky of [false, true]) {
     assert.deepEqual(Array.from(f.target.desktops), [second]);
     assert.equal(pending.width, 900);
     assert.equal(pending.height, 600);
+}
+
+// Existing quick-tile proportions are changed only with explicit permission.
+for (const resizeOthers of [undefined, false, true]) {
+    for (const occupiedIndex of [0, 1, 4]) {
+        const f = fixture();
+        const layout = quickLayoutFixture(f);
+        const other = {internalId: '{snapped-other}'};
+        layout.tiles[occupiedIndex].windows = [other];
+        layout.tiles[0].windows = [...(layout.tiles[0].windows || []), f.target];
+        assert.equal(f.restoreImmediately(savedState({resizeOtherTiledWindows: resizeOthers,
+            tile: {kind: 'quick', edges: 2, region: {x: 0, y: 0, width: .65, height: 1}}})), true);
+        assert.equal(f.target.tile, layout.tiles[0]);
+        assert.equal(layout.tiles[0].relativeGeometry.width, resizeOthers === true ? .65 : .5);
+        if (resizeOthers !== true) assert.equal(f.target.frameGeometry.width, 832);
+        assert.equal(layout.tiles[1].relativeGeometry.width, resizeOthers === true ? .35 : .5);
+        if (resizeOthers !== true) assert.equal(layout.writes.length, 0);
+    }
+}
+{
+    const f = fixture();
+    const layout = quickLayoutFixture(f);
+    layout.tiles[0].windows = [f.target];
+    assert.equal(f.restoreImmediately(savedState({resizeOtherTiledWindows: false, tile: {kind: 'quick', edges: 2,
+        region: {x: 0, y: 0, width: .65, height: 1}}})), true);
+    assert.equal(layout.tiles[0].relativeGeometry.width, .5);
+    assert.equal(f.target.frameGeometry.width, 832, 'saved proportions apply only to the target by default');
 }

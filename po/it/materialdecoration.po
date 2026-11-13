@@ -515,3 +515,11 @@ msgstr "Ricorda il desktop virtuale dell'ultima chiusura"
 #: src/kcm/config.ui
 msgid "Restore the saved virtual desktop, switch to it and activate the window. When disabled, keep the desktop chosen when the window opens."
 msgstr "Ripristina il desktop virtuale salvato, passa a quel desktop e attiva la finestra. Se disattivata, mantiene il desktop scelto all’apertura della finestra."
+
+#: src/kcm/config.ui
+msgid "Resize other snapped windows when restoring saved proportions"
+msgstr "Ridimensiona le altre finestre agganciate al ripristino delle proporzioni salvate"
+
+#: src/kcm/config.ui
+msgid "Allow restoring a snapped window's saved proportions to resize other windows in the same quick-tile layout. When disabled, restore the saved proportions only to the reopened window."
+msgstr "Consente al ripristino delle proporzioni salvate di una finestra agganciata di ridimensionare le altre finestre nello stesso layout di aggancio rapido. Se disattivata, ripristina le proporzioni salvate solo per la finestra riaperta."

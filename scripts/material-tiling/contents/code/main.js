@@ -95,7 +95,7 @@ var materialTiling;
         return index >= 0 ? [2, 4, 1, 8, 3, 5, 10, 12][index] : 0;
     }
 
-    function restoreQuickTileRegion(saved, tile) {
+    function restoreQuickTileRegion(target, saved, tile, output, resizeOthers) {
         const region = saved.region;
         const keys = ["x", "y", "width", "height"];
         // Old states need only their edge; invalid optional proportions are ignored.
@@ -106,12 +106,28 @@ var materialTiling;
         const same = function (a, b) { return keys.every(function (key) { return Math.abs(a[key] - b[key]) < 0.00001; }); };
         const minimum = tile.minimumSize;
         if (minimum && (region.width < minimum.width || region.height < minimum.height)) return false;
+        if (!resizeOthers) {
+            // Keep the native association and unsnap geometry, but apply the
+            // saved frame only to this window without changing the shared tile.
+            const area = workspace.clientArea(KWin.MaximizeArea, output, restorationDesktop(target, output));
+            const padding = tile.padding || 0;
+            const x = Math.round(area.x + region.x * area.width);
+            const y = Math.round(area.y + region.y * area.height);
+            const right = Math.min(output.geometry.x + output.geometry.width, x + Math.round(region.width * area.width)) -
+                (region.x + region.width < 1 ? padding / 2 : padding);
+            const bottom = Math.min(output.geometry.y + output.geometry.height, y + Math.round(region.height * area.height)) -
+                (region.y + region.height < 1 ? padding / 2 : padding);
+            const left = Math.max(output.geometry.x, x) + (region.x > 0 ? padding / 2 : padding);
+            const top = Math.max(output.geometry.y, y) + (region.y > 0 ? padding / 2 : padding);
+            target.frameGeometry = {x: left, y: top, width: right - left, height: bottom - top};
+            return true;
+        }
         // KWin owns the shared layout and propagates the saved split.
         tile.relativeGeometry = copy(region);
         return same(tile.relativeGeometry, region);
     }
 
-    function restoreNativeTile(target, saved, output) {
+    function restoreNativeTile(target, saved, output, resizeOthers) {
         if (!saved || !target.resizeable) return false;
         if (saved.kind === "quick") {
             if (!tileActions[saved.edges] || typeof materialWindowStateBridge === "undefined" || typeof workspace.tilingForScreen !== "function") return false;
@@ -131,7 +147,7 @@ var materialTiling;
                 if (target.onAllDesktops || target.desktops.length !== 1 || target.desktops[0].id !== desktop.id) return false;
                 for (let i = 0; i < tiles.length; ++i) {
                     if (quickTileMode(tiles[i]) === saved.edges && manageRestoredTile(target, saved, tiles[i])) {
-                        const restored = restoreQuickTileRegion(saved, tiles[i]);
+                        const restored = restoreQuickTileRegion(target, saved, tiles[i], output, resizeOthers);
                         if (restored) lastSelection[id(target)] = {edges: saved.edges, tile: tiles[i], output: output};
                         return restored;
                     }
@@ -243,7 +259,7 @@ var materialTiling;
         // between outputs without undoing their mode or assigning a normal size.
         if (target.fullScreen || target.maximizeMode || target.tile) {
             const restoreTile = !target.fullScreen && !target.maximizeMode && state.tile;
-            if (restoreTile && restoreNativeTile(target, state.tile, output)) return true;
+            if (restoreTile && restoreNativeTile(target, state.tile, output, state.resizeOtherTiledWindows === true)) return true;
             if (target.output !== output) workspace.sendClientToScreen(target, output);
             return !restoreTile;
         }
@@ -274,7 +290,7 @@ var materialTiling;
             target.frameGeometry = {x: x, y: y, width: current.width, height: current.height};
         }
         // KWin owns the size of a snapped window; floating app sizes stay intact.
-        return !state.tile || restoreNativeTile(target, state.tile, output);
+        return !state.tile || restoreNativeTile(target, state.tile, output, state.resizeOtherTiledWindows === true);
     }
 
     materialPrepareWindowState = function (target, state) {

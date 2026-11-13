@@ -167,15 +167,18 @@ private slots:
         QVERIFY(!settings.rememberWindowState());
         QVERIFY(settings.rememberWindowScreen());
         QVERIFY(!settings.rememberWindowDesktop());
+        QVERIFY(!settings.resizeOtherTiledWindows());
         auto source = Material::InternalSettingsPtr::create();
         auto copy = Material::InternalSettingsPtr::create();
         source->setRememberWindowState(true);
         source->setRememberWindowScreen(false);
         source->setRememberWindowDesktop(true);
+        source->setResizeOtherTiledWindows(true);
         Material::copyInternalSettings(source, copy);
         QVERIFY(copy->rememberWindowState());
         QVERIFY(!copy->rememberWindowScreen());
         QVERIFY(copy->rememberWindowDesktop());
+        QVERIFY(copy->resizeOtherTiledWindows());
     }
     void mappedWindowStartsTrackingWithoutRestoration() {
         QScopedValueRollback available(prepareAvailable, true);
@@ -220,6 +223,7 @@ private slots:
         QCOMPARE(prepareRequests.size(), prepared);
         QVERIFY(immediateRequests.last().value("rememberScreen").toBool());
         QVERIFY(!immediateRequests.last().value("rememberDesktop").toBool());
+        QVERIFY(!immediateRequests.last().value("resizeOtherTiledWindows").toBool());
     }
     void restoresWithCurrentPolicy_data() {
         QTest::addColumn<bool>("screen");
@@ -256,6 +260,22 @@ private slots:
         const auto saved = Material::readWindowState(key, Material::WindowStateScope::self()->current());
         QVERIFY(!saved.contains("rememberScreen"));
         QVERIFY(!saved.contains("rememberDesktop"));
+    }
+    void resizeOtherTiledWindowsPolicy() {
+        QScopedValueRollback available(immediateAvailable, true);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.ResizeOtherTiles." + QUuid::createUuid().toString());
+        const auto key = Material::windowStateKey(&window);
+        const auto scope = Material::WindowStateScope::self()->current();
+        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), scope));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        Material::configureWindowState(&decoration, true, true, false, true);
+        window.map();
+        QVERIFY(immediateRequests.last().value("resizeOtherTiledWindows").toBool());
+        window.close();
+        QVERIFY(!Material::readWindowState(key, scope).contains("resizeOtherTiledWindows"));
     }
     void turningOffDesktopBeforeMappingReleasesPreparation() {
         QScopedValueRollback available(prepareAvailable, true);
@@ -332,6 +352,7 @@ private slots:
         settings.setRememberWindowState(true);
         settings.setRememberWindowScreen(false);
         settings.setRememberWindowDesktop(true);
+        settings.setResizeOtherTiledWindows(true);
         settings.save();
         Material::InternalSettings loaded;
         loaded.setSharedConfig(config);
@@ -339,11 +360,13 @@ private slots:
         QVERIFY(loaded.rememberWindowState());
         QVERIFY(!loaded.rememberWindowScreen());
         QVERIFY(loaded.rememberWindowDesktop());
+        QVERIFY(loaded.resizeOtherTiledWindows());
         Material::SettingsProvider provider;
         auto defaults = Material::InternalSettingsPtr::create();
         defaults->setRememberWindowState(true);
         defaults->setRememberWindowScreen(false);
         defaults->setRememberWindowDesktop(true);
+        defaults->setResizeOtherTiledWindows(true);
         auto exception = Material::InternalSettingsPtr::create();
         exception->setMask(Material::ExceptionMask::ExcludeWindowPosition);
         exception->setExcludeWindowPosition(true);
@@ -351,6 +374,7 @@ private slots:
         QVERIFY(!merged->rememberWindowState());
         QVERIFY(!merged->rememberWindowScreen());
         QVERIFY(merged->rememberWindowDesktop());
+        QVERIFY(merged->resizeOtherTiledWindows());
     }
     void lateOptionsApplyAtFirstFrame_data() {
         QTest::addColumn<bool>("enabledInitially");
@@ -642,13 +666,16 @@ private slots:
         window.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
         Q_EMIT window.requestedTileChanged();
         window.changedTile();
+        window.setProperty("resize", true);
+        window.startInteraction();
         tile.setProperty("relativeGeometry", QRectF(0, 0, 0.65, 1));
         window.setProperty("frameGeometry", QRectF(0, 0, 832, 800));
-        if (interactiveFinish) window.finishInteraction();
-        else {
+        if (!interactiveFinish) {
             Q_EMIT window.frameGeometryChanged();
             QCoreApplication::processEvents();
         }
+        window.finishInteraction();
+        window.setProperty("resize", false);
         const auto key = Material::windowStateKey(&window);
         const auto scope = Material::WindowStateScope::self()->current();
         QVERIFY(Material::readWindowState(key, scope).isEmpty());
@@ -657,6 +684,43 @@ private slots:
         const auto saved = Material::readWindowState(key, scope).value("tile").toMap();
         QCOMPARE(saved.value("region").toMap().value("width").toDouble(), 0.65);
         QCOMPARE(saved.value("normalSize").toMap().value("width").toDouble(), 900);
+    }
+    void quickTileProportionsRequireUserResize_data() {
+        QTest::addColumn<QString>("action");
+        for (const auto &action : {"untouched", "layout-change", "move", "resize", "resize-no-change"})
+            QTest::newRow(action) << QString::fromLatin1(action);
+    }
+    void quickTileProportionsRequireUserResize() {
+        QFETCH(QString, action);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.TileResize." + QUuid::createUuid().toString());
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        KWin::QuickRootTile root;
+        KWin::Tile tile;
+        root.bind(&tile);
+        tile.setProperty("relativeGeometry", QRectF(0, 0, 0.5, 1));
+        window.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
+        Q_EMIT window.requestedTileChanged();
+        window.changedTile();
+        const bool interactive = action == "move" || action.startsWith("resize");
+        window.setProperty("resize", action.startsWith("resize"));
+        if (interactive) window.startInteraction();
+        if (action != "untouched" && action != "resize-no-change") {
+            tile.setProperty("relativeGeometry", QRectF(0, 0, 0.65, 1));
+            window.setProperty("frameGeometry", QRectF(0, 0, 832, 800));
+            Q_EMIT window.frameGeometryChanged();
+        }
+        if (interactive) window.finishInteraction();
+        window.setProperty("resize", false);
+        window.close();
+        const auto saved = Material::readWindowState(Material::windowStateKey(&window),
+            Material::WindowStateScope::self()->current()).value("tile").toMap();
+        QCOMPARE(saved.value("edges").toInt(), 2);
+        QCOMPARE(saved.contains("region"), action == "resize");
+        if (action == "resize") QCOMPARE(saved.value("region").toMap().value("width").toDouble(), .65);
     }
     void savesNormalSizeOnlyWithValidTileMetadata() {
         KWin::WaylandWindow window;

@@ -146,6 +146,7 @@ void MaterialDecorationKCM::setupConnections()
     connect(m_ui->kcfg_RememberWindowState, &QCheckBox::toggled, m_ui->windowRestorationOptions, &QWidget::setEnabled);
     connect(m_ui->kcfg_RememberWindowScreen, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_RememberWindowDesktop, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
+    connect(m_ui->kcfg_ResizeOtherTiledWindows, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
 
     connect(m_ui->exceptionsWidget, &Material::ExceptionListWidget::changed, this, &MaterialDecorationKCM::updateChanged);
 }
@@ -216,6 +217,7 @@ void MaterialDecorationKCM::loadUIFromSettings(const Material::InternalSettings 
     m_ui->kcfg_RememberWindowState->setChecked(settings.rememberWindowState());
     m_ui->kcfg_RememberWindowScreen->setChecked(settings.rememberWindowScreen());
     m_ui->kcfg_RememberWindowDesktop->setChecked(settings.rememberWindowDesktop());
+    m_ui->kcfg_ResizeOtherTiledWindows->setChecked(settings.resizeOtherTiledWindows());
     m_ui->windowRestorationOptions->setEnabled(settings.rememberWindowState());
 }
 
@@ -269,6 +271,7 @@ void MaterialDecorationKCM::save()
     m_settings->setRememberWindowState(m_ui->kcfg_RememberWindowState->isChecked());
     m_settings->setRememberWindowScreen(m_ui->kcfg_RememberWindowScreen->isChecked());
     m_settings->setRememberWindowDesktop(m_ui->kcfg_RememberWindowDesktop->isChecked());
+    m_settings->setResizeOtherTiledWindows(m_ui->kcfg_ResizeOtherTiledWindows->isChecked());
 
     m_settings->save();
     const auto message = QDBusMessage::createMethodCall(
@@ -344,6 +347,7 @@ bool MaterialDecorationKCM::isChanged() const
     if (m_ui->kcfg_RememberWindowState->isChecked() != m_settings->rememberWindowState()) return true;
     if (m_ui->kcfg_RememberWindowScreen->isChecked() != m_settings->rememberWindowScreen()) return true;
     if (m_ui->kcfg_RememberWindowDesktop->isChecked() != m_settings->rememberWindowDesktop()) return true;
+    if (m_ui->kcfg_ResizeOtherTiledWindows->isChecked() != m_settings->resizeOtherTiledWindows()) return true;
 
     if (m_ui->exceptionsWidget->isChanged()) return true;
 

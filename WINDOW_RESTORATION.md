@@ -39,10 +39,13 @@ as stable.
   X11/XWayland windows, dialogs and popups. Per-window exceptions can disable it
   through normal decoration settings updates; App ID changes are not monitored.
 - **Restored data:** position and native quick or custom tiling. Quick tiling
-  also restores saved split proportions, resizing other windows in the same
-  quick-tile layout. KWin applies its own layout constraints.
+  uses the current tile proportions unless the window was explicitly resized
+  by the user. User-resized proportions are restored to that window only.
+  **Resize other snapped windows when restoring saved proportions** (off by
+  default) applies them to the shared quick-tile layout as well.
+  KWin applies its own layout constraints.
   Custom tiling requires a compatible layout.
-  The two subordinate options are independent:
+  The screen and desktop options are independent:
   **Remember the screen where the window was last closed** is on by default;
   when off, placement uses the screen KWin chose for the new window.
   **Remember the virtual desktop where the window was last closed** is off by

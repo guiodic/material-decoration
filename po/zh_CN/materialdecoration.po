@@ -515,3 +515,11 @@ msgstr "记住窗口上次关闭时所在的虚拟桌面"
 #: src/kcm/config.ui
 msgid "Restore the saved virtual desktop, switch to it and activate the window. When disabled, keep the desktop chosen when the window opens."
 msgstr "恢复已保存的虚拟桌面，切换到该桌面并激活窗口。禁用时，保留窗口打开时选择的桌面。"
+
+#: src/kcm/config.ui
+msgid "Resize other snapped windows when restoring saved proportions"
+msgstr "恢复已保存的比例时调整其他贴靠窗口的大小"
+
+#: src/kcm/config.ui
+msgid "Allow restoring a snapped window's saved proportions to resize other windows in the same quick-tile layout. When disabled, restore the saved proportions only to the reopened window."
+msgstr "允许在恢复贴靠窗口已保存的比例时，调整同一快速平铺布局中其他窗口的大小。禁用时，仅为重新打开的窗口恢复已保存的比例。"
