@@ -367,8 +367,8 @@ var materialTiling;
         const ids = Array.from(target.desktops, function (desktop) { return desktop.id; }).sort();
         if (ids.join() !== Array.from(state.desktopIds).sort().join()) return false;
         const tile = saved.kind === "custom" ? compatibleCustomTile(target, saved, output) :
-            target.tile || materialWindowStateBridge.quickTiles(workspace.tilingForScreen(output)).find(function (tile) {
-            return Array.from(tile.windows).indexOf(target) !== -1;
+            materialWindowStateBridge.quickTiles(workspace.tilingForScreen(output)).find(function (tile) {
+            return tile === target.tile || Array.from(tile.windows).indexOf(target) !== -1;
         });
         if (!tile || (saved.kind === "quick" && quickTileMode(tile) !== saved.edges)) return false;
         if (saved.kind === "custom" && target.tile !== tile && Array.from(tile.windows).indexOf(target) === -1) return false;

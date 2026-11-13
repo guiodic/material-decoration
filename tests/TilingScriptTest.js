@@ -982,3 +982,17 @@ for (const mismatch of [null, 'other-tile', 'layout', 'path', 'frame', 'inactive
     assert.deepEqual({...f.target.frameGeometry}, frame);
     assert.equal(f.workspace.activeWindow, active);
 }
+
+// A custom grid with eight siblings is not a native quick-tile layout.
+{
+    const f = fixture();
+    const custom = {tiles: Array.from({length: 8}, (_, i) => f.leaf((i % 4) / 4, i < 4 ? 0 : .5, .25, .5))};
+    custom.tiles.forEach(tile => { tile.parent = custom; tile.windows = []; });
+    f.workspace.layoutRoot = custom;
+    f.workspace.quickTiles = [];
+    f.target.tile = custom.tiles[4];
+    f.target.frameGeometry = {x: 0, y: 400, width: 320, height: 400};
+    assert.equal(f.send(0, 'target', 'matchWindowState', savedState({tile: {
+        kind: 'quick', edges: 3, normalSize: {width: 900, height: 650}
+    }})).success, false);
+}
