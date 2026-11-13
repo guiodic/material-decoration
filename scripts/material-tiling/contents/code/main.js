@@ -95,6 +95,20 @@ var materialTiling;
         return index >= 0 ? [2, 4, 1, 8, 3, 5, 10, 12][index] : 0;
     }
 
+    function quickTileFrame(target, region, tile, output) {
+        const area = workspace.clientArea(KWin.MaximizeArea, output, restorationDesktop(target, output));
+        const padding = tile.padding || 0;
+        const x = Math.round(area.x + region.x * area.width);
+        const y = Math.round(area.y + region.y * area.height);
+        const right = Math.min(output.geometry.x + output.geometry.width, x + Math.round(region.width * area.width)) -
+            (region.x + region.width < 1 ? padding / 2 : padding);
+        const bottom = Math.min(output.geometry.y + output.geometry.height, y + Math.round(region.height * area.height)) -
+            (region.y + region.height < 1 ? padding / 2 : padding);
+        const left = Math.max(output.geometry.x, x) + (region.x > 0 ? padding / 2 : padding);
+        const top = Math.max(output.geometry.y, y) + (region.y > 0 ? padding / 2 : padding);
+        return {x: left, y: top, width: right - left, height: bottom - top};
+    }
+
     function restoreQuickTileRegion(target, saved, tile, output, resizeOthers) {
         const region = saved.region;
         const keys = ["x", "y", "width", "height"];
@@ -109,17 +123,7 @@ var materialTiling;
         if (!resizeOthers) {
             // Keep the native association and unsnap geometry, but apply the
             // saved frame only to this window without changing the shared tile.
-            const area = workspace.clientArea(KWin.MaximizeArea, output, restorationDesktop(target, output));
-            const padding = tile.padding || 0;
-            const x = Math.round(area.x + region.x * area.width);
-            const y = Math.round(area.y + region.y * area.height);
-            const right = Math.min(output.geometry.x + output.geometry.width, x + Math.round(region.width * area.width)) -
-                (region.x + region.width < 1 ? padding / 2 : padding);
-            const bottom = Math.min(output.geometry.y + output.geometry.height, y + Math.round(region.height * area.height)) -
-                (region.y + region.height < 1 ? padding / 2 : padding);
-            const left = Math.max(output.geometry.x, x) + (region.x > 0 ? padding / 2 : padding);
-            const top = Math.max(output.geometry.y, y) + (region.y > 0 ? padding / 2 : padding);
-            target.frameGeometry = {x: left, y: top, width: right - left, height: bottom - top};
+            target.frameGeometry = quickTileFrame(target, region, tile, output);
             return true;
         }
         // KWin owns the shared layout and propagates the saved split.
@@ -350,10 +354,25 @@ var materialTiling;
         return restored;
     };
 
+    function matchesWindowState(target, state) {
+        const saved = state.tile, output = target.output;
+        if (!saved || saved.kind !== "quick" || !output || output.name !== state.outputName ||
+            target.onAllDesktops !== state.onAllDesktops) return false;
+        const ids = Array.from(target.desktops, function (desktop) { return desktop.id; }).sort();
+        if (ids.join() !== Array.from(state.desktopIds).sort().join()) return false;
+        const tile = target.tile || materialWindowStateBridge.quickTiles(workspace.tilingForScreen(output)).find(function (tile) {
+            return Array.from(tile.windows).indexOf(target) !== -1;
+        });
+        if (!tile || quickTileMode(tile) !== saved.edges) return false;
+        const expected = quickTileFrame(target, saved.region || tile.relativeGeometry, tile, output), frame = target.frameGeometry;
+        return ["x", "y", "width", "height"].every(function (key) { return Math.abs(frame[key] - expected[key]) <= 2; });
+    }
+
     materialTiling = function (target, request) {
         if (!target || target.deleted || target.specialWindow) throw new Error("Target window is unavailable");
         if (!target.resizeable) throw new Error("Target window is not resizeable");
         if (request.operation === "layout") return captureLayout(target);
+        if (request.operation === "matchWindowState") return matchesWindowState(target, request);
         const action = tileActions[request.edges];
         const custom = request.operation === "tileCustom";
         if (!custom && (request.operation !== "tile" || !action || typeof workspace[action] !== "function")) throw new Error("Unsupported tiling request");

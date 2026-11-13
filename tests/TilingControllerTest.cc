@@ -118,6 +118,18 @@ private slots:
         QVERIFY(!Material::tilingScriptAvailable());
         QVERIFY(!Material::tileWindow(&valid, Qt::LeftEdge));
     }
+    void matchesSavedWindowStateWithoutRestoring() {
+        TestDecoration valid(&window, &bridge);
+        const QVariantMap state{{"version", 3}, {"desktopIds", QVariantList{"desktop-1"}}};
+        evaluate("materialTiling = undefined;");
+        QVERIFY(!Material::matchesSavedWindowState(&valid, state));
+        evaluate("materialTiling = function(window, state) { checked = state; return state.operation === 'matchWindowState'; };");
+        QVERIFY(Material::matchesSavedWindowState(&valid, state));
+        QCOMPARE(engine->evaluate("checked.desktopIds[0]").toString(), "desktop-1");
+        QVERIFY(!state.contains("operation"));
+        evaluate("materialTiling = function() { return 'true'; };");
+        QVERIFY(!Material::matchesSavedWindowState(&valid, state));
+    }
     void restoresFixedSizeWindowsSynchronously() {
         TestDecoration valid(&window, &bridge);
         valid.setTitleBar(QRectF(0, 0, 640, 32.5));

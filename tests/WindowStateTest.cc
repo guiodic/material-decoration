@@ -121,7 +121,13 @@ static bool prepareMinimizes = false;
 static QVariant preparedDesktops;
 static QObject *testWorkspace = nullptr;
 static int workspaceLookups = 0;
+static bool savedWindowMatches = false;
+static QList<QVariantMap> matchRequests;
 namespace Material {
+bool matchesSavedWindowState(KDecoration3::Decoration *, const QVariantMap &state) {
+    matchRequests.append(state);
+    return savedWindowMatches;
+}
 QObject *windowStateWorkspace() { ++workspaceLookups; return testWorkspace; }
 WindowRestoreResult prepareWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
 {
@@ -828,6 +834,73 @@ private slots:
         window.close();
         QCOMPARE(Material::readWindowState(key, scope).value("tile").toMap().value("region").toMap().value("width").toDouble(),
             changed ? .5 : .65);
+    }
+    void reenableRetainsOnlyMatchingCustomTile_data() {
+        QTest::addColumn<bool>("changedWhileDisabled");
+        QTest::addColumn<bool>("customProportions");
+        QTest::newRow("same-window") << false << true;
+        QTest::newRow("changed-window") << true << true;
+        QTest::newRow("standard-tile") << false << false;
+    }
+    void reenableRetainsOnlyMatchingCustomTile() {
+        QFETCH(bool, changedWhileDisabled);
+        QFETCH(bool, customProportions);
+        QScopedValueRollback available(immediateAvailable, true);
+        QScopedValueRollback matches(savedWindowMatches, !changedWhileDisabled);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.ReenableTile." + QUuid::createUuid().toString());
+        KWin::QuickRootTile root;
+        KWin::Tile tile;
+        root.bind(&tile);
+        tile.setProperty("relativeGeometry", QRectF(0, 0, .5, 1));
+        auto state = Material::captureWindowState(&window);
+        state.insert("tile", QVariantMap{{"kind", "quick"}, {"edges", 2},
+            {"region", QVariantMap{{"x", 0}, {"y", 0}, {"width", .6}, {"height", 1}}},
+            {"normalSize", QVariantMap{{"width", 900}, {"height", 650}}}});
+        if (!customProportions) {
+            auto savedTile = state.value("tile").toMap();
+            savedTile.remove("region");
+            state.insert("tile", savedTile);
+        }
+        const auto key = Material::windowStateKey(&window);
+        const auto scope = Material::WindowStateScope::self()->current();
+        QVERIFY(Material::writeWindowState(key, state, scope));
+        QScopedValueRollback hook(immediateHook, std::function<void()>([&] {
+            window.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
+            window.setProperty("frameGeometry", QRectF(0, 0, customProportions ? 768 : 640, 800));
+            Q_EMIT window.requestedTileChanged();
+            window.changedTile();
+        }));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true);
+        window.map();
+        if (customProportions) {
+            window.setProperty("resize", true);
+            window.startInteraction();
+            tile.setProperty("relativeGeometry", QRectF(0, 0, .65, 1));
+            window.setProperty("frameGeometry", QRectF(0, 0, 832, 800));
+            window.finishInteraction();
+            window.setProperty("resize", false);
+            QCOMPARE(Material::readWindowState(key, scope).value("tile").toMap().value("region").toMap().value("width").toDouble(), .6);
+        }
+        defaultWorkspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&window}));
+        Material::configureWindowState(&decoration, false);
+        const auto before = Material::readWindowState(key, scope).value("tile").toMap();
+        if (customProportions) QCOMPARE(before.value("region").toMap().value("width").toDouble(), .65);
+        if (changedWhileDisabled) window.setProperty("frameGeometry", QRectF(0, 0, 640, 800));
+        const auto frame = window.property("frameGeometry");
+        const auto restores = immediateRequests.size();
+        const auto matchesBefore = matchRequests.size();
+        Material::configureWindowState(&decoration, true);
+        QCOMPARE(matchRequests.size(), matchesBefore + 1);
+        QCOMPARE(matchRequests.last().value("tile").toMap(), before);
+        QCOMPARE(window.property("frameGeometry"), frame);
+        QCOMPARE(immediateRequests.size(), restores);
+        window.close();
+        const auto saved = Material::readWindowState(key, scope).value("tile").toMap();
+        QCOMPARE(saved.contains("region"), customProportions && !changedWhileDisabled);
+        if (!changedWhileDisabled) QCOMPARE(saved, before);
     }
     void savesNormalSizeOnlyWithValidTileMetadata() {
         KWin::WaylandWindow window;

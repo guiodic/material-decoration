@@ -331,6 +331,12 @@ public:
                 m_saveAllowed.insert(scope->current(), true);
                 rememberNormalSize();
                 updateTile();
+                const auto saved = readWindowState(windowStateKey(m_window), scope->current());
+                const auto tile = saved.value("tile").toMap();
+                if (tile.value("kind") == QLatin1String("quick") && matchesSavedWindowState(decoration, saved)) {
+                    m_customQuickTile = tile;
+                    m_normalSize = tile.value("normalSize").toMap();
+                }
                 return;
             }
         }
@@ -339,6 +345,7 @@ public:
     void configure(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows)
     {
         m_decoration = decoration;
+        if (!enabled && m_restoreStarted) save();
         m_enabled = enabled;
         if (!enabled) Q_EMIT restorationStopped();
         m_rememberScreen = rememberScreen;

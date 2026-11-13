@@ -929,3 +929,30 @@ for (const [resizeOthers, canceled] of [[false, false], [true, false], [false, t
     assert.deepEqual({...f.target.frameGeometry}, {x: 2596, y: 48, width: 1236, height: 508});
     assert.equal(tile.relativeGeometry.width, .5);
 }
+
+// Matching an already mapped window is read-only and compares saved geometry.
+for (const mismatch of [null, 'rounding', 'outside-tolerance', 'size', 'position', 'edges', 'output', 'desktop', 'sticky', 'no-region', 'standard', 'floating']) {
+    const f = fixture();
+    const tile = quickTile(f.leaf(0, 0, .5, 1));
+    tile.windows = [];
+    f.workspace.quickTiles = [tile];
+    f.target.tile = tile;
+    f.target.frameGeometry = {x: 0, y: 0, width: 832, height: 800};
+    const state = savedState({tile: {kind: 'quick', edges: 2, region: {x: 0, y: 0, width: .65, height: 1}}});
+    if (mismatch === 'rounding') f.target.frameGeometry.height += .5;
+    if (mismatch === 'outside-tolerance') f.target.frameGeometry.width += 2.1;
+    if (mismatch === 'size') f.target.frameGeometry.width = 640;
+    if (mismatch === 'position') f.target.frameGeometry.x = 50;
+    if (mismatch === 'edges') state.tile.edges = 4;
+    if (mismatch === 'output') state.outputName = 'other-screen';
+    if (mismatch === 'desktop') state.desktopIds = ['other-desktop'];
+    if (mismatch === 'sticky') state.onAllDesktops = true;
+    if (mismatch === 'no-region' || mismatch === 'standard') delete state.tile.region;
+    if (mismatch === 'standard') f.target.frameGeometry.width = 640;
+    if (mismatch === 'floating') f.target.tile = null;
+    const frame = {...f.target.frameGeometry}, active = f.workspace.activeWindow;
+    assert.equal(f.send(0, 'target', 'matchWindowState', state).success, mismatch === null || mismatch === 'rounding' || mismatch === 'standard', mismatch);
+    assert.deepEqual({...f.target.frameGeometry}, frame);
+    assert.equal(f.workspace.activeWindow, active);
+    assert.equal(tile.relativeGeometry.width, .5);
+}
