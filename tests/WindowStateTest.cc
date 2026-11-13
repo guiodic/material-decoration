@@ -14,6 +14,7 @@
 #include <QDBusConnection>
 #include <QRectF>
 #include <QScopedValueRollback>
+#include <QSignalSpy>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTest>
@@ -91,6 +92,7 @@ public:
     void removeOutput(QObject *output) { Q_EMIT outputRemoved(output); }
     void addOutput(QObject *output) { Q_EMIT outputAdded(output); }
     void finish() { Q_EMIT outputsChanged(); }
+    int topologyListeners() const { return receivers(SIGNAL(outputsChanged())); }
 signals:
     void outputRemoved(QObject *output);
     void outputAdded(QObject *output);
@@ -118,8 +120,9 @@ static int prepareCalls = 0;
 static bool prepareMinimizes = false;
 static QVariant preparedDesktops;
 static QObject *testWorkspace = nullptr;
+static int workspaceLookups = 0;
 namespace Material {
-QObject *windowStateWorkspace() { return testWorkspace; }
+QObject *windowStateWorkspace() { ++workspaceLookups; return testWorkspace; }
 WindowRestoreResult prepareWindowStateImmediately(KDecoration3::Decoration *decoration, const QVariantMap &state)
 {
     ++prepareCalls;
@@ -179,6 +182,70 @@ private slots:
         QVERIFY(!copy->rememberWindowScreen());
         QVERIFY(copy->rememberWindowDesktop());
         QVERIFY(copy->resizeOtherTiledWindows());
+    }
+    void disabledDoesNotCreateOrDiscoverAnything() {
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.Disabled." + QUuid::createUuid().toString());
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        const auto children = window.children().size();
+        const auto lookups = workspaceLookups;
+        const auto preparations = prepareCalls;
+        const auto restores = immediateRequests.size();
+        Material::configureWindowState(&decoration, false);
+        window.map();
+        window.startInteraction();
+        window.stepInteraction();
+        window.finishInteraction();
+        window.changedTile();
+        window.close();
+        QCoreApplication::processEvents();
+        QCOMPARE(window.children().size(), children);
+        QCOMPARE(workspaceLookups, lookups);
+        QCOMPARE(prepareCalls, preparations);
+        QCOMPARE(immediateRequests.size(), restores);
+    }
+    void topologyMonitoringFollowsActiveControllers() {
+        ScopeWorkspace workspace;
+        QObject interface(&workspace), output;
+        auto bus = QDBusConnection::sessionBus();
+        QVERIFY(bus.registerObject("/KWin", &interface));
+        QScopedValueRollback wrapper(testWorkspace, static_cast<QObject *>(&workspace));
+        output.setProperty("name", "A");
+        output.setProperty("geometry", QRect(0, 0, 1280, 800));
+        workspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&output}));
+        KWin::WaylandWindow first, second;
+        setup(first, "org.example.StateTest.MonitorFirst");
+        setup(second, "org.example.StateTest.MonitorSecond");
+        MaterialTest::Bridge firstBridge, secondBridge;
+        StateDecoration firstDecoration(&first, &firstBridge), secondDecoration(&second, &secondBridge);
+        auto *scope = Material::WindowStateScope::self();
+        QSignalSpy snapshots(scope, &Material::WindowStateScope::snapshotRequested);
+        Material::configureWindowState(&firstDecoration, true);
+        Material::configureWindowState(&secondDecoration, true);
+        QCOMPARE(workspace.topologyListeners(), 1);
+        Material::configureWindowState(&firstDecoration, false);
+        QCOMPARE(workspace.topologyListeners(), 1);
+        // Queue the usual topology completion, then disable the last controller.
+        workspace.removeOutput(&output);
+        snapshots.clear();
+        Material::configureWindowState(&secondDecoration, false);
+        QCOMPARE(workspace.topologyListeners(), 0);
+        const auto lookups = workspaceLookups;
+        output.setProperty("geometry", QRect(100, 0, 1280, 800));
+        workspace.addOutput(&output);
+        workspace.finish();
+        QCoreApplication::processEvents();
+        QVERIFY(snapshots.isEmpty());
+        QCOMPARE(workspaceLookups, lookups);
+        Material::configureWindowState(&firstDecoration, true);
+        QCOMPARE(workspace.topologyListeners(), 1);
+        QCOMPARE(scope->current(), Material::windowConfigurationScope(&workspace));
+        workspace.removeOutput(&output);
+        QCOMPARE(snapshots.size(), 1);
+        Material::configureWindowState(&firstDecoration, false);
+        QCOMPARE(workspace.topologyListeners(), 0);
+        bus.unregisterObject("/KWin");
     }
     void mappedWindowStartsTrackingWithoutRestoration() {
         QScopedValueRollback available(prepareAvailable, true);
@@ -411,9 +478,10 @@ private slots:
         QCoreApplication::processEvents();
         const auto calls = prepareCalls;
         Material::configureWindowState(&decoration, true, true, rememberDesktop);
-        QCOMPARE(prepareCalls, calls);
-        QVERIFY(!window.property("minimized").toBool());
-        QCOMPARE(window.property("desktops"), current);
+        const bool preparedOnEnable = !enabledInitially && rememberDesktop;
+        QCOMPARE(prepareCalls, calls + int(preparedOnEnable));
+        QCOMPARE(window.property("minimized").toBool(), preparedOnEnable);
+        QCOMPARE(window.property("desktops"), preparedOnEnable ? saved : current);
         window.map();
         QVERIFY(!window.property("minimized").toBool());
         QCOMPARE(immediateRequests.last().value("rememberDesktop").toBool(), rememberDesktop);

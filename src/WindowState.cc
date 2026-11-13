@@ -265,6 +265,8 @@ public:
         m_prepareRetryTimer.setSingleShot(true);
         connect(&m_prepareRetryTimer, &QTimer::timeout, this, &WindowStateController::prepare);
         auto *scope = WindowStateScope::self();
+        scope->retain();
+        connect(this, &QObject::destroyed, scope, &WindowStateScope::release);
         connect(scope, &WindowStateScope::scopeChanged, this, [this](const QString &newScope) {
             // Capture this for every open window before any sibling can close
             // and create a state in the newly entered configuration.
@@ -662,11 +664,20 @@ private:
 void configureWindowState(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows)
 {
     auto *window = decoration->parent();
+    if (!window) return;
+    auto *controller = window->findChild<WindowStateController *>(QString(), Qt::FindDirectChildrenOnly);
+    if (!enabled) {
+        if (controller) {
+            controller->configure(decoration, false, rememberScreen, rememberDesktop, resizeOtherTiledWindows);
+            delete controller;
+        }
+        return;
+    }
     // Do not affect XWayland, dialogs, popups or the KCM's preview.
-    if (!window || !window->inherits("KWin::WaylandWindow") || !window->property("normalWindow").toBool()
+    if (!window->inherits("KWin::WaylandWindow") || !window->property("normalWindow").toBool()
         || window->property("transient").toBool()) return;
-    if (auto *controller = window->findChild<WindowStateController *>(QString(), Qt::FindDirectChildrenOnly)) {
-        controller->configure(decoration, enabled, rememberScreen, rememberDesktop, resizeOtherTiledWindows);
+    if (controller) {
+        controller->configure(decoration, true, rememberScreen, rememberDesktop, resizeOtherTiledWindows);
     } else {
         // Owned by the KWin window, so fullscreen/decoration removal cannot lose
         // the close handler. Normal sizes are tracked in memory, never polled.

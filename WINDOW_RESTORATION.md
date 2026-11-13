@@ -31,6 +31,11 @@ An App ID supplied late is handled at the first frame; identity changes do not
 restart early preparation. After opening, the application/tag identity is treated
 as stable.
 
+When disabled, restoration controllers are not created. Disabling the feature
+removes existing controllers after cancelling pending restoration. Topology
+monitoring stops when no active controllers remain. The tiling popup operates
+independently.
+
 ## 2. Current restoration policies
 
 - **Eligibility:** experimental, disabled by default, and enabled in the KCM's
