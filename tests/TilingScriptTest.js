@@ -42,13 +42,18 @@ function fixture(extraWindows = []) {
     }
     const context = {workspace, materialWindowStateBridge: {quickTiles(manager) { return manager.quickTiles; }}, KWin: {PlacementArea: 0, MaximizeArea: 1}};
     vm.runInNewContext(source, context);
+    function restore(target, state) {
+        const {resizeOtherTiledWindows, restoreContext, ...request} = state;
+        request.restoreContext = restoreContext || {resizeOtherTiledWindows: resizeOtherTiledWindows === true};
+        return context.materialRestoreWindowState(target, request);
+    }
     return {workspace, target, other, calls, output, root, leaf,
-        restoreImmediately(state) { return context.materialRestoreWindowState(target, state); },
+        restoreImmediately(state) { return restore(target, state); },
         prepareImmediately(state) { return context.materialPrepareWindowState(target, state); },
         send(edges, uuid = 'target', operation = 'tile', extra = {}) {
             const target = workspace.windowList().find(window => String(window.internalId).replace(/[{}]/g, '') === uuid);
             try {
-                if (operation === 'restoreState') return {success: context.materialRestoreWindowState(target, extra.state)};
+                if (operation === 'restoreState') return {success: restore(target, extra.state)};
                 const result = context.materialTiling(target, {edges, operation, ...extra});
                 return Array.isArray(result) ? {success: true, layout: Array.from(result, zone => ({...zone}))} : {success: result};
             } catch (error) { return {success: false, reason: String(error)}; }

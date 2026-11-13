@@ -94,8 +94,7 @@ void WindowStateScope::release()
 
 QString WindowStateScope::current()
 {
-    if (!m_users) return windowConfigurationScope(windowStateWorkspace());
-    attach();
+    if (m_users) attach();
     return m_scope;
 }
 

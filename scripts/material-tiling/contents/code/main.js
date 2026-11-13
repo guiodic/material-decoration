@@ -144,7 +144,7 @@ var materialTiling;
         return tile;
     }
 
-    function restoreNativeTile(target, saved, output, resizeOthers, context) {
+    function restoreNativeTile(target, saved, output, context) {
         if (!saved || !target.resizeable) return false;
         if (saved.kind === "quick") {
             if (!tileActions[saved.edges] || typeof materialWindowStateBridge === "undefined" || typeof workspace.tilingForScreen !== "function") return false;
@@ -164,12 +164,12 @@ var materialTiling;
                 if (target.onAllDesktops || target.desktops.length !== 1 || target.desktops[0].id !== desktop.id) return false;
                 for (let i = 0; i < tiles.length; ++i) {
                     if (quickTileMode(tiles[i]) === saved.edges && manageRestoredTile(target, saved, tiles[i])) {
-                        const restoreRegion = function (policy) {
-                            const restored = restoreQuickTileRegion(target, saved, tiles[i], output, policy);
+                        const restoreRegion = function () {
+                            const restored = restoreQuickTileRegion(target, saved, tiles[i], output, context.resizeOtherTiledWindows);
                             if (restored) lastSelection[id(target)] = {edges: saved.edges, tile: tiles[i], output: output};
                             return restored;
                         };
-                        if (target.tile === tiles[i]) return restoreRegion(resizeOthers);
+                        if (target.tile === tiles[i]) return restoreRegion();
                         // An inactive desktop owns the association but requests
                         // the tile only when shown. Keep the normal frame until then.
                         const cancel = function () {
@@ -189,7 +189,7 @@ var materialTiling;
                             if (manageRestoredTile(target, saved, tiles[i])) {
                                 // Removing the last owner resets the shared splits.
                                 layout.forEach(function (entry) { entry.tile.relativeGeometry = entry.region; });
-                                restoreRegion(context.resizeOtherTiledWindows);
+                                restoreRegion();
                             }
                         };
                         context.restorationStopped.connect(cancel);
@@ -297,7 +297,7 @@ var materialTiling;
         // between outputs without undoing their mode or assigning a normal size.
         if (target.fullScreen || target.maximizeMode || target.tile) {
             const restoreTile = !target.fullScreen && !target.maximizeMode && state.tile;
-            if (restoreTile && restoreNativeTile(target, state.tile, output, state.resizeOtherTiledWindows === true, state.restoreContext)) return true;
+            if (restoreTile && restoreNativeTile(target, state.tile, output, state.restoreContext)) return true;
             if (target.output !== output) workspace.sendClientToScreen(target, output);
             return !restoreTile;
         }
@@ -328,7 +328,7 @@ var materialTiling;
             target.frameGeometry = {x: x, y: y, width: current.width, height: current.height};
         }
         // KWin owns the size of a snapped window; floating app sizes stay intact.
-        return !state.tile || restoreNativeTile(target, state.tile, output, state.resizeOtherTiledWindows === true, state.restoreContext);
+        return !state.tile || restoreNativeTile(target, state.tile, output, state.restoreContext);
     }
 
     materialPrepareWindowState = function (target, state) {

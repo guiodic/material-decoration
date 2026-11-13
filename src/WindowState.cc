@@ -253,8 +253,8 @@ class WindowStateController : public QObject
     Q_PROPERTY(bool resizeOtherTiledWindows READ resizeOtherTiledWindows)
 public:
     bool resizeOtherTiledWindows() const { return m_resizeOtherTiledWindows; }
-    explicit WindowStateController(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows)
-        : QObject(decoration->parent()), m_window(decoration->parent()), m_decoration(decoration), m_enabled(enabled)
+    explicit WindowStateController(KDecoration3::Decoration *decoration, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows)
+        : QObject(decoration->parent()), m_window(decoration->parent()), m_decoration(decoration), m_enabled(true)
         , m_rememberScreen(rememberScreen), m_rememberDesktop(rememberDesktop), m_resizeOtherTiledWindows(resizeOtherTiledWindows)
     {
         // Read synchronously on closed(), before KWin releases the window.
@@ -481,12 +481,12 @@ private slots:
     }
     void startUserInteraction()
     {
+        // Tile changes are synchronous; client buffers can arrive after release.
         auto *tile = m_window->property("tile").value<QObject *>();
         m_resizeEdges = m_window->property("resize").toBool() ? windowTile(m_window).value("edges").toInt() : 0;
         m_tileResized = false;
         if (m_resizeEdges && tile) m_resizeConnection = connect(tile, SIGNAL(relativeGeometryChanged()),
             this, SLOT(markTileResized()), Qt::DirectConnection);
-        // Cancel pending restoration when the user takes control.
         m_restoreCancelled = true;
         Q_EMIT restorationStopped();
         if (m_enabled) m_saveAllowed.insert(WindowStateScope::self()->current(), true);
@@ -537,7 +537,6 @@ private:
         // Policy belongs to the current settings, never to the persisted state.
         state.insert("rememberScreen", m_rememberScreen);
         state.insert("rememberDesktop", m_rememberDesktop);
-        state.insert("resizeOtherTiledWindows", m_resizeOtherTiledWindows);
         state.insert("restoreContext", QVariant::fromValue<QObject *>(this));
         return state;
     }
@@ -707,7 +706,7 @@ void configureWindowState(KDecoration3::Decoration *decoration, bool enabled, bo
     } else {
         // Owned by the KWin window, so fullscreen/decoration removal cannot lose
         // the close handler. Normal sizes are tracked in memory, never polled.
-        new WindowStateController(decoration, enabled, rememberScreen, rememberDesktop, resizeOtherTiledWindows);
+        new WindowStateController(decoration, rememberScreen, rememberDesktop, resizeOtherTiledWindows);
     }
 }
 }
