@@ -227,9 +227,8 @@ QVariantMap captureWindowState(const QObject *window)
 
 QVariantMap readWindowState(const QString &key, const QString &scope)
 {
-    if (key.isEmpty()) return {};
-    KConfigGroup group(stateConfig(), key);
-    if (!scope.isEmpty()) group = group.group(QStringLiteral("Configurations")).group(scope);
+    if (key.isEmpty() || scope.isEmpty()) return {};
+    const auto group = KConfigGroup(stateConfig(), key).group(QStringLiteral("Configurations")).group(scope);
     const auto state = QJsonDocument::fromJson(group.readEntry("State", QByteArray())).object().toVariantMap();
     return positionState(state);
 }
@@ -237,10 +236,9 @@ QVariantMap readWindowState(const QString &key, const QString &scope)
 bool writeWindowState(const QString &key, const QVariantMap &state, const QString &scope)
 {
     const auto saved = positionState(state);
-    if (key.isEmpty() || saved.isEmpty()) return false;
+    if (key.isEmpty() || scope.isEmpty() || saved.isEmpty()) return false;
     const auto config = stateConfig();
-    KConfigGroup group(config, key);
-    if (!scope.isEmpty()) group = group.group(QStringLiteral("Configurations")).group(scope);
+    auto group = KConfigGroup(config, key).group(QStringLiteral("Configurations")).group(scope);
     group.writeEntry("State", QJsonDocument::fromVariant(saved).toJson(QJsonDocument::Compact));
     return config->sync();
 }

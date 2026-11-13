@@ -136,6 +136,8 @@ WindowRestoreResult restoreWindowStateImmediately(KDecoration3::Decoration *, co
 
 class WindowStateTest : public QObject {
     Q_OBJECT
+    ScopeWorkspace defaultWorkspace;
+    QObject defaultOutput;
     void setup(KWin::WaylandWindow &window, const QString &app) {
         window.setProperty("desktopFileName", app);
         window.setProperty("normalWindow", true);
@@ -151,6 +153,12 @@ private slots:
         config->group("Windeco").writeEntry("RememberWindowState", true);
         QVERIFY(config->sync());
         Material::SettingsProvider::self()->reconfigure();
+    }
+    void init() {
+        defaultOutput.setProperty("name", "Virtual-0");
+        defaultOutput.setProperty("geometry", QRect(0, 0, 1280, 800));
+        defaultWorkspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&defaultOutput}));
+        testWorkspace = &defaultWorkspace;
     }
     void disabledByDefault() {
         Material::InternalSettings settings;
@@ -173,7 +181,7 @@ private slots:
         QScopedValueRollback restoreAvailability(immediateAvailable, true);
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.DefaultPolicy." + QUuid::createUuid().toString());
-        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         const auto prepared = prepareRequests.size();
@@ -201,7 +209,7 @@ private slots:
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.Policy." + QUuid::createUuid().toString());
         const auto key = Material::windowStateKey(&window);
-        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window)));
+        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         const auto prepared = prepareRequests.size();
@@ -215,7 +223,7 @@ private slots:
         QCOMPARE(immediateRequests.last().value("rememberScreen").toBool(), screen);
         QCOMPARE(immediateRequests.last().value("rememberDesktop").toBool(), desktop);
         window.close();
-        const auto saved = Material::readWindowState(key);
+        const auto saved = Material::readWindowState(key, Material::WindowStateScope::self()->current());
         QVERIFY(!saved.contains("rememberScreen"));
         QVERIFY(!saved.contains("rememberDesktop"));
     }
@@ -230,7 +238,7 @@ private slots:
         QScopedValueRollback desktops(preparedDesktops, QVariant::fromValue(QList<QObject *>{&savedDesktop}));
         window.setProperty("desktops", original);
         window.setProperty("minimized", false);
-        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         Material::configureWindowState(&decoration, true, true, true);
@@ -454,7 +462,7 @@ private slots:
         setup(window, app + ".Initial");
         setup(future, app);
         future.setProperty("frameGeometry", QRectF(400, 250, 800, 500));
-        QVERIFY(Material::writeWindowState(Material::windowStateKey(&future), Material::captureWindowState(&future)));
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&future), Material::captureWindowState(&future), Material::WindowStateScope::self()->current()));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         Material::configureWindowState(&decoration, true, true, true);
@@ -489,12 +497,12 @@ private slots:
         QCOMPARE(state.value("desktopIds").toStringList(), QStringList{"desktop-uuid"});
         QCOMPARE(state.value("outputPosition").toMap().value("x").toDouble(), 1920);
         const auto key = Material::windowStateKey(&window);
-        QVERIFY(Material::writeWindowState(key, state));
-        const auto saved = Material::readWindowState(key);
+        QVERIFY(Material::writeWindowState(key, state, Material::WindowStateScope::self()->current()));
+        const auto saved = Material::readWindowState(key, Material::WindowStateScope::self()->current());
         QVERIFY(!saved.contains("maximizeMode"));
         QVERIFY(!saved.contains("fullScreen"));
-        QVERIFY(!Material::writeWindowState(key, {{"version", 3}, {"position", QVariantMap{{"x", 1}}}}));
-        QCOMPARE(Material::readWindowState(key), saved);
+        QVERIFY(!Material::writeWindowState(key, {{"version", 3}, {"position", QVariantMap{{"x", 1}}}}, Material::WindowStateScope::self()->current()));
+        QCOMPARE(Material::readWindowState(key, Material::WindowStateScope::self()->current()), saved);
     }
     void rejectsUnsupportedStateVersions() {
         const QString key = "unsupported-" + QUuid::createUuid().toString();
@@ -502,14 +510,14 @@ private slots:
         setup(window, "org.example.StateTest.Unsupported");
         const auto current = Material::captureWindowState(&window);
         auto config = KSharedConfig::openStateConfig(QStringLiteral("material-window-staterc"));
-        KConfigGroup group(config, key);
+        auto group = KConfigGroup(config, key).group("Configurations").group(Material::WindowStateScope::self()->current());
         for (int version : {1, 2, 4}) {
             auto state = current;
             state.insert("version", version);
             group.writeEntry("State", QJsonDocument::fromVariant(state).toJson(QJsonDocument::Compact));
             QVERIFY(config->sync());
-            QVERIFY(Material::readWindowState(key).isEmpty());
-            QVERIFY(!Material::writeWindowState(key, state));
+            QVERIFY(Material::readWindowState(key, Material::WindowStateScope::self()->current()).isEmpty());
+            QVERIFY(!Material::writeWindowState(key, state, Material::WindowStateScope::self()->current()));
         }
     }
     void capturesNativeTileBindings() {
@@ -524,8 +532,8 @@ private slots:
         QCOMPARE(state.value("tile").toMap().value("kind").toString(), "quick");
         QCOMPARE(state.value("tile").toMap().value("edges").toInt(), 2);
         const auto key = Material::windowStateKey(&window);
-        QVERIFY(Material::writeWindowState(key, state));
-        QCOMPARE(Material::readWindowState(key).value("tile"), state.value("tile"));
+        QVERIFY(Material::writeWindowState(key, state, Material::WindowStateScope::self()->current()));
+        QCOMPARE(Material::readWindowState(key, Material::WindowStateScope::self()->current()).value("tile"), state.value("tile"));
         QObject root, first, custom;
         root.setProperty("tiles", QVariant::fromValue(QList<QObject *>{&first, &custom}));
         custom.setProperty("parent", QVariant::fromValue(&root));
@@ -534,8 +542,8 @@ private slots:
         state = Material::captureWindowState(&window);
         QCOMPARE(state.value("tile").toMap().value("kind").toString(), "custom");
         QCOMPARE(state.value("tile").toMap().value("path").toList().first().toInt(), 1);
-        QVERIFY(Material::writeWindowState(key, state));
-        QCOMPARE(Material::readWindowState(key).value("tile"), state.value("tile"));
+        QVERIFY(Material::writeWindowState(key, state, Material::WindowStateScope::self()->current()));
+        QCOMPARE(Material::readWindowState(key, Material::WindowStateScope::self()->current()).value("tile"), state.value("tile"));
     }
     void keepsTileBindingWhenCloseCleanupClearsTheProperty() {
         for (bool unsnap : {false, true}) {
@@ -555,7 +563,7 @@ private slots:
             if (unsnap) window.changedTile();
             window.setProperty("deleted", true);
             window.close();
-            QCOMPARE(Material::readWindowState(Material::windowStateKey(&window)).contains("tile"), !unsnap);
+            QCOMPARE(Material::readWindowState(Material::windowStateKey(&window), Material::WindowStateScope::self()->current()).contains("tile"), !unsnap);
         }
     }
     void persistsQuickTileProportions_data() {
@@ -582,8 +590,8 @@ private slots:
         window.setProperty("tile", QVariant::fromValue<QObject *>(&tile));
         const auto state = Material::captureWindowState(&window);
         const auto key = Material::windowStateKey(&window);
-        QVERIFY(Material::writeWindowState(key, state));
-        const auto savedTile = Material::readWindowState(key).value("tile").toMap();
+        QVERIFY(Material::writeWindowState(key, state, Material::WindowStateScope::self()->current()));
+        const auto savedTile = Material::readWindowState(key, Material::WindowStateScope::self()->current()).value("tile").toMap();
         QCOMPARE(savedTile.value("edges").toInt(), edges);
         const auto saved = savedTile.value("region").toMap();
         QCOMPARE(saved.value("x").toDouble(), region.x());
@@ -603,8 +611,8 @@ private slots:
         tiles[0].setProperty("relativeGeometry", QRectF(0, 0, 0.65, 0.85));
         window.setProperty("tile", QVariant::fromValue<QObject *>(&tiles[0]));
         const auto key = Material::windowStateKey(&window);
-        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window)));
-        const auto saved = Material::readWindowState(key).value("tile").toMap();
+        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
+        const auto saved = Material::readWindowState(key, Material::WindowStateScope::self()->current()).value("tile").toMap();
         QCOMPARE(saved.value("edges").toInt(), 2); // Still left, not top-left.
         QCOMPARE(saved.value("region").toMap().value("height").toDouble(), 0.85);
     }
@@ -620,8 +628,8 @@ private slots:
                 {{"x", 0}, {"y", 0}, {"width", 0.6}, {"height", 1.2}},
                 {{"x", 0}, {"y", 0}, {"width", std::numeric_limits<double>::infinity()}, {"height", 1}}}) {
             state.insert("tile", QVariantMap{{"kind", "quick"}, {"edges", 2}, {"region", region}});
-            QVERIFY(Material::writeWindowState(key, state));
-            const auto saved = Material::readWindowState(key).value("tile").toMap();
+            QVERIFY(Material::writeWindowState(key, state, Material::WindowStateScope::self()->current()));
+            const auto saved = Material::readWindowState(key, Material::WindowStateScope::self()->current()).value("tile").toMap();
             QCOMPARE(saved.value("kind").toString(), "quick");
             QCOMPARE(saved.value("edges").toInt(), 2);
             QVERIFY(!saved.contains("region"));
@@ -671,16 +679,16 @@ private slots:
         const auto key = Material::windowStateKey(&window);
         const QVariantMap size{{"width", 900.5}, {"height", 650.25}};
         state.insert("tile", QVariantMap{{"kind", "quick"}, {"edges", 2}, {"normalSize", size}});
-        QVERIFY(Material::writeWindowState(key, state));
-        QCOMPARE(Material::readWindowState(key).value("tile").toMap().value("normalSize").toMap(), size);
+        QVERIFY(Material::writeWindowState(key, state, Material::WindowStateScope::self()->current()));
+        QCOMPARE(Material::readWindowState(key, Material::WindowStateScope::self()->current()).value("tile").toMap().value("normalSize").toMap(), size);
         for (const auto &bad : {QVariantMap{{"width", 0}, {"height", 500}}, QVariantMap{{"width", -1}, {"height", 500}}, QVariantMap{{"width", 900}}}) {
             state.insert("tile", QVariantMap{{"kind", "quick"}, {"edges", 2}, {"normalSize", bad}});
-            QVERIFY(Material::writeWindowState(key, state));
-            QVERIFY(!Material::readWindowState(key).value("tile").toMap().contains("normalSize"));
+            QVERIFY(Material::writeWindowState(key, state, Material::WindowStateScope::self()->current()));
+            QVERIFY(!Material::readWindowState(key, Material::WindowStateScope::self()->current()).value("tile").toMap().contains("normalSize"));
         }
         state.insert("tile", QVariantMap{{"kind", "quick"}, {"edges", 6}, {"normalSize", size}});
-        QVERIFY(Material::writeWindowState(key, state));
-        QVERIFY(!Material::readWindowState(key).contains("tile"));
+        QVERIFY(Material::writeWindowState(key, state, Material::WindowStateScope::self()->current()));
+        QVERIFY(!Material::readWindowState(key, Material::WindowStateScope::self()->current()).contains("tile"));
     }
     void remembersNormalSizeAcrossTilingAndMaximizing_data() {
         QTest::addColumn<bool>("maximizeFirst");
@@ -724,7 +732,7 @@ private slots:
         window.changedTile();
         QCoreApplication::processEvents();
         window.close();
-        auto state = Material::readWindowState(Material::windowStateKey(&window));
+        auto state = Material::readWindowState(Material::windowStateKey(&window), Material::WindowStateScope::self()->current());
         QCOMPARE(state.value("tile").toMap().value("normalSize").toMap(), (QVariantMap{{"width", 900}, {"height", 650}}));
         // A tile-to-tile resize must preserve the original normal dimensions.
         window.setProperty("frameGeometry", QRectF(0, 0, 450, 800));
@@ -732,7 +740,7 @@ private slots:
         window.changedTile();
         QCoreApplication::processEvents();
         window.close();
-        QCOMPARE(Material::readWindowState(Material::windowStateKey(&window)).value("tile"), state.value("tile"));
+        QCOMPARE(Material::readWindowState(Material::windowStateKey(&window), Material::WindowStateScope::self()->current()).value("tile"), state.value("tile"));
         // After unsnapping, normal sizes can change again and floating saves
         // must never acquire dimensions from this observer.
         window.setProperty("tile", QVariant::fromValue<QObject *>(nullptr));
@@ -744,7 +752,7 @@ private slots:
         window.changedTile();
         QCoreApplication::processEvents();
         window.close();
-        state = Material::readWindowState(Material::windowStateKey(&window));
+        state = Material::readWindowState(Material::windowStateKey(&window), Material::WindowStateScope::self()->current());
         QVERIFY(!state.contains("tile"));
         QVERIFY(!state.contains("normalSize"));
         QVERIFY(!state.contains("width"));
@@ -757,7 +765,7 @@ private slots:
         auto state = Material::captureWindowState(&window);
         state.insert("tile", QVariantMap{{"kind", "quick"}, {"edges", 2}, {"normalSize", size}});
         const auto key = Material::windowStateKey(&window);
-        QVERIFY(Material::writeWindowState(key, state));
+        QVERIFY(Material::writeWindowState(key, state, Material::WindowStateScope::self()->current()));
         KWin::QuickRootTile root;
         KWin::Tile tile;
         root.bind(&tile);
@@ -782,7 +790,7 @@ private slots:
         immediateHook = {};
         QCoreApplication::processEvents();
         window.close();
-        QCOMPARE(Material::readWindowState(key).value("tile").toMap().value("normalSize").toMap(), size);
+        QCOMPARE(Material::readWindowState(key, Material::WindowStateScope::self()->current()).value("tile").toMap().value("normalSize").toMap(), size);
     }
     void newSiblingSizeHint_data() {
         QTest::addColumn<QString>("scenario");
@@ -847,7 +855,7 @@ private slots:
             QCOMPARE(hint.value("normalSize").toMap(), (QVariantMap{{"width", 800}, {"height", 500}}));
             QCOMPARE(hint.value("tileSize").toMap(), (QVariantMap{{"width", 640}, {"height", 800}}));
             // A live sibling can provide this information before any close/save.
-            QVERIFY(Material::readWindowState(Material::windowStateKey(&source)).isEmpty());
+            QVERIFY(Material::readWindowState(Material::windowStateKey(&source), Material::WindowStateScope::self()->current()).isEmpty());
         } else {
             QCOMPARE(immediateRequests.size(), count);
         }
@@ -860,13 +868,13 @@ private slots:
         Material::configureWindowState(decoration, true, true, true);
         const auto key = Material::windowStateKey(&window);
         QCoreApplication::processEvents();
-        QVERIFY(Material::readWindowState(key).isEmpty());
+        QVERIFY(Material::readWindowState(key, Material::WindowStateScope::self()->current()).isEmpty());
         window.setProperty("frameGeometry", QVariant::fromValue(NativeRectangle{120, 150, 900, 700}));
-        QVERIFY(Material::readWindowState(key).isEmpty());
+        QVERIFY(Material::readWindowState(key, Material::WindowStateScope::self()->current()).isEmpty());
         delete decoration;
         window.close();
         // Direct connection: no event loop iteration is needed to persist state.
-        QCOMPARE(Material::readWindowState(key).value("position").toMap().value("x").toDouble(), 120);
+        QCOMPARE(Material::readWindowState(key, Material::WindowStateScope::self()->current()).value("position").toMap().value("x").toDouble(), 120);
     }
     void disabledNeverRestoresOrWrites() {
         KWin::WaylandWindow window;
@@ -874,8 +882,8 @@ private slots:
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         const auto key = Material::windowStateKey(&window);
-        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window)));
-        const auto saved = Material::readWindowState(key);
+        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
+        const auto saved = Material::readWindowState(key, Material::WindowStateScope::self()->current());
         const auto count = immediateRequests.size();
         Material::configureWindowState(&decoration, false);
         window.map();
@@ -883,13 +891,13 @@ private slots:
         QCOMPARE(immediateRequests.size(), count);
         window.setProperty("frameGeometry", QRectF(200, 200, 1000, 700));
         window.close();
-        QCOMPARE(Material::readWindowState(key), saved);
+        QCOMPARE(Material::readWindowState(key, Material::WindowStateScope::self()->current()), saved);
     }
     void restoresOnceAndRespectsDisabling() {
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.Restore." + QUuid::createUuid().toString());
         const auto key = Material::windowStateKey(&window);
-        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window)));
+        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         const auto count = immediateRequests.size();
@@ -901,16 +909,16 @@ private slots:
         Material::configureWindowState(&decoration, true, true, true);
         QCoreApplication::processEvents();
         QCOMPARE(immediateRequests.size(), count + 1);
-        const auto saved = Material::readWindowState(key);
+        const auto saved = Material::readWindowState(key, Material::WindowStateScope::self()->current());
         Material::configureWindowState(&decoration, false);
         window.setProperty("frameGeometry", QRectF(200, 200, 1000, 700));
         window.close();
-        QCOMPARE(Material::readWindowState(key), saved);
+        QCOMPARE(Material::readWindowState(key, Material::WindowStateScope::self()->current()), saved);
     }
     void retriesWhenSynchronousScriptBecomesAvailable() {
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.Retry." + QUuid::createUuid().toString());
-        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         const auto count = immediateRequests.size();
@@ -931,7 +939,7 @@ private slots:
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.Cancel." + QUuid::createUuid().toString());
         const auto key = Material::windowStateKey(&window);
-        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window)));
+        QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         const auto count = immediateRequests.size();
@@ -947,14 +955,14 @@ private slots:
         QCOMPARE(window.property("frameGeometry").toRectF(), geometry);
         // Cancellation affects only restoration, not saving the user's choice.
         window.close();
-        const auto saved = Material::readWindowState(key).value("position").toMap();
+        const auto saved = Material::readWindowState(key, Material::WindowStateScope::self()->current()).value("position").toMap();
         QCOMPARE(saved.value("x").toDouble(), geometry.x());
         QCOMPARE(saved.value("y").toDouble(), geometry.y());
     }
     void applicationGeometryChangeDoesNotCancelPendingRestore() {
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.AppMove." + QUuid::createUuid().toString());
-        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         const auto count = immediateRequests.size();
@@ -968,7 +976,7 @@ private slots:
     void doesNotRetryExecutionFailure() {
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.Failure." + QUuid::createUuid().toString());
-        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         const auto count = immediateRequests.size();
@@ -1115,7 +1123,7 @@ private slots:
     void restoresBeforeMappingSignalReturns() {
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.Immediate." + QUuid::createUuid().toString());
-        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         Material::configureWindowState(&decoration, true, true, true);
@@ -1132,7 +1140,7 @@ private slots:
             KWin::WaylandWindow window;
             setup(window, "org.example.StateTest.Prepare." + QUuid::createUuid().toString());
             window.setProperty("minimized", initiallyMinimized);
-            QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+            QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
             MaterialTest::Bridge bridge;
             StateDecoration decoration(&window, &bridge);
             prepareAvailable = true;
@@ -1156,7 +1164,7 @@ private slots:
         const auto original = QVariant::fromValue(QList<QObject *>{&oldDesktop});
         window.setProperty("desktops", original);
         window.setProperty("minimized", false);
-        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         preparedDesktops = QVariant::fromValue(QList<QObject *>{&newDesktop});
@@ -1180,7 +1188,7 @@ private slots:
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.LatePrepare." + QUuid::createUuid().toString());
         window.setProperty("minimized", false);
-        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         Material::configureWindowState(&decoration, true, true, true);
@@ -1199,7 +1207,7 @@ private slots:
             QScopedValueRollback available(prepareAvailable, false);
             KWin::WaylandWindow window;
             setup(window, "org.example.StateTest.StopPrepare." + QUuid::createUuid().toString());
-            QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+            QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
             MaterialTest::Bridge bridge;
             StateDecoration decoration(&window, &bridge);
             Material::configureWindowState(&decoration, true, true, true);
@@ -1219,7 +1227,7 @@ private slots:
         QScopedValueRollback succeeds(prepareSucceeds, false);
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.FailedPrepare." + QUuid::createUuid().toString());
-        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         const auto count = prepareCalls;
@@ -1233,7 +1241,7 @@ private slots:
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.ReassertPrepare." + QUuid::createUuid().toString());
         window.setProperty("minimized", false);
-        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         const auto count = prepareCalls;
@@ -1250,7 +1258,7 @@ private slots:
         QScopedValueRollback available(prepareAvailable, false);
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.PrepareBudget." + QUuid::createUuid().toString());
-        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window)));
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), Material::WindowStateScope::self()->current()));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
         const auto count = prepareCalls;
@@ -1293,8 +1301,9 @@ private slots:
         QCOMPARE(Material::readWindowState(key, ab).value("position"), original.value("position"));
         QCOMPARE(Material::readWindowState(key, onlyA).value("position").toMap().value("x").toInt(), 200);
         const auto unscoped = key + "-unscoped";
-        QVERIFY(Material::writeWindowState(unscoped, original));
-        QVERIFY(Material::readWindowState(unscoped, ab).isEmpty());
+        QVERIFY(!Material::writeWindowState(unscoped, original, {}));
+        QVERIFY(Material::readWindowState(key, {}).isEmpty());
+        QVERIFY(!KSharedConfig::openStateConfig(QStringLiteral("material-window-staterc"))->hasGroup(unscoped));
     }
     void reloadsStateWhenOpeningConfigurationChanges_data() {
         QTest::addColumn<int>("phase");
