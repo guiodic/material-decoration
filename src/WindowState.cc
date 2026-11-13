@@ -14,6 +14,7 @@
 #include <QMetaProperty>
 #include <QMetaMethod>
 #include <QPointer>
+#include <QQmlProperty>
 #include <QRectF>
 #include <QScopedValueRollback>
 #include <QSet>
@@ -308,7 +309,8 @@ public:
         connectSignal("maximizedAboutToChange", "maximizeStarting()");
         connectSignal("maximizedChanged", "maximizeFinished()");
         connectSignal("fullScreenChanged", "queueNormalSizeUpdate()");
-        m_originalDesktops = m_window->property("desktops");
+        for (const auto &value : m_window->property("desktops").toList())
+            m_originalDesktops.append(value.value<QObject *>());
         prepare();
     }
     void configure(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop)
@@ -319,7 +321,14 @@ public:
         m_rememberDesktop = rememberDesktop;
         if (!enabled || !rememberDesktop) m_prepareRetryTimer.stop();
         if ((!enabled || !rememberDesktop) && !m_restoreStarted) {
-            if (m_prepared && m_originalDesktops.isValid()) m_window->setProperty("desktops", m_originalDesktops);
+            if (m_prepared) {
+                QVariantList desktops;
+                for (const auto &desktop : m_originalDesktops) if (desktop) desktops.append(QVariant::fromValue(desktop.data()));
+                // An empty original list means all desktops. If every original
+                // desktop was deleted, leave KWin's current membership intact.
+                if (m_originalDesktops.isEmpty() || !desktops.isEmpty())
+                    QQmlProperty::write(m_window, QStringLiteral("desktops"), desktops);
+            }
             releaseVisibilityGuard();
             m_prepared = false;
         }
@@ -480,7 +489,7 @@ private:
             if (m_prepared) {
                 if (auto *workspace = windowStateWorkspace()) {
                     if (auto *desktop = workspace->property("currentDesktop").value<QObject *>())
-                        m_window->setProperty("desktops", QVariant::fromValue(QList<QObject *>{desktop}));
+                        QQmlProperty::write(m_window, QStringLiteral("desktops"), QVariantList{QVariant::fromValue(desktop)});
                 }
             }
             releaseVisibilityGuard();
@@ -592,7 +601,7 @@ private:
     int m_prepareAttempts = 0;
     QTimer m_prepareRetryTimer;
     bool m_visibilityGuard = false;
-    QVariant m_originalDesktops;
+    QList<QPointer<QObject>> m_originalDesktops;
     QString m_stateScope;
     QString m_stateKey;
     QVariantMap m_state;

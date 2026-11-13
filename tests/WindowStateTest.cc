@@ -20,6 +20,7 @@
 #include <QUuid>
 #include <functional>
 #include <limits>
+#include <memory>
 
 // Match the runtime base-class name without including any private KWin header.
 namespace KWin {
@@ -37,6 +38,8 @@ public:
 };
 class WaylandWindow : public QObject {
     Q_OBJECT
+    Q_PROPERTY(QList<QObject *> desktops MEMBER m_desktops)
+    QList<QObject *> m_desktops;
 public:
     void close() { Q_EMIT closed(); }
     void map() { Q_EMIT readyForPaintingChanged(); }
@@ -59,6 +62,16 @@ signals:
     void interactiveMoveResizeFinished();
 };
 }
+
+class NativeDesktop : public QObject { Q_OBJECT public: using QObject::QObject; };
+class DesktopWindow : public KWin::WaylandWindow {
+    Q_OBJECT
+    Q_PROPERTY(QList<NativeDesktop *> desktops READ desktops WRITE setDesktops)
+    QList<NativeDesktop *> m_desktops;
+public:
+    QList<NativeDesktop *> desktops() const { return m_desktops; }
+    void setDesktops(const QList<NativeDesktop *> &desktops) { m_desktops = desktops; }
+};
 
 class NativeRectangle {
     Q_GADGET
@@ -237,6 +250,45 @@ private slots:
         window.map();
         QCOMPARE(prepareRequests.size(), prepared);
         QVERIFY(!immediateRequests.last().value("rememberDesktop").toBool());
+    }
+    void disablingPreparationIgnoresDeletedDesktops_data() {
+        QTest::addColumn<int>("originalCount");
+        QTest::newRow("all-desktops") << 0;
+        QTest::newRow("only-desktop-deleted") << 1;
+        QTest::newRow("one-of-two-deleted") << 2;
+    }
+    void disablingPreparationIgnoresDeletedDesktops() {
+        QFETCH(int, originalCount);
+        QScopedValueRollback available(prepareAvailable, true);
+        QScopedValueRollback minimizes(prepareMinimizes, true);
+        NativeDesktop survivingDesktop, savedDesktop;
+        auto removedDesktop = std::make_unique<NativeDesktop>();
+        QList<NativeDesktop *> original;
+        if (originalCount == 2) original.append(&survivingDesktop);
+        if (originalCount > 0) original.append(removedDesktop.get());
+        const auto saved = QVariant::fromValue(QList<NativeDesktop *>{&savedDesktop});
+        QScopedValueRollback desktops(preparedDesktops, saved);
+        DesktopWindow window;
+        setup(window, "org.example.StateTest.DeletedDesktop." + QUuid::createUuid().toString());
+        window.setProperty("desktops", QVariant::fromValue(original));
+        window.setProperty("minimized", false);
+        auto state = Material::captureWindowState(&window);
+        state.insert("onAllDesktops", false);
+        state.insert("desktopIds", QStringList{"saved"});
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), state, Material::WindowStateScope::self()->current()));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true, true, true);
+        QVERIFY(window.property("minimized").toBool());
+        QCOMPARE(window.property("desktops"), saved);
+        removedDesktop.reset();
+        Material::configureWindowState(&decoration, true, true, false);
+        QVERIFY(!window.property("minimized").toBool());
+        const QList<NativeDesktop *> expected = originalCount == 2 ? QList<NativeDesktop *>{&survivingDesktop} :
+            originalCount == 0 ? QList<NativeDesktop *>{} : QList<NativeDesktop *>{&savedDesktop};
+        QCOMPARE(window.property("desktops").value<QList<NativeDesktop *>>(), expected);
+        window.map();
+        QCOMPARE(window.property("desktops").value<QList<NativeDesktop *>>(), expected);
     }
     void policySettingsRoundTripAndInheritThroughExceptions() {
         QTemporaryDir directory;
