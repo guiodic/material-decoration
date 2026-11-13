@@ -75,6 +75,7 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
     m_hideShadowCheckBox = new QCheckBox(i18n("Don't draw window shadow"), this);
     m_squareCornersCheckBox = new QCheckBox(i18n("Don't round window corners"), this);
     m_outlineActiveCheckBox = new QCheckBox(i18n("Paint a thin line around the window"), this);
+    m_excludeWindowPositionCheckBox = new QCheckBox(i18n("Do not remember window position"), this);
 
     optionsLayout->addWidget(m_hideTitleBarCheckBox);
     optionsLayout->addWidget(m_hideApplicationMenuCheckBox);
@@ -82,6 +83,7 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
     optionsLayout->addWidget(m_hideShadowCheckBox);
     optionsLayout->addWidget(m_squareCornersCheckBox);
     optionsLayout->addWidget(m_outlineActiveCheckBox);
+    optionsLayout->addWidget(m_excludeWindowPositionCheckBox);
 
     auto menuColorsLayout = new QFormLayout();
     m_menuColorsCombo = new QComboBox(this);
@@ -151,6 +153,7 @@ void ExceptionDialog::setException(const InternalSettingsPtr &exception)
     m_hideShadowCheckBox->setChecked(exception->hideShadow());
     m_squareCornersCheckBox->setChecked(exception->squareCorners());
     m_outlineActiveCheckBox->setChecked(exception->outlineActive());
+    m_excludeWindowPositionCheckBox->setChecked((exception->mask() & ExceptionMask::ExcludeWindowPosition) && exception->excludeWindowPosition());
     m_menuColorsCombo->setCurrentIndex((exception->mask() & ExceptionMask::MenusFollowDecorationColors)
         ? (exception->menusFollowDecorationColors() ? 1 : 2) : 0);
 
@@ -172,7 +175,8 @@ void ExceptionDialog::applyToException(InternalSettingsPtr &exception)
                ExceptionMask::HamburgerMenu |
                ExceptionMask::HideShadow |
                ExceptionMask::SquareCorners |
-               ExceptionMask::OutlineActive;
+               ExceptionMask::OutlineActive |
+               ExceptionMask::ExcludeWindowPosition;
 
     exception->setHideTitleBar(m_hideTitleBarCheckBox->isChecked());
     exception->setHideApplicationMenu(m_hideApplicationMenuCheckBox->isChecked());
@@ -180,6 +184,7 @@ void ExceptionDialog::applyToException(InternalSettingsPtr &exception)
     exception->setHideShadow(m_hideShadowCheckBox->isChecked());
     exception->setSquareCorners(m_squareCornersCheckBox->isChecked());
     exception->setOutlineActive(m_outlineActiveCheckBox->isChecked());
+    exception->setExcludeWindowPosition(m_excludeWindowPositionCheckBox->isChecked());
 
     if (m_menuColorsCombo->currentIndex() != 0) {
         mask |= ExceptionMask::MenusFollowDecorationColors;

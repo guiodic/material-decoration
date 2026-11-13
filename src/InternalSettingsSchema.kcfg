@@ -149,6 +149,15 @@
         </entry>
 
         <!-- other -->
+        <entry name="RememberWindowState" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="RememberWindowScreen" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="RememberWindowDesktop" type="Bool">
+            <default>false</default>
+        </entry>
         <entry name="LongPressEnabled" type="Bool">
             <default>true</default>
         </entry>
@@ -172,6 +181,9 @@
         </entry>
 
         <!-- exception options -->
+        <entry name="ExcludeWindowPosition" type="Bool">
+            <default>false</default>
+        </entry>
         <entry name="ExceptionPattern" type="String">
             <default></default>
         </entry>

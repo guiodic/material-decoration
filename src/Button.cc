@@ -988,7 +988,7 @@ void Button::refreshLongPressToolTip()
     } else if (type() == KDecoration3::DecorationButtonType::Close) {
         checkLongPressAction(this, QStringLiteral("Minimize to tray"), QStringLiteral("com.github.luisbocanegra.minimize2tray"), update);
     } else if (canTileWindow(deco)) {
-        checkLongPressAction(this, QStringLiteral("MaterialTilingPopupDispatch"), QStringLiteral("material-tiling"), update);
+        update(tilingScriptAvailable());
     } else {
         update(false);
     }

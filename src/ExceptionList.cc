@@ -62,6 +62,9 @@ void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettings
     dst->setLongPressEnabled(src->longPressEnabled());
     dst->setLongPressDuration(src->longPressDuration());
     dst->setDragFromButtonsEnabled(src->dragFromButtonsEnabled());
+    dst->setRememberWindowState(src->rememberWindowState());
+    dst->setRememberWindowScreen(src->rememberWindowScreen());
+    dst->setRememberWindowDesktop(src->rememberWindowDesktop());
 
     dst->setExceptionPattern(src->exceptionPattern());
     dst->setExceptionType(src->exceptionType());
@@ -72,6 +75,7 @@ void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettings
     dst->setHideApplicationMenu(src->hideApplicationMenu());
     dst->setSquareCorners(src->squareCorners());
     dst->setHideShadow(src->hideShadow());
+    dst->setExcludeWindowPosition(src->excludeWindowPosition());
 }
 
 InternalSettingsPtr cloneInternalSettings(const InternalSettingsPtr &src)
@@ -134,6 +138,7 @@ void ExceptionList::readConfig(const KSharedConfig::Ptr &config)
         exception->setHideApplicationMenu(group.readEntry("HideApplicationMenu", exception->hideApplicationMenu()));
         exception->setHamburgerMenu(group.readEntry("HamburgerMenu", exception->hamburgerMenu()));
         exception->setHideShadow(group.readEntry("HideShadow", exception->hideShadow()));
+        exception->setExcludeWindowPosition(group.readEntry("ExcludeWindowPosition", false));
         exception->setSquareCorners(group.readEntry("SquareCorners", exception->squareCorners()));
         exception->setOutlineActive(group.readEntry("OutlineActive", exception->outlineActive()));
         exception->setMenusFollowDecorationColors(group.readEntry("MenusFollowDecorationColors", exception->menusFollowDecorationColors()));
@@ -172,6 +177,7 @@ void ExceptionList::writeConfig(KSharedConfig::Ptr config)
         group.writeEntry("HideApplicationMenu", exception->hideApplicationMenu());
         group.writeEntry("HamburgerMenu", exception->hamburgerMenu());
         group.writeEntry("HideShadow", exception->hideShadow());
+        group.writeEntry("ExcludeWindowPosition", exception->excludeWindowPosition());
         group.writeEntry("SquareCorners", exception->squareCorners());
         group.writeEntry("OutlineActive", exception->outlineActive());
         group.writeEntry("MenusFollowDecorationColors", exception->menusFollowDecorationColors());

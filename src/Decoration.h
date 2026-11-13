@@ -92,7 +92,6 @@ protected:
 private:
     std::unique_ptr<TilingPopup> m_tilingPopup;
     bool m_tilingPopupOpening = false;
-    quint64 m_tilingPopupRequest = 0;
     QTimer m_tilingPopupHoverMonitor;
     QElapsedTimer m_tilingPopupOutsideTime;
 

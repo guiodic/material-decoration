@@ -483,3 +483,35 @@ msgstr "Désactivé"
 #: src/kcm/config.ui
 msgid "Use accent color for the active window border"
 msgstr "Utiliser la couleur d’accentuation pour la bordure de la fenêtre active"
+
+#: src/kcm/config.ui
+msgid "Remember window position (Wayland)"
+msgstr "Mémoriser la position des fenêtres (Wayland)"
+
+#: src/kcm/config.ui
+msgid "Save window position when a window closes and restore it when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window."
+msgstr "Enregistrer la position de la fenêtre à sa fermeture et la restaurer à sa réouverture. L’application contrôle sa taille. Nécessite le script KWin Material Tiling Popup. Les fenêtres d’une même application sans identité distincte partagent l’état de la dernière fenêtre fermée."
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Do not remember window position"
+msgstr "Ne pas mémoriser la position de la fenêtre"
+
+#: src/kcm/config.ui
+msgid "Window Management"
+msgstr "Gestion des fenêtres"
+
+#: src/kcm/config.ui
+msgid "Remember the screen where the window was last closed"
+msgstr "Mémoriser l’écran sur lequel la fenêtre a été fermée en dernier"
+
+#: src/kcm/config.ui
+msgid "Restore the saved screen. When disabled, use the screen chosen by KWin when the window opens."
+msgstr "Restaurer l’écran enregistré. Si cette option est désactivée, utiliser l’écran choisi par KWin à l’ouverture de la fenêtre."
+
+#: src/kcm/config.ui
+msgid "Remember the virtual desktop where the window was last closed"
+msgstr "Mémoriser le bureau virtuel sur lequel la fenêtre a été fermée en dernier"
+
+#: src/kcm/config.ui
+msgid "Restore the saved virtual desktop, switch to it and activate the window. When disabled, keep the desktop chosen when the window opens."
+msgstr "Restaurer le bureau virtuel enregistré, y accéder et activer la fenêtre. Si cette option est désactivée, conserver le bureau choisi à l’ouverture de la fenêtre."
