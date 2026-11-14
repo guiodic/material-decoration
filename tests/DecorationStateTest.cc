@@ -48,6 +48,46 @@ class DecorationStateTest : public QObject
             {QVariantMap{{QStringLiteral("bridge"), QVariant::fromValue<KDecoration3::DecorationBridge *>(&bridge)}}}));
     }
 
+    static QImage renderShadow(const std::shared_ptr<KDecoration3::DecorationShadow> &shadow,
+                               qreal scale, bool previewSources, const QMarginsF &canvasPadding,
+                               Qt::Edges clipEdges = {})
+    {
+        const auto texture = shadow->shadow();
+        const auto split = shadow->innerShadowRect();
+        const auto padding = shadow->padding();
+        const QSize size(240 + padding.left() + padding.right(), 180 + padding.top() + padding.bottom());
+        const QSize canvasSize(240 + canvasPadding.left() + canvasPadding.right(),
+                               180 + canvasPadding.top() + canvasPadding.bottom());
+        QImage image(canvasSize * scale, QImage::Format_ARGB32_Premultiplied);
+        image.setDevicePixelRatio(scale);
+        image.fill(Qt::transparent);
+        QPainter painter(&image);
+        if (clipEdges) {
+            const qreal left = clipEdges.testFlag(Qt::LeftEdge) ? canvasPadding.left() : 0;
+            const qreal top = clipEdges.testFlag(Qt::TopEdge) ? canvasPadding.top() : 0;
+            const qreal right = clipEdges.testFlag(Qt::RightEdge) ? canvasPadding.left() + 240 : canvasSize.width();
+            const qreal bottom = clipEdges.testFlag(Qt::BottomEdge) ? canvasPadding.top() + 180 : canvasSize.height();
+            painter.setClipRect(QRectF(left, top, right - left, bottom - top));
+        }
+        painter.translate(canvasPadding.left() - padding.left(), canvasPadding.top() - padding.top());
+        const qreal sx[] = {0, split.left(), split.right(), qreal(texture.width())};
+        const qreal sy[] = {0, split.top(), split.bottom(), qreal(texture.height())};
+        const qreal dx[] = {0, sx[1], size.width() - (sx[3] - sx[2]), qreal(size.width())};
+        const qreal dy[] = {0, sy[1], size.height() - (sy[3] - sy[2]), qreal(size.height())};
+        for (int y = 0; y < 3; ++y) {
+            for (int x = 0; x < 3; ++x) {
+                if (x == 1 && y == 1) continue;
+                QRectF source(sx[x], sy[y], sx[x + 1] - sx[x], sy[y + 1] - sy[y]);
+                // Match PreviewItem::paintShadow's QRect right()/bottom() offsets.
+                if (previewSources && x == 2 && y == 1) source.translate(-1, 0);
+                if (previewSources && x == 1 && y == 2) source.translate(0, -1);
+                painter.drawImage(QRectF(dx[x], dy[y], dx[x + 1] - dx[x], dy[y + 1] - dy[y]), texture, source);
+            }
+        }
+        painter.end();
+        return image;
+    }
+
 private slots:
     void initTestCase()
     {
@@ -269,24 +309,6 @@ private slots:
             QCOMPARE(padding.top(), edges.testFlag(Qt::TopEdge) ? 0 : full->paddingTop());
             QCOMPARE(padding.right(), edges.testFlag(Qt::RightEdge) ? 0 : full->paddingRight());
             QCOMPARE(padding.bottom(), edges.testFlag(Qt::BottomEdge) ? 0 : full->paddingBottom());
-            const auto parts = [](const auto &shadow) {
-                return std::array<QRectF, 8>{shadow->topLeftGeometry(), shadow->topGeometry(),
-                    shadow->topRightGeometry(), shadow->rightGeometry(), shadow->bottomRightGeometry(),
-                    shadow->bottomGeometry(), shadow->bottomLeftGeometry(), shadow->leftGeometry()};
-            };
-            const std::array<Qt::Edges, 8> adjacent{
-                Qt::TopEdge | Qt::LeftEdge, Qt::TopEdge, Qt::TopEdge | Qt::RightEdge, Qt::RightEdge,
-                Qt::BottomEdge | Qt::RightEdge, Qt::BottomEdge, Qt::BottomEdge | Qt::LeftEdge, Qt::LeftEdge};
-            const auto clippedParts = parts(clipped);
-            const auto fullParts = parts(full);
-            for (size_t i = 0; i < clippedParts.size(); ++i) {
-                if (edges & adjacent[i]) {
-                    QVERIFY(clippedParts[i].isEmpty());
-                } else {
-                    QVERIFY(!clippedParts[i].isEmpty());
-                    QCOMPARE(clipped->shadow().copy(clippedParts[i].toRect()), fullImage.copy(fullParts[i].toRect()));
-                }
-            }
         }
         // A clipped variant must not alter another window's shared full shadow.
         QCOMPARE(other->shadow(), full);
@@ -297,6 +319,55 @@ private slots:
         bridge.client->screenEdges = edges;
         Q_EMIT decoration->window()->adjacentScreenEdgesChanged(edges);
         QCOMPARE(decoration->shadow(), clipped);
+    }
+
+    void snappedShadowMatchesScreenClip_data()
+    {
+        QTest::addColumn<int>("mask");
+        QTest::addColumn<int>("radius");
+        QTest::addColumn<qreal>("scale");
+        for (int mask = 0; mask < 15; ++mask) {
+            for (int radius : {0, 6, 16}) {
+                for (qreal scale : {1.0, 1.25}) {
+                    QTest::newRow(qPrintable(QStringLiteral("edges-%1-radius-%2-scale-%3").arg(mask).arg(radius).arg(scale)))
+                        << mask << radius << scale;
+                }
+            }
+        }
+    }
+
+    void snappedShadowMatchesScreenClip()
+    {
+        QFETCH(int, mask);
+        QFETCH(int, radius);
+        QFETCH(qreal, scale);
+        auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        auto group = config->group(QStringLiteral("Windeco"));
+        group.writeEntry("ShadowSize", 2);
+        group.writeEntry("CornerRadius", radius);
+        group.writeEntry("SquareCornersTiled", false);
+        QVERIFY(config->sync());
+        MaterialTest::Bridge bridge;
+        auto decoration = create(bridge);
+        QVERIFY(decoration);
+        bridge.client->outputScale = scale;
+        decoration->create();
+        decoration->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&bridge));
+        QVERIFY(decoration->init());
+        Q_EMIT decoration->settings()->reconfigured();
+        const auto full = decoration->shadow();
+        QVERIFY(full);
+        const auto edges = Qt::Edges::fromInt(mask);
+        // Compare at texture resolution; independently resizing raster tiles can
+        // introduce sampling differences at fractional scales. The window scale
+        // still exercises pixel-snapped corner radii during shadow generation.
+        const auto expected = renderShadow(full, 1, false, full->padding(), edges);
+        bridge.client->screenEdges = edges;
+        Q_EMIT decoration->window()->adjacentScreenEdgesChanged(edges);
+        const auto clipped = decoration->shadow();
+        QVERIFY(clipped);
+        const auto actual = renderShadow(clipped, 1, false, full->padding());
+        QCOMPARE(actual, expected);
     }
 
     void shadedShadowKeepsBottomEdge()
@@ -314,15 +385,15 @@ private slots:
         Q_EMIT decoration->settings()->reconfigured();
         const auto tiled = decoration->shadow();
         QVERIFY(tiled);
-        QVERIFY(tiled->bottomGeometry().isEmpty());
+        QCOMPARE(tiled->paddingBottom(), 0);
         bridge.client->shaded = true;
         Q_EMIT decoration->window()->shadedChanged(true);
         const auto shaded = decoration->shadow();
         QVERIFY(shaded);
         QVERIFY(!shaded->bottomGeometry().isEmpty());
         QVERIFY(shaded->paddingBottom() > 0);
-        QVERIFY(shaded->leftGeometry().isEmpty());
-        QVERIFY(shaded->topGeometry().isEmpty());
+        QCOMPARE(shaded->paddingLeft(), 0);
+        QCOMPARE(shaded->paddingTop(), 0);
         bridge.client->shaded = false;
         Q_EMIT decoration->window()->shadedChanged(false);
         QCOMPARE(decoration->shadow(), tiled);
@@ -415,34 +486,8 @@ private slots:
         QCOMPARE(candidate->padding(), reference->padding());
         QCOMPARE(candidate->innerShadowRect(), reference->innerShadowRect());
 
-        const auto render = [](const auto &shadow, qreal scale, bool previewSources) {
-            const auto texture = shadow->shadow();
-            const auto split = shadow->innerShadowRect();
-            const auto padding = shadow->padding();
-            const QSize size(240 + padding.left() + padding.right(), 180 + padding.top() + padding.bottom());
-            QImage image(size * scale, QImage::Format_ARGB32_Premultiplied);
-            image.setDevicePixelRatio(scale);
-            image.fill(Qt::transparent);
-            QPainter painter(&image);
-            const qreal sx[] = {0, split.left(), split.right(), qreal(texture.width())};
-            const qreal sy[] = {0, split.top(), split.bottom(), qreal(texture.height())};
-            const qreal dx[] = {0, sx[1], size.width() - (sx[3] - sx[2]), qreal(size.width())};
-            const qreal dy[] = {0, sy[1], size.height() - (sy[3] - sy[2]), qreal(size.height())};
-            for (int y = 0; y < 3; ++y) {
-                for (int x = 0; x < 3; ++x) {
-                    if (x == 1 && y == 1) continue;
-                    QRectF source(sx[x], sy[y], sx[x + 1] - sx[x], sy[y + 1] - sy[y]);
-                    // Match PreviewItem::paintShadow's QRect right()/bottom() offsets.
-                    if (previewSources && x == 2 && y == 1) source.translate(-1, 0);
-                    if (previewSources && x == 1 && y == 2) source.translate(0, -1);
-                    painter.drawImage(QRectF(dx[x], dy[y], dx[x + 1] - dx[x], dy[y + 1] - dy[y]), texture, source);
-                }
-            }
-            painter.end();
-            return image;
-        };
         for (qreal scale : {1.0, 1.25, 1.5, 1.75, 2.0}) {
-            QCOMPARE(render(candidate, scale, true), render(reference, scale, false));
+            QCOMPARE(renderShadow(candidate, scale, true, candidate->padding()), renderShadow(reference, scale, false, reference->padding()));
         }
     }
 

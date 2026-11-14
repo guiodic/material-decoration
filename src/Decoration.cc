@@ -1028,24 +1028,23 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
 
     QRect innerShadowRect(outerRect.center(), QSize(1, 1));
     if (excludedEdges) {
-        // Remove entire nine-patch columns/rows, including their corner tiles.
-        // Empty tile geometry lets KWin omit those sides instead of drawing
-        // transparent pixels or moving the shadow behind the decoration.
+        // Clip at the window boundary, preserving the in-frame corner pixels
+        // needed to join the shadow of a free, rounded edge.
         QRect croppedRect = outerRect;
         if (excludedEdges.testFlag(Qt::LeftEdge)) {
-            croppedRect.setLeft(innerShadowRect.left());
+            croppedRect.setLeft(outerRect.left() + padding.left());
             padding.setLeft(0);
         }
         if (excludedEdges.testFlag(Qt::TopEdge)) {
-            croppedRect.setTop(innerShadowRect.top());
+            croppedRect.setTop(outerRect.top() + padding.top());
             padding.setTop(0);
         }
         if (excludedEdges.testFlag(Qt::RightEdge)) {
-            croppedRect.setRight(innerShadowRect.right());
+            croppedRect.setRight(outerRect.right() - padding.right());
             padding.setRight(0);
         }
         if (excludedEdges.testFlag(Qt::BottomEdge)) {
-            croppedRect.setBottom(innerShadowRect.bottom());
+            croppedRect.setBottom(outerRect.bottom() - padding.bottom());
             padding.setBottom(0);
         }
         shadowTexture = shadowTexture.copy(croppedRect);
