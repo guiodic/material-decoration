@@ -47,6 +47,7 @@ target_link_libraries(materialdecoration_kcm
         KF6::CoreAddons
         KF6::I18n
         KF6::KCMUtils
+        KF6::WindowSystem
 )
 
 target_include_directories(materialdecoration_kcm

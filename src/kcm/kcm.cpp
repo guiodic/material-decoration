@@ -9,6 +9,7 @@
 
 #include <KLocalizedString>
 #include <KPluginFactory>
+#include <KWindowSystem>
 
 #include <QDBusConnection>
 #include <QDBusMessage>
@@ -28,6 +29,8 @@ MaterialDecorationKCM::MaterialDecorationKCM(QObject *parent, const KPluginMetaD
     , m_settings(std::make_unique<Material::InternalSettings>())
 {
     m_ui->setupUi(widget());
+    if (KWindowSystem::isPlatformX11())
+        m_ui->tabWidget->setTabVisible(m_ui->tabWidget->indexOf(m_ui->windowManagementTab), false);
 
     if (auto *bar = m_ui->tabWidget->findChild<QTabBar *>()) {
         bar->setExpanding(true);
