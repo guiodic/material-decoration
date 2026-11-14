@@ -5,7 +5,8 @@
 **Identify the window.** The decoration reads Qt properties from its parent,
 the KWin window. A SHA-256 key combines the application's `desktopFileName`
 (falling back to `resourceClass`) and Wayland tag. Window titles
-are not used. Windows without distinct roles or tags share the same state.
+and window roles are not used. Windows of the same application without distinct
+tags share the same state.
 
 **Save the state.** KConfig stores JSON in
 `$XDG_STATE_HOME/material-window-staterc` (normally
@@ -46,7 +47,9 @@ independently.
 - **Eligibility:** experimental, disabled by default, and enabled in the KCM's
   Window Management tab. Requires the Material Tiling Popup KWin script. Applies
   to normal, non-transient Wayland windows that use this decoration; excludes
-  X11/XWayland windows, dialogs and popups. Per-window exceptions can disable it
+  X11/XWayland windows, dialogs and popups. On X11, the KCM tab is hidden and
+  restoration initialization returns before accessing the decoration parent.
+  Per-window exceptions can disable it
   through normal decoration settings updates; App ID changes are not monitored.
 - **Restored data:** position and native quick or custom tiling. Quick tiling
   uses the current tile proportions unless the window was explicitly resized
@@ -73,8 +76,10 @@ independently.
   unambiguous. App-requested maximization and fullscreen take precedence;
   maximized, fullscreen and minimized states are not persisted.
 - **Placement:** positions are translated relative to the saved screen origin
-  and constrained to the available work area. Floating windows cascade to avoid nearby placements
-  by 1.25 times the title-bar height, with a 30-pixel fallback when unavailable.
+  and constrained to the available work area. Floating window positions are
+  considered overlapping when their horizontal and vertical offsets are both
+  less than the title-bar height. Windows cascade by 1.25 times that height,
+  with a 30-pixel height fallback when unavailable.
   Collision checks consider matching screen, desktop and activity contexts.
 - **Disconnected screens:** automatic relocation to a remaining screen preserves
   the old configuration's placement. An interactive move or resize afterwards
