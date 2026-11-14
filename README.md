@@ -2,7 +2,11 @@
 
 
 # material-decoration
-Material-ish window decoration theme for KWin.
+Material-ish window decoration theme for KWin with Locally Integrated Menu and Menu Search and Window Position Restoration.
+Based on zzag's original design. 
+LIM introduction by Zren. 
+Ported to QT6 by nicman23.
+Maintained and improved (search, wayland support, window management) by guiodic.
 
 
 ### Locally Integrated Menu & Search
