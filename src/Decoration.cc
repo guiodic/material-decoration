@@ -183,6 +183,7 @@ struct ShadowCacheKey {
     int size;
     int strength;
     qreal cornerRadius;
+    Qt::Edges excludedEdges;
     bool preview;
 
     bool operator==(const ShadowCacheKey &) const = default;
@@ -915,11 +916,22 @@ void Decoration::updateShadow()
         return;
     }
 
+    Qt::Edges excludedEdges = window()->adjacentScreenEdges();
+    if (window()->isShaded()) {
+        // A shaded window no longer reaches the tile's bottom edge.
+        excludedEdges &= ~Qt::BottomEdge;
+    }
+    if (excludedEdges == (Qt::LeftEdge | Qt::TopEdge | Qt::RightEdge | Qt::BottomEdge)) {
+        setShadow(nullptr);
+        return;
+    }
+
     const ShadowCacheKey key{
         m_internalSettings->shadowColor(),
         m_internalSettings->shadowSize(),
         m_internalSettings->shadowStrength(),
         m_cornerRadius,
+        excludedEdges,
         property("visualParent").isValid(),
     };
     const auto cached = std::find_if(s_shadowCache.begin(), s_shadowCache.end(), [&key](const auto &entry) {
@@ -931,7 +943,7 @@ void Decoration::updateShadow()
         return;
     }
 
-    auto shadow = createShadowObject(1.0, key.cornerRadius);
+    auto shadow = createShadowObject(1.0, key.cornerRadius, key.excludedEdges);
     if (shadow) {
         s_shadowCache.push_front({key, shadow});
         // Retain common corner/scale variants without keeping every past setting.
@@ -942,7 +954,7 @@ void Decoration::updateShadow()
     setShadow(shadow);
 }
 
-std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(const float strengthScale, qreal cornerRadius)
+std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(const float strengthScale, qreal cornerRadius, Qt::Edges excludedEdges)
 {
     CompositeShadowParams params = lookupShadowParams(m_internalSettings->shadowSize());
     if (params.isNone()) {
@@ -982,7 +994,7 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
     // Klassy adjusts the padding and derives the cutout directly from it.
     const bool preview = property("visualParent").isValid();
     constexpr int shadowOverlap = 3;
-    const QMargins padding(boxRect.left() - outerRect.left() - shadowOverlap - params.offset.x(),
+    QMargins padding(boxRect.left() - outerRect.left() - shadowOverlap - params.offset.x(),
                            boxRect.top() - outerRect.top() - shadowOverlap - params.offset.y(),
                            outerRect.right() - boxRect.right() - shadowOverlap + params.offset.x(),
                            outerRect.bottom() - boxRect.bottom() - shadowOverlap + params.offset.y());
@@ -1014,9 +1026,38 @@ std::shared_ptr<KDecoration3::DecorationShadow> Decoration::createShadowObject(c
         reinterpret_cast<QRgb *>(shadowTexture.scanLine(source.height() - 1))[center.x()] = 0;
     }
 
+    QRect innerShadowRect(outerRect.center(), QSize(1, 1));
+    if (excludedEdges) {
+        // Remove entire nine-patch columns/rows, including their corner tiles.
+        // Empty tile geometry lets KWin omit those sides instead of drawing
+        // transparent pixels or moving the shadow behind the decoration.
+        QRect croppedRect = outerRect;
+        if (excludedEdges.testFlag(Qt::LeftEdge)) {
+            croppedRect.setLeft(innerShadowRect.left());
+            padding.setLeft(0);
+        }
+        if (excludedEdges.testFlag(Qt::TopEdge)) {
+            croppedRect.setTop(innerShadowRect.top());
+            padding.setTop(0);
+        }
+        if (excludedEdges.testFlag(Qt::RightEdge)) {
+            croppedRect.setRight(innerShadowRect.right());
+            padding.setRight(0);
+        }
+        if (excludedEdges.testFlag(Qt::BottomEdge)) {
+            croppedRect.setBottom(innerShadowRect.bottom());
+            padding.setBottom(0);
+        }
+        shadowTexture = shadowTexture.copy(croppedRect);
+        if (shadowTexture.isNull()) {
+            return nullptr;
+        }
+        innerShadowRect.translate(-croppedRect.topLeft());
+    }
+
     auto ret = std::make_shared<KDecoration3::DecorationShadow>();
     ret->setPadding(padding);
-    ret->setInnerShadowRect(QRect(outerRect.center(), QSize(1, 1)));
+    ret->setInnerShadowRect(innerShadowRect);
     ret->setShadow(shadowTexture);
     return ret;
 }

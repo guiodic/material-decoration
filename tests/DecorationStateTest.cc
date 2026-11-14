@@ -165,10 +165,14 @@ private slots:
         QVERIFY(shadow);
         const auto rounded = decoration->currentState()->borderRadius();
         std::shared_ptr<KDecoration3::DecorationShadow> squareShadow;
-        const auto checkSquare = [&] {
+        const auto checkSquare = [&](bool screenAttached = false) {
             decoration->apply(decoration->nextState()->clone());
             QVERIFY(decoration->currentState()->borderRadius() == KDecoration3::BorderRadius());
             QVERIFY(decoration->shadow());
+            if (screenAttached) {
+                QVERIFY(decoration->shadow() != shadow);
+                return;
+            }
             if (squareShadow) {
                 QCOMPARE(decoration->shadow(), squareShadow);
             } else {
@@ -178,7 +182,7 @@ private slots:
         };
         bridge.client->screenEdges = Qt::LeftEdge | Qt::TopEdge | Qt::BottomEdge;
         Q_EMIT decoration->window()->adjacentScreenEdgesChanged(bridge.client->screenEdges);
-        checkSquare();
+        checkSquare(true);
         bridge.client->screenEdges = {};
         Q_EMIT decoration->window()->adjacentScreenEdgesChanged({});
         QCOMPARE(decoration->shadow(), shadow);
@@ -208,6 +212,120 @@ private slots:
         QCOMPARE(decoration->shadow(), shadow);
         config->deleteGroup(QStringLiteral("Windeco Exception 0"));
         QVERIFY(config->sync());
+    }
+
+    void shadowScreenEdges_data()
+    {
+        QTest::addColumn<int>("mask");
+        QTest::addColumn<qreal>("scale");
+        for (int mask = 0; mask < 16; ++mask) {
+            for (qreal scale : {1.0, 1.25}) {
+                QTest::newRow(qPrintable(QStringLiteral("edges-%1-scale-%2").arg(mask).arg(scale))) << mask << scale;
+            }
+        }
+    }
+
+    void shadowScreenEdges()
+    {
+        QFETCH(int, mask);
+        QFETCH(qreal, scale);
+        const auto edges = Qt::Edges::fromInt(mask);
+        auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        auto group = config->group(QStringLiteral("Windeco"));
+        group.writeEntry("ShadowSize", 2);
+        group.writeEntry("SquareCornersTiled", false);
+        QVERIFY(config->sync());
+        MaterialTest::Bridge bridge;
+        auto decoration = create(bridge);
+        QVERIFY(decoration);
+        bridge.client->outputScale = scale;
+        decoration->create();
+        decoration->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&bridge));
+        QVERIFY(decoration->init());
+        Q_EMIT decoration->settings()->reconfigured();
+        const auto full = decoration->shadow();
+        QVERIFY(full);
+        const QImage fullImage = full->shadow();
+
+        MaterialTest::Bridge otherBridge;
+        auto other = create(otherBridge);
+        QVERIFY(other);
+        otherBridge.client->outputScale = scale;
+        other->create();
+        other->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&otherBridge));
+        QVERIFY(other->init());
+        QCOMPARE(other->shadow(), full);
+
+        bridge.client->screenEdges = edges;
+        Q_EMIT decoration->window()->adjacentScreenEdgesChanged(edges);
+        const auto clipped = decoration->shadow();
+        if (mask == 15) {
+            QVERIFY(!clipped);
+        } else {
+            QVERIFY(clipped);
+            QCOMPARE(clipped == full, mask == 0);
+            const auto padding = clipped->padding();
+            QCOMPARE(padding.left(), edges.testFlag(Qt::LeftEdge) ? 0 : full->paddingLeft());
+            QCOMPARE(padding.top(), edges.testFlag(Qt::TopEdge) ? 0 : full->paddingTop());
+            QCOMPARE(padding.right(), edges.testFlag(Qt::RightEdge) ? 0 : full->paddingRight());
+            QCOMPARE(padding.bottom(), edges.testFlag(Qt::BottomEdge) ? 0 : full->paddingBottom());
+            const auto parts = [](const auto &shadow) {
+                return std::array<QRectF, 8>{shadow->topLeftGeometry(), shadow->topGeometry(),
+                    shadow->topRightGeometry(), shadow->rightGeometry(), shadow->bottomRightGeometry(),
+                    shadow->bottomGeometry(), shadow->bottomLeftGeometry(), shadow->leftGeometry()};
+            };
+            const std::array<Qt::Edges, 8> adjacent{
+                Qt::TopEdge | Qt::LeftEdge, Qt::TopEdge, Qt::TopEdge | Qt::RightEdge, Qt::RightEdge,
+                Qt::BottomEdge | Qt::RightEdge, Qt::BottomEdge, Qt::BottomEdge | Qt::LeftEdge, Qt::LeftEdge};
+            const auto clippedParts = parts(clipped);
+            const auto fullParts = parts(full);
+            for (size_t i = 0; i < clippedParts.size(); ++i) {
+                if (edges & adjacent[i]) {
+                    QVERIFY(clippedParts[i].isEmpty());
+                } else {
+                    QVERIFY(!clippedParts[i].isEmpty());
+                    QCOMPARE(clipped->shadow().copy(clippedParts[i].toRect()), fullImage.copy(fullParts[i].toRect()));
+                }
+            }
+        }
+        // A clipped variant must not alter another window's shared full shadow.
+        QCOMPARE(other->shadow(), full);
+        QCOMPARE(full->shadow(), fullImage);
+        bridge.client->screenEdges = {};
+        Q_EMIT decoration->window()->adjacentScreenEdgesChanged({});
+        QCOMPARE(decoration->shadow(), full);
+        bridge.client->screenEdges = edges;
+        Q_EMIT decoration->window()->adjacentScreenEdgesChanged(edges);
+        QCOMPARE(decoration->shadow(), clipped);
+    }
+
+    void shadedShadowKeepsBottomEdge()
+    {
+        auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        config->group(QStringLiteral("Windeco")).writeEntry("ShadowSize", 2);
+        QVERIFY(config->sync());
+        MaterialTest::Bridge bridge;
+        auto decoration = create(bridge);
+        QVERIFY(decoration);
+        bridge.client->screenEdges = Qt::LeftEdge | Qt::TopEdge | Qt::BottomEdge;
+        decoration->create();
+        decoration->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&bridge));
+        QVERIFY(decoration->init());
+        Q_EMIT decoration->settings()->reconfigured();
+        const auto tiled = decoration->shadow();
+        QVERIFY(tiled);
+        QVERIFY(tiled->bottomGeometry().isEmpty());
+        bridge.client->shaded = true;
+        Q_EMIT decoration->window()->shadedChanged(true);
+        const auto shaded = decoration->shadow();
+        QVERIFY(shaded);
+        QVERIFY(!shaded->bottomGeometry().isEmpty());
+        QVERIFY(shaded->paddingBottom() > 0);
+        QVERIFY(shaded->leftGeometry().isEmpty());
+        QVERIFY(shaded->topGeometry().isEmpty());
+        bridge.client->shaded = false;
+        Q_EMIT decoration->window()->shadedChanged(false);
+        QCOMPARE(decoration->shadow(), tiled);
     }
 
     void shadowCacheEviction()
@@ -255,14 +373,24 @@ private slots:
         QVERIFY(decoration->shadow() != shadows[1]);
     }
 
+    void previewShadowTileContinuity_data()
+    {
+        QTest::addColumn<int>("mask");
+        for (int mask = 0; mask < 16; ++mask) {
+            QTest::newRow(qPrintable(QStringLiteral("edges-%1").arg(mask))) << mask;
+        }
+    }
+
     void previewShadowTileContinuity()
     {
+        QFETCH(int, mask);
         auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
         config->group(QStringLiteral("Windeco")).writeEntry("ShadowSize", 2);
         QVERIFY(config->sync());
         MaterialTest::Bridge realBridge;
         auto real = create(realBridge);
         QVERIFY(real);
+        realBridge.client->screenEdges = Qt::Edges::fromInt(mask);
         real->create();
         real->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&realBridge));
         QVERIFY(real->init());
@@ -270,12 +398,18 @@ private slots:
         MaterialTest::Bridge previewBridge;
         auto preview = create(previewBridge);
         QVERIFY(preview);
+        previewBridge.client->screenEdges = Qt::Edges::fromInt(mask);
         preview->setProperty("visualParent", QVariant::fromValue<QObject *>(this));
         preview->create();
         preview->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&previewBridge));
         QVERIFY(preview->init());
         const auto reference = real->shadow();
         const auto candidate = preview->shadow();
+        if (mask == 15) {
+            QVERIFY(!reference);
+            QVERIFY(!candidate);
+            return;
+        }
         QVERIFY(reference);
         QVERIFY(candidate);
         QCOMPARE(candidate->padding(), reference->padding());
