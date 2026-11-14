@@ -5,6 +5,7 @@
 
 #include <KConfigGroup>
 #include <KSharedConfig>
+#include <KWindowSystem>
 #include <KDecoration3/Decoration>
 #include <QCryptographicHash>
 #include <QHash>
@@ -688,6 +689,7 @@ private:
 
 void configureWindowState(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows)
 {
+    if (KWindowSystem::isPlatformX11()) return;
     auto *window = decoration->parent();
     if (!window) return;
     auto *controller = window->findChild<WindowStateController *>(QString(), Qt::FindDirectChildrenOnly);
