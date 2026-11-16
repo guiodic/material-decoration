@@ -44,7 +44,7 @@ independently.
 
 ## 2. Current restoration policies
 
-- **Eligibility:** experimental, disabled by default, and enabled in the KCM's
+- **Eligibility:** experimental, enabled by default, and configurable in the KCM's
   Window Management tab. Requires the Material Tiling Popup KWin script. Applies
   to normal, non-transient Wayland windows that use this decoration; excludes
   X11/XWayland windows, dialogs and popups. On X11, the KCM tab is hidden and
@@ -81,7 +81,7 @@ independently.
   less than the title-bar height. Windows cascade by 1.25 times that height,
   with a 30-pixel height fallback when unavailable.
   Collision checks consider matching screen, desktop and activity contexts. The
-  **Let KWin place additional windows of the same application** option (off by
+  **Let KWin place additional windows of the same application** option (on by
   default) bypasses restoration when another normal, non-transient window of the
   same application is already open, including on another screen or desktop or
   when minimized. This comparison uses App ID (falling back to resource class),

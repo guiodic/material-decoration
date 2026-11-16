@@ -82,9 +82,9 @@ button) in the application interface associated with that shortcut.
 
 
 # Restore Window position
-You can enable position restore in the configuration module's **Window Management**
-tab when windows are closed and reopened. Also enable the **Material Tiling Popup** script in
-**System Settings > Window Management > KWin Scripts** to use this feature.
+Position restoration is enabled by default and can be configured in the
+configuration module's **Window Management** tab. The **Material Tiling Popup**
+script must also be enabled in **System Settings > Window Management > KWin Scripts**.
 It supports native Wayland windows only; X11 (XWayland) windows are excluded; they are already
 managed by kwin/xwayland.
 It works with apps that use Kwin-managed decorations. For other apps 
@@ -95,8 +95,10 @@ configuration of virtual desktops. Restoring the last screen is enabled by defau
 Restoring the last virtual desktop is optional and disabled by default; enabling
 it also switches to the restored desktop and activates the window.
 The normal size of a tiled window is retained for unsnapping after reopening.
-A new floating window with the same identity can also recover that normal size
-if it inherits the dimensions of the tiled window while the latter is still open.
+By default, additional windows of the same application are left entirely to KWin
+when another normal window is already open. If this option is disabled, a new
+floating window with the same identity can also recover the normal size if it
+inherits the dimensions of a tiled window that is still open.
 Windows of the same application without distinct Wayland tags
 share the state of the last closed window.
 

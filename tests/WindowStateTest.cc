@@ -184,33 +184,33 @@ private slots:
         defaultWorkspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{}));
         testWorkspace = &defaultWorkspace;
     }
-    void disabledByDefault() {
+    void defaultsAndSettingsCopy() {
         Material::InternalSettings settings;
         settings.setDefaults();
-        QVERIFY(!settings.rememberWindowState());
+        QVERIFY(settings.rememberWindowState());
         QVERIFY(settings.rememberWindowScreen());
         QVERIFY(!settings.rememberWindowDesktop());
         QVERIFY(!settings.resizeOtherTiledWindows());
-        QVERIFY(!settings.useKWinPlacementForAdditionalWindows());
+        QVERIFY(settings.useKWinPlacementForAdditionalWindows());
         auto source = Material::InternalSettingsPtr::create();
         auto copy = Material::InternalSettingsPtr::create();
-        source->setRememberWindowState(true);
+        source->setRememberWindowState(false);
         source->setRememberWindowScreen(false);
         source->setRememberWindowDesktop(true);
         source->setResizeOtherTiledWindows(true);
-        source->setUseKWinPlacementForAdditionalWindows(true);
+        source->setUseKWinPlacementForAdditionalWindows(false);
         Material::copyInternalSettings(source, copy);
-        QVERIFY(copy->rememberWindowState());
+        QVERIFY(!copy->rememberWindowState());
         QVERIFY(!copy->rememberWindowScreen());
         QVERIFY(copy->rememberWindowDesktop());
         QVERIFY(copy->resizeOtherTiledWindows());
-        QVERIFY(copy->useKWinPlacementForAdditionalWindows());
+        QVERIFY(!copy->useKWinPlacementForAdditionalWindows());
     }
     void additionalWindowPlacement_data() {
         QTest::addColumn<bool>("enabled");
         QTest::addColumn<QString>("otherKind");
         QTest::addColumn<bool>("skip");
-        QTest::newRow("default-policy") << false << QString("same") << false;
+        QTest::newRow("policy-disabled") << false << QString("same") << false;
         QTest::newRow("first-window") << true << QString("none") << false;
         QTest::newRow("same-application") << true << QString("same") << true;
         QTest::newRow("different-tags") << true << QString("tagged") << true;
@@ -650,20 +650,20 @@ private slots:
         settings.setSharedConfig(config);
         settings.load();
         settings.setDefaults();
-        settings.setRememberWindowState(true);
+        settings.setRememberWindowState(false);
         settings.setRememberWindowScreen(false);
         settings.setRememberWindowDesktop(true);
         settings.setResizeOtherTiledWindows(true);
-        settings.setUseKWinPlacementForAdditionalWindows(true);
+        settings.setUseKWinPlacementForAdditionalWindows(false);
         settings.save();
         Material::InternalSettings loaded;
         loaded.setSharedConfig(config);
         loaded.load();
-        QVERIFY(loaded.rememberWindowState());
+        QVERIFY(!loaded.rememberWindowState());
         QVERIFY(!loaded.rememberWindowScreen());
         QVERIFY(loaded.rememberWindowDesktop());
         QVERIFY(loaded.resizeOtherTiledWindows());
-        QVERIFY(loaded.useKWinPlacementForAdditionalWindows());
+        QVERIFY(!loaded.useKWinPlacementForAdditionalWindows());
         Material::SettingsProvider provider;
         auto defaults = Material::InternalSettingsPtr::create();
         defaults->setRememberWindowState(true);

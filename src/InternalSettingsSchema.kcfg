@@ -150,7 +150,7 @@
 
         <!-- other -->
         <entry name="RememberWindowState" type="Bool">
-            <default>false</default>
+            <default>true</default>
         </entry>
         <entry name="RememberWindowScreen" type="Bool">
             <default>true</default>
@@ -159,7 +159,7 @@
             <default>false</default>
         </entry>
         <entry name="UseKWinPlacementForAdditionalWindows" type="Bool">
-            <default>false</default>
+            <default>true</default>
         </entry>
         <entry name="ResizeOtherTiledWindows" type="Bool">
             <default>false</default>
