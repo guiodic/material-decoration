@@ -1,0 +1,998 @@
+# Translation of materialdecoration into tr.
+# SPDX-FileCopyrightText: 2026 Guido Iodice <guido.iodice@gmail.com>
+# This file is distributed under the same license as materialdecoration.
+msgid ""
+msgstr ""
+"Project-Id-Version: materialdecoration\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-27 00:03+0000\n"
+"PO-Revision-Date: 2026-11-16 17:50+0100\n"
+"Last-Translator: Guido Iodice <guido.iodice@gmail.com>\n"
+"Language-Team: tr\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: src/Button.cc:929
+#, kde-format
+msgid "Press and hold to minimize other windows"
+msgstr "Diğer pencereleri küçültmek için basılı tutun"
+
+#: src/Button.cc:932
+#, kde-format
+msgid "Press and hold to show snapping zones"
+msgstr "Yerleştirme bölgelerini göstermek için basılı tutun"
+
+#: src/Button.cc:935
+#, kde-format
+msgid "Press and hold to minimize to the notification area"
+msgstr "Bildirim alanına küçültmek için basılı tutun"
+
+#: src/Button.cc:1012
+#, kde-format
+msgid ""
+"Install kwin-minimize2tray and enable Minimize to Tray in System Settings > "
+"Window Management > KWin Scripts."
+msgstr "kwin-minimize2tray eklentisini kurun ve Sistem Ayarları > Pencere Yönetimi > KWin Betikleri bölümünde Minimize to Tray özelliğini etkinleştirin."
+
+#: src/Button.cc:1018
+#, kde-format
+msgid ""
+"The action to minimize all other windows is unavailable. It requires Plasma "
+"6.6 or later."
+msgstr "Diğer tüm pencereleri küçültme eylemi kullanılamıyor. Plasma 6.6 veya sonrası gerekir."
+
+#: src/Decoration.cc:248
+#, kde-format
+msgid ""
+"Enable the Material Tiling Popup script in System Settings > Window "
+"Management > KWin Scripts."
+msgstr "Sistem Ayarları > Pencere Yönetimi > KWin Betikleri bölümünde Material Tiling Popup betiğini etkinleştirin."
+
+#: src/Decoration.cc:267
+#, kde-format
+msgid "The custom tile is unavailable. Open the popup again."
+msgstr "Özel döşeme kullanılamıyor. Açılır pencereyi yeniden açın."
+
+#: src/TilingPopup.cc:18
+#, kde-format
+msgid "Left half"
+msgstr "Sol yarı"
+
+#: src/TilingPopup.cc:19
+#, kde-format
+msgid "Right half"
+msgstr "Sağ yarı"
+
+#: src/TilingPopup.cc:20
+#, kde-format
+msgid "Top half"
+msgstr "Üst yarı"
+
+#: src/TilingPopup.cc:21
+#, kde-format
+msgid "Bottom half"
+msgstr "Alt yarı"
+
+#: src/TilingPopup.cc:22
+#, kde-format
+msgid "Top left quarter"
+msgstr "Sol üst çeyrek"
+
+#: src/TilingPopup.cc:23
+#, kde-format
+msgid "Top right quarter"
+msgstr "Sağ üst çeyrek"
+
+#: src/TilingPopup.cc:24
+#, kde-format
+msgid "Bottom left quarter"
+msgstr "Sol alt çeyrek"
+
+#: src/TilingPopup.cc:25
+#, kde-format
+msgid "Bottom right quarter"
+msgstr "Sağ alt çeyrek"
+
+#: src/TilingPopup.cc:36
+#, kde-format
+msgid "Window tiling layouts"
+msgstr "Pencere döşeme düzenleri"
+
+#: src/TilingPopup.cc:50
+#, kde-format
+msgid "Custom tiling layout (Meta+T)"
+msgstr "Özel döşeme düzeni (Meta+T)"
+
+#: src/TilingPopup.cc:51
+#, kde-format
+msgid "Custom layout unavailable"
+msgstr "Özel düzen kullanılamıyor"
+
+#: src/TilingPopup.cc:79
+#, kde-format
+msgid "Meta+T to edit snapping zones"
+msgstr "Yerleştirme bölgelerini düzenlemek için Meta+T"
+
+#: src/TilingPopup.cc:102
+#, kde-format
+msgid "Custom tile %1"
+msgstr "Özel döşeme %1"
+
+#: src/kcm/DetectDialog.cc:37
+#, kde-format
+msgid "Detect Window Properties"
+msgstr "Pencere Özelliklerini Algıla"
+
+#: src/kcm/DetectDialog.cc:41
+#, kde-format
+msgid ""
+"Click 'Detect' and then click on the target window to capture its properties."
+msgstr "Özellikleri almak için önce «Algıla»ya, ardından hedef pencereye tıklayın."
+
+#: src/kcm/DetectDialog.cc:46
+#, kde-format
+msgid "Detect"
+msgstr "Algıla"
+
+#: src/kcm/DetectDialog.cc:60
+#, kde-format
+msgid "Querying KWin for window information..."
+msgstr "KWin üzerinden pencere bilgileri sorgulanıyor..."
+
+#: src/kcm/DetectDialog.cc:80 src/kcm/DetectDialog.cc:81
+#, kde-format
+msgid "(unavailable)"
+msgstr "(kullanılamıyor)"
+
+#: src/kcm/DetectDialog.cc:83
+#, kde-format
+msgid ""
+"Captured Window Class: %1\n"
+"Captured Window Title: %2"
+msgstr ""
+"Algılanan pencere sınıfı: %1\n"
+"Algılanan pencere başlığı: %2"
+
+#: src/kcm/DetectDialog.cc:86
+#, kde-format
+msgid "Failed to detect window info: %1"
+msgstr "Pencere bilgileri algılanamadı: %1"
+
+#: src/kcm/ExceptionDialog.cc:40
+#, kde-format
+msgid "Window Exception Settings"
+msgstr "Pencere İstisnası Ayarları"
+
+#: src/kcm/ExceptionDialog.cc:45
+#, kde-format
+msgid "Window Identification"
+msgstr "Pencere Tanımlama"
+
+#: src/kcm/ExceptionDialog.cc:49
+#, kde-format
+msgid "Detect Window Properties..."
+msgstr "Pencere özelliklerini algıla..."
+
+#: src/kcm/ExceptionDialog.cc:55
+#, kde-format
+msgid "Window Property / Pattern:"
+msgstr "Pencere özelliği / kalıp:"
+
+#: src/kcm/ExceptionDialog.cc:58
+#, kde-format
+msgid "Window Class"
+msgstr "Pencere Sınıfı"
+
+#: src/kcm/ExceptionDialog.cc:58
+#, kde-format
+msgid "Window Title"
+msgstr "Pencere Başlığı"
+
+#: src/kcm/ExceptionDialog.cc:60
+#, kde-format
+msgid "Match against:"
+msgstr "Karşılaştırılacak özellik:"
+
+#: src/kcm/ExceptionDialog.cc:63
+#, kde-format
+msgid "Exact Match"
+msgstr "Tam Eşleşme"
+
+#: src/kcm/ExceptionDialog.cc:63
+#, kde-format
+msgid "Substring Match"
+msgstr "Alt Dizi Eşleşmesi"
+
+#: src/kcm/ExceptionDialog.cc:64
+#, kde-format
+msgid "Matching mode:"
+msgstr "Eşleştirme kipi:"
+
+#: src/kcm/ExceptionDialog.cc:69
+#, kde-format
+msgid "Window Options"
+msgstr "Pencere Seçenekleri"
+
+#: src/kcm/ExceptionDialog.cc:72
+#, kde-format
+msgid "Hide window title bar"
+msgstr "Pencere başlık çubuğunu gizle"
+
+#: src/kcm/ExceptionDialog.cc:73
+#, kde-format
+msgid "Show the window title and hide the menu"
+msgstr "Pencere başlığını göster ve menüyü gizle"
+
+#: src/kcm/ExceptionDialog.cc:74
+#, kde-format
+msgid "Show menu as hamburger"
+msgstr "Menüyü hamburger düğmesi olarak göster"
+
+#: src/kcm/ExceptionDialog.cc:75
+#, kde-format
+msgid "Don't draw window shadow"
+msgstr "Pencere gölgesi çizme"
+
+#: src/kcm/ExceptionDialog.cc:76
+#, kde-format
+msgid "Don't round window corners"
+msgstr "Pencere köşelerini yuvarlama"
+
+#: src/kcm/ExceptionDialog.cc:77
+#, kde-format
+msgid "Paint a thin line around the window"
+msgstr "Pencerenin çevresine ince bir çizgi çiz"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Disabled"
+msgstr "Devre Dışı"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Enabled"
+msgstr "Etkin"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Use global setting"
+msgstr "Genel ayarı kullan"
+
+#: src/kcm/ExceptionDialog.cc:89 src/kcm/config.ui:328
+#, kde-format
+msgid "Menus follow decoration colors"
+msgstr "Menüler dekorasyon renklerini izlesin"
+
+#: src/kcm/ExceptionDialog.cc:106
+#, kde-format
+msgid "Pattern cannot be empty."
+msgstr "Kalıp boş olamaz."
+
+#: src/kcm/ExceptionDialog.cc:106
+#, kde-format
+msgid "Warning"
+msgstr "Uyarı"
+
+#: src/kcm/ExceptionListWidget.cc:66
+#, kde-format
+msgid "Add..."
+msgstr "Ekle..."
+
+#: src/kcm/ExceptionListWidget.cc:67
+#, kde-format
+msgid "Edit..."
+msgstr "Düzenle..."
+
+#: src/kcm/ExceptionListWidget.cc:68
+#, kde-format
+msgid "Remove"
+msgstr "Kaldır"
+
+#: src/kcm/ExceptionListWidget.cc:69
+#, kde-format
+msgid "Move Up"
+msgstr "Yukarı Taşı"
+
+#: src/kcm/ExceptionListWidget.cc:70
+#, kde-format
+msgid "Move Down"
+msgstr "Aşağı Taşı"
+
+#: src/kcm/ExceptionListWidget.cc:82
+#, kde-format
+msgid ""
+"Rules are evaluated from top to bottom; the first matching rule will be "
+"applied."
+msgstr "Kurallar yukarıdan aşağıya değerlendirilir; ilk eşleşen kural uygulanır."
+
+#: src/kcm/ExceptionModel.cc:50
+#, kde-format
+msgid "Empty pattern"
+msgstr "Boş kalıp"
+
+#: src/kcm/ExceptionModel.cc:52
+#, kde-format
+msgid "Class"
+msgstr "Sınıf"
+
+#: src/kcm/ExceptionModel.cc:52
+#, kde-format
+msgid "Title"
+msgstr "Başlık"
+
+#: src/kcm/config.ui:14
+#, kde-format
+msgid "Form"
+msgstr "Form"
+
+#: src/kcm/config.ui:39
+#, kde-format
+msgid "Appearance"
+msgstr "Görünüm"
+
+#: src/kcm/config.ui:45
+#, kde-format
+msgid "Title alignment"
+msgstr "Başlık hizalaması"
+
+#: src/kcm/config.ui:55
+#, kde-format
+msgid "Button size"
+msgstr "Düğme boyutu"
+
+#: src/kcm/config.ui:65
+#, kde-format
+msgid "Active window opacity"
+msgstr "Etkin pencere opaklığı"
+
+#: src/kcm/config.ui:72 src/kcm/config.ui:92
+#, kde-format
+msgid "%"
+msgstr "%"
+
+#: src/kcm/config.ui:85
+#, kde-format
+msgid "Inactive window opacity"
+msgstr "Etkin olmayan pencere opaklığı"
+
+#: src/kcm/config.ui:105
+#, kde-format
+msgid "Corner radius"
+msgstr "Köşe yarıçapı"
+
+#: src/kcm/config.ui:112
+#, kde-format
+msgid "px"
+msgstr "pks"
+
+#: src/kcm/config.ui:125
+#, kde-format
+msgid "Round bottom corners"
+msgstr "Alt köşeleri yuvarla"
+
+#: src/kcm/config.ui:135
+#, kde-format
+msgid "Don't round corners for tiled windows"
+msgstr "Döşenmiş pencerelerin köşelerini yuvarlama"
+
+#: src/kcm/config.ui:145
+#, kde-format
+msgid "Use custom border and outline colors"
+msgstr "Özel kenarlık ve dış çizgi renkleri kullan"
+
+#: src/kcm/config.ui:152
+#, kde-format
+msgid "Active window border color"
+msgstr "Etkin pencere kenarlık rengi"
+
+#: src/kcm/config.ui:166
+#, kde-format
+msgid "Inactive window border color"
+msgstr "Etkin olmayan pencere kenarlık rengi"
+
+#: src/kcm/config.ui:180
+#, kde-format
+msgid "Paint a thin outline around the window"
+msgstr "Pencerenin çevresine ince bir dış çizgi çiz"
+
+#: src/kcm/config.ui:187
+#, kde-format
+msgid "Hide window title when space is limited"
+msgstr "Alan sınırlı olduğunda pencere başlığını gizle"
+
+#: src/kcm/config.ui:194
+#, kde-format
+msgid "Show window title on mouse over"
+msgstr "Üzerine gelindiğinde pencere başlığını göster"
+
+#: src/kcm/config.ui:201
+#, kde-format
+msgid "Minimum reserved space"
+msgstr "Ayrılan en az alan"
+
+#: src/kcm/config.ui:208
+#, kde-format
+msgid " px"
+msgstr " pks"
+
+#: src/kcm/config.ui:221
+#, kde-format
+msgid "Enable animations"
+msgstr "Canlandırmaları etkinleştir"
+
+#: src/kcm/config.ui:228
+#, kde-format
+msgid "Animation duration"
+msgstr "Canlandırma süresi"
+
+#: src/kcm/config.ui:235
+#, kde-format
+msgid "ms"
+msgstr "ms"
+
+#: src/kcm/config.ui:249
+#, kde-format
+msgid "Menu and Search"
+msgstr "Menü ve Arama"
+
+#: src/kcm/config.ui:255
+#, kde-format
+msgid "Always show application menu"
+msgstr "Uygulama menüsünü her zaman göster"
+
+#: src/kcm/config.ui:262
+#, kde-format
+msgid "Enable search button"
+msgstr "Arama düğmesini etkinleştir"
+
+#: src/kcm/config.ui:269
+#, kde-format
+msgid "Show disabled menu actions"
+msgstr "Devre dışı menü eylemlerini göster"
+
+#: src/kcm/config.ui:276
+#, kde-format
+msgid "Ignore top-level menu labels"
+msgstr "Üst düzey menü adlarını yok say"
+
+#: src/kcm/config.ui:283
+#, kde-format
+msgid "Also ignore submenu labels"
+msgstr "Alt menü adlarını da yok say"
+
+#: src/kcm/config.ui:290
+#, kde-format
+msgid "Enable fuzzy search"
+msgstr "Bulanık aramayı etkinleştir"
+
+#: src/kcm/config.ui:297
+#, kde-format
+msgid "Use hamburger menu"
+msgstr "Hamburger menü kullan"
+
+#: src/kcm/config.ui:304
+#, kde-format
+msgid "Menu item spacing"
+msgstr "Menü ögeleri arasındaki boşluk"
+
+#: src/kcm/config.ui:314
+#, kde-format
+msgid "Use system menu font"
+msgstr "Sistem menü yazıtipini kullan"
+
+#: src/kcm/config.ui:321
+#, kde-format
+msgid "Use system colors"
+msgstr "Sistem renklerini kullan"
+
+#: src/kcm/config.ui:336
+#, kde-format
+msgid "Shadows"
+msgstr "Gölgeler"
+
+#: src/kcm/config.ui:342
+#, kde-format
+msgid "Shadow size"
+msgstr "Gölge boyutu"
+
+#: src/kcm/config.ui:352
+#, kde-format
+msgid "Shadow color"
+msgstr "Gölge rengi"
+
+#: src/kcm/config.ui:362
+#, kde-format
+msgid "Shadow strength"
+msgstr "Gölge yoğunluğu"
+
+#: src/kcm/config.ui:391
+#, kde-format
+msgid "Button Options"
+msgstr "Düğme Seçenekleri"
+
+#: src/kcm/config.ui:399
+#, kde-format
+msgid "Enable long-press actions on window buttons"
+msgstr "Pencere düğmelerinde uzun basma eylemlerini etkinleştir"
+
+#: src/kcm/config.ui:412
+#, kde-format
+msgid ""
+"<html><body><div style=\"width: 350px;\">\n"
+"<p>When enabled:</p>\n"
+"<ul>\n"
+"<li>Long-pressing the close button minimizes the window to the system tray "
+"(requires the kwin-minimize2tray plugin)</li>\n"
+"<li>Long-pressing the minimize button minimizes all windows except the "
+"current one (requires Plasma 6.6 or later)</li>\n"
+"</ul>\n"
+"</div></body></html>"
+msgstr ""
+"<html><body><div style=\"width: 350px;\">\n"
+"<p>Etkinleştirildiğinde:</p>\n"
+"<ul>\n"
+"<li>Kapat düğmesine uzun basmak pencereyi sistem tepsisine küçültür (kwin-minimize2tray eklentisi gerekir)</li>\n"
+"<li>Küçült düğmesine uzun basmak geçerli pencere dışındaki tüm pencereleri küçültür (Plasma 6.6 veya sonrası gerekir)</li>\n"
+"</ul>\n"
+"</div></body></html>"
+
+#: src/kcm/config.ui:437
+#, kde-format
+msgid "Long-press duration"
+msgstr "Uzun basma süresi"
+
+#: src/kcm/config.ui:444 src/kcm/config.ui:466
+#, kde-format
+msgid " ms"
+msgstr " ms"
+
+#: src/kcm/config.ui:456
+#, kde-format
+msgid "Open tiling popup when hovering over maximize"
+msgstr "Büyüt düğmesinin üzerine gelindiğinde döşeme penceresini aç"
+
+#: src/kcm/config.ui:461
+#, kde-format
+msgid "Tiling popup hover delay"
+msgstr "Döşeme penceresi gecikmesi"
+
+#: src/kcm/config.ui:474
+#, kde-format
+msgid "Allow window dragging from buttons"
+msgstr "Düğmelerden pencere sürüklemeye izin ver"
+
+#: src/kcm/config.ui:482
+#, kde-format
+msgid "Window-Specific Overrides"
+msgstr "Pencereye Özgü Ayarlar"
+
+#: src/kcm/kcm.cpp:34
+#, kde-format
+msgid "Left"
+msgstr "Sol"
+
+#: src/kcm/kcm.cpp:35
+#, kde-format
+msgid "Center"
+msgstr "Orta"
+
+#: src/kcm/kcm.cpp:36
+#, kde-format
+msgid "Center (Full Width)"
+msgstr "Orta (Tam Genişlik)"
+
+#: src/kcm/kcm.cpp:37
+#, kde-format
+msgid "Right"
+msgstr "Sağ"
+
+#: src/kcm/kcm.cpp:38
+#, kde-format
+msgid "Hidden"
+msgstr "Gizli"
+
+#: src/kcm/kcm.cpp:40
+#, kde-format
+msgid "Very Tiny"
+msgstr "En Küçük"
+
+#: src/kcm/kcm.cpp:41
+#, kde-format
+msgid "Tiny"
+msgstr "Çok Küçük"
+
+#: src/kcm/kcm.cpp:42 src/kcm/kcm.cpp:48
+#, kde-format
+msgid "Small"
+msgstr "Küçük"
+
+#: src/kcm/kcm.cpp:43
+#, kde-format
+msgid "Default"
+msgstr "Öntanımlı"
+
+#: src/kcm/kcm.cpp:44 src/kcm/kcm.cpp:50
+#, kde-format
+msgid "Large"
+msgstr "Büyük"
+
+#: src/kcm/kcm.cpp:45 src/kcm/kcm.cpp:51
+#, kde-format
+msgid "Very Large"
+msgstr "Çok Büyük"
+
+#: src/kcm/kcm.cpp:47
+#, kde-format
+msgid "None"
+msgstr "Yok"
+
+#: src/kcm/kcm.cpp:49
+#, kde-format
+msgid "Medium"
+msgstr "Orta"
+
+#: src/kcm/materialdecoration_kcm.json:3
+#, kde-format
+msgid "Configuration module for the Material Decoration"
+msgstr "Material Dekorasyonu için yapılandırma modülü"
+
+#: src/kcm/materialdecoration_kcm.json:5
+#, kde-format
+msgid "Material Decoration"
+msgstr "Material Dekorasyonu"
+
+#: src/kcm/config.ui
+msgid "Use accent color for the active window border"
+msgstr "Etkin pencere kenarlığı için vurgu rengini kullan"
+
+#: src/kcm/config.ui
+msgid "Remember window position (Wayland)"
+msgstr "Pencere konumunu anımsa (Wayland)"
+
+#: src/kcm/config.ui
+msgid ""
+"Save window position when a window closes\n"
+"and restore it when it opens again.\n"
+"The application controls its size.\n"
+"Requires the Material Tiling Popup KWin script.\n"
+"Windows of the same application without a distinct identity\n"
+"share the state of the last closed window."
+msgstr ""
+"Pencere kapandığında konumunu kaydeder ve yeniden açıldığında geri yükler.\n"
+"Boyutu uygulama belirler.\n"
+"Material Tiling Popup KWin betiği gerekir.\n"
+"Aynı uygulamanın ayrı bir kimliği olmayan pencereleri, son kapatılan pencerenin durumunu paylaşır."
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Do not remember window position"
+msgstr "Pencere konumunu anımsama"
+
+#: src/kcm/config.ui
+msgid "Window Management"
+msgstr "Pencere Yönetimi"
+
+#: src/kcm/config.ui
+msgid "Remember the screen where the window was last closed"
+msgstr "Pencerenin en son kapatıldığı ekranı anımsa"
+
+#: src/kcm/config.ui
+msgid ""
+"Restore the saved screen.\n"
+"When disabled, use the screen chosen by KWin when the window opens."
+msgstr ""
+"Kaydedilen ekranı geri yükler.\n"
+"Devre dışıysa pencere açılırken KWin tarafından seçilen ekranı kullanır."
+
+#: src/kcm/config.ui
+msgid "Remember the virtual desktop where the window was last closed"
+msgstr "Pencerenin en son kapatıldığı sanal masaüstünü anımsa"
+
+#: src/kcm/config.ui
+msgid ""
+"Restore the saved virtual desktop, switch to it and activate the window.\n"
+"When disabled, keep the desktop chosen when the window opens."
+msgstr ""
+"Kaydedilen sanal masaüstünü geri yükler, o masaüstüne geçer ve pencereyi etkinleştirir.\n"
+"Devre dışıysa pencere açılırken seçilen masaüstünü korur."
+
+#: src/kcm/config.ui
+msgid "Resize other snapped windows when restoring saved proportions"
+msgstr "Kaydedilen oranlar geri yüklenirken diğer yerleştirilmiş pencereleri yeniden boyutlandır"
+
+#: src/kcm/config.ui
+msgid ""
+"Allow restoring a snapped window's saved proportions to\n"
+"resize other windows in the same quick-tile layout.\n"
+"When disabled, restore the saved proportions only to the reopened window."
+msgstr ""
+"Yerleştirilmiş bir pencerenin kaydedilen oranları geri yüklenirken aynı hızlı\n"
+"döşeme düzenindeki diğer pencerelerin de yeniden boyutlandırılmasına izin verir.\n"
+"Devre dışıysa kaydedilen oranları yalnızca yeniden açılan pencereye uygular."
+
+#: src/kcm/config.ui
+msgid "Let KWin place additional windows of the same application"
+msgstr "Aynı uygulamanın ek pencerelerini KWin yerleştirsin"
+
+#: src/kcm/config.ui
+msgid ""
+"When another normal window of the same application is already\n"
+"open, leave position, screen, virtual desktop and tiling to KWin.\n"
+"The first window still uses saved restoration.\n"
+"When disabled, apply the restoration settings to\n"
+"additional windows too, cascading overlapping windows."
+msgstr ""
+"Aynı uygulamanın başka bir normal penceresi zaten açıksa\n"
+"konumu, ekranı, sanal masaüstünü ve döşemeyi KWin'e bırakır.\n"
+"İlk pencere kaydedilen durumu geri yüklemeyi sürdürür.\n"
+"Devre dışıysa geri yükleme ayarlarını ek pencerelere de\n"
+"uygular ve üst üste binenleri kademeli yerleştirir."
+
+#: src/kcm/config.ui
+msgid ""
+"Show the window title on mouse over when it is\n"
+"hidden due to limited space or shortened to fit.\n"
+"Requires the application menu to be always visible."
+msgstr ""
+"Alan yetersizliğinden gizlenen veya kısaltılan başlığı, üzerine gelindiğinde gösterir.\n"
+"Uygulama menüsünün her zaman görünür olması gerekir."
+
+#: src/kcm/config.ui
+msgid ""
+"Center aligns the title within the available space.\n"
+"Center (Full Width) centers it on the window,\n"
+"shifting it to avoid menus and buttons."
+msgstr ""
+"Orta, başlığı kullanılabilir alanda ortalar.\n"
+"Orta (Tam Genişlik), başlığı pencereye göre ortalar\n"
+"ve menülerle düğmelerden kaçınacak şekilde kaydırır."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts the opacity of the active window title bar and borders.\n"
+"Does not change the opacity of the window contents."
+msgstr ""
+"Etkin pencerenin başlık çubuğu ve kenarlıklarının opaklığını ayarlar.\n"
+"Pencere içeriğinin opaklığını değiştirmez."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts the opacity of inactive window title bars and borders.\n"
+"Does not change the opacity of the window contents."
+msgstr ""
+"Etkin olmayan pencerelerin başlık çubukları ve kenarlıklarının opaklığını ayarlar.\n"
+"Pencere içeriğinin opaklığını değiştirmez."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses square corners when a window is snapped to a tiling zone.\n"
+"Floating windows keep the configured corner rounding."
+msgstr ""
+"Pencere bir döşeme bölgesine yerleştirildiğinde dik köşeler kullanır.\n"
+"Serbest pencereler yapılandırılmış köşe yuvarlamasını korur."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the selected colors for borders and the outline, if enabled.\n"
+"When disabled, uses the frame color from the window color scheme."
+msgstr ""
+"Seçilen renkleri kenarlıklarda ve etkinse dış çizgide kullanır.\n"
+"Devre dışıysa pencere renk şemasındaki çerçeve rengini kullanır."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the window color scheme accent color instead\n"
+"of the manually selected active border color.\n"
+"Also applies to the outline."
+msgstr ""
+"Elle seçilen etkin kenarlık rengi yerine pencere renk şemasının vurgu rengini kullanır.\n"
+"Dış çizgiye de uygulanır."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid ""
+"Draws a thin line around the window\n"
+"using the active or inactive border color.\n"
+"The outline stays opaque even when the decoration is transparent."
+msgstr ""
+"Pencerenin çevresine etkin veya etkin olmayan kenarlık rengiyle ince bir çizgi çizer.\n"
+"Dekorasyon saydam olsa bile dış çizgi opak kalır."
+
+#: src/kcm/config.ui
+msgid ""
+"Hides the title when the application menu\n"
+"leaves less space than the configured minimum.\n"
+"When disabled, keeps the title visible and shortens it as needed."
+msgstr ""
+"Uygulama menüsünün bıraktığı alan ayarlanan alt sınırdan küçükse başlığı gizler.\n"
+"Devre dışıysa başlığı görünür tutar ve gerektiğinde kısaltır."
+
+#: src/kcm/config.ui
+msgid ""
+"Minimum width in pixels available beside the\n"
+"application menu before the title is hidden.\n"
+"Only applies when hiding the title for limited space is enabled."
+msgstr ""
+"Başlık gizlenmeden önce uygulama menüsü yanında bulunması gereken en az piksel genişliği.\n"
+"Yalnızca sınırlı alanda başlığı gizleme seçeneği etkinse uygulanır."
+
+#: src/kcm/config.ui
+msgid ""
+"Keeps the application menu visible in the title bar.\n"
+"When disabled, the menu appears on mouse over."
+msgstr ""
+"Uygulama menüsünü başlık çubuğunda görünür tutar.\n"
+"Devre dışıysa menü, üzerine gelindiğinde görünür."
+
+#: src/kcm/config.ui
+msgid ""
+"Adds a button to find and run application menu commands.\n"
+"Requires the application to export its menu to the decoration."
+msgstr ""
+"Uygulama menüsü komutlarını bulup çalıştırmak için bir düğme ekler.\n"
+"Uygulamanın menüsünü pencere dekorasyonuna sunması gerekir."
+
+#: src/kcm/config.ui
+msgid ""
+"Includes unavailable commands in search results.\n"
+"They remain disabled and cannot be run."
+msgstr ""
+"Kullanılamayan komutları da arama sonuçlarına ekler.\n"
+"Bu komutlar devre dışı kalır ve çalıştırılamaz."
+
+#: src/kcm/config.ui
+msgid ""
+"Excludes top-level menu names, such as File or Edit, from matching.\n"
+"Commands inside those menus are still searched."
+msgstr ""
+"Dosya veya Düzen gibi üst düzey menü adlarını eşleştirmeye katmaz.\n"
+"Bu menülerin içindeki komutlar aranmaya devam eder."
+
+#: src/kcm/config.ui
+msgid ""
+"Searches command names only, excluding the names of their parent menus.\n"
+"Also enables ignoring top-level menu labels."
+msgstr ""
+"Üst menülerin adlarını dışarıda tutarak yalnızca komut adlarını arar.\n"
+"Üst düzey menü adlarını yok saymayı da etkinleştirir."
+
+#: src/kcm/config.ui
+msgid ""
+"Finds approximate matches, including minor typing errors, and ranks results by relevance.\n"
+"When disabled, searches for the typed text as a substring."
+msgstr ""
+"Küçük yazım hataları da dahil olmak üzere yaklaşık\n"
+"eşleşmeleri bulur ve sonuçları ilgililiğe göre sıralar.\n"
+"Devre dışıysa girilen metni alt dizi olarak arar."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid ""
+"Collects the application menu in one button instead of\n"
+"showing separate top-level menu buttons in the title bar."
+msgstr ""
+"Başlık çubuğunda ayrı üst düzey menü düğmeleri\n"
+"göstermek yerine uygulama menüsünü tek düğmede toplar."
+
+#: src/kcm/config.ui
+msgid ""
+"Adds horizontal space on both sides of\n"
+"menu labels in the title bar.\n"
+"Higher values make the buttons wider."
+msgstr ""
+"Başlık çubuğundaki menü adlarının iki yanına yatay boşluk ekler.\n"
+"Yüksek değerler düğmeleri genişletir."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the system menu font.\n"
+"When disabled, uses the title bar font."
+msgstr ""
+"Sistem menü yazıtipini kullanır.\n"
+"Devre dışıysa başlık çubuğu yazıtipini kullanır."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses system selection colors to highlight application menu buttons.\n"
+"When disabled, uses the decoration button highlighting."
+msgstr ""
+"Uygulama menüsü düğmelerini vurgulamak için sistem seçim renklerini kullanır.\n"
+"Devre dışıysa dekorasyon düğmelerinin vurgulamasını kullanır."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the window color scheme for popup menus and the tiling popup.\n"
+"When disabled, uses the default system palette."
+msgstr ""
+"Açılır menülerde ve döşeme penceresinde pencere renk şemasını kullanır.\n"
+"Devre dışıysa öntanımlı sistem paletini kullanır."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts shadow opacity without changing its size.\n"
+"Higher values make the shadow stronger."
+msgstr ""
+"Boyutunu değiştirmeden gölgenin opaklığını ayarlar.\n"
+"Yüksek değerler gölgeyi daha belirgin yapar."
+
+#: src/kcm/config.ui
+msgid ""
+"Hold Maximize to show snapping zones, Minimize to minimize other windows\n"
+"on the screen, or Close to minimize to the system tray.\n"
+"Requires the corresponding support or scripts.\n"
+"See the information button for requirements."
+msgstr ""
+"Yerleştirme bölgeleri için Büyüt'ü, ekrandaki diğer pencereleri küçültmek için\n"
+"Küçült'ü veya sistem tepsisine küçültmek için Kapat'ı basılı tutun.\n"
+"İlgili destek veya betikler gerekir.\n"
+"Gereksinimler için bilgi düğmesine bakın."
+
+#: src/kcm/config.ui
+msgid "Time to hold a window button before its additional action is triggered."
+msgstr "Ek eylemi tetiklemek için bir pencere düğmesini basılı tutmanız gereken süre."
+
+#: src/kcm/config.ui
+msgid ""
+"Shows snapping zones when the pointer stays over Maximize, without clicking.\n"
+"Requires the Material Tiling Popup KWin script."
+msgstr ""
+"İşaretçi Büyüt üzerinde kaldığında tıklamadan yerleştirme bölgelerini gösterir.\n"
+"Material Tiling Popup KWin betiği gerekir."
+
+#: src/kcm/config.ui
+msgid ""
+"Time to wait before opening the tiling\n"
+"popup while the pointer stays over Maximize."
+msgstr "İşaretçi Büyüt üzerinde kalırken döşeme penceresi açılmadan önce beklenecek süre."
+
+#: src/kcm/config.ui
+msgid ""
+"Allows window dragging to start from decoration\n"
+"buttons such as Minimize and Maximize.\n"
+"Application menu buttons still allow dragging when this is disabled."
+msgstr ""
+"Küçült ve Büyüt gibi dekorasyon düğmelerinden pencere sürüklemeyi başlatmaya izin verir.\n"
+"Devre dışıyken de uygulama menüsü düğmelerinden sürükleme yapılabilir."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Enter the text to match against the window title or class.\n"
+"Use Detect Window Properties to capture it from an open window."
+msgstr ""
+"Pencere başlığı veya sınıfıyla eşleştirilecek metni girin.\n"
+"Açık bir pencereden almak için pencere özelliklerini algılama işlevini kullanın."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"The title is the text shown in\n"
+"the title bar and may change.\n"
+"The class identifies the application."
+msgstr ""
+"Başlık, başlık çubuğunda gösterilen metindir ve değişebilir.\n"
+"Sınıf uygulamayı tanımlar."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Exact Match requires the whole value.\n"
+"Substring Match finds the text anywhere within it.\n"
+"Matching is case-insensitive and does not use regular expressions."
+msgstr ""
+"Tam Eşleşme değerin tamamını gerektirir.\n"
+"Alt Dizi Eşleşmesi metni değerin herhangi bir yerinde arar.\n"
+"Büyük/küçük harf ayrımı yapılmaz ve düzenli ifadeler kullanılmaz."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Excludes matching windows from saving and restoring their\n"
+"position, even when enabled in the global settings."
+msgstr ""
+"Genel ayarlarda etkin olsa bile eşleşen pencerelerin\n"
+"konumlarının kaydedilmesini ve geri yüklenmesini engeller."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Overrides whether menus follow decoration colors for matching windows.\n"
+"Use global setting keeps the general preference."
+msgstr ""
+"Eşleşen pencerelerde menülerin dekorasyon renklerini izleyip izlemeyeceğini belirler.\n"
+"Genel ayarı kullan, genel tercihi korur."

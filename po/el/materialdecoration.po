@@ -1,0 +1,1018 @@
+# Translation of materialdecoration into el.
+# SPDX-FileCopyrightText: 2026 Guido Iodice <guido.iodice@gmail.com>
+# This file is distributed under the same license as materialdecoration.
+msgid ""
+msgstr ""
+"Project-Id-Version: materialdecoration\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-27 00:03+0000\n"
+"PO-Revision-Date: 2026-11-16 17:50+0100\n"
+"Last-Translator: Guido Iodice <guido.iodice@gmail.com>\n"
+"Language-Team: el\n"
+"Language: el\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/Button.cc:929
+#, kde-format
+msgid "Press and hold to minimize other windows"
+msgstr "Πατήστε παρατεταμένα για ελαχιστοποίηση των άλλων παραθύρων"
+
+#: src/Button.cc:932
+#, kde-format
+msgid "Press and hold to show snapping zones"
+msgstr "Πατήστε παρατεταμένα για εμφάνιση των περιοχών προσκόλλησης"
+
+#: src/Button.cc:935
+#, kde-format
+msgid "Press and hold to minimize to the notification area"
+msgstr "Πατήστε παρατεταμένα για ελαχιστοποίηση στην περιοχή ειδοποιήσεων"
+
+#: src/Button.cc:1012
+#, kde-format
+msgid ""
+"Install kwin-minimize2tray and enable Minimize to Tray in System Settings > "
+"Window Management > KWin Scripts."
+msgstr "Εγκαταστήστε το kwin-minimize2tray και ενεργοποιήστε το Minimize to Tray στις Ρυθμίσεις συστήματος > Διαχείριση παραθύρων > Σενάρια KWin."
+
+#: src/Button.cc:1018
+#, kde-format
+msgid ""
+"The action to minimize all other windows is unavailable. It requires Plasma "
+"6.6 or later."
+msgstr "Η ενέργεια ελαχιστοποίησης όλων των άλλων παραθύρων δεν είναι διαθέσιμη. Απαιτείται Plasma 6.6 ή νεότερο."
+
+#: src/Decoration.cc:248
+#, kde-format
+msgid ""
+"Enable the Material Tiling Popup script in System Settings > Window "
+"Management > KWin Scripts."
+msgstr "Ενεργοποιήστε το σενάριο Material Tiling Popup στις Ρυθμίσεις συστήματος > Διαχείριση παραθύρων > Σενάρια KWin."
+
+#: src/Decoration.cc:267
+#, kde-format
+msgid "The custom tile is unavailable. Open the popup again."
+msgstr "Το προσαρμοσμένο πλακίδιο δεν είναι διαθέσιμο. Ανοίξτε ξανά το αναδυόμενο παράθυρο."
+
+#: src/TilingPopup.cc:18
+#, kde-format
+msgid "Left half"
+msgstr "Αριστερό μισό"
+
+#: src/TilingPopup.cc:19
+#, kde-format
+msgid "Right half"
+msgstr "Δεξί μισό"
+
+#: src/TilingPopup.cc:20
+#, kde-format
+msgid "Top half"
+msgstr "Επάνω μισό"
+
+#: src/TilingPopup.cc:21
+#, kde-format
+msgid "Bottom half"
+msgstr "Κάτω μισό"
+
+#: src/TilingPopup.cc:22
+#, kde-format
+msgid "Top left quarter"
+msgstr "Επάνω αριστερό τέταρτο"
+
+#: src/TilingPopup.cc:23
+#, kde-format
+msgid "Top right quarter"
+msgstr "Επάνω δεξί τέταρτο"
+
+#: src/TilingPopup.cc:24
+#, kde-format
+msgid "Bottom left quarter"
+msgstr "Κάτω αριστερό τέταρτο"
+
+#: src/TilingPopup.cc:25
+#, kde-format
+msgid "Bottom right quarter"
+msgstr "Κάτω δεξί τέταρτο"
+
+#: src/TilingPopup.cc:36
+#, kde-format
+msgid "Window tiling layouts"
+msgstr "Διατάξεις παράθεσης παραθύρων"
+
+#: src/TilingPopup.cc:50
+#, kde-format
+msgid "Custom tiling layout (Meta+T)"
+msgstr "Προσαρμοσμένη διάταξη παράθεσης (Meta+T)"
+
+#: src/TilingPopup.cc:51
+#, kde-format
+msgid "Custom layout unavailable"
+msgstr "Η προσαρμοσμένη διάταξη δεν είναι διαθέσιμη"
+
+#: src/TilingPopup.cc:79
+#, kde-format
+msgid "Meta+T to edit snapping zones"
+msgstr "Meta+T για επεξεργασία των περιοχών προσκόλλησης"
+
+#: src/TilingPopup.cc:102
+#, kde-format
+msgid "Custom tile %1"
+msgstr "Προσαρμοσμένο πλακίδιο %1"
+
+#: src/kcm/DetectDialog.cc:37
+#, kde-format
+msgid "Detect Window Properties"
+msgstr "Ανίχνευση ιδιοτήτων παραθύρου"
+
+#: src/kcm/DetectDialog.cc:41
+#, kde-format
+msgid ""
+"Click 'Detect' and then click on the target window to capture its properties."
+msgstr "Πατήστε «Ανίχνευση» και έπειτα στο επιθυμητό παράθυρο για να ληφθούν οι ιδιότητές του."
+
+#: src/kcm/DetectDialog.cc:46
+#, kde-format
+msgid "Detect"
+msgstr "Ανίχνευση"
+
+#: src/kcm/DetectDialog.cc:60
+#, kde-format
+msgid "Querying KWin for window information..."
+msgstr "Ανάκτηση πληροφοριών παραθύρου από το KWin..."
+
+#: src/kcm/DetectDialog.cc:80 src/kcm/DetectDialog.cc:81
+#, kde-format
+msgid "(unavailable)"
+msgstr "(μη διαθέσιμο)"
+
+#: src/kcm/DetectDialog.cc:83
+#, kde-format
+msgid ""
+"Captured Window Class: %1\n"
+"Captured Window Title: %2"
+msgstr ""
+"Κλάση παραθύρου που ανιχνεύτηκε: %1\n"
+"Τίτλος παραθύρου που ανιχνεύτηκε: %2"
+
+#: src/kcm/DetectDialog.cc:86
+#, kde-format
+msgid "Failed to detect window info: %1"
+msgstr "Αποτυχία ανίχνευσης πληροφοριών παραθύρου: %1"
+
+#: src/kcm/ExceptionDialog.cc:40
+#, kde-format
+msgid "Window Exception Settings"
+msgstr "Ρυθμίσεις εξαιρέσεων παραθύρων"
+
+#: src/kcm/ExceptionDialog.cc:45
+#, kde-format
+msgid "Window Identification"
+msgstr "Αναγνώριση παραθύρου"
+
+#: src/kcm/ExceptionDialog.cc:49
+#, kde-format
+msgid "Detect Window Properties..."
+msgstr "Ανίχνευση ιδιοτήτων παραθύρου..."
+
+#: src/kcm/ExceptionDialog.cc:55
+#, kde-format
+msgid "Window Property / Pattern:"
+msgstr "Ιδιότητα παραθύρου / μοτίβο:"
+
+#: src/kcm/ExceptionDialog.cc:58
+#, kde-format
+msgid "Window Class"
+msgstr "Κλάση παραθύρου"
+
+#: src/kcm/ExceptionDialog.cc:58
+#, kde-format
+msgid "Window Title"
+msgstr "Τίτλος παραθύρου"
+
+#: src/kcm/ExceptionDialog.cc:60
+#, kde-format
+msgid "Match against:"
+msgstr "Σύγκριση με:"
+
+#: src/kcm/ExceptionDialog.cc:63
+#, kde-format
+msgid "Exact Match"
+msgstr "Ακριβής αντιστοίχιση"
+
+#: src/kcm/ExceptionDialog.cc:63
+#, kde-format
+msgid "Substring Match"
+msgstr "Αντιστοίχιση υποσυμβολοσειράς"
+
+#: src/kcm/ExceptionDialog.cc:64
+#, kde-format
+msgid "Matching mode:"
+msgstr "Τρόπος αντιστοίχισης:"
+
+#: src/kcm/ExceptionDialog.cc:69
+#, kde-format
+msgid "Window Options"
+msgstr "Επιλογές παραθύρου"
+
+#: src/kcm/ExceptionDialog.cc:72
+#, kde-format
+msgid "Hide window title bar"
+msgstr "Απόκρυψη της γραμμής τίτλου του παραθύρου"
+
+#: src/kcm/ExceptionDialog.cc:73
+#, kde-format
+msgid "Show the window title and hide the menu"
+msgstr "Εμφάνιση του τίτλου του παραθύρου και απόκρυψη του μενού"
+
+#: src/kcm/ExceptionDialog.cc:74
+#, kde-format
+msgid "Show menu as hamburger"
+msgstr "Εμφάνιση του μενού ως κουμπί χάμπουργκερ"
+
+#: src/kcm/ExceptionDialog.cc:75
+#, kde-format
+msgid "Don't draw window shadow"
+msgstr "Να μη σχεδιάζεται σκιά παραθύρου"
+
+#: src/kcm/ExceptionDialog.cc:76
+#, kde-format
+msgid "Don't round window corners"
+msgstr "Να μη στρογγυλεύονται οι γωνίες του παραθύρου"
+
+#: src/kcm/ExceptionDialog.cc:77
+#, kde-format
+msgid "Paint a thin line around the window"
+msgstr "Σχεδίαση λεπτής γραμμής γύρω από το παράθυρο"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Disabled"
+msgstr "Απενεργοποιημένο"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Enabled"
+msgstr "Ενεργοποιημένο"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Use global setting"
+msgstr "Χρήση της καθολικής ρύθμισης"
+
+#: src/kcm/ExceptionDialog.cc:89 src/kcm/config.ui:328
+#, kde-format
+msgid "Menus follow decoration colors"
+msgstr "Τα μενού ακολουθούν τα χρώματα της διακόσμησης"
+
+#: src/kcm/ExceptionDialog.cc:106
+#, kde-format
+msgid "Pattern cannot be empty."
+msgstr "Το μοτίβο δεν μπορεί να είναι κενό."
+
+#: src/kcm/ExceptionDialog.cc:106
+#, kde-format
+msgid "Warning"
+msgstr "Προειδοποίηση"
+
+#: src/kcm/ExceptionListWidget.cc:66
+#, kde-format
+msgid "Add..."
+msgstr "Προσθήκη..."
+
+#: src/kcm/ExceptionListWidget.cc:67
+#, kde-format
+msgid "Edit..."
+msgstr "Επεξεργασία..."
+
+#: src/kcm/ExceptionListWidget.cc:68
+#, kde-format
+msgid "Remove"
+msgstr "Αφαίρεση"
+
+#: src/kcm/ExceptionListWidget.cc:69
+#, kde-format
+msgid "Move Up"
+msgstr "Μετακίνηση επάνω"
+
+#: src/kcm/ExceptionListWidget.cc:70
+#, kde-format
+msgid "Move Down"
+msgstr "Μετακίνηση κάτω"
+
+#: src/kcm/ExceptionListWidget.cc:82
+#, kde-format
+msgid ""
+"Rules are evaluated from top to bottom; the first matching rule will be "
+"applied."
+msgstr "Οι κανόνες ελέγχονται από πάνω προς τα κάτω· εφαρμόζεται ο πρώτος που αντιστοιχεί."
+
+#: src/kcm/ExceptionModel.cc:50
+#, kde-format
+msgid "Empty pattern"
+msgstr "Κενό μοτίβο"
+
+#: src/kcm/ExceptionModel.cc:52
+#, kde-format
+msgid "Class"
+msgstr "Κλάση"
+
+#: src/kcm/ExceptionModel.cc:52
+#, kde-format
+msgid "Title"
+msgstr "Τίτλος"
+
+#: src/kcm/config.ui:14
+#, kde-format
+msgid "Form"
+msgstr "Φόρμα"
+
+#: src/kcm/config.ui:39
+#, kde-format
+msgid "Appearance"
+msgstr "Εμφάνιση"
+
+#: src/kcm/config.ui:45
+#, kde-format
+msgid "Title alignment"
+msgstr "Στοίχιση τίτλου"
+
+#: src/kcm/config.ui:55
+#, kde-format
+msgid "Button size"
+msgstr "Μέγεθος κουμπιών"
+
+#: src/kcm/config.ui:65
+#, kde-format
+msgid "Active window opacity"
+msgstr "Αδιαφάνεια ενεργού παραθύρου"
+
+#: src/kcm/config.ui:72 src/kcm/config.ui:92
+#, kde-format
+msgid "%"
+msgstr "%"
+
+#: src/kcm/config.ui:85
+#, kde-format
+msgid "Inactive window opacity"
+msgstr "Αδιαφάνεια ανενεργού παραθύρου"
+
+#: src/kcm/config.ui:105
+#, kde-format
+msgid "Corner radius"
+msgstr "Ακτίνα γωνιών"
+
+#: src/kcm/config.ui:112
+#, kde-format
+msgid "px"
+msgstr "px"
+
+#: src/kcm/config.ui:125
+#, kde-format
+msgid "Round bottom corners"
+msgstr "Στρογγυλοποίηση των κάτω γωνιών"
+
+#: src/kcm/config.ui:135
+#, kde-format
+msgid "Don't round corners for tiled windows"
+msgstr "Να μη στρογγυλεύονται οι γωνίες των παραθύρων σε παράθεση"
+
+#: src/kcm/config.ui:145
+#, kde-format
+msgid "Use custom border and outline colors"
+msgstr "Χρήση προσαρμοσμένων χρωμάτων πλαισίου και περιγράμματος"
+
+#: src/kcm/config.ui:152
+#, kde-format
+msgid "Active window border color"
+msgstr "Χρώμα πλαισίου ενεργού παραθύρου"
+
+#: src/kcm/config.ui:166
+#, kde-format
+msgid "Inactive window border color"
+msgstr "Χρώμα πλαισίου ανενεργού παραθύρου"
+
+#: src/kcm/config.ui:180
+#, kde-format
+msgid "Paint a thin outline around the window"
+msgstr "Σχεδίαση λεπτού περιγράμματος γύρω από το παράθυρο"
+
+#: src/kcm/config.ui:187
+#, kde-format
+msgid "Hide window title when space is limited"
+msgstr "Απόκρυψη του τίτλου παραθύρου όταν ο χώρος είναι περιορισμένος"
+
+#: src/kcm/config.ui:194
+#, kde-format
+msgid "Show window title on mouse over"
+msgstr "Εμφάνιση του τίτλου παραθύρου κατά την αιώρηση του δείκτη"
+
+#: src/kcm/config.ui:201
+#, kde-format
+msgid "Minimum reserved space"
+msgstr "Ελάχιστος δεσμευμένος χώρος"
+
+#: src/kcm/config.ui:208
+#, kde-format
+msgid " px"
+msgstr " px"
+
+#: src/kcm/config.ui:221
+#, kde-format
+msgid "Enable animations"
+msgstr "Ενεργοποίηση εφέ κίνησης"
+
+#: src/kcm/config.ui:228
+#, kde-format
+msgid "Animation duration"
+msgstr "Διάρκεια εφέ κίνησης"
+
+#: src/kcm/config.ui:235
+#, kde-format
+msgid "ms"
+msgstr "ms"
+
+#: src/kcm/config.ui:249
+#, kde-format
+msgid "Menu and Search"
+msgstr "Μενού και αναζήτηση"
+
+#: src/kcm/config.ui:255
+#, kde-format
+msgid "Always show application menu"
+msgstr "Να εμφανίζεται πάντα το μενού εφαρμογής"
+
+#: src/kcm/config.ui:262
+#, kde-format
+msgid "Enable search button"
+msgstr "Ενεργοποίηση κουμπιού αναζήτησης"
+
+#: src/kcm/config.ui:269
+#, kde-format
+msgid "Show disabled menu actions"
+msgstr "Εμφάνιση απενεργοποιημένων ενεργειών μενού"
+
+#: src/kcm/config.ui:276
+#, kde-format
+msgid "Ignore top-level menu labels"
+msgstr "Παράβλεψη ονομάτων μενού ανώτατου επιπέδου"
+
+#: src/kcm/config.ui:283
+#, kde-format
+msgid "Also ignore submenu labels"
+msgstr "Παράβλεψη και των ονομάτων υπομενού"
+
+#: src/kcm/config.ui:290
+#, kde-format
+msgid "Enable fuzzy search"
+msgstr "Ενεργοποίηση ασαφούς αναζήτησης"
+
+#: src/kcm/config.ui:297
+#, kde-format
+msgid "Use hamburger menu"
+msgstr "Χρήση μενού χάμπουργκερ"
+
+#: src/kcm/config.ui:304
+#, kde-format
+msgid "Menu item spacing"
+msgstr "Απόσταση μεταξύ στοιχείων μενού"
+
+#: src/kcm/config.ui:314
+#, kde-format
+msgid "Use system menu font"
+msgstr "Χρήση γραμματοσειράς μενού συστήματος"
+
+#: src/kcm/config.ui:321
+#, kde-format
+msgid "Use system colors"
+msgstr "Χρήση χρωμάτων συστήματος"
+
+#: src/kcm/config.ui:336
+#, kde-format
+msgid "Shadows"
+msgstr "Σκιές"
+
+#: src/kcm/config.ui:342
+#, kde-format
+msgid "Shadow size"
+msgstr "Μέγεθος σκιάς"
+
+#: src/kcm/config.ui:352
+#, kde-format
+msgid "Shadow color"
+msgstr "Χρώμα σκιάς"
+
+#: src/kcm/config.ui:362
+#, kde-format
+msgid "Shadow strength"
+msgstr "Ένταση σκιάς"
+
+#: src/kcm/config.ui:391
+#, kde-format
+msgid "Button Options"
+msgstr "Επιλογές κουμπιών"
+
+#: src/kcm/config.ui:399
+#, kde-format
+msgid "Enable long-press actions on window buttons"
+msgstr "Ενεργοποίηση ενεργειών παρατεταμένου πατήματος στα κουμπιά παραθύρου"
+
+#: src/kcm/config.ui:412
+#, kde-format
+msgid ""
+"<html><body><div style=\"width: 350px;\">\n"
+"<p>When enabled:</p>\n"
+"<ul>\n"
+"<li>Long-pressing the close button minimizes the window to the system tray "
+"(requires the kwin-minimize2tray plugin)</li>\n"
+"<li>Long-pressing the minimize button minimizes all windows except the "
+"current one (requires Plasma 6.6 or later)</li>\n"
+"</ul>\n"
+"</div></body></html>"
+msgstr ""
+"<html><body><div style=\"width: 350px;\">\n"
+"<p>Όταν είναι ενεργό:</p>\n"
+"<ul>\n"
+"<li>Το παρατεταμένο πάτημα στο κουμπί κλεισίματος ελαχιστοποιεί το παράθυρο στο πλαίσιο συστήματος (απαιτεί το πρόσθετο kwin-minimize2tray)</li>\n"
+"<li>Το παρατεταμένο πάτημα στο κουμπί ελαχιστοποίησης ελαχιστοποιεί όλα τα παράθυρα εκτός από το τρέχον (απαιτεί Plasma 6.6 ή νεότερο)</li>\n"
+"</ul>\n"
+"</div></body></html>"
+
+#: src/kcm/config.ui:437
+#, kde-format
+msgid "Long-press duration"
+msgstr "Διάρκεια παρατεταμένου πατήματος"
+
+#: src/kcm/config.ui:444 src/kcm/config.ui:466
+#, kde-format
+msgid " ms"
+msgstr " ms"
+
+#: src/kcm/config.ui:456
+#, kde-format
+msgid "Open tiling popup when hovering over maximize"
+msgstr "Άνοιγμα αναδυόμενου παραθύρου παράθεσης κατά την αιώρηση στη μεγιστοποίηση"
+
+#: src/kcm/config.ui:461
+#, kde-format
+msgid "Tiling popup hover delay"
+msgstr "Καθυστέρηση αναδυόμενου παραθύρου παράθεσης"
+
+#: src/kcm/config.ui:474
+#, kde-format
+msgid "Allow window dragging from buttons"
+msgstr "Να επιτρέπεται το σύρσιμο παραθύρου από τα κουμπιά"
+
+#: src/kcm/config.ui:482
+#, kde-format
+msgid "Window-Specific Overrides"
+msgstr "Ειδικές ρυθμίσεις ανά παράθυρο"
+
+#: src/kcm/kcm.cpp:34
+#, kde-format
+msgid "Left"
+msgstr "Αριστερά"
+
+#: src/kcm/kcm.cpp:35
+#, kde-format
+msgid "Center"
+msgstr "Κέντρο"
+
+#: src/kcm/kcm.cpp:36
+#, kde-format
+msgid "Center (Full Width)"
+msgstr "Κέντρο (πλήρες πλάτος)"
+
+#: src/kcm/kcm.cpp:37
+#, kde-format
+msgid "Right"
+msgstr "Δεξιά"
+
+#: src/kcm/kcm.cpp:38
+#, kde-format
+msgid "Hidden"
+msgstr "Κρυφός"
+
+#: src/kcm/kcm.cpp:40
+#, kde-format
+msgid "Very Tiny"
+msgstr "Ελάχιστο"
+
+#: src/kcm/kcm.cpp:41
+#, kde-format
+msgid "Tiny"
+msgstr "Πολύ μικρό"
+
+#: src/kcm/kcm.cpp:42 src/kcm/kcm.cpp:48
+#, kde-format
+msgid "Small"
+msgstr "Μικρό"
+
+#: src/kcm/kcm.cpp:43
+#, kde-format
+msgid "Default"
+msgstr "Προεπιλογή"
+
+#: src/kcm/kcm.cpp:44 src/kcm/kcm.cpp:50
+#, kde-format
+msgid "Large"
+msgstr "Μεγάλο"
+
+#: src/kcm/kcm.cpp:45 src/kcm/kcm.cpp:51
+#, kde-format
+msgid "Very Large"
+msgstr "Πολύ μεγάλο"
+
+#: src/kcm/kcm.cpp:47
+#, kde-format
+msgid "None"
+msgstr "Κανένα"
+
+#: src/kcm/kcm.cpp:49
+#, kde-format
+msgid "Medium"
+msgstr "Μεσαίο"
+
+#: src/kcm/materialdecoration_kcm.json:3
+#, kde-format
+msgid "Configuration module for the Material Decoration"
+msgstr "Άρθρωμα ρυθμίσεων για τη διακόσμηση Material"
+
+#: src/kcm/materialdecoration_kcm.json:5
+#, kde-format
+msgid "Material Decoration"
+msgstr "Διακόσμηση Material"
+
+#: src/kcm/config.ui
+msgid "Use accent color for the active window border"
+msgstr "Χρήση χρώματος έμφασης για το πλαίσιο του ενεργού παραθύρου"
+
+#: src/kcm/config.ui
+msgid "Remember window position (Wayland)"
+msgstr "Απομνημόνευση θέσης παραθύρου (Wayland)"
+
+#: src/kcm/config.ui
+msgid ""
+"Save window position when a window closes\n"
+"and restore it when it opens again.\n"
+"The application controls its size.\n"
+"Requires the Material Tiling Popup KWin script.\n"
+"Windows of the same application without a distinct identity\n"
+"share the state of the last closed window."
+msgstr ""
+"Αποθηκεύει τη θέση του παραθύρου όταν κλείνει\n"
+"και την επαναφέρει όταν ανοίγει ξανά.\n"
+"Το μέγεθος ελέγχεται από την εφαρμογή.\n"
+"Απαιτείται το σενάριο Material Tiling Popup του KWin.\n"
+"Τα παράθυρα της ίδιας εφαρμογής χωρίς ξεχωριστό αναγνωριστικό\n"
+"μοιράζονται την κατάσταση του τελευταίου παραθύρου που έκλεισε."
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Do not remember window position"
+msgstr "Να μην απομνημονεύεται η θέση παραθύρου"
+
+#: src/kcm/config.ui
+msgid "Window Management"
+msgstr "Διαχείριση παραθύρων"
+
+#: src/kcm/config.ui
+msgid "Remember the screen where the window was last closed"
+msgstr "Απομνημόνευση της οθόνης όπου το παράθυρο έκλεισε τελευταία φορά"
+
+#: src/kcm/config.ui
+msgid ""
+"Restore the saved screen.\n"
+"When disabled, use the screen chosen by KWin when the window opens."
+msgstr ""
+"Επαναφέρει την αποθηκευμένη οθόνη.\n"
+"Αν απενεργοποιηθεί, χρησιμοποιείται η οθόνη που επιλέγει\n"
+"το KWin όταν ανοίγει το παράθυρο."
+
+#: src/kcm/config.ui
+msgid "Remember the virtual desktop where the window was last closed"
+msgstr "Απομνημόνευση της εικονικής επιφάνειας εργασίας όπου το παράθυρο έκλεισε τελευταία φορά"
+
+#: src/kcm/config.ui
+msgid ""
+"Restore the saved virtual desktop, switch to it and activate the window.\n"
+"When disabled, keep the desktop chosen when the window opens."
+msgstr ""
+"Επαναφέρει την αποθηκευμένη εικονική επιφάνεια εργασίας, μεταβαίνει\n"
+"σε αυτή και ενεργοποιεί το παράθυρο.\n"
+"Αν απενεργοποιηθεί, διατηρείται η επιφάνεια εργασίας που επιλέχθηκε κατά το άνοιγμα."
+
+#: src/kcm/config.ui
+msgid "Resize other snapped windows when restoring saved proportions"
+msgstr "Αλλαγή μεγέθους άλλων προσκολλημένων παραθύρων κατά την επαναφορά αποθηκευμένων αναλογιών"
+
+#: src/kcm/config.ui
+msgid ""
+"Allow restoring a snapped window's saved proportions to\n"
+"resize other windows in the same quick-tile layout.\n"
+"When disabled, restore the saved proportions only to the reopened window."
+msgstr ""
+"Επιτρέπει στην επαναφορά των αποθηκευμένων αναλογιών ενός προσκολλημένου παραθύρου να\n"
+"αλλάζει το μέγεθος άλλων παραθύρων στην ίδια διάταξη γρήγορης παράθεσης.\n"
+"Αν απενεργοποιηθεί, οι αποθηκευμένες αναλογίες επαναφέρονται μόνο στο παράθυρο που ανοίγει ξανά."
+
+#: src/kcm/config.ui
+msgid "Let KWin place additional windows of the same application"
+msgstr "Ανάθεση στο KWin της τοποθέτησης πρόσθετων παραθύρων της ίδιας εφαρμογής"
+
+#: src/kcm/config.ui
+msgid ""
+"When another normal window of the same application is already\n"
+"open, leave position, screen, virtual desktop and tiling to KWin.\n"
+"The first window still uses saved restoration.\n"
+"When disabled, apply the restoration settings to\n"
+"additional windows too, cascading overlapping windows."
+msgstr ""
+"Όταν είναι ήδη ανοιχτό άλλο κανονικό παράθυρο της ίδιας εφαρμογής, αφήνει στο\n"
+"KWin τη θέση, την οθόνη, την εικονική επιφάνεια εργασίας και την παράθεση.\n"
+"Το πρώτο παράθυρο εξακολουθεί να επαναφέρει την αποθηκευμένη κατάσταση.\n"
+"Αν απενεργοποιηθεί, οι ρυθμίσεις επαναφοράς εφαρμόζονται και στα\n"
+"πρόσθετα παράθυρα, με κλιμακωτή τοποθέτηση όσων επικαλύπτονται."
+
+#: src/kcm/config.ui
+msgid ""
+"Show the window title on mouse over when it is\n"
+"hidden due to limited space or shortened to fit.\n"
+"Requires the application menu to be always visible."
+msgstr ""
+"Εμφανίζει κατά την αιώρηση του δείκτη τον τίτλο\n"
+"που έχει κρυφτεί ή συντομευτεί λόγω περιορισμένου χώρου.\n"
+"Απαιτείται να είναι πάντα ορατό το μενού εφαρμογής."
+
+#: src/kcm/config.ui
+msgid ""
+"Center aligns the title within the available space.\n"
+"Center (Full Width) centers it on the window,\n"
+"shifting it to avoid menus and buttons."
+msgstr ""
+"Το Κέντρο στοιχίζει τον τίτλο στον διαθέσιμο χώρο.\n"
+"Το Κέντρο (πλήρες πλάτος) τον κεντράρει ως προς το\n"
+"παράθυρο, μετακινώντας τον ώστε να αποφεύγει μενού και κουμπιά."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts the opacity of the active window title bar and borders.\n"
+"Does not change the opacity of the window contents."
+msgstr ""
+"Ρυθμίζει την αδιαφάνεια της γραμμής τίτλου και του πλαισίου του ενεργού παραθύρου.\n"
+"Δεν αλλάζει την αδιαφάνεια του περιεχομένου του παραθύρου."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts the opacity of inactive window title bars and borders.\n"
+"Does not change the opacity of the window contents."
+msgstr ""
+"Ρυθμίζει την αδιαφάνεια των γραμμών τίτλου και των πλαισίων των ανενεργών παραθύρων.\n"
+"Δεν αλλάζει την αδιαφάνεια του περιεχομένου των παραθύρων."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses square corners when a window is snapped to a tiling zone.\n"
+"Floating windows keep the configured corner rounding."
+msgstr ""
+"Χρησιμοποιεί ορθές γωνίες όταν ένα παράθυρο προσκολλάται σε περιοχή παράθεσης.\n"
+"Τα ελεύθερα παράθυρα διατηρούν τη ρυθμισμένη στρογγυλοποίηση γωνιών."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the selected colors for borders and the outline, if enabled.\n"
+"When disabled, uses the frame color from the window color scheme."
+msgstr ""
+"Χρησιμοποιεί τα επιλεγμένα χρώματα για το πλαίσιο\n"
+"και το περίγραμμα, αν είναι ενεργό.\n"
+"Αν απενεργοποιηθεί, χρησιμοποιεί το χρώμα πλαισίου από το χρωματικό σχήμα του παραθύρου."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the window color scheme accent color instead\n"
+"of the manually selected active border color.\n"
+"Also applies to the outline."
+msgstr ""
+"Χρησιμοποιεί το χρώμα έμφασης του χρωματικού σχήματος του\n"
+"παραθύρου αντί του χειροκίνητα επιλεγμένου χρώματος ενεργού πλαισίου.\n"
+"Εφαρμόζεται και στο περίγραμμα."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid ""
+"Draws a thin line around the window\n"
+"using the active or inactive border color.\n"
+"The outline stays opaque even when the decoration is transparent."
+msgstr ""
+"Σχεδιάζει μια λεπτή γραμμή γύρω από το παράθυρο\n"
+"με το χρώμα ενεργού ή ανενεργού πλαισίου.\n"
+"Το περίγραμμα παραμένει αδιαφανές ακόμη και όταν η διακόσμηση είναι διαφανής."
+
+#: src/kcm/config.ui
+msgid ""
+"Hides the title when the application menu\n"
+"leaves less space than the configured minimum.\n"
+"When disabled, keeps the title visible and shortens it as needed."
+msgstr ""
+"Κρύβει τον τίτλο όταν το μενού εφαρμογής\n"
+"αφήνει λιγότερο χώρο από το καθορισμένο ελάχιστο.\n"
+"Αν απενεργοποιηθεί, διατηρεί τον τίτλο ορατό και τον συντομεύει όταν χρειάζεται."
+
+#: src/kcm/config.ui
+msgid ""
+"Minimum width in pixels available beside the\n"
+"application menu before the title is hidden.\n"
+"Only applies when hiding the title for limited space is enabled."
+msgstr ""
+"Ελάχιστο διαθέσιμο πλάτος σε εικονοστοιχεία δίπλα στο\n"
+"μενού εφαρμογής πριν κρυφτεί ο τίτλος.\n"
+"Ισχύει μόνο όταν είναι ενεργή η απόκρυψη τίτλου λόγω περιορισμένου χώρου."
+
+#: src/kcm/config.ui
+msgid ""
+"Keeps the application menu visible in the title bar.\n"
+"When disabled, the menu appears on mouse over."
+msgstr ""
+"Διατηρεί το μενού εφαρμογής ορατό στη γραμμή τίτλου.\n"
+"Αν απενεργοποιηθεί, το μενού εμφανίζεται με την αιώρηση του δείκτη."
+
+#: src/kcm/config.ui
+msgid ""
+"Adds a button to find and run application menu commands.\n"
+"Requires the application to export its menu to the decoration."
+msgstr ""
+"Προσθέτει κουμπί για αναζήτηση και εκτέλεση εντολών του μενού εφαρμογής.\n"
+"Απαιτείται η εφαρμογή να διαθέτει το μενού της στη διακόσμηση παραθύρου."
+
+#: src/kcm/config.ui
+msgid ""
+"Includes unavailable commands in search results.\n"
+"They remain disabled and cannot be run."
+msgstr ""
+"Περιλαμβάνει μη διαθέσιμες εντολές στα αποτελέσματα αναζήτησης.\n"
+"Παραμένουν απενεργοποιημένες και δεν μπορούν να εκτελεστούν."
+
+#: src/kcm/config.ui
+msgid ""
+"Excludes top-level menu names, such as File or Edit, from matching.\n"
+"Commands inside those menus are still searched."
+msgstr ""
+"Εξαιρεί από την αντιστοίχιση τα ονόματα μενού\n"
+"ανώτατου επιπέδου, όπως Αρχείο ή Επεξεργασία.\n"
+"Οι εντολές μέσα σε αυτά τα μενού εξακολουθούν να αναζητούνται."
+
+#: src/kcm/config.ui
+msgid ""
+"Searches command names only, excluding the names of their parent menus.\n"
+"Also enables ignoring top-level menu labels."
+msgstr ""
+"Αναζητά μόνο ονόματα εντολών, εξαιρώντας τα ονόματα των μενού που τις περιέχουν.\n"
+"Ενεργοποιεί και την παράβλεψη ονομάτων μενού ανώτατου επιπέδου."
+
+#: src/kcm/config.ui
+msgid ""
+"Finds approximate matches, including minor typing errors, and ranks results by relevance.\n"
+"When disabled, searches for the typed text as a substring."
+msgstr ""
+"Εντοπίζει κατά προσέγγιση αντιστοιχίσεις, ακόμη και μικρά λάθη\n"
+"πληκτρολόγησης, και ταξινομεί τα αποτελέσματα κατά συνάφεια.\n"
+"Αν απενεργοποιηθεί, αναζητά το πληκτρολογημένο κείμενο ως υποσυμβολοσειρά."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid ""
+"Collects the application menu in one button instead of\n"
+"showing separate top-level menu buttons in the title bar."
+msgstr ""
+"Συγκεντρώνει το μενού εφαρμογής σε ένα κουμπί αντί για\n"
+"ξεχωριστά κουμπιά μενού ανώτατου επιπέδου στη γραμμή τίτλου."
+
+#: src/kcm/config.ui
+msgid ""
+"Adds horizontal space on both sides of\n"
+"menu labels in the title bar.\n"
+"Higher values make the buttons wider."
+msgstr ""
+"Προσθέτει οριζόντιο χώρο και στις δύο πλευρές\n"
+"των ονομάτων μενού στη γραμμή τίτλου.\n"
+"Μεγαλύτερες τιμές κάνουν τα κουμπιά πλατύτερα."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the system menu font.\n"
+"When disabled, uses the title bar font."
+msgstr ""
+"Χρησιμοποιεί τη γραμματοσειρά μενού συστήματος.\n"
+"Αν απενεργοποιηθεί, χρησιμοποιεί τη γραμματοσειρά της γραμμής τίτλου."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses system selection colors to highlight application menu buttons.\n"
+"When disabled, uses the decoration button highlighting."
+msgstr ""
+"Χρησιμοποιεί τα χρώματα επιλογής του συστήματος για\n"
+"την επισήμανση των κουμπιών μενού εφαρμογής.\n"
+"Αν απενεργοποιηθεί, χρησιμοποιεί την επισήμανση των κουμπιών διακόσμησης."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the window color scheme for popup menus and the tiling popup.\n"
+"When disabled, uses the default system palette."
+msgstr ""
+"Χρησιμοποιεί το χρωματικό σχήμα του παραθύρου για τα\n"
+"αναδυόμενα μενού και το αναδυόμενο παράθυρο παράθεσης.\n"
+"Αν απενεργοποιηθεί, χρησιμοποιεί την προεπιλεγμένη παλέτα του συστήματος."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts shadow opacity without changing its size.\n"
+"Higher values make the shadow stronger."
+msgstr ""
+"Ρυθμίζει την αδιαφάνεια της σκιάς χωρίς να αλλάζει το μέγεθός της.\n"
+"Μεγαλύτερες τιμές κάνουν τη σκιά πιο έντονη."
+
+#: src/kcm/config.ui
+msgid ""
+"Hold Maximize to show snapping zones, Minimize to minimize other windows\n"
+"on the screen, or Close to minimize to the system tray.\n"
+"Requires the corresponding support or scripts.\n"
+"See the information button for requirements."
+msgstr ""
+"Κρατήστε πατημένη τη μεγιστοποίηση για εμφάνιση περιοχών προσκόλλησης, την\n"
+"ελαχιστοποίηση για ελαχιστοποίηση των άλλων παραθύρων της οθόνης ή\n"
+"το κλείσιμο για ελαχιστοποίηση στο πλαίσιο συστήματος.\n"
+"Απαιτείται η αντίστοιχη υποστήριξη ή σενάρια.\n"
+"Δείτε το κουμπί πληροφοριών για τις απαιτήσεις."
+
+#: src/kcm/config.ui
+msgid "Time to hold a window button before its additional action is triggered."
+msgstr ""
+"Χρόνος που πρέπει να κρατάτε πατημένο ένα κουμπί\n"
+"παραθύρου πριν εκτελεστεί η πρόσθετη ενέργειά του."
+
+#: src/kcm/config.ui
+msgid ""
+"Shows snapping zones when the pointer stays over Maximize, without clicking.\n"
+"Requires the Material Tiling Popup KWin script."
+msgstr ""
+"Εμφανίζει περιοχές προσκόλλησης όταν ο δείκτης παραμένει πάνω στη μεγιστοποίηση, χωρίς κλικ.\n"
+"Απαιτείται το σενάριο Material Tiling Popup του KWin."
+
+#: src/kcm/config.ui
+msgid ""
+"Time to wait before opening the tiling\n"
+"popup while the pointer stays over Maximize."
+msgstr ""
+"Χρόνος αναμονής πριν ανοίξει το αναδυόμενο παράθυρο παράθεσης\n"
+"ενώ ο δείκτης παραμένει πάνω στη μεγιστοποίηση."
+
+#: src/kcm/config.ui
+msgid ""
+"Allows window dragging to start from decoration\n"
+"buttons such as Minimize and Maximize.\n"
+"Application menu buttons still allow dragging when this is disabled."
+msgstr ""
+"Επιτρέπει την έναρξη συρσίματος παραθύρου από κουμπιά διακόσμησης, όπως ελαχιστοποίηση και μεγιστοποίηση.\n"
+"Το σύρσιμο από κουμπιά μενού εφαρμογής παραμένει διαθέσιμο ακόμη και αν απενεργοποιηθεί."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Enter the text to match against the window title or class.\n"
+"Use Detect Window Properties to capture it from an open window."
+msgstr ""
+"Εισαγάγετε το κείμενο για σύγκριση με τον\n"
+"τίτλο ή την κλάση του παραθύρου.\n"
+"Χρησιμοποιήστε την ανίχνευση ιδιοτήτων για να το λάβετε από ανοιχτό παράθυρο."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"The title is the text shown in\n"
+"the title bar and may change.\n"
+"The class identifies the application."
+msgstr ""
+"Ο τίτλος είναι το κείμενο στη γραμμή τίτλου και μπορεί να αλλάζει.\n"
+"Η κλάση προσδιορίζει την εφαρμογή."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Exact Match requires the whole value.\n"
+"Substring Match finds the text anywhere within it.\n"
+"Matching is case-insensitive and does not use regular expressions."
+msgstr ""
+"Η ακριβής αντιστοίχιση απαιτεί ολόκληρη την τιμή.\n"
+"Η αντιστοίχιση υποσυμβολοσειράς βρίσκει το κείμενο οπουδήποτε μέσα στην τιμή.\n"
+"Δεν γίνεται διάκριση πεζών και κεφαλαίων και δεν χρησιμοποιούνται κανονικές εκφράσεις."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Excludes matching windows from saving and restoring their\n"
+"position, even when enabled in the global settings."
+msgstr ""
+"Εξαιρεί τα αντίστοιχα παράθυρα από την αποθήκευση και επαναφορά της\n"
+"θέσης τους, ακόμη και όταν είναι ενεργή στις καθολικές ρυθμίσεις."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Overrides whether menus follow decoration colors for matching windows.\n"
+"Use global setting keeps the general preference."
+msgstr ""
+"Ορίζει αν τα μενού των αντίστοιχων παραθύρων ακολουθούν τα χρώματα διακόσμησης.\n"
+"Η Χρήση της καθολικής ρύθμισης διατηρεί τη γενική προτίμηση."

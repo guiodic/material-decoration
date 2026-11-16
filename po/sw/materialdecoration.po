@@ -1,0 +1,1011 @@
+# Translation of materialdecoration into sw.
+# SPDX-FileCopyrightText: 2026 Guido Iodice <guido.iodice@gmail.com>
+# This file is distributed under the same license as materialdecoration.
+msgid ""
+msgstr ""
+"Project-Id-Version: materialdecoration\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-27 00:03+0000\n"
+"PO-Revision-Date: 2026-11-16 17:50+0100\n"
+"Last-Translator: Guido Iodice <guido.iodice@gmail.com>\n"
+"Language-Team: sw\n"
+"Language: sw\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/Button.cc:929
+#, kde-format
+msgid "Press and hold to minimize other windows"
+msgstr "Bonyeza na ushikilie ili kupunguza madirisha mengine"
+
+#: src/Button.cc:932
+#, kde-format
+msgid "Press and hold to show snapping zones"
+msgstr "Bonyeza na ushikilie ili kuonyesha maeneo ya kupanga"
+
+#: src/Button.cc:935
+#, kde-format
+msgid "Press and hold to minimize to the notification area"
+msgstr "Bonyeza na ushikilie ili kupunguza hadi eneo la arifa"
+
+#: src/Button.cc:1012
+#, kde-format
+msgid ""
+"Install kwin-minimize2tray and enable Minimize to Tray in System Settings > "
+"Window Management > KWin Scripts."
+msgstr "Sakinisha kwin-minimize2tray na uwashe Minimize to Tray katika Mipangilio ya Mfumo > Usimamizi wa Madirisha > Hati za KWin."
+
+#: src/Button.cc:1018
+#, kde-format
+msgid ""
+"The action to minimize all other windows is unavailable. It requires Plasma "
+"6.6 or later."
+msgstr "Kitendo cha kupunguza madirisha mengine yote hakipatikani. Kinahitaji Plasma 6.6 au toleo jipya zaidi."
+
+#: src/Decoration.cc:248
+#, kde-format
+msgid ""
+"Enable the Material Tiling Popup script in System Settings > Window "
+"Management > KWin Scripts."
+msgstr "Washa hati ya Material Tiling Popup katika Mipangilio ya Mfumo > Usimamizi wa Madirisha > Hati za KWin."
+
+#: src/Decoration.cc:267
+#, kde-format
+msgid "The custom tile is unavailable. Open the popup again."
+msgstr "Kigae maalumu hakipatikani. Fungua tena kidirisha ibukizi."
+
+#: src/TilingPopup.cc:18
+#, kde-format
+msgid "Left half"
+msgstr "Nusu ya kushoto"
+
+#: src/TilingPopup.cc:19
+#, kde-format
+msgid "Right half"
+msgstr "Nusu ya kulia"
+
+#: src/TilingPopup.cc:20
+#, kde-format
+msgid "Top half"
+msgstr "Nusu ya juu"
+
+#: src/TilingPopup.cc:21
+#, kde-format
+msgid "Bottom half"
+msgstr "Nusu ya chini"
+
+#: src/TilingPopup.cc:22
+#, kde-format
+msgid "Top left quarter"
+msgstr "Robo ya juu kushoto"
+
+#: src/TilingPopup.cc:23
+#, kde-format
+msgid "Top right quarter"
+msgstr "Robo ya juu kulia"
+
+#: src/TilingPopup.cc:24
+#, kde-format
+msgid "Bottom left quarter"
+msgstr "Robo ya chini kushoto"
+
+#: src/TilingPopup.cc:25
+#, kde-format
+msgid "Bottom right quarter"
+msgstr "Robo ya chini kulia"
+
+#: src/TilingPopup.cc:36
+#, kde-format
+msgid "Window tiling layouts"
+msgstr "Mipangilio ya vigae vya madirisha"
+
+#: src/TilingPopup.cc:50
+#, kde-format
+msgid "Custom tiling layout (Meta+T)"
+msgstr "Mpangilio maalumu wa vigae (Meta+T)"
+
+#: src/TilingPopup.cc:51
+#, kde-format
+msgid "Custom layout unavailable"
+msgstr "Mpangilio maalumu haupatikani"
+
+#: src/TilingPopup.cc:79
+#, kde-format
+msgid "Meta+T to edit snapping zones"
+msgstr "Meta+T ili kuhariri maeneo ya kupanga"
+
+#: src/TilingPopup.cc:102
+#, kde-format
+msgid "Custom tile %1"
+msgstr "Kigae maalumu %1"
+
+#: src/kcm/DetectDialog.cc:37
+#, kde-format
+msgid "Detect Window Properties"
+msgstr "Tambua Sifa za Dirisha"
+
+#: src/kcm/DetectDialog.cc:41
+#, kde-format
+msgid ""
+"Click 'Detect' and then click on the target window to capture its properties."
+msgstr "Bofya «Tambua», kisha ubofye dirisha unalotaka ili kupata sifa zake."
+
+#: src/kcm/DetectDialog.cc:46
+#, kde-format
+msgid "Detect"
+msgstr "Tambua"
+
+#: src/kcm/DetectDialog.cc:60
+#, kde-format
+msgid "Querying KWin for window information..."
+msgstr "Inaomba taarifa za dirisha kutoka KWin..."
+
+#: src/kcm/DetectDialog.cc:80 src/kcm/DetectDialog.cc:81
+#, kde-format
+msgid "(unavailable)"
+msgstr "(haipatikani)"
+
+#: src/kcm/DetectDialog.cc:83
+#, kde-format
+msgid ""
+"Captured Window Class: %1\n"
+"Captured Window Title: %2"
+msgstr ""
+"Darasa la dirisha lililotambuliwa: %1\n"
+"Kichwa cha dirisha kilichotambuliwa: %2"
+
+#: src/kcm/DetectDialog.cc:86
+#, kde-format
+msgid "Failed to detect window info: %1"
+msgstr "Imeshindwa kutambua taarifa za dirisha: %1"
+
+#: src/kcm/ExceptionDialog.cc:40
+#, kde-format
+msgid "Window Exception Settings"
+msgstr "Mipangilio ya Vighairi vya Madirisha"
+
+#: src/kcm/ExceptionDialog.cc:45
+#, kde-format
+msgid "Window Identification"
+msgstr "Utambulisho wa Dirisha"
+
+#: src/kcm/ExceptionDialog.cc:49
+#, kde-format
+msgid "Detect Window Properties..."
+msgstr "Tambua sifa za dirisha..."
+
+#: src/kcm/ExceptionDialog.cc:55
+#, kde-format
+msgid "Window Property / Pattern:"
+msgstr "Sifa ya dirisha / kiolezo:"
+
+#: src/kcm/ExceptionDialog.cc:58
+#, kde-format
+msgid "Window Class"
+msgstr "Darasa la Dirisha"
+
+#: src/kcm/ExceptionDialog.cc:58
+#, kde-format
+msgid "Window Title"
+msgstr "Kichwa cha Dirisha"
+
+#: src/kcm/ExceptionDialog.cc:60
+#, kde-format
+msgid "Match against:"
+msgstr "Linganisha na:"
+
+#: src/kcm/ExceptionDialog.cc:63
+#, kde-format
+msgid "Exact Match"
+msgstr "Ulinganisho Kamili"
+
+#: src/kcm/ExceptionDialog.cc:63
+#, kde-format
+msgid "Substring Match"
+msgstr "Ulinganisho wa Sehemu ya Maandishi"
+
+#: src/kcm/ExceptionDialog.cc:64
+#, kde-format
+msgid "Matching mode:"
+msgstr "Njia ya kulinganisha:"
+
+#: src/kcm/ExceptionDialog.cc:69
+#, kde-format
+msgid "Window Options"
+msgstr "Chaguo za Dirisha"
+
+#: src/kcm/ExceptionDialog.cc:72
+#, kde-format
+msgid "Hide window title bar"
+msgstr "Ficha upau wa kichwa cha dirisha"
+
+#: src/kcm/ExceptionDialog.cc:73
+#, kde-format
+msgid "Show the window title and hide the menu"
+msgstr "Onyesha kichwa cha dirisha na ufiche menyu"
+
+#: src/kcm/ExceptionDialog.cc:74
+#, kde-format
+msgid "Show menu as hamburger"
+msgstr "Onyesha menyu kama kitufe cha mistari mitatu"
+
+#: src/kcm/ExceptionDialog.cc:75
+#, kde-format
+msgid "Don't draw window shadow"
+msgstr "Usichore kivuli cha dirisha"
+
+#: src/kcm/ExceptionDialog.cc:76
+#, kde-format
+msgid "Don't round window corners"
+msgstr "Usifanye pembe za dirisha kuwa za mviringo"
+
+#: src/kcm/ExceptionDialog.cc:77
+#, kde-format
+msgid "Paint a thin line around the window"
+msgstr "Chora mstari mwembamba kuzunguka dirisha"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Disabled"
+msgstr "Imezimwa"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Enabled"
+msgstr "Imewashwa"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Use global setting"
+msgstr "Tumia mpangilio wa jumla"
+
+#: src/kcm/ExceptionDialog.cc:89 src/kcm/config.ui:328
+#, kde-format
+msgid "Menus follow decoration colors"
+msgstr "Menyu zifuate rangi za mapambo ya dirisha"
+
+#: src/kcm/ExceptionDialog.cc:106
+#, kde-format
+msgid "Pattern cannot be empty."
+msgstr "Kiolezo hakiwezi kuwa tupu."
+
+#: src/kcm/ExceptionDialog.cc:106
+#, kde-format
+msgid "Warning"
+msgstr "Onyo"
+
+#: src/kcm/ExceptionListWidget.cc:66
+#, kde-format
+msgid "Add..."
+msgstr "Ongeza..."
+
+#: src/kcm/ExceptionListWidget.cc:67
+#, kde-format
+msgid "Edit..."
+msgstr "Hariri..."
+
+#: src/kcm/ExceptionListWidget.cc:68
+#, kde-format
+msgid "Remove"
+msgstr "Ondoa"
+
+#: src/kcm/ExceptionListWidget.cc:69
+#, kde-format
+msgid "Move Up"
+msgstr "Sogeza Juu"
+
+#: src/kcm/ExceptionListWidget.cc:70
+#, kde-format
+msgid "Move Down"
+msgstr "Sogeza Chini"
+
+#: src/kcm/ExceptionListWidget.cc:82
+#, kde-format
+msgid ""
+"Rules are evaluated from top to bottom; the first matching rule will be "
+"applied."
+msgstr "Kanuni hukaguliwa kutoka juu kwenda chini; kanuni ya kwanza inayolingana hutumika."
+
+#: src/kcm/ExceptionModel.cc:50
+#, kde-format
+msgid "Empty pattern"
+msgstr "Kiolezo tupu"
+
+#: src/kcm/ExceptionModel.cc:52
+#, kde-format
+msgid "Class"
+msgstr "Darasa"
+
+#: src/kcm/ExceptionModel.cc:52
+#, kde-format
+msgid "Title"
+msgstr "Kichwa"
+
+#: src/kcm/config.ui:14
+#, kde-format
+msgid "Form"
+msgstr "Fomu"
+
+#: src/kcm/config.ui:39
+#, kde-format
+msgid "Appearance"
+msgstr "Mwonekano"
+
+#: src/kcm/config.ui:45
+#, kde-format
+msgid "Title alignment"
+msgstr "Mpangilio wa kichwa"
+
+#: src/kcm/config.ui:55
+#, kde-format
+msgid "Button size"
+msgstr "Ukubwa wa vitufe"
+
+#: src/kcm/config.ui:65
+#, kde-format
+msgid "Active window opacity"
+msgstr "Kutopitisha mwanga kwa dirisha linalotumika"
+
+#: src/kcm/config.ui:72 src/kcm/config.ui:92
+#, kde-format
+msgid "%"
+msgstr "%"
+
+#: src/kcm/config.ui:85
+#, kde-format
+msgid "Inactive window opacity"
+msgstr "Kutopitisha mwanga kwa dirisha lisilotumika"
+
+#: src/kcm/config.ui:105
+#, kde-format
+msgid "Corner radius"
+msgstr "Nusu kipenyo ya pembe"
+
+#: src/kcm/config.ui:112
+#, kde-format
+msgid "px"
+msgstr "px"
+
+#: src/kcm/config.ui:125
+#, kde-format
+msgid "Round bottom corners"
+msgstr "Fanya pembe za chini kuwa za mviringo"
+
+#: src/kcm/config.ui:135
+#, kde-format
+msgid "Don't round corners for tiled windows"
+msgstr "Usifanye pembe za madirisha ya vigae kuwa za mviringo"
+
+#: src/kcm/config.ui:145
+#, kde-format
+msgid "Use custom border and outline colors"
+msgstr "Tumia rangi maalumu za mipaka na mstari wa nje"
+
+#: src/kcm/config.ui:152
+#, kde-format
+msgid "Active window border color"
+msgstr "Rangi ya mpaka wa dirisha linalotumika"
+
+#: src/kcm/config.ui:166
+#, kde-format
+msgid "Inactive window border color"
+msgstr "Rangi ya mpaka wa dirisha lisilotumika"
+
+#: src/kcm/config.ui:180
+#, kde-format
+msgid "Paint a thin outline around the window"
+msgstr "Chora mstari mwembamba wa nje kuzunguka dirisha"
+
+#: src/kcm/config.ui:187
+#, kde-format
+msgid "Hide window title when space is limited"
+msgstr "Ficha kichwa cha dirisha nafasi inapokuwa ndogo"
+
+#: src/kcm/config.ui:194
+#, kde-format
+msgid "Show window title on mouse over"
+msgstr "Onyesha kichwa cha dirisha kipanya kinapopita juu yake"
+
+#: src/kcm/config.ui:201
+#, kde-format
+msgid "Minimum reserved space"
+msgstr "Nafasi ya chini kabisa iliyotengwa"
+
+#: src/kcm/config.ui:208
+#, kde-format
+msgid " px"
+msgstr " px"
+
+#: src/kcm/config.ui:221
+#, kde-format
+msgid "Enable animations"
+msgstr "Washa uhuishaji"
+
+#: src/kcm/config.ui:228
+#, kde-format
+msgid "Animation duration"
+msgstr "Muda wa uhuishaji"
+
+#: src/kcm/config.ui:235
+#, kde-format
+msgid "ms"
+msgstr "ms"
+
+#: src/kcm/config.ui:249
+#, kde-format
+msgid "Menu and Search"
+msgstr "Menyu na Utafutaji"
+
+#: src/kcm/config.ui:255
+#, kde-format
+msgid "Always show application menu"
+msgstr "Onyesha menyu ya programu kila wakati"
+
+#: src/kcm/config.ui:262
+#, kde-format
+msgid "Enable search button"
+msgstr "Washa kitufe cha kutafuta"
+
+#: src/kcm/config.ui:269
+#, kde-format
+msgid "Show disabled menu actions"
+msgstr "Onyesha vitendo vya menyu vilivyozimwa"
+
+#: src/kcm/config.ui:276
+#, kde-format
+msgid "Ignore top-level menu labels"
+msgstr "Puuza majina ya menyu za ngazi ya juu"
+
+#: src/kcm/config.ui:283
+#, kde-format
+msgid "Also ignore submenu labels"
+msgstr "Puuza pia majina ya menyu ndogo"
+
+#: src/kcm/config.ui:290
+#, kde-format
+msgid "Enable fuzzy search"
+msgstr "Washa utafutaji wa kukadiria"
+
+#: src/kcm/config.ui:297
+#, kde-format
+msgid "Use hamburger menu"
+msgstr "Tumia menyu ya mistari mitatu"
+
+#: src/kcm/config.ui:304
+#, kde-format
+msgid "Menu item spacing"
+msgstr "Nafasi kati ya vipengee vya menyu"
+
+#: src/kcm/config.ui:314
+#, kde-format
+msgid "Use system menu font"
+msgstr "Tumia fonti ya menyu ya mfumo"
+
+#: src/kcm/config.ui:321
+#, kde-format
+msgid "Use system colors"
+msgstr "Tumia rangi za mfumo"
+
+#: src/kcm/config.ui:336
+#, kde-format
+msgid "Shadows"
+msgstr "Vivuli"
+
+#: src/kcm/config.ui:342
+#, kde-format
+msgid "Shadow size"
+msgstr "Ukubwa wa kivuli"
+
+#: src/kcm/config.ui:352
+#, kde-format
+msgid "Shadow color"
+msgstr "Rangi ya kivuli"
+
+#: src/kcm/config.ui:362
+#, kde-format
+msgid "Shadow strength"
+msgstr "Nguvu ya kivuli"
+
+#: src/kcm/config.ui:391
+#, kde-format
+msgid "Button Options"
+msgstr "Chaguo za Vitufe"
+
+#: src/kcm/config.ui:399
+#, kde-format
+msgid "Enable long-press actions on window buttons"
+msgstr "Washa vitendo vya kubonyeza vitufe vya dirisha kwa muda mrefu"
+
+#: src/kcm/config.ui:412
+#, kde-format
+msgid ""
+"<html><body><div style=\"width: 350px;\">\n"
+"<p>When enabled:</p>\n"
+"<ul>\n"
+"<li>Long-pressing the close button minimizes the window to the system tray "
+"(requires the kwin-minimize2tray plugin)</li>\n"
+"<li>Long-pressing the minimize button minimizes all windows except the "
+"current one (requires Plasma 6.6 or later)</li>\n"
+"</ul>\n"
+"</div></body></html>"
+msgstr ""
+"<html><body><div style=\"width: 350px;\">\n"
+"<p>Ikiwashwa:</p>\n"
+"<ul>\n"
+"<li>Kubonyeza kitufe cha kufunga kwa muda mrefu hupunguza dirisha hadi trei ya mfumo (inahitaji programu-jalizi ya kwin-minimize2tray)</li>\n"
+"<li>Kubonyeza kitufe cha kupunguza kwa muda mrefu hupunguza madirisha yote isipokuwa la sasa (inahitaji Plasma 6.6 au toleo jipya zaidi)</li>\n"
+"</ul>\n"
+"</div></body></html>"
+
+#: src/kcm/config.ui:437
+#, kde-format
+msgid "Long-press duration"
+msgstr "Muda wa kubonyeza kwa muda mrefu"
+
+#: src/kcm/config.ui:444 src/kcm/config.ui:466
+#, kde-format
+msgid " ms"
+msgstr " ms"
+
+#: src/kcm/config.ui:456
+#, kde-format
+msgid "Open tiling popup when hovering over maximize"
+msgstr "Fungua kidirisha cha vigae kishale kinapokuwa juu ya kitufe cha kupanua"
+
+#: src/kcm/config.ui:461
+#, kde-format
+msgid "Tiling popup hover delay"
+msgstr "Kuchelewesha kidirisha ibukizi cha vigae"
+
+#: src/kcm/config.ui:474
+#, kde-format
+msgid "Allow window dragging from buttons"
+msgstr "Ruhusu kuburuta dirisha kutoka kwenye vitufe"
+
+#: src/kcm/config.ui:482
+#, kde-format
+msgid "Window-Specific Overrides"
+msgstr "Mipangilio Maalumu ya Madirisha"
+
+#: src/kcm/kcm.cpp:34
+#, kde-format
+msgid "Left"
+msgstr "Kushoto"
+
+#: src/kcm/kcm.cpp:35
+#, kde-format
+msgid "Center"
+msgstr "Katikati"
+
+#: src/kcm/kcm.cpp:36
+#, kde-format
+msgid "Center (Full Width)"
+msgstr "Katikati (upana wote)"
+
+#: src/kcm/kcm.cpp:37
+#, kde-format
+msgid "Right"
+msgstr "Kulia"
+
+#: src/kcm/kcm.cpp:38
+#, kde-format
+msgid "Hidden"
+msgstr "Imefichwa"
+
+#: src/kcm/kcm.cpp:40
+#, kde-format
+msgid "Very Tiny"
+msgstr "Ndogo kabisa"
+
+#: src/kcm/kcm.cpp:41
+#, kde-format
+msgid "Tiny"
+msgstr "Ndogo sana"
+
+#: src/kcm/kcm.cpp:42 src/kcm/kcm.cpp:48
+#, kde-format
+msgid "Small"
+msgstr "Ndogo"
+
+#: src/kcm/kcm.cpp:43
+#, kde-format
+msgid "Default"
+msgstr "Chaguo-msingi"
+
+#: src/kcm/kcm.cpp:44 src/kcm/kcm.cpp:50
+#, kde-format
+msgid "Large"
+msgstr "Kubwa"
+
+#: src/kcm/kcm.cpp:45 src/kcm/kcm.cpp:51
+#, kde-format
+msgid "Very Large"
+msgstr "Kubwa sana"
+
+#: src/kcm/kcm.cpp:47
+#, kde-format
+msgid "None"
+msgstr "Hakuna"
+
+#: src/kcm/kcm.cpp:49
+#, kde-format
+msgid "Medium"
+msgstr "Wastani"
+
+#: src/kcm/materialdecoration_kcm.json:3
+#, kde-format
+msgid "Configuration module for the Material Decoration"
+msgstr "Moduli ya kusanidi mapambo ya Material"
+
+#: src/kcm/materialdecoration_kcm.json:5
+#, kde-format
+msgid "Material Decoration"
+msgstr "Mapambo ya Material"
+
+#: src/kcm/config.ui
+msgid "Use accent color for the active window border"
+msgstr "Tumia rangi ya msisitizo kwa mpaka wa dirisha linalotumika"
+
+#: src/kcm/config.ui
+msgid "Remember window position (Wayland)"
+msgstr "Kumbuka mahali pa dirisha (Wayland)"
+
+#: src/kcm/config.ui
+msgid ""
+"Save window position when a window closes\n"
+"and restore it when it opens again.\n"
+"The application controls its size.\n"
+"Requires the Material Tiling Popup KWin script.\n"
+"Windows of the same application without a distinct identity\n"
+"share the state of the last closed window."
+msgstr ""
+"Huhifadhi mahali pa dirisha linapofungwa na kuparejesha linapofunguliwa tena.\n"
+"Programu hudhibiti ukubwa wake.\n"
+"Inahitaji hati ya Material Tiling Popup ya KWin.\n"
+"Madirisha ya programu moja yasiyo na utambulisho\n"
+"tofauti hushiriki hali ya dirisha lililofungwa mwisho."
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Do not remember window position"
+msgstr "Usikumbuke mahali pa dirisha"
+
+#: src/kcm/config.ui
+msgid "Window Management"
+msgstr "Usimamizi wa Madirisha"
+
+#: src/kcm/config.ui
+msgid "Remember the screen where the window was last closed"
+msgstr "Kumbuka skrini ambayo dirisha lilifungwa juu yake mara ya mwisho"
+
+#: src/kcm/config.ui
+msgid ""
+"Restore the saved screen.\n"
+"When disabled, use the screen chosen by KWin when the window opens."
+msgstr ""
+"Hurejesha skrini iliyohifadhiwa.\n"
+"Ikizimwa, hutumia skrini iliyochaguliwa na KWin dirisha linapofunguliwa."
+
+#: src/kcm/config.ui
+msgid "Remember the virtual desktop where the window was last closed"
+msgstr "Kumbuka eneo-kazi pepe ambalo dirisha lilifungwa ndani yake mara ya mwisho"
+
+#: src/kcm/config.ui
+msgid ""
+"Restore the saved virtual desktop, switch to it and activate the window.\n"
+"When disabled, keep the desktop chosen when the window opens."
+msgstr ""
+"Hurejesha eneo-kazi pepe lililohifadhiwa, huhamia humo na kufanya dirisha litumike.\n"
+"Ikizimwa, huhifadhi eneo-kazi lililochaguliwa dirisha lilipofunguliwa."
+
+#: src/kcm/config.ui
+msgid "Resize other snapped windows when restoring saved proportions"
+msgstr "Badilisha ukubwa wa madirisha mengine yaliyopangwa wakati wa kurejesha uwiano uliohifadhiwa"
+
+#: src/kcm/config.ui
+msgid ""
+"Allow restoring a snapped window's saved proportions to\n"
+"resize other windows in the same quick-tile layout.\n"
+"When disabled, restore the saved proportions only to the reopened window."
+msgstr ""
+"Huruhusu kurejesha uwiano uliohifadhiwa wa dirisha lililopangwa kubadili ukubwa wa\n"
+"madirisha mengine katika mpangilio uleule wa haraka wa vigae.\n"
+"Ikizimwa, hurejesha uwiano uliohifadhiwa kwa dirisha lililofunguliwa tena pekee."
+
+#: src/kcm/config.ui
+msgid "Let KWin place additional windows of the same application"
+msgstr "Acha KWin ipange madirisha ya ziada ya programu ileile"
+
+#: src/kcm/config.ui
+msgid ""
+"When another normal window of the same application is already\n"
+"open, leave position, screen, virtual desktop and tiling to KWin.\n"
+"The first window still uses saved restoration.\n"
+"When disabled, apply the restoration settings to\n"
+"additional windows too, cascading overlapping windows."
+msgstr ""
+"Ikiwa dirisha jingine la kawaida la programu ileile tayari limefunguliwa,\n"
+"huiachia KWin mahali, skrini, eneo-kazi pepe na upangaji wa vigae.\n"
+"Dirisha la kwanza bado hurejesha hali iliyohifadhiwa.\n"
+"Ikizimwa, hutumia mipangilio ya kurejesha pia kwa madirisha\n"
+"ya ziada, na hupanga yanayofunikana kwa ngazi."
+
+#: src/kcm/config.ui
+msgid ""
+"Show the window title on mouse over when it is\n"
+"hidden due to limited space or shortened to fit.\n"
+"Requires the application menu to be always visible."
+msgstr ""
+"Huonyesha kichwa cha dirisha kishale kinapopita juu yake\n"
+"ikiwa kimefichwa au kufupishwa kutokana na nafasi ndogo.\n"
+"Inahitaji menyu ya programu ionekane kila wakati."
+
+#: src/kcm/config.ui
+msgid ""
+"Center aligns the title within the available space.\n"
+"Center (Full Width) centers it on the window,\n"
+"shifting it to avoid menus and buttons."
+msgstr ""
+"Katikati huweka kichwa katikati ya nafasi iliyopo.\n"
+"Katikati (upana wote) hukipanga katikati ya dirisha,\n"
+"ikikisogeza ili kuepuka menyu na vitufe."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts the opacity of the active window title bar and borders.\n"
+"Does not change the opacity of the window contents."
+msgstr ""
+"Hubadilisha kiwango cha kutopitisha mwanga cha upau\n"
+"wa kichwa na mipaka ya dirisha linalotumika.\n"
+"Haibadilishi kiwango cha kutopitisha mwanga cha yaliyomo dirishani."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts the opacity of inactive window title bars and borders.\n"
+"Does not change the opacity of the window contents."
+msgstr ""
+"Hubadilisha kiwango cha kutopitisha mwanga cha pau\n"
+"za vichwa na mipaka ya madirisha yasiyotumika.\n"
+"Haibadilishi kiwango cha kutopitisha mwanga cha yaliyomo madirishani."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses square corners when a window is snapped to a tiling zone.\n"
+"Floating windows keep the configured corner rounding."
+msgstr ""
+"Hutumia pembe za mraba dirisha linapopangwa kwenye eneo la vigae.\n"
+"Madirisha huru huhifadhi mviringo wa pembe uliowekwa."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the selected colors for borders and the outline, if enabled.\n"
+"When disabled, uses the frame color from the window color scheme."
+msgstr ""
+"Hutumia rangi zilizochaguliwa kwa mipaka na mstari wa nje, ukiwa umewashwa.\n"
+"Ikizimwa, hutumia rangi ya fremu kutoka kwenye mpangilio wa rangi wa dirisha."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the window color scheme accent color instead\n"
+"of the manually selected active border color.\n"
+"Also applies to the outline."
+msgstr ""
+"Hutumia rangi ya msisitizo ya mpangilio wa rangi wa dirisha\n"
+"badala ya rangi ya mpaka hai iliyochaguliwa kwa mkono.\n"
+"Hutumika pia kwa mstari wa nje."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid ""
+"Draws a thin line around the window\n"
+"using the active or inactive border color.\n"
+"The outline stays opaque even when the decoration is transparent."
+msgstr ""
+"Huchora mstari mwembamba kuzunguka dirisha kwa rangi ya mpaka unaotumika au usiotumika.\n"
+"Mstari wa nje hubaki usiopitisha mwanga hata mapambo yakiwa wazi."
+
+#: src/kcm/config.ui
+msgid ""
+"Hides the title when the application menu\n"
+"leaves less space than the configured minimum.\n"
+"When disabled, keeps the title visible and shortens it as needed."
+msgstr ""
+"Huficha kichwa menyu ya programu inapoacha nafasi\n"
+"ndogo kuliko kiwango cha chini kilichowekwa.\n"
+"Ikizimwa, huacha kichwa kionekane na kukifupisha inapohitajika."
+
+#: src/kcm/config.ui
+msgid ""
+"Minimum width in pixels available beside the\n"
+"application menu before the title is hidden.\n"
+"Only applies when hiding the title for limited space is enabled."
+msgstr ""
+"Upana wa chini kabisa kwa pikseli karibu na menyu kabla kichwa hakijafichwa.\n"
+"Hutumika tu ikiwa kuficha kichwa kutokana na nafasi ndogo kumewashwa."
+
+#: src/kcm/config.ui
+msgid ""
+"Keeps the application menu visible in the title bar.\n"
+"When disabled, the menu appears on mouse over."
+msgstr ""
+"Huacha menyu ya programu ionekane kwenye upau wa kichwa.\n"
+"Ikizimwa, menyu huonekana kishale kinapopita juu yake."
+
+#: src/kcm/config.ui
+msgid ""
+"Adds a button to find and run application menu commands.\n"
+"Requires the application to export its menu to the decoration."
+msgstr ""
+"Huongeza kitufe cha kutafuta na kutekeleza amri za menyu ya programu.\n"
+"Programu lazima itoe menyu yake kwa mapambo ya dirisha."
+
+#: src/kcm/config.ui
+msgid ""
+"Includes unavailable commands in search results.\n"
+"They remain disabled and cannot be run."
+msgstr ""
+"Hujumuisha amri zisizopatikana katika matokeo ya utafutaji.\n"
+"Hubaki zimezimwa na haziwezi kutekelezwa."
+
+#: src/kcm/config.ui
+msgid ""
+"Excludes top-level menu names, such as File or Edit, from matching.\n"
+"Commands inside those menus are still searched."
+msgstr ""
+"Huondoa majina ya menyu za juu, kama Faili au Hariri, kwenye ulinganisho.\n"
+"Amri zilizo ndani ya menyu hizo bado hutafutwa."
+
+#: src/kcm/config.ui
+msgid ""
+"Searches command names only, excluding the names of their parent menus.\n"
+"Also enables ignoring top-level menu labels."
+msgstr ""
+"Hutafuta majina ya amri tu, bila majina ya menyu zinazozibeba.\n"
+"Huwasha pia kupuuza majina ya menyu za ngazi ya juu."
+
+#: src/kcm/config.ui
+msgid ""
+"Finds approximate matches, including minor typing errors, and ranks results by relevance.\n"
+"When disabled, searches for the typed text as a substring."
+msgstr ""
+"Hutafuta ulinganifu wa kukadiria, ikijumuisha makosa madogo\n"
+"ya kuandika, na kupanga matokeo kwa umuhimu.\n"
+"Ikizimwa, hutafuta maandishi yaliyoingizwa kama sehemu ya majina."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid ""
+"Collects the application menu in one button instead of\n"
+"showing separate top-level menu buttons in the title bar."
+msgstr ""
+"Hukusanya menyu ya programu kwenye kitufe kimoja badala ya kuonyesha\n"
+"vitufe tofauti vya menyu za juu kwenye upau wa kichwa."
+
+#: src/kcm/config.ui
+msgid ""
+"Adds horizontal space on both sides of\n"
+"menu labels in the title bar.\n"
+"Higher values make the buttons wider."
+msgstr ""
+"Huongeza nafasi ya mlalo pande zote mbili za\n"
+"majina ya menyu kwenye upau wa kichwa.\n"
+"Thamani kubwa hufanya vitufe kuwa vipana zaidi."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the system menu font.\n"
+"When disabled, uses the title bar font."
+msgstr ""
+"Hutumia fonti ya menyu ya mfumo.\n"
+"Ikizimwa, hutumia fonti ya upau wa kichwa."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses system selection colors to highlight application menu buttons.\n"
+"When disabled, uses the decoration button highlighting."
+msgstr ""
+"Hutumia rangi za uteuzi za mfumo kuangazia vitufe vya menyu ya programu.\n"
+"Ikizimwa, hutumia uangaziaji wa vitufe vya mapambo."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the window color scheme for popup menus and the tiling popup.\n"
+"When disabled, uses the default system palette."
+msgstr ""
+"Hutumia mpangilio wa rangi wa dirisha kwa\n"
+"menyu ibukizi na kidirisha cha vigae.\n"
+"Ikizimwa, hutumia paleti ya chaguo-msingi ya mfumo."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts shadow opacity without changing its size.\n"
+"Higher values make the shadow stronger."
+msgstr ""
+"Hubadilisha kiwango cha kutopitisha mwanga cha kivuli bila kubadilisha ukubwa wake.\n"
+"Thamani kubwa hufanya kivuli kiwe na nguvu zaidi."
+
+#: src/kcm/config.ui
+msgid ""
+"Hold Maximize to show snapping zones, Minimize to minimize other windows\n"
+"on the screen, or Close to minimize to the system tray.\n"
+"Requires the corresponding support or scripts.\n"
+"See the information button for requirements."
+msgstr ""
+"Shikilia Panua ili kuona maeneo ya kupanga, Punguza ili kupunguza madirisha\n"
+"mengine kwenye skrini, au Funga ili kupunguza hadi trei ya mfumo.\n"
+"Inahitaji usaidizi au hati zinazohusika.\n"
+"Angalia mahitaji kwenye kitufe cha taarifa."
+
+#: src/kcm/config.ui
+msgid "Time to hold a window button before its additional action is triggered."
+msgstr ""
+"Muda wa kushikilia kitufe cha dirisha kabla\n"
+"ya kitendo chake cha ziada kutekelezwa."
+
+#: src/kcm/config.ui
+msgid ""
+"Shows snapping zones when the pointer stays over Maximize, without clicking.\n"
+"Requires the Material Tiling Popup KWin script."
+msgstr ""
+"Huonyesha maeneo ya kupanga kishale kinapobaki juu ya Panua, bila kubofya.\n"
+"Inahitaji hati ya Material Tiling Popup ya KWin."
+
+#: src/kcm/config.ui
+msgid ""
+"Time to wait before opening the tiling\n"
+"popup while the pointer stays over Maximize."
+msgstr ""
+"Muda wa kusubiri kabla ya kufungua kidirisha\n"
+"cha vigae kishale kinapobaki juu ya Panua."
+
+#: src/kcm/config.ui
+msgid ""
+"Allows window dragging to start from decoration\n"
+"buttons such as Minimize and Maximize.\n"
+"Application menu buttons still allow dragging when this is disabled."
+msgstr ""
+"Huruhusu kuanza kuburuta dirisha kutoka kwenye vitufe\n"
+"vya mapambo kama Punguza na Panua.\n"
+"Kuburuta kutoka kwenye vitufe vya menyu ya programu bado kunapatikana ikizimwa."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Enter the text to match against the window title or class.\n"
+"Use Detect Window Properties to capture it from an open window."
+msgstr ""
+"Ingiza maandishi ya kulinganisha na kichwa au darasa la dirisha.\n"
+"Tumia utambuzi wa sifa za dirisha kuyapata kutoka dirisha lililofunguliwa."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"The title is the text shown in\n"
+"the title bar and may change.\n"
+"The class identifies the application."
+msgstr ""
+"Kichwa ni maandishi kwenye upau wa kichwa na kinaweza kubadilika.\n"
+"Darasa hutambulisha programu."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Exact Match requires the whole value.\n"
+"Substring Match finds the text anywhere within it.\n"
+"Matching is case-insensitive and does not use regular expressions."
+msgstr ""
+"Ulinganisho Kamili huhitaji thamani yote.\n"
+"Ulinganisho wa Sehemu ya Maandishi hutafuta maandishi popote ndani ya thamani.\n"
+"Herufi kubwa na ndogo hazitofautishwi na hakuna matumizi ya semi za kawaida."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Excludes matching windows from saving and restoring their\n"
+"position, even when enabled in the global settings."
+msgstr ""
+"Huondoa madirisha yanayolingana katika kuhifadhi na kurejesha mahali\n"
+"pake, hata ikiwa imewashwa kwenye mipangilio ya jumla."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Overrides whether menus follow decoration colors for matching windows.\n"
+"Use global setting keeps the general preference."
+msgstr ""
+"Hubatilisha mpangilio wa kufuata rangi za mapambo kwa menyu za madirisha yanayolingana.\n"
+"Tumia mpangilio wa jumla huhifadhi chaguo la jumla."

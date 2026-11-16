@@ -1,0 +1,1022 @@
+# Translation of materialdecoration into pt.
+# SPDX-FileCopyrightText: 2026 Guido Iodice <guido.iodice@gmail.com>
+# This file is distributed under the same license as materialdecoration.
+msgid ""
+msgstr ""
+"Project-Id-Version: materialdecoration\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-27 00:03+0000\n"
+"PO-Revision-Date: 2026-11-16 17:50+0100\n"
+"Last-Translator: Guido Iodice <guido.iodice@gmail.com>\n"
+"Language-Team: pt\n"
+"Language: pt\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/Button.cc:929
+#, kde-format
+msgid "Press and hold to minimize other windows"
+msgstr "Prima continuamente para minimizar as outras janelas"
+
+#: src/Button.cc:932
+#, kde-format
+msgid "Press and hold to show snapping zones"
+msgstr "Prima continuamente para mostrar as zonas de encaixe"
+
+#: src/Button.cc:935
+#, kde-format
+msgid "Press and hold to minimize to the notification area"
+msgstr "Prima continuamente para minimizar para a área de notificação"
+
+#: src/Button.cc:1012
+#, kde-format
+msgid ""
+"Install kwin-minimize2tray and enable Minimize to Tray in System Settings > "
+"Window Management > KWin Scripts."
+msgstr "Instale o kwin-minimize2tray e ative o Minimize to Tray em Configuração do Sistema > Gestão de Janelas > Programas do KWin."
+
+#: src/Button.cc:1018
+#, kde-format
+msgid ""
+"The action to minimize all other windows is unavailable. It requires Plasma "
+"6.6 or later."
+msgstr "A ação para minimizar todas as outras janelas não está disponível. Requer o Plasma 6.6 ou posterior."
+
+#: src/Decoration.cc:248
+#, kde-format
+msgid ""
+"Enable the Material Tiling Popup script in System Settings > Window "
+"Management > KWin Scripts."
+msgstr "Ative o programa Material Tiling Popup em Configuração do Sistema > Gestão de Janelas > Programas do KWin."
+
+#: src/Decoration.cc:267
+#, kde-format
+msgid "The custom tile is unavailable. Open the popup again."
+msgstr "A área de mosaico personalizada não está disponível. Abra novamente a janela de disposição."
+
+#: src/TilingPopup.cc:18
+#, kde-format
+msgid "Left half"
+msgstr "Metade esquerda"
+
+#: src/TilingPopup.cc:19
+#, kde-format
+msgid "Right half"
+msgstr "Metade direita"
+
+#: src/TilingPopup.cc:20
+#, kde-format
+msgid "Top half"
+msgstr "Metade superior"
+
+#: src/TilingPopup.cc:21
+#, kde-format
+msgid "Bottom half"
+msgstr "Metade inferior"
+
+#: src/TilingPopup.cc:22
+#, kde-format
+msgid "Top left quarter"
+msgstr "Quarto superior esquerdo"
+
+#: src/TilingPopup.cc:23
+#, kde-format
+msgid "Top right quarter"
+msgstr "Quarto superior direito"
+
+#: src/TilingPopup.cc:24
+#, kde-format
+msgid "Bottom left quarter"
+msgstr "Quarto inferior esquerdo"
+
+#: src/TilingPopup.cc:25
+#, kde-format
+msgid "Bottom right quarter"
+msgstr "Quarto inferior direito"
+
+#: src/TilingPopup.cc:36
+#, kde-format
+msgid "Window tiling layouts"
+msgstr "Disposições de janelas em mosaico"
+
+#: src/TilingPopup.cc:50
+#, kde-format
+msgid "Custom tiling layout (Meta+T)"
+msgstr "Disposição em mosaico personalizada (Meta+T)"
+
+#: src/TilingPopup.cc:51
+#, kde-format
+msgid "Custom layout unavailable"
+msgstr "Disposição personalizada indisponível"
+
+#: src/TilingPopup.cc:79
+#, kde-format
+msgid "Meta+T to edit snapping zones"
+msgstr "Meta+T para editar as zonas de encaixe"
+
+#: src/TilingPopup.cc:102
+#, kde-format
+msgid "Custom tile %1"
+msgstr "Área personalizada %1"
+
+#: src/kcm/DetectDialog.cc:37
+#, kde-format
+msgid "Detect Window Properties"
+msgstr "Detetar as propriedades da janela"
+
+#: src/kcm/DetectDialog.cc:41
+#, kde-format
+msgid ""
+"Click 'Detect' and then click on the target window to capture its properties."
+msgstr "Carregue em «Detetar» e depois na janela pretendida para obter as suas propriedades."
+
+#: src/kcm/DetectDialog.cc:46
+#, kde-format
+msgid "Detect"
+msgstr "Detetar"
+
+#: src/kcm/DetectDialog.cc:60
+#, kde-format
+msgid "Querying KWin for window information..."
+msgstr "A consultar as informações da janela no KWin..."
+
+#: src/kcm/DetectDialog.cc:80 src/kcm/DetectDialog.cc:81
+#, kde-format
+msgid "(unavailable)"
+msgstr "(indisponível)"
+
+#: src/kcm/DetectDialog.cc:83
+#, kde-format
+msgid ""
+"Captured Window Class: %1\n"
+"Captured Window Title: %2"
+msgstr ""
+"Classe da janela detetada: %1\n"
+"Título da janela detetado: %2"
+
+#: src/kcm/DetectDialog.cc:86
+#, kde-format
+msgid "Failed to detect window info: %1"
+msgstr "Não foi possível detetar as informações da janela: %1"
+
+#: src/kcm/ExceptionDialog.cc:40
+#, kde-format
+msgid "Window Exception Settings"
+msgstr "Configuração das exceções de janelas"
+
+#: src/kcm/ExceptionDialog.cc:45
+#, kde-format
+msgid "Window Identification"
+msgstr "Identificação da janela"
+
+#: src/kcm/ExceptionDialog.cc:49
+#, kde-format
+msgid "Detect Window Properties..."
+msgstr "Detetar as propriedades da janela..."
+
+#: src/kcm/ExceptionDialog.cc:55
+#, kde-format
+msgid "Window Property / Pattern:"
+msgstr "Propriedade da janela / padrão:"
+
+#: src/kcm/ExceptionDialog.cc:58
+#, kde-format
+msgid "Window Class"
+msgstr "Classe da janela"
+
+#: src/kcm/ExceptionDialog.cc:58
+#, kde-format
+msgid "Window Title"
+msgstr "Título da janela"
+
+#: src/kcm/ExceptionDialog.cc:60
+#, kde-format
+msgid "Match against:"
+msgstr "Comparar com:"
+
+#: src/kcm/ExceptionDialog.cc:63
+#, kde-format
+msgid "Exact Match"
+msgstr "Correspondência exata"
+
+#: src/kcm/ExceptionDialog.cc:63
+#, kde-format
+msgid "Substring Match"
+msgstr "Correspondência parcial"
+
+#: src/kcm/ExceptionDialog.cc:64
+#, kde-format
+msgid "Matching mode:"
+msgstr "Modo de correspondência:"
+
+#: src/kcm/ExceptionDialog.cc:69
+#, kde-format
+msgid "Window Options"
+msgstr "Opções da janela"
+
+#: src/kcm/ExceptionDialog.cc:72
+#, kde-format
+msgid "Hide window title bar"
+msgstr "Ocultar a barra de título da janela"
+
+#: src/kcm/ExceptionDialog.cc:73
+#, kde-format
+msgid "Show the window title and hide the menu"
+msgstr "Mostrar o título da janela e ocultar o menu"
+
+#: src/kcm/ExceptionDialog.cc:74
+#, kde-format
+msgid "Show menu as hamburger"
+msgstr "Mostrar o menu como botão de hambúrguer"
+
+#: src/kcm/ExceptionDialog.cc:75
+#, kde-format
+msgid "Don't draw window shadow"
+msgstr "Não desenhar a sombra da janela"
+
+#: src/kcm/ExceptionDialog.cc:76
+#, kde-format
+msgid "Don't round window corners"
+msgstr "Não arredondar os cantos da janela"
+
+#: src/kcm/ExceptionDialog.cc:77
+#, kde-format
+msgid "Paint a thin line around the window"
+msgstr "Desenhar uma linha fina à volta da janela"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Disabled"
+msgstr "Desativado"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Enabled"
+msgstr "Ativado"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Use global setting"
+msgstr "Usar a configuração global"
+
+#: src/kcm/ExceptionDialog.cc:89 src/kcm/config.ui:328
+#, kde-format
+msgid "Menus follow decoration colors"
+msgstr "Os menus seguem as cores da decoração"
+
+#: src/kcm/ExceptionDialog.cc:106
+#, kde-format
+msgid "Pattern cannot be empty."
+msgstr "O padrão não pode estar vazio."
+
+#: src/kcm/ExceptionDialog.cc:106
+#, kde-format
+msgid "Warning"
+msgstr "Aviso"
+
+#: src/kcm/ExceptionListWidget.cc:66
+#, kde-format
+msgid "Add..."
+msgstr "Adicionar..."
+
+#: src/kcm/ExceptionListWidget.cc:67
+#, kde-format
+msgid "Edit..."
+msgstr "Editar..."
+
+#: src/kcm/ExceptionListWidget.cc:68
+#, kde-format
+msgid "Remove"
+msgstr "Remover"
+
+#: src/kcm/ExceptionListWidget.cc:69
+#, kde-format
+msgid "Move Up"
+msgstr "Subir"
+
+#: src/kcm/ExceptionListWidget.cc:70
+#, kde-format
+msgid "Move Down"
+msgstr "Descer"
+
+#: src/kcm/ExceptionListWidget.cc:82
+#, kde-format
+msgid ""
+"Rules are evaluated from top to bottom; the first matching rule will be "
+"applied."
+msgstr "As regras são avaliadas de cima para baixo; aplica-se a primeira regra correspondente."
+
+#: src/kcm/ExceptionModel.cc:50
+#, kde-format
+msgid "Empty pattern"
+msgstr "Padrão vazio"
+
+#: src/kcm/ExceptionModel.cc:52
+#, kde-format
+msgid "Class"
+msgstr "Classe"
+
+#: src/kcm/ExceptionModel.cc:52
+#, kde-format
+msgid "Title"
+msgstr "Título"
+
+#: src/kcm/config.ui:14
+#, kde-format
+msgid "Form"
+msgstr "Formulário"
+
+#: src/kcm/config.ui:39
+#, kde-format
+msgid "Appearance"
+msgstr "Aparência"
+
+#: src/kcm/config.ui:45
+#, kde-format
+msgid "Title alignment"
+msgstr "Alinhamento do título"
+
+#: src/kcm/config.ui:55
+#, kde-format
+msgid "Button size"
+msgstr "Tamanho dos botões"
+
+#: src/kcm/config.ui:65
+#, kde-format
+msgid "Active window opacity"
+msgstr "Opacidade da janela ativa"
+
+#: src/kcm/config.ui:72 src/kcm/config.ui:92
+#, kde-format
+msgid "%"
+msgstr "%"
+
+#: src/kcm/config.ui:85
+#, kde-format
+msgid "Inactive window opacity"
+msgstr "Opacidade da janela inativa"
+
+#: src/kcm/config.ui:105
+#, kde-format
+msgid "Corner radius"
+msgstr "Raio dos cantos"
+
+#: src/kcm/config.ui:112
+#, kde-format
+msgid "px"
+msgstr "px"
+
+#: src/kcm/config.ui:125
+#, kde-format
+msgid "Round bottom corners"
+msgstr "Arredondar os cantos inferiores"
+
+#: src/kcm/config.ui:135
+#, kde-format
+msgid "Don't round corners for tiled windows"
+msgstr "Não arredondar os cantos das janelas em mosaico"
+
+#: src/kcm/config.ui:145
+#, kde-format
+msgid "Use custom border and outline colors"
+msgstr "Usar cores personalizadas para a borda e o contorno"
+
+#: src/kcm/config.ui:152
+#, kde-format
+msgid "Active window border color"
+msgstr "Cor da borda da janela ativa"
+
+#: src/kcm/config.ui:166
+#, kde-format
+msgid "Inactive window border color"
+msgstr "Cor da borda da janela inativa"
+
+#: src/kcm/config.ui:180
+#, kde-format
+msgid "Paint a thin outline around the window"
+msgstr "Desenhar um contorno fino à volta da janela"
+
+#: src/kcm/config.ui:187
+#, kde-format
+msgid "Hide window title when space is limited"
+msgstr "Ocultar o título da janela quando o espaço é limitado"
+
+#: src/kcm/config.ui:194
+#, kde-format
+msgid "Show window title on mouse over"
+msgstr "Mostrar o título da janela ao passar o rato"
+
+#: src/kcm/config.ui:201
+#, kde-format
+msgid "Minimum reserved space"
+msgstr "Espaço mínimo reservado"
+
+#: src/kcm/config.ui:208
+#, kde-format
+msgid " px"
+msgstr " px"
+
+#: src/kcm/config.ui:221
+#, kde-format
+msgid "Enable animations"
+msgstr "Ativar as animações"
+
+#: src/kcm/config.ui:228
+#, kde-format
+msgid "Animation duration"
+msgstr "Duração da animação"
+
+#: src/kcm/config.ui:235
+#, kde-format
+msgid "ms"
+msgstr "ms"
+
+#: src/kcm/config.ui:249
+#, kde-format
+msgid "Menu and Search"
+msgstr "Menu e pesquisa"
+
+#: src/kcm/config.ui:255
+#, kde-format
+msgid "Always show application menu"
+msgstr "Mostrar sempre o menu da aplicação"
+
+#: src/kcm/config.ui:262
+#, kde-format
+msgid "Enable search button"
+msgstr "Ativar o botão de pesquisa"
+
+#: src/kcm/config.ui:269
+#, kde-format
+msgid "Show disabled menu actions"
+msgstr "Mostrar as ações desativadas dos menus"
+
+#: src/kcm/config.ui:276
+#, kde-format
+msgid "Ignore top-level menu labels"
+msgstr "Ignorar os nomes dos menus de topo"
+
+#: src/kcm/config.ui:283
+#, kde-format
+msgid "Also ignore submenu labels"
+msgstr "Ignorar também os nomes dos submenus"
+
+#: src/kcm/config.ui:290
+#, kde-format
+msgid "Enable fuzzy search"
+msgstr "Ativar a pesquisa aproximada"
+
+#: src/kcm/config.ui:297
+#, kde-format
+msgid "Use hamburger menu"
+msgstr "Usar o menu de hambúrguer"
+
+#: src/kcm/config.ui:304
+#, kde-format
+msgid "Menu item spacing"
+msgstr "Espaço entre os itens do menu"
+
+#: src/kcm/config.ui:314
+#, kde-format
+msgid "Use system menu font"
+msgstr "Usar o tipo de letra dos menus do sistema"
+
+#: src/kcm/config.ui:321
+#, kde-format
+msgid "Use system colors"
+msgstr "Usar as cores do sistema"
+
+#: src/kcm/config.ui:336
+#, kde-format
+msgid "Shadows"
+msgstr "Sombras"
+
+#: src/kcm/config.ui:342
+#, kde-format
+msgid "Shadow size"
+msgstr "Tamanho da sombra"
+
+#: src/kcm/config.ui:352
+#, kde-format
+msgid "Shadow color"
+msgstr "Cor da sombra"
+
+#: src/kcm/config.ui:362
+#, kde-format
+msgid "Shadow strength"
+msgstr "Intensidade da sombra"
+
+#: src/kcm/config.ui:391
+#, kde-format
+msgid "Button Options"
+msgstr "Opções dos botões"
+
+#: src/kcm/config.ui:399
+#, kde-format
+msgid "Enable long-press actions on window buttons"
+msgstr "Ativar as ações de pressão prolongada nos botões da janela"
+
+#: src/kcm/config.ui:412
+#, kde-format
+msgid ""
+"<html><body><div style=\"width: 350px;\">\n"
+"<p>When enabled:</p>\n"
+"<ul>\n"
+"<li>Long-pressing the close button minimizes the window to the system tray "
+"(requires the kwin-minimize2tray plugin)</li>\n"
+"<li>Long-pressing the minimize button minimizes all windows except the "
+"current one (requires Plasma 6.6 or later)</li>\n"
+"</ul>\n"
+"</div></body></html>"
+msgstr ""
+"<html><body><div style=\"width: 350px;\">\n"
+"<p>Quando ativado:</p>\n"
+"<ul>\n"
+"<li>Manter premido o botão de fechar minimiza a janela para a bandeja do sistema (requer o módulo kwin-minimize2tray)</li>\n"
+"<li>Manter premido o botão de minimizar minimiza todas as janelas exceto a atual (requer Plasma 6.6 ou posterior)</li>\n"
+"</ul>\n"
+"</div></body></html>"
+
+#: src/kcm/config.ui:437
+#, kde-format
+msgid "Long-press duration"
+msgstr "Duração da pressão prolongada"
+
+#: src/kcm/config.ui:444 src/kcm/config.ui:466
+#, kde-format
+msgid " ms"
+msgstr " ms"
+
+#: src/kcm/config.ui:456
+#, kde-format
+msgid "Open tiling popup when hovering over maximize"
+msgstr "Abrir a janela de disposição ao passar sobre o botão de maximizar"
+
+#: src/kcm/config.ui:461
+#, kde-format
+msgid "Tiling popup hover delay"
+msgstr "Atraso da janela de disposição"
+
+#: src/kcm/config.ui:474
+#, kde-format
+msgid "Allow window dragging from buttons"
+msgstr "Permitir arrastar a janela a partir dos botões"
+
+#: src/kcm/config.ui:482
+#, kde-format
+msgid "Window-Specific Overrides"
+msgstr "Definições específicas por janela"
+
+#: src/kcm/kcm.cpp:34
+#, kde-format
+msgid "Left"
+msgstr "Esquerda"
+
+#: src/kcm/kcm.cpp:35
+#, kde-format
+msgid "Center"
+msgstr "Centro"
+
+#: src/kcm/kcm.cpp:36
+#, kde-format
+msgid "Center (Full Width)"
+msgstr "Centro (largura total)"
+
+#: src/kcm/kcm.cpp:37
+#, kde-format
+msgid "Right"
+msgstr "Direita"
+
+#: src/kcm/kcm.cpp:38
+#, kde-format
+msgid "Hidden"
+msgstr "Oculto"
+
+#: src/kcm/kcm.cpp:40
+#, kde-format
+msgid "Very Tiny"
+msgstr "Mínimo"
+
+#: src/kcm/kcm.cpp:41
+#, kde-format
+msgid "Tiny"
+msgstr "Muito pequeno"
+
+#: src/kcm/kcm.cpp:42 src/kcm/kcm.cpp:48
+#, kde-format
+msgid "Small"
+msgstr "Pequeno"
+
+#: src/kcm/kcm.cpp:43
+#, kde-format
+msgid "Default"
+msgstr "Predefinido"
+
+#: src/kcm/kcm.cpp:44 src/kcm/kcm.cpp:50
+#, kde-format
+msgid "Large"
+msgstr "Grande"
+
+#: src/kcm/kcm.cpp:45 src/kcm/kcm.cpp:51
+#, kde-format
+msgid "Very Large"
+msgstr "Muito grande"
+
+#: src/kcm/kcm.cpp:47
+#, kde-format
+msgid "None"
+msgstr "Nenhum"
+
+#: src/kcm/kcm.cpp:49
+#, kde-format
+msgid "Medium"
+msgstr "Médio"
+
+#: src/kcm/materialdecoration_kcm.json:3
+#, kde-format
+msgid "Configuration module for the Material Decoration"
+msgstr "Módulo de configuração da decoração Material"
+
+#: src/kcm/materialdecoration_kcm.json:5
+#, kde-format
+msgid "Material Decoration"
+msgstr "Decoração Material"
+
+#: src/kcm/config.ui
+msgid "Use accent color for the active window border"
+msgstr "Usar a cor de destaque na borda da janela ativa"
+
+#: src/kcm/config.ui
+msgid "Remember window position (Wayland)"
+msgstr "Recordar a posição da janela (Wayland)"
+
+#: src/kcm/config.ui
+msgid ""
+"Save window position when a window closes\n"
+"and restore it when it opens again.\n"
+"The application controls its size.\n"
+"Requires the Material Tiling Popup KWin script.\n"
+"Windows of the same application without a distinct identity\n"
+"share the state of the last closed window."
+msgstr ""
+"Guarda a posição da janela ao fechá-la\n"
+"e restaura-a quando é aberta novamente.\n"
+"A aplicação controla o tamanho.\n"
+"Requer o programa Material Tiling Popup do KWin.\n"
+"As janelas da mesma aplicação sem uma identidade\n"
+"distinta partilham o estado da última janela fechada."
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Do not remember window position"
+msgstr "Não recordar a posição da janela"
+
+#: src/kcm/config.ui
+msgid "Window Management"
+msgstr "Gestão de Janelas"
+
+#: src/kcm/config.ui
+msgid "Remember the screen where the window was last closed"
+msgstr "Recordar o ecrã onde a janela foi fechada pela última vez"
+
+#: src/kcm/config.ui
+msgid ""
+"Restore the saved screen.\n"
+"When disabled, use the screen chosen by KWin when the window opens."
+msgstr ""
+"Restaura o ecrã guardado.\n"
+"Se desativada, usa o ecrã escolhido pelo KWin ao abrir a janela."
+
+#: src/kcm/config.ui
+msgid "Remember the virtual desktop where the window was last closed"
+msgstr "Recordar o ambiente de trabalho virtual onde a janela foi fechada pela última vez"
+
+#: src/kcm/config.ui
+msgid ""
+"Restore the saved virtual desktop, switch to it and activate the window.\n"
+"When disabled, keep the desktop chosen when the window opens."
+msgstr ""
+"Restaura o ambiente de trabalho virtual guardado,\n"
+"muda para ele e ativa a janela.\n"
+"Se desativada, mantém o ambiente escolhido ao abrir a janela."
+
+#: src/kcm/config.ui
+msgid "Resize other snapped windows when restoring saved proportions"
+msgstr "Redimensionar outras janelas encaixadas ao restaurar as proporções guardadas"
+
+#: src/kcm/config.ui
+msgid ""
+"Allow restoring a snapped window's saved proportions to\n"
+"resize other windows in the same quick-tile layout.\n"
+"When disabled, restore the saved proportions only to the reopened window."
+msgstr ""
+"Permite que a restauração das proporções guardadas de uma janela\n"
+"encaixada redimensione outras janelas na mesma disposição rápida em mosaico.\n"
+"Se desativada, restaura as proporções apenas na janela reaberta."
+
+#: src/kcm/config.ui
+msgid "Let KWin place additional windows of the same application"
+msgstr "Deixar o KWin posicionar as janelas adicionais da mesma aplicação"
+
+#: src/kcm/config.ui
+msgid ""
+"When another normal window of the same application is already\n"
+"open, leave position, screen, virtual desktop and tiling to KWin.\n"
+"The first window still uses saved restoration.\n"
+"When disabled, apply the restoration settings to\n"
+"additional windows too, cascading overlapping windows."
+msgstr ""
+"Quando já está aberta outra janela normal da mesma\n"
+"aplicação, deixa a posição, o ecrã, o ambiente de\n"
+"trabalho virtual e o mosaico a cargo do KWin.\n"
+"A primeira janela continua a restaurar o estado guardado.\n"
+"Se desativada, também aplica a restauração às janelas\n"
+"adicionais, dispondo em cascata as que se sobrepõem."
+
+#: src/kcm/config.ui
+msgid ""
+"Show the window title on mouse over when it is\n"
+"hidden due to limited space or shortened to fit.\n"
+"Requires the application menu to be always visible."
+msgstr ""
+"Mostra o título ao passar o rato quando\n"
+"está oculto por falta de espaço ou abreviado.\n"
+"Requer que o menu da aplicação esteja sempre visível."
+
+#: src/kcm/config.ui
+msgid ""
+"Center aligns the title within the available space.\n"
+"Center (Full Width) centers it on the window,\n"
+"shifting it to avoid menus and buttons."
+msgstr ""
+"Centro alinha o título no espaço disponível.\n"
+"Centro (largura total) centra-o na janela, deslocando-o para evitar menus e botões."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts the opacity of the active window title bar and borders.\n"
+"Does not change the opacity of the window contents."
+msgstr ""
+"Ajusta a opacidade da barra de título\n"
+"e das bordas da janela ativa.\n"
+"Não altera a opacidade do conteúdo da janela."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts the opacity of inactive window title bars and borders.\n"
+"Does not change the opacity of the window contents."
+msgstr ""
+"Ajusta a opacidade das barras de título\n"
+"e das bordas das janelas inativas.\n"
+"Não altera a opacidade do conteúdo das janelas."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses square corners when a window is snapped to a tiling zone.\n"
+"Floating windows keep the configured corner rounding."
+msgstr ""
+"Usa cantos retos quando uma janela está encaixada numa zona de mosaico.\n"
+"As janelas flutuantes mantêm o arredondamento configurado."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the selected colors for borders and the outline, if enabled.\n"
+"When disabled, uses the frame color from the window color scheme."
+msgstr ""
+"Usa as cores escolhidas para as bordas e o contorno, se ativado.\n"
+"Se desativada, usa a cor da moldura\n"
+"do esquema de cores da janela."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the window color scheme accent color instead\n"
+"of the manually selected active border color.\n"
+"Also applies to the outline."
+msgstr ""
+"Usa a cor de destaque do esquema de cores\n"
+"da janela em vez da cor ativa escolhida manualmente.\n"
+"Também se aplica ao contorno."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid ""
+"Draws a thin line around the window\n"
+"using the active or inactive border color.\n"
+"The outline stays opaque even when the decoration is transparent."
+msgstr ""
+"Desenha uma linha fina à volta da janela\n"
+"com a cor da borda ativa ou inativa.\n"
+"O contorno permanece opaco mesmo com a decoração transparente."
+
+#: src/kcm/config.ui
+msgid ""
+"Hides the title when the application menu\n"
+"leaves less space than the configured minimum.\n"
+"When disabled, keeps the title visible and shortens it as needed."
+msgstr ""
+"Oculta o título quando o menu da aplicação\n"
+"deixa menos espaço que o mínimo configurado.\n"
+"Se desativada, mantém o título visível e abrevia-o quando necessário."
+
+#: src/kcm/config.ui
+msgid ""
+"Minimum width in pixels available beside the\n"
+"application menu before the title is hidden.\n"
+"Only applies when hiding the title for limited space is enabled."
+msgstr ""
+"Largura mínima disponível em píxeis junto ao\n"
+"menu antes de ocultar o título.\n"
+"Aplica-se apenas quando está ativa a ocultação\n"
+"do título por falta de espaço."
+
+#: src/kcm/config.ui
+msgid ""
+"Keeps the application menu visible in the title bar.\n"
+"When disabled, the menu appears on mouse over."
+msgstr ""
+"Mantém o menu da aplicação visível na barra de título.\n"
+"Se desativada, o menu aparece ao passar o rato."
+
+#: src/kcm/config.ui
+msgid ""
+"Adds a button to find and run application menu commands.\n"
+"Requires the application to export its menu to the decoration."
+msgstr ""
+"Adiciona um botão para procurar e executar comandos do menu da aplicação.\n"
+"A aplicação tem de disponibilizar o seu menu à decoração."
+
+#: src/kcm/config.ui
+msgid ""
+"Includes unavailable commands in search results.\n"
+"They remain disabled and cannot be run."
+msgstr ""
+"Inclui comandos indisponíveis nos resultados da pesquisa.\n"
+"Permanecem desativados e não podem ser executados."
+
+#: src/kcm/config.ui
+msgid ""
+"Excludes top-level menu names, such as File or Edit, from matching.\n"
+"Commands inside those menus are still searched."
+msgstr ""
+"Exclui da correspondência os nomes dos menus\n"
+"de topo, como Ficheiro ou Editar.\n"
+"Os comandos desses menus continuam a ser pesquisados."
+
+#: src/kcm/config.ui
+msgid ""
+"Searches command names only, excluding the names of their parent menus.\n"
+"Also enables ignoring top-level menu labels."
+msgstr ""
+"Pesquisa apenas os nomes dos comandos, excluindo\n"
+"os nomes dos menus que os contêm.\n"
+"Também ativa a exclusão dos nomes dos menus de topo."
+
+#: src/kcm/config.ui
+msgid ""
+"Finds approximate matches, including minor typing errors, and ranks results by relevance.\n"
+"When disabled, searches for the typed text as a substring."
+msgstr ""
+"Procura correspondências aproximadas, incluindo pequenos erros de escrita, e ordena por relevância.\n"
+"Se desativada, procura o texto introduzido como parte das legendas."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid ""
+"Collects the application menu in one button instead of\n"
+"showing separate top-level menu buttons in the title bar."
+msgstr ""
+"Reúne o menu da aplicação num único botão em vez de mostrar\n"
+"botões separados para os menus de topo na barra de título."
+
+#: src/kcm/config.ui
+msgid ""
+"Adds horizontal space on both sides of\n"
+"menu labels in the title bar.\n"
+"Higher values make the buttons wider."
+msgstr ""
+"Adiciona espaço horizontal dos dois lados dos\n"
+"nomes dos menus na barra de título.\n"
+"Valores maiores tornam os botões mais largos."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the system menu font.\n"
+"When disabled, uses the title bar font."
+msgstr ""
+"Usa o tipo de letra dos menus do sistema.\n"
+"Se desativada, usa o tipo de letra da barra de título."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses system selection colors to highlight application menu buttons.\n"
+"When disabled, uses the decoration button highlighting."
+msgstr ""
+"Usa as cores de seleção do sistema para\n"
+"realçar os botões do menu da aplicação.\n"
+"Se desativada, usa o realce dos botões da decoração."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the window color scheme for popup menus and the tiling popup.\n"
+"When disabled, uses the default system palette."
+msgstr ""
+"Usa o esquema de cores da janela nos\n"
+"menus e na janela de disposição em mosaico.\n"
+"Se desativada, usa a paleta predefinida do sistema."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts shadow opacity without changing its size.\n"
+"Higher values make the shadow stronger."
+msgstr ""
+"Ajusta a opacidade da sombra sem alterar o tamanho.\n"
+"Valores maiores tornam a sombra mais intensa."
+
+#: src/kcm/config.ui
+msgid ""
+"Hold Maximize to show snapping zones, Minimize to minimize other windows\n"
+"on the screen, or Close to minimize to the system tray.\n"
+"Requires the corresponding support or scripts.\n"
+"See the information button for requirements."
+msgstr ""
+"Mantenha premido Maximizar para mostrar zonas de encaixe, Minimizar\n"
+"para minimizar as outras janelas do ecrã ou Fechar\n"
+"para minimizar para a bandeja do sistema.\n"
+"Requer o suporte ou os programas correspondentes.\n"
+"Consulte os requisitos no botão de informações."
+
+#: src/kcm/config.ui
+msgid "Time to hold a window button before its additional action is triggered."
+msgstr ""
+"Tempo durante o qual deve manter premido um\n"
+"botão antes de executar a ação adicional."
+
+#: src/kcm/config.ui
+msgid ""
+"Shows snapping zones when the pointer stays over Maximize, without clicking.\n"
+"Requires the Material Tiling Popup KWin script."
+msgstr ""
+"Mostra zonas de encaixe quando o ponteiro permanece sobre Maximizar, sem clicar.\n"
+"Requer o programa Material Tiling Popup do KWin."
+
+#: src/kcm/config.ui
+msgid ""
+"Time to wait before opening the tiling\n"
+"popup while the pointer stays over Maximize."
+msgstr ""
+"Tempo de espera antes de abrir a janela\n"
+"de disposição enquanto o ponteiro permanece sobre Maximizar."
+
+#: src/kcm/config.ui
+msgid ""
+"Allows window dragging to start from decoration\n"
+"buttons such as Minimize and Maximize.\n"
+"Application menu buttons still allow dragging when this is disabled."
+msgstr ""
+"Permite começar a arrastar a janela pelos\n"
+"botões da decoração, como Minimizar e Maximizar.\n"
+"O arrastamento pelos botões do menu da aplicação\n"
+"continua disponível se esta opção estiver desativada."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Enter the text to match against the window title or class.\n"
+"Use Detect Window Properties to capture it from an open window."
+msgstr ""
+"Introduza o texto a comparar com o\n"
+"título ou a classe da janela.\n"
+"Use a deteção de propriedades para o obter de uma janela aberta."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"The title is the text shown in\n"
+"the title bar and may change.\n"
+"The class identifies the application."
+msgstr ""
+"O título é o texto da barra de título e pode mudar.\n"
+"A classe identifica a aplicação."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Exact Match requires the whole value.\n"
+"Substring Match finds the text anywhere within it.\n"
+"Matching is case-insensitive and does not use regular expressions."
+msgstr ""
+"Correspondência exata exige o valor completo.\n"
+"Correspondência parcial procura o texto em qualquer parte do valor.\n"
+"A comparação ignora maiúsculas e minúsculas e não usa expressões regulares."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Excludes matching windows from saving and restoring their\n"
+"position, even when enabled in the global settings."
+msgstr ""
+"Exclui as janelas correspondentes da gravação e restauração\n"
+"da posição, mesmo quando ativadas nas opções globais."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Overrides whether menus follow decoration colors for matching windows.\n"
+"Use global setting keeps the general preference."
+msgstr ""
+"Define se os menus das janelas correspondentes seguem as cores da decoração.\n"
+"Usar a configuração global mantém a preferência geral."
