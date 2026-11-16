@@ -158,6 +158,9 @@
         <entry name="RememberWindowDesktop" type="Bool">
             <default>false</default>
         </entry>
+        <entry name="UseKWinPlacementForAdditionalWindows" type="Bool">
+            <default>false</default>
+        </entry>
         <entry name="ResizeOtherTiledWindows" type="Bool">
             <default>false</default>
         </entry>

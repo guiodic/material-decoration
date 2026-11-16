@@ -191,17 +191,116 @@ private slots:
         QVERIFY(settings.rememberWindowScreen());
         QVERIFY(!settings.rememberWindowDesktop());
         QVERIFY(!settings.resizeOtherTiledWindows());
+        QVERIFY(!settings.useKWinPlacementForAdditionalWindows());
         auto source = Material::InternalSettingsPtr::create();
         auto copy = Material::InternalSettingsPtr::create();
         source->setRememberWindowState(true);
         source->setRememberWindowScreen(false);
         source->setRememberWindowDesktop(true);
         source->setResizeOtherTiledWindows(true);
+        source->setUseKWinPlacementForAdditionalWindows(true);
         Material::copyInternalSettings(source, copy);
         QVERIFY(copy->rememberWindowState());
         QVERIFY(!copy->rememberWindowScreen());
         QVERIFY(copy->rememberWindowDesktop());
         QVERIFY(copy->resizeOtherTiledWindows());
+        QVERIFY(copy->useKWinPlacementForAdditionalWindows());
+    }
+    void additionalWindowPlacement_data() {
+        QTest::addColumn<bool>("enabled");
+        QTest::addColumn<QString>("otherKind");
+        QTest::addColumn<bool>("skip");
+        QTest::newRow("default-policy") << false << QString("same") << false;
+        QTest::newRow("first-window") << true << QString("none") << false;
+        QTest::newRow("same-application") << true << QString("same") << true;
+        QTest::newRow("different-tags") << true << QString("tagged") << true;
+        QTest::newRow("minimized-sibling") << true << QString("minimized") << true;
+        QTest::newRow("resource-class-fallback") << true << QString("fallback") << true;
+        QTest::newRow("other-application") << true << QString("different") << false;
+        QTest::newRow("closing-sibling") << true << QString("deleted") << false;
+        QTest::newRow("dialog") << true << QString("dialog") << false;
+        QTest::newRow("transient") << true << QString("transient") << false;
+    }
+    void additionalWindowPlacement() {
+        QFETCH(bool, enabled);
+        QFETCH(QString, otherKind);
+        QFETCH(bool, skip);
+        QScopedValueRollback available(prepareAvailable, true);
+        QScopedValueRollback minimizes(prepareMinimizes, true);
+        QScopedValueRollback restoreAvailability(immediateAvailable, true);
+        QScopedValueRollback restoreSuccess(immediateSucceeds, true);
+        QObject currentDesktop, savedDesktop;
+        currentDesktop.setProperty("id", "current");
+        savedDesktop.setProperty("id", "saved");
+        const auto originalDesktops = QVariant::fromValue(QList<QObject *>{&currentDesktop});
+        QScopedValueRollback desktops(preparedDesktops, QVariant::fromValue(QList<QObject *>{&savedDesktop}));
+        const QString app = "org.example.StateTest.Additional." + QUuid::createUuid().toString();
+        KWin::WaylandWindow window, other;
+        setup(window, app);
+        setup(other, otherKind == "different" ? app + ".Other" : app);
+        window.setProperty("desktops", originalDesktops);
+        other.setProperty("desktops", QVariant::fromValue(QList<QObject *>{&savedDesktop}));
+        if (otherKind == "tagged") other.setProperty("tag", "different-role");
+        if (otherKind == "minimized") other.setProperty("minimized", true);
+        if (otherKind == "deleted") other.setProperty("deleted", true);
+        if (otherKind == "dialog") other.setProperty("normalWindow", false);
+        if (otherKind == "transient") other.setProperty("transient", true);
+        if (otherKind == "fallback") {
+            for (auto *item : {&window, &other}) {
+                item->setProperty("desktopFileName", QVariant());
+                item->setProperty("resourceClass", app);
+            }
+        }
+        defaultWorkspace.setProperty("stackingOrder", QVariant::fromValue(otherKind == "none" ?
+            QList<QObject *>{} : QList<QObject *>{&other}));
+        auto saved = Material::captureWindowState(&window);
+        saved.insert("position", QVariantMap{{"x", 200}, {"y", 250}});
+        const auto scope = currentScope();
+        const auto key = Material::windowStateKey(&window);
+        QVERIFY(Material::writeWindowState(key, saved, scope));
+        const auto preparations = prepareRequests.size();
+        const auto restores = immediateRequests.size();
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true, true, true, false, enabled);
+        QCOMPARE(prepareRequests.size() - preparations, skip ? 0 : 1);
+        if (skip) {
+            QCOMPARE(window.property("desktops"), originalDesktops);
+            QVERIFY(!window.property("minimized").toBool());
+        }
+        window.map();
+        QCOMPARE(immediateRequests.size() - restores, skip ? 0 : 1);
+        QVERIFY(!window.property("minimized").toBool());
+        if (skip) {
+            QCOMPARE(window.property("desktops"), originalDesktops);
+            window.close();
+            QCOMPARE(Material::readWindowState(key, scope).value("position").toMap(),
+                     Material::captureWindowState(&window).value("position").toMap());
+        }
+    }
+    void siblingAppearsAfterPreparation() {
+        QScopedValueRollback available(prepareAvailable, true);
+        QScopedValueRollback minimizes(prepareMinimizes, true);
+        QObject currentDesktop, savedDesktop;
+        const auto original = QVariant::fromValue(QList<QObject *>{&currentDesktop});
+        QScopedValueRollback desktops(preparedDesktops, QVariant::fromValue(QList<QObject *>{&savedDesktop}));
+        KWin::WaylandWindow window, other;
+        const QString app = "org.example.StateTest.LateSibling." + QUuid::createUuid().toString();
+        setup(window, app);
+        setup(other, app);
+        window.setProperty("desktops", original);
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), Material::captureWindowState(&window), currentScope()));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true, true, true, false, true);
+        QVERIFY(window.property("minimized").toBool());
+        QCOMPARE(window.property("desktops"), preparedDesktops);
+        defaultWorkspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&other}));
+        const auto restores = immediateRequests.size();
+        window.map();
+        QCOMPARE(immediateRequests.size(), restores);
+        QCOMPARE(window.property("desktops"), original);
+        QVERIFY(!window.property("minimized").toBool());
     }
     void disabledDoesNotCreateOrDiscoverAnything() {
         KWin::WaylandWindow window;
@@ -447,6 +546,7 @@ private slots:
         settings.setRememberWindowScreen(false);
         settings.setRememberWindowDesktop(true);
         settings.setResizeOtherTiledWindows(true);
+        settings.setUseKWinPlacementForAdditionalWindows(true);
         settings.save();
         Material::InternalSettings loaded;
         loaded.setSharedConfig(config);
@@ -455,12 +555,14 @@ private slots:
         QVERIFY(!loaded.rememberWindowScreen());
         QVERIFY(loaded.rememberWindowDesktop());
         QVERIFY(loaded.resizeOtherTiledWindows());
+        QVERIFY(loaded.useKWinPlacementForAdditionalWindows());
         Material::SettingsProvider provider;
         auto defaults = Material::InternalSettingsPtr::create();
         defaults->setRememberWindowState(true);
         defaults->setRememberWindowScreen(false);
         defaults->setRememberWindowDesktop(true);
         defaults->setResizeOtherTiledWindows(true);
+        defaults->setUseKWinPlacementForAdditionalWindows(true);
         auto exception = Material::InternalSettingsPtr::create();
         exception->setMask(Material::ExceptionMask::ExcludeWindowPosition);
         exception->setExcludeWindowPosition(true);
@@ -469,6 +571,7 @@ private slots:
         QVERIFY(!merged->rememberWindowScreen());
         QVERIFY(merged->rememberWindowDesktop());
         QVERIFY(merged->resizeOtherTiledWindows());
+        QVERIFY(merged->useKWinPlacementForAdditionalWindows());
     }
     void lateOptionsApplyAtFirstFrame_data() {
         QTest::addColumn<bool>("enabledInitially");
@@ -1131,7 +1234,7 @@ private slots:
     }
     void newSiblingSizeHint_data() {
         QTest::addColumn<QString>("scenario");
-        for (const auto *scenario : {"matching", "different-size", "different-identity", "excluded-source", "special-target", "fixed-target", "uncommitted-source", "ambiguous-source"})
+        for (const auto *scenario : {"matching", "different-size", "different-identity", "excluded-source", "special-target", "fixed-target", "uncommitted-source", "ambiguous-source", "kwin-placement"})
             QTest::newRow(scenario) << QString::fromLatin1(scenario);
     }
     void newSiblingSizeHint() {
@@ -1185,7 +1288,7 @@ private slots:
         }
         immediateAvailable = true;
         const auto count = immediateRequests.size();
-        Material::configureWindowState(&targetDecoration, true, true, true);
+        Material::configureWindowState(&targetDecoration, true, true, true, false, scenario == "kwin-placement");
         auto stacking = workspace.property("stackingOrder").toList();
         stacking.append(QVariant::fromValue<QObject *>(&target));
         workspace.setProperty("stackingOrder", stacking);

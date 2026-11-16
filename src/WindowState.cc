@@ -178,6 +178,13 @@ QVariantMap positionState(const QVariantMap &state)
     return saved;
 }
 
+QString applicationId(const QObject *window)
+{
+    if (!window) return {};
+    const auto app = window->property("desktopFileName").toString();
+    return app.isEmpty() ? window->property("resourceClass").toString() : app;
+}
+
 KSharedConfig::Ptr stateConfig()
 {
     return KSharedConfig::openStateConfig(QStringLiteral("material-window-staterc"));
@@ -187,8 +194,7 @@ KSharedConfig::Ptr stateConfig()
 QString windowStateKey(const QObject *window)
 {
     if (!window) return {};
-    QString app = window->property("desktopFileName").toString();
-    if (app.isEmpty()) app = window->property("resourceClass").toString();
+    const QString app = applicationId(window);
     if (app.isEmpty()) return {};
     // A Wayland tag, when supplied, distinguishes windows of the same app.
     // Otherwise all indistinguishable main windows share the last closed state.
@@ -254,9 +260,11 @@ class WindowStateController : public QObject
     Q_PROPERTY(bool resizeOtherTiledWindows READ resizeOtherTiledWindows)
 public:
     bool resizeOtherTiledWindows() const { return m_resizeOtherTiledWindows; }
-    explicit WindowStateController(KDecoration3::Decoration *decoration, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows)
+    explicit WindowStateController(KDecoration3::Decoration *decoration, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows,
+        bool useKWinPlacementForAdditionalWindows)
         : QObject(decoration->parent()), m_window(decoration->parent()), m_decoration(decoration), m_enabled(true)
         , m_rememberScreen(rememberScreen), m_rememberDesktop(rememberDesktop), m_resizeOtherTiledWindows(resizeOtherTiledWindows)
+        , m_useKWinPlacementForAdditionalWindows(useKWinPlacementForAdditionalWindows)
     {
         // Read synchronously on closed(), before KWin releases the window.
         connect(m_window, SIGNAL(closed()), this, SLOT(save()), Qt::DirectConnection);
@@ -349,7 +357,8 @@ public:
         }
         prepare();
     }
-    void configure(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows)
+    void configure(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows,
+        bool useKWinPlacementForAdditionalWindows)
     {
         m_decoration = decoration;
         if (!enabled && m_restoreStarted) save();
@@ -358,6 +367,8 @@ public:
         m_rememberScreen = rememberScreen;
         m_rememberDesktop = rememberDesktop;
         m_resizeOtherTiledWindows = resizeOtherTiledWindows;
+        m_useKWinPlacementForAdditionalWindows = useKWinPlacementForAdditionalWindows;
+        if (enabled && !m_restoreStarted && keepKWinPlacement()) return;
         if (!enabled || !rememberDesktop) m_prepareRetryTimer.stop();
         if ((!enabled || !rememberDesktop) && !m_restoreStarted) {
             if (m_prepared) {
@@ -382,6 +393,7 @@ private slots:
         if (!m_enabled || m_restoreCancelled || m_restoreStarted || !m_decoration
             || m_prepareAttempts >= 100 || m_window->property("deleted").toBool()) return;
         m_prepareRetryTimer.stop();
+        if (keepKWinPlacement()) return;
         refreshState();
         if (m_prepareFailed || !m_rememberDesktop || m_state.isEmpty()) return;
         const bool wasMinimized = m_window->property("minimized").toBool();
@@ -513,6 +525,7 @@ private slots:
             retry();
             return;
         }
+        if (keepKWinPlacement()) return;
         refreshState();
         const auto inheritedSize = siblingNormalSize();
         if (m_state.isEmpty() && inheritedSize.isEmpty()) return;
@@ -533,6 +546,36 @@ private slots:
     }
 
 private:
+    bool keepKWinPlacement()
+    {
+        if (!m_useKWinPlacementForAdditionalWindows) return false;
+        const auto app = applicationId(m_window);
+        auto *workspace = app.isEmpty() ? nullptr : windowStateWorkspace();
+        if (!workspace) return false;
+        for (const auto &entry : workspace->property("stackingOrder").toList()) {
+            auto *other = entry.value<QObject *>();
+            if (!other || other == m_window || !other->property("normalWindow").toBool()
+                || other->property("transient").toBool() || other->property("deleted").toBool()
+                || applicationId(other) != app) continue;
+            m_restoreCancelled = true;
+            m_retryTimer.stop();
+            m_prepareRetryTimer.stop();
+            // A sibling may become visible after desktop preparation started.
+            if (m_prepared) {
+                QVariantList desktops;
+                for (const auto &desktop : m_originalDesktops) if (desktop) desktops.append(QVariant::fromValue(desktop.data()));
+                if (m_originalDesktops.isEmpty() || !desktops.isEmpty())
+                    QQmlProperty::write(m_window, QStringLiteral("desktops"), desktops);
+                m_prepared = false;
+            }
+            releaseVisibilityGuard();
+            m_saveAllowed.insert(WindowStateScope::self()->current(), true);
+            Q_EMIT restorationStopped();
+            return true;
+        }
+        return false;
+    }
+
     QVariantMap restorationRequest(QVariantMap state)
     {
         // Policy belongs to the current settings, never to the persisted state.
@@ -656,6 +699,7 @@ private:
     bool m_rememberScreen;
     bool m_rememberDesktop;
     bool m_resizeOtherTiledWindows;
+    bool m_useKWinPlacementForAdditionalWindows;
     bool m_restoreStarted = false;
     // New states are writable; existing ones need a successful restore or a user move.
     QHash<QString, bool> m_saveAllowed;
@@ -687,7 +731,8 @@ private:
     int m_attempts = 0;
 };
 
-void configureWindowState(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows)
+void configureWindowState(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows,
+        bool useKWinPlacementForAdditionalWindows)
 {
     if (KWindowSystem::isPlatformX11()) return;
     auto *window = decoration->parent();
@@ -695,7 +740,7 @@ void configureWindowState(KDecoration3::Decoration *decoration, bool enabled, bo
     auto *controller = window->findChild<WindowStateController *>(QString(), Qt::FindDirectChildrenOnly);
     if (!enabled) {
         if (controller) {
-            controller->configure(decoration, false, rememberScreen, rememberDesktop, resizeOtherTiledWindows);
+            controller->configure(decoration, false, rememberScreen, rememberDesktop, resizeOtherTiledWindows, useKWinPlacementForAdditionalWindows);
             delete controller;
         }
         return;
@@ -704,11 +749,11 @@ void configureWindowState(KDecoration3::Decoration *decoration, bool enabled, bo
     if (!window->inherits("KWin::WaylandWindow") || !window->property("normalWindow").toBool()
         || window->property("transient").toBool()) return;
     if (controller) {
-        controller->configure(decoration, true, rememberScreen, rememberDesktop, resizeOtherTiledWindows);
+        controller->configure(decoration, true, rememberScreen, rememberDesktop, resizeOtherTiledWindows, useKWinPlacementForAdditionalWindows);
     } else {
         // Owned by the KWin window, so fullscreen/decoration removal cannot lose
         // the close handler. Normal sizes are tracked in memory, never polled.
-        new WindowStateController(decoration, rememberScreen, rememberDesktop, resizeOtherTiledWindows);
+        new WindowStateController(decoration, rememberScreen, rememberDesktop, resizeOtherTiledWindows, useKWinPlacementForAdditionalWindows);
     }
 }
 }

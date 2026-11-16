@@ -523,3 +523,11 @@ msgstr "Redimensionner les autres fenêtres ancrées lors de la restauration des
 #: src/kcm/config.ui
 msgid "Allow restoring a snapped window's saved proportions to resize other windows in the same quick-tile layout. When disabled, restore the saved proportions only to the reopened window."
 msgstr "Autorise la restauration des proportions enregistrées d’une fenêtre ancrée à redimensionner les autres fenêtres du même agencement en mosaïque rapide. Si désactivé, les proportions enregistrées sont restaurées uniquement pour la fenêtre rouverte."
+
+#: src/kcm/config.ui
+msgid "Let KWin place additional windows of the same application"
+msgstr ""
+
+#: src/kcm/config.ui
+msgid "When another normal window of the same application is already open, leave position, screen, virtual desktop and tiling to KWin. The first window still uses saved restoration."
+msgstr ""

@@ -66,6 +66,7 @@ void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettings
     dst->setRememberWindowScreen(src->rememberWindowScreen());
     dst->setRememberWindowDesktop(src->rememberWindowDesktop());
     dst->setResizeOtherTiledWindows(src->resizeOtherTiledWindows());
+    dst->setUseKWinPlacementForAdditionalWindows(src->useKWinPlacementForAdditionalWindows());
 
     dst->setExceptionPattern(src->exceptionPattern());
     dst->setExceptionType(src->exceptionType());

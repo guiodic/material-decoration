@@ -679,3 +679,11 @@ msgstr ""
 #: src/kcm/config.ui
 msgid "Allow restoring a snapped window's saved proportions to resize other windows in the same quick-tile layout. When disabled, restore the saved proportions only to the reopened window."
 msgstr ""
+
+#: src/kcm/config.ui
+msgid "Let KWin place additional windows of the same application"
+msgstr ""
+
+#: src/kcm/config.ui
+msgid "When another normal window of the same application is already open, leave position, screen, virtual desktop and tiling to KWin. The first window still uses saved restoration."
+msgstr ""
