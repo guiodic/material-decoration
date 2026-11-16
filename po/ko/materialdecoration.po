@@ -1,0 +1,993 @@
+# Translation of materialdecoration into ko.
+# SPDX-FileCopyrightText: 2026 Guido Iodice <guido.iodice@gmail.com>
+# This file is distributed under the same license as materialdecoration.
+msgid ""
+msgstr ""
+"Project-Id-Version: materialdecoration\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-27 00:03+0000\n"
+"PO-Revision-Date: 2026-11-16 16:55+0100\n"
+"Last-Translator: Guido Iodice <guido.iodice@gmail.com>\n"
+"Language-Team: ko\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: src/Button.cc:929
+#, kde-format
+msgid "Press and hold to minimize other windows"
+msgstr "길게 눌러 다른 창 최소화"
+
+#: src/Button.cc:932
+#, kde-format
+msgid "Press and hold to show snapping zones"
+msgstr "길게 눌러 스냅 영역 표시"
+
+#: src/Button.cc:935
+#, kde-format
+msgid "Press and hold to minimize to the notification area"
+msgstr "길게 눌러 알림 영역으로 최소화"
+
+#: src/Button.cc:1012
+#, kde-format
+msgid ""
+"Install kwin-minimize2tray and enable Minimize to Tray in System Settings > "
+"Window Management > KWin Scripts."
+msgstr "kwin-minimize2tray 플러그인을 설치하고 시스템 설정 > 창 관리 > KWin 스크립트에서 Minimize to Tray를 활성화하세요."
+
+#: src/Button.cc:1018
+#, kde-format
+msgid ""
+"The action to minimize all other windows is unavailable. It requires Plasma "
+"6.6 or later."
+msgstr "다른 모든 창을 최소화하는 동작을 사용할 수 없습니다. Plasma 6.6 이상이 필요합니다."
+
+#: src/Decoration.cc:248
+#, kde-format
+msgid ""
+"Enable the Material Tiling Popup script in System Settings > Window "
+"Management > KWin Scripts."
+msgstr "시스템 설정 > 창 관리 > KWin 스크립트에서 Material Tiling Popup 스크립트를 활성화하세요."
+
+#: src/Decoration.cc:267
+#, kde-format
+msgid "The custom tile is unavailable. Open the popup again."
+msgstr "사용자 정의 타일을 사용할 수 없습니다. 팝업을 다시 여세요."
+
+#: src/TilingPopup.cc:18
+#, kde-format
+msgid "Left half"
+msgstr "왼쪽 절반"
+
+#: src/TilingPopup.cc:19
+#, kde-format
+msgid "Right half"
+msgstr "오른쪽 절반"
+
+#: src/TilingPopup.cc:20
+#, kde-format
+msgid "Top half"
+msgstr "위쪽 절반"
+
+#: src/TilingPopup.cc:21
+#, kde-format
+msgid "Bottom half"
+msgstr "아래쪽 절반"
+
+#: src/TilingPopup.cc:22
+#, kde-format
+msgid "Top left quarter"
+msgstr "왼쪽 위 ¼"
+
+#: src/TilingPopup.cc:23
+#, kde-format
+msgid "Top right quarter"
+msgstr "오른쪽 위 ¼"
+
+#: src/TilingPopup.cc:24
+#, kde-format
+msgid "Bottom left quarter"
+msgstr "왼쪽 아래 ¼"
+
+#: src/TilingPopup.cc:25
+#, kde-format
+msgid "Bottom right quarter"
+msgstr "오른쪽 아래 ¼"
+
+#: src/TilingPopup.cc:36
+#, kde-format
+msgid "Window tiling layouts"
+msgstr "창 타일링 배치"
+
+#: src/TilingPopup.cc:50
+#, kde-format
+msgid "Custom tiling layout (Meta+T)"
+msgstr "사용자 정의 타일링 배치(Meta+T)"
+
+#: src/TilingPopup.cc:51
+#, kde-format
+msgid "Custom layout unavailable"
+msgstr "사용자 정의 배치를 사용할 수 없음"
+
+#: src/TilingPopup.cc:79
+#, kde-format
+msgid "Meta+T to edit snapping zones"
+msgstr "Meta+T로 스냅 영역 편집"
+
+#: src/TilingPopup.cc:102
+#, kde-format
+msgid "Custom tile %1"
+msgstr "사용자 정의 타일 %1"
+
+#: src/kcm/DetectDialog.cc:37
+#, kde-format
+msgid "Detect Window Properties"
+msgstr "창 속성 감지"
+
+#: src/kcm/DetectDialog.cc:41
+#, kde-format
+msgid ""
+"Click 'Detect' and then click on the target window to capture its properties."
+msgstr "'감지'를 누른 다음 대상 창을 눌러 속성을 가져오세요."
+
+#: src/kcm/DetectDialog.cc:46
+#, kde-format
+msgid "Detect"
+msgstr "감지"
+
+#: src/kcm/DetectDialog.cc:60
+#, kde-format
+msgid "Querying KWin for window information..."
+msgstr "KWin에 창 정보를 요청하는 중..."
+
+#: src/kcm/DetectDialog.cc:80 src/kcm/DetectDialog.cc:81
+#, kde-format
+msgid "(unavailable)"
+msgstr "(사용할 수 없음)"
+
+#: src/kcm/DetectDialog.cc:83
+#, kde-format
+msgid ""
+"Captured Window Class: %1\n"
+"Captured Window Title: %2"
+msgstr ""
+"감지한 창 클래스: %1\n"
+"감지한 창 제목: %2"
+
+#: src/kcm/DetectDialog.cc:86
+#, kde-format
+msgid "Failed to detect window info: %1"
+msgstr "창 정보를 감지하지 못했습니다: %1"
+
+#: src/kcm/ExceptionDialog.cc:40
+#, kde-format
+msgid "Window Exception Settings"
+msgstr "창 예외 설정"
+
+#: src/kcm/ExceptionDialog.cc:45
+#, kde-format
+msgid "Window Identification"
+msgstr "창 식별"
+
+#: src/kcm/ExceptionDialog.cc:49
+#, kde-format
+msgid "Detect Window Properties..."
+msgstr "창 속성 감지..."
+
+#: src/kcm/ExceptionDialog.cc:55
+#, kde-format
+msgid "Window Property / Pattern:"
+msgstr "창 속성 / 패턴:"
+
+#: src/kcm/ExceptionDialog.cc:58
+#, kde-format
+msgid "Window Class"
+msgstr "창 클래스"
+
+#: src/kcm/ExceptionDialog.cc:58
+#, kde-format
+msgid "Window Title"
+msgstr "창 제목"
+
+#: src/kcm/ExceptionDialog.cc:60
+#, kde-format
+msgid "Match against:"
+msgstr "비교 대상:"
+
+#: src/kcm/ExceptionDialog.cc:63
+#, kde-format
+msgid "Exact Match"
+msgstr "정확히 일치"
+
+#: src/kcm/ExceptionDialog.cc:63
+#, kde-format
+msgid "Substring Match"
+msgstr "부분 문자열 일치"
+
+#: src/kcm/ExceptionDialog.cc:64
+#, kde-format
+msgid "Matching mode:"
+msgstr "일치 방식:"
+
+#: src/kcm/ExceptionDialog.cc:69
+#, kde-format
+msgid "Window Options"
+msgstr "창 옵션"
+
+#: src/kcm/ExceptionDialog.cc:72
+#, kde-format
+msgid "Hide window title bar"
+msgstr "창 제목 표시줄 숨기기"
+
+#: src/kcm/ExceptionDialog.cc:73
+#, kde-format
+msgid "Show the window title and hide the menu"
+msgstr "창 제목을 표시하고 메뉴 숨기기"
+
+#: src/kcm/ExceptionDialog.cc:74
+#, kde-format
+msgid "Show menu as hamburger"
+msgstr "메뉴를 햄버거 메뉴로 표시"
+
+#: src/kcm/ExceptionDialog.cc:75
+#, kde-format
+msgid "Don't draw window shadow"
+msgstr "창 그림자 그리지 않기"
+
+#: src/kcm/ExceptionDialog.cc:76
+#, kde-format
+msgid "Don't round window corners"
+msgstr "창 모서리를 둥글게 하지 않기"
+
+#: src/kcm/ExceptionDialog.cc:77
+#, kde-format
+msgid "Paint a thin line around the window"
+msgstr "창 주위에 가는 선 그리기"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Disabled"
+msgstr "비활성화됨"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Enabled"
+msgstr "활성화됨"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Use global setting"
+msgstr "전역 설정 사용"
+
+#: src/kcm/ExceptionDialog.cc:89 src/kcm/config.ui:328
+#, kde-format
+msgid "Menus follow decoration colors"
+msgstr "장식 색상에 맞춰 메뉴 색상 지정"
+
+#: src/kcm/ExceptionDialog.cc:106
+#, kde-format
+msgid "Pattern cannot be empty."
+msgstr "패턴은 비워 둘 수 없습니다."
+
+#: src/kcm/ExceptionDialog.cc:106
+#, kde-format
+msgid "Warning"
+msgstr "경고"
+
+#: src/kcm/ExceptionListWidget.cc:66
+#, kde-format
+msgid "Add..."
+msgstr "추가..."
+
+#: src/kcm/ExceptionListWidget.cc:67
+#, kde-format
+msgid "Edit..."
+msgstr "편집..."
+
+#: src/kcm/ExceptionListWidget.cc:68
+#, kde-format
+msgid "Remove"
+msgstr "삭제"
+
+#: src/kcm/ExceptionListWidget.cc:69
+#, kde-format
+msgid "Move Up"
+msgstr "위로 이동"
+
+#: src/kcm/ExceptionListWidget.cc:70
+#, kde-format
+msgid "Move Down"
+msgstr "아래로 이동"
+
+#: src/kcm/ExceptionListWidget.cc:82
+#, kde-format
+msgid ""
+"Rules are evaluated from top to bottom; the first matching rule will be "
+"applied."
+msgstr "규칙은 위에서 아래로 평가하며, 처음 일치하는 규칙을 적용합니다."
+
+#: src/kcm/ExceptionModel.cc:50
+#, kde-format
+msgid "Empty pattern"
+msgstr "빈 패턴"
+
+#: src/kcm/ExceptionModel.cc:52
+#, kde-format
+msgid "Class"
+msgstr "클래스"
+
+#: src/kcm/ExceptionModel.cc:52
+#, kde-format
+msgid "Title"
+msgstr "제목"
+
+#: src/kcm/config.ui:14
+#, kde-format
+msgid "Form"
+msgstr "폼"
+
+#: src/kcm/config.ui:39
+#, kde-format
+msgid "Appearance"
+msgstr "모양"
+
+#: src/kcm/config.ui:45
+#, kde-format
+msgid "Title alignment"
+msgstr "제목 정렬"
+
+#: src/kcm/config.ui:55
+#, kde-format
+msgid "Button size"
+msgstr "단추 크기"
+
+#: src/kcm/config.ui:65
+#, kde-format
+msgid "Active window opacity"
+msgstr "활성 창 불투명도"
+
+#: src/kcm/config.ui:72 src/kcm/config.ui:92
+#, kde-format
+msgid "%"
+msgstr "%"
+
+#: src/kcm/config.ui:85
+#, kde-format
+msgid "Inactive window opacity"
+msgstr "비활성 창 불투명도"
+
+#: src/kcm/config.ui:105
+#, kde-format
+msgid "Corner radius"
+msgstr "모서리 반지름"
+
+#: src/kcm/config.ui:112
+#, kde-format
+msgid "px"
+msgstr "px"
+
+#: src/kcm/config.ui:125
+#, kde-format
+msgid "Round bottom corners"
+msgstr "아래쪽 모서리 둥글게"
+
+#: src/kcm/config.ui:135
+#, kde-format
+msgid "Don't round corners for tiled windows"
+msgstr "타일링된 창 모서리를 둥글게 하지 않기"
+
+#: src/kcm/config.ui:145
+#, kde-format
+msgid "Use custom border and outline colors"
+msgstr "사용자 정의 테두리 및 윤곽선 색상 사용"
+
+#: src/kcm/config.ui:152
+#, kde-format
+msgid "Active window border color"
+msgstr "활성 창 테두리 색상"
+
+#: src/kcm/config.ui:166
+#, kde-format
+msgid "Inactive window border color"
+msgstr "비활성 창 테두리 색상"
+
+#: src/kcm/config.ui:180
+#, kde-format
+msgid "Paint a thin outline around the window"
+msgstr "창 주위에 가는 윤곽선 그리기"
+
+#: src/kcm/config.ui:187
+#, kde-format
+msgid "Hide window title when space is limited"
+msgstr "공간이 부족하면 창 제목 숨기기"
+
+#: src/kcm/config.ui:194
+#, kde-format
+msgid "Show window title on mouse over"
+msgstr "마우스를 올리면 창 제목 표시"
+
+#: src/kcm/config.ui:201
+#, kde-format
+msgid "Minimum reserved space"
+msgstr "최소 확보 공간"
+
+#: src/kcm/config.ui:208
+#, kde-format
+msgid " px"
+msgstr " px"
+
+#: src/kcm/config.ui:221
+#, kde-format
+msgid "Enable animations"
+msgstr "애니메이션 활성화"
+
+#: src/kcm/config.ui:228
+#, kde-format
+msgid "Animation duration"
+msgstr "애니메이션 시간"
+
+#: src/kcm/config.ui:235
+#, kde-format
+msgid "ms"
+msgstr "ms"
+
+#: src/kcm/config.ui:249
+#, kde-format
+msgid "Menu and Search"
+msgstr "메뉴 및 검색"
+
+#: src/kcm/config.ui:255
+#, kde-format
+msgid "Always show application menu"
+msgstr "항상 애플리케이션 메뉴 표시"
+
+#: src/kcm/config.ui:262
+#, kde-format
+msgid "Enable search button"
+msgstr "검색 단추 활성화"
+
+#: src/kcm/config.ui:269
+#, kde-format
+msgid "Show disabled menu actions"
+msgstr "비활성화된 메뉴 동작 표시"
+
+#: src/kcm/config.ui:276
+#, kde-format
+msgid "Ignore top-level menu labels"
+msgstr "최상위 메뉴 이름 무시"
+
+#: src/kcm/config.ui:283
+#, kde-format
+msgid "Also ignore submenu labels"
+msgstr "하위 메뉴 이름도 무시"
+
+#: src/kcm/config.ui:290
+#, kde-format
+msgid "Enable fuzzy search"
+msgstr "유사 검색 활성화"
+
+#: src/kcm/config.ui:297
+#, kde-format
+msgid "Use hamburger menu"
+msgstr "햄버거 메뉴 사용"
+
+#: src/kcm/config.ui:304
+#, kde-format
+msgid "Menu item spacing"
+msgstr "메뉴 항목 간격"
+
+#: src/kcm/config.ui:314
+#, kde-format
+msgid "Use system menu font"
+msgstr "시스템 메뉴 글꼴 사용"
+
+#: src/kcm/config.ui:321
+#, kde-format
+msgid "Use system colors"
+msgstr "시스템 색상 사용"
+
+#: src/kcm/config.ui:336
+#, kde-format
+msgid "Shadows"
+msgstr "그림자"
+
+#: src/kcm/config.ui:342
+#, kde-format
+msgid "Shadow size"
+msgstr "그림자 크기"
+
+#: src/kcm/config.ui:352
+#, kde-format
+msgid "Shadow color"
+msgstr "그림자 색상"
+
+#: src/kcm/config.ui:362
+#, kde-format
+msgid "Shadow strength"
+msgstr "그림자 강도"
+
+#: src/kcm/config.ui:391
+#, kde-format
+msgid "Button Options"
+msgstr "단추 옵션"
+
+#: src/kcm/config.ui:399
+#, kde-format
+msgid "Enable long-press actions on window buttons"
+msgstr "창 단추를 길게 누르는 동작 활성화"
+
+#: src/kcm/config.ui:412
+#, kde-format
+msgid ""
+"<html><body><div style=\"width: 350px;\">\n"
+"<p>When enabled:</p>\n"
+"<ul>\n"
+"<li>Long-pressing the close button minimizes the window to the system tray "
+"(requires the kwin-minimize2tray plugin)</li>\n"
+"<li>Long-pressing the minimize button minimizes all windows except the "
+"current one (requires Plasma 6.6 or later)</li>\n"
+"</ul>\n"
+"</div></body></html>"
+msgstr ""
+"<html><body><div style=\"width: 350px;\">\n"
+"<p>활성화 시:</p>\n"
+"<ul>\n"
+"<li>닫기 단추를 길게 누르면 창을 시스템 트레이로 최소화합니다(kwin-minimize2tray 플러그인 필요)</li>\n"
+"<li>최소화 단추를 길게 누르면 현재 창을 제외한 모든 창을 최소화합니다(Plasma 6.6 이상 필요)</li>\n"
+"</ul>\n"
+"</div></body></html>"
+
+#: src/kcm/config.ui:437
+#, kde-format
+msgid "Long-press duration"
+msgstr "길게 누르기 시간"
+
+#: src/kcm/config.ui:444 src/kcm/config.ui:466
+#, kde-format
+msgid " ms"
+msgstr " ms"
+
+#: src/kcm/config.ui:456
+#, kde-format
+msgid "Open tiling popup when hovering over maximize"
+msgstr "최대화 단추에 마우스를 올리면 타일링 팝업 열기"
+
+#: src/kcm/config.ui:461
+#, kde-format
+msgid "Tiling popup hover delay"
+msgstr "타일링 팝업 지연 시간"
+
+#: src/kcm/config.ui:474
+#, kde-format
+msgid "Allow window dragging from buttons"
+msgstr "단추에서 창 끌기 허용"
+
+#: src/kcm/config.ui:482
+#, kde-format
+msgid "Window-Specific Overrides"
+msgstr "창별 설정 재정의"
+
+#: src/kcm/kcm.cpp:34
+#, kde-format
+msgid "Left"
+msgstr "왼쪽"
+
+#: src/kcm/kcm.cpp:35
+#, kde-format
+msgid "Center"
+msgstr "가운데"
+
+#: src/kcm/kcm.cpp:36
+#, kde-format
+msgid "Center (Full Width)"
+msgstr "가운데(전체 너비)"
+
+#: src/kcm/kcm.cpp:37
+#, kde-format
+msgid "Right"
+msgstr "오른쪽"
+
+#: src/kcm/kcm.cpp:38
+#, kde-format
+msgid "Hidden"
+msgstr "숨김"
+
+#: src/kcm/kcm.cpp:40
+#, kde-format
+msgid "Very Tiny"
+msgstr "가장 작게"
+
+#: src/kcm/kcm.cpp:41
+#, kde-format
+msgid "Tiny"
+msgstr "아주 작게"
+
+#: src/kcm/kcm.cpp:42 src/kcm/kcm.cpp:48
+#, kde-format
+msgid "Small"
+msgstr "작게"
+
+#: src/kcm/kcm.cpp:43
+#, kde-format
+msgid "Default"
+msgstr "기본값"
+
+#: src/kcm/kcm.cpp:44 src/kcm/kcm.cpp:50
+#, kde-format
+msgid "Large"
+msgstr "크게"
+
+#: src/kcm/kcm.cpp:45 src/kcm/kcm.cpp:51
+#, kde-format
+msgid "Very Large"
+msgstr "매우 크게"
+
+#: src/kcm/kcm.cpp:47
+#, kde-format
+msgid "None"
+msgstr "없음"
+
+#: src/kcm/kcm.cpp:49
+#, kde-format
+msgid "Medium"
+msgstr "중간"
+
+#: src/kcm/materialdecoration_kcm.json:3
+#, kde-format
+msgid "Configuration module for the Material Decoration"
+msgstr "Material 창 장식 설정 모듈"
+
+#: src/kcm/materialdecoration_kcm.json:5
+#, kde-format
+msgid "Material Decoration"
+msgstr "Material 창 장식"
+
+#: src/kcm/config.ui
+msgid "Use accent color for the active window border"
+msgstr "활성 창 테두리에 강조 색상 사용"
+
+#: src/kcm/config.ui
+msgid "Remember window position (Wayland)"
+msgstr "창 위치 기억(Wayland)"
+
+#: src/kcm/config.ui
+msgid ""
+"Save window position when a window closes\n"
+"and restore it when it opens again.\n"
+"The application controls its size.\n"
+"Requires the Material Tiling Popup KWin script.\n"
+"Windows of the same application without a distinct identity\n"
+"share the state of the last closed window."
+msgstr ""
+"창을 닫을 때 위치를 저장하고 다시 열 때 복원합니다.\n"
+"창 크기는 애플리케이션에서 결정합니다.\n"
+"Material Tiling Popup KWin 스크립트가 필요합니다.\n"
+"같은 애플리케이션에서 별도의 식별 정보가 없는 창은 마지막으로 닫은 창의 상태를 공유합니다."
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Do not remember window position"
+msgstr "창 위치 기억하지 않기"
+
+#: src/kcm/config.ui
+msgid "Window Management"
+msgstr "창 관리"
+
+#: src/kcm/config.ui
+msgid "Remember the screen where the window was last closed"
+msgstr "창을 마지막으로 닫은 화면 기억"
+
+#: src/kcm/config.ui
+msgid ""
+"Restore the saved screen.\n"
+"When disabled, use the screen chosen by KWin when the window opens."
+msgstr ""
+"저장된 화면으로 복원합니다.\n"
+"비활성화하면 창을 열 때 KWin이 선택한 화면을 사용합니다."
+
+#: src/kcm/config.ui
+msgid "Remember the virtual desktop where the window was last closed"
+msgstr "창을 마지막으로 닫은 가상 데스크톱 기억"
+
+#: src/kcm/config.ui
+msgid ""
+"Restore the saved virtual desktop, switch to it and activate the window.\n"
+"When disabled, keep the desktop chosen when the window opens."
+msgstr ""
+"저장된 가상 데스크톱으로 복원하고 해당 데스크톱으로 전환하여 창을 활성화합니다.\n"
+"비활성화하면 창을 열 때 선택된 데스크톱을 유지합니다."
+
+#: src/kcm/config.ui
+msgid "Resize other snapped windows when restoring saved proportions"
+msgstr "저장된 비율을 복원할 때 다른 스냅 창 크기 조정"
+
+#: src/kcm/config.ui
+msgid ""
+"Allow restoring a snapped window's saved proportions to\n"
+"resize other windows in the same quick-tile layout.\n"
+"When disabled, restore the saved proportions only to the reopened window."
+msgstr ""
+"스냅된 창의 저장된 비율을 복원할 때 같은 빠른 타일링\n"
+"배치의 다른 창 크기도 조정할 수 있게 합니다.\n"
+"비활성화하면 다시 연 창에만 저장된 비율을 복원합니다."
+
+#: src/kcm/config.ui
+msgid "Let KWin place additional windows of the same application"
+msgstr "같은 애플리케이션의 추가 창 배치를 KWin에 맡기기"
+
+#: src/kcm/config.ui
+msgid ""
+"When another normal window of the same application is already\n"
+"open, leave position, screen, virtual desktop and tiling to KWin.\n"
+"The first window still uses saved restoration.\n"
+"When disabled, apply the restoration settings to\n"
+"additional windows too, cascading overlapping windows."
+msgstr ""
+"같은 애플리케이션의 다른 일반 창이 열려 있으면 위치,\n"
+"화면, 가상 데스크톱 및 타일링을 KWin에 맡깁니다.\n"
+"첫 번째 창은 저장된 상태로 복원합니다.\n"
+"비활성화하면 추가 창에도 복원 설정을 적용하며, 겹치는 창은 계단식으로 배치합니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Show the window title on mouse over when it is\n"
+"hidden due to limited space or shortened to fit.\n"
+"Requires the application menu to be always visible."
+msgstr ""
+"공간 부족으로 숨겨지거나 잘린 창 제목을 마우스를 올리면 표시합니다.\n"
+"애플리케이션 메뉴가 항상 표시되도록 설정해야 합니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Center aligns the title within the available space.\n"
+"Center (Full Width) centers it on the window,\n"
+"shifting it to avoid menus and buttons."
+msgstr ""
+"가운데는 사용 가능한 공간 안에서 제목을 정렬합니다.\n"
+"가운데(전체 너비)는 창을 기준으로 가운데에 배치하며 메뉴와 단추를 피하도록 이동합니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts the opacity of the active window title bar and borders.\n"
+"Does not change the opacity of the window contents."
+msgstr ""
+"활성 창 제목 표시줄과 테두리의 불투명도를 조정합니다.\n"
+"창 내용의 불투명도는 변경하지 않습니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts the opacity of inactive window title bars and borders.\n"
+"Does not change the opacity of the window contents."
+msgstr ""
+"비활성 창 제목 표시줄과 테두리의 불투명도를 조정합니다.\n"
+"창 내용의 불투명도는 변경하지 않습니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses square corners when a window is snapped to a tiling zone.\n"
+"Floating windows keep the configured corner rounding."
+msgstr ""
+"창이 타일링 영역에 스냅되면 직각 모서리를 사용합니다.\n"
+"떠 있는 창은 설정된 둥근 모서리를 유지합니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the selected colors for borders and the outline, if enabled.\n"
+"When disabled, uses the frame color from the window color scheme."
+msgstr ""
+"테두리와 활성화된 윤곽선에 선택한 색상을 사용합니다.\n"
+"비활성화하면 창 색 구성표의 프레임 색상을 사용합니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the window color scheme accent color instead\n"
+"of the manually selected active border color.\n"
+"Also applies to the outline."
+msgstr ""
+"수동으로 선택한 활성 테두리 색상 대신 창 색 구성표의 강조 색상을 사용합니다.\n"
+"윤곽선에도 적용됩니다."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid ""
+"Draws a thin line around the window\n"
+"using the active or inactive border color.\n"
+"The outline stays opaque even when the decoration is transparent."
+msgstr ""
+"활성 또는 비활성 테두리 색상으로 창 주위에 가는 선을 그립니다.\n"
+"장식이 투명해도 윤곽선은 불투명하게 유지됩니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Hides the title when the application menu\n"
+"leaves less space than the configured minimum.\n"
+"When disabled, keeps the title visible and shortens it as needed."
+msgstr ""
+"애플리케이션 메뉴가 차지하고 남은 공간이 설정된 최소값보다 작으면 제목을 숨깁니다.\n"
+"비활성화하면 제목을 표시하고 필요에 따라 줄입니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Minimum width in pixels available beside the\n"
+"application menu before the title is hidden.\n"
+"Only applies when hiding the title for limited space is enabled."
+msgstr ""
+"제목을 숨기기 전에 애플리케이션 메뉴 옆에 확보할 최소 너비이며 단위는 픽셀입니다.\n"
+"공간이 부족할 때 제목을 숨기는 옵션이 활성화된 경우에만 적용됩니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Keeps the application menu visible in the title bar.\n"
+"When disabled, the menu appears on mouse over."
+msgstr ""
+"제목 표시줄에 애플리케이션 메뉴를 계속 표시합니다.\n"
+"비활성화하면 마우스를 올릴 때 메뉴가 나타납니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Adds a button to find and run application menu commands.\n"
+"Requires the application to export its menu to the decoration."
+msgstr ""
+"애플리케이션 메뉴 명령을 검색하고 실행할 수 있는 단추를 추가합니다.\n"
+"애플리케이션에서 장식에 메뉴를 내보내야 합니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Includes unavailable commands in search results.\n"
+"They remain disabled and cannot be run."
+msgstr ""
+"검색 결과에 사용할 수 없는 명령도 포함합니다.\n"
+"해당 명령은 비활성화된 상태를 유지하며 실행할 수 없습니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Excludes top-level menu names, such as File or Edit, from matching.\n"
+"Commands inside those menus are still searched."
+msgstr ""
+"파일이나 편집 같은 최상위 메뉴 이름은 검색에서 제외합니다.\n"
+"해당 메뉴 안의 명령은 계속 검색합니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Searches command names only, excluding the names of their parent menus.\n"
+"Also enables ignoring top-level menu labels."
+msgstr ""
+"상위 메뉴 이름을 제외하고 명령 이름만 검색합니다.\n"
+"최상위 메뉴 이름 무시도 활성화합니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Finds approximate matches, including minor typing errors, and ranks results by relevance.\n"
+"When disabled, searches for the typed text as a substring."
+msgstr ""
+"작은 오타를 포함한 유사 항목을 검색하고 관련성에 따라 결과를 정렬합니다.\n"
+"비활성화하면 입력한 텍스트를 포함하는 이름을 검색합니다."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid ""
+"Collects the application menu in one button instead of\n"
+"showing separate top-level menu buttons in the title bar."
+msgstr ""
+"제목 표시줄에 최상위 메뉴 단추를 따로 표시하는\n"
+"대신 애플리케이션 메뉴를 하나의 단추에 모읍니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Adds horizontal space on both sides of\n"
+"menu labels in the title bar.\n"
+"Higher values make the buttons wider."
+msgstr ""
+"제목 표시줄의 메뉴 이름 양쪽에 가로 여백을 추가합니다.\n"
+"값이 클수록 단추가 넓어집니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the system menu font.\n"
+"When disabled, uses the title bar font."
+msgstr ""
+"시스템 메뉴 글꼴을 사용합니다.\n"
+"비활성화하면 제목 표시줄 글꼴을 사용합니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses system selection colors to highlight application menu buttons.\n"
+"When disabled, uses the decoration button highlighting."
+msgstr ""
+"애플리케이션 메뉴 단추를 강조할 때 시스템 선택 색상을 사용합니다.\n"
+"비활성화하면 장식 단추의 강조 방식을 사용합니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the window color scheme for popup menus and the tiling popup.\n"
+"When disabled, uses the default system palette."
+msgstr ""
+"팝업 메뉴와 타일링 팝업에 창 색 구성표를 사용합니다.\n"
+"비활성화하면 기본 시스템 팔레트를 사용합니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts shadow opacity without changing its size.\n"
+"Higher values make the shadow stronger."
+msgstr ""
+"크기를 바꾸지 않고 그림자의 불투명도를 조정합니다.\n"
+"값이 클수록 그림자가 진해집니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Hold Maximize to show snapping zones, Minimize to minimize other windows\n"
+"on the screen, or Close to minimize to the system tray.\n"
+"Requires the corresponding support or scripts.\n"
+"See the information button for requirements."
+msgstr ""
+"최대화를 길게 누르면 스냅 영역을 표시하고, 최소화를 길게 누르면 화면의\n"
+"다른 창을 최소화하며, 닫기를 길게 누르면 시스템 트레이로 최소화합니다.\n"
+"해당 기능 지원 또는 스크립트가 필요합니다.\n"
+"요구 사항은 정보 단추를 참조하세요."
+
+#: src/kcm/config.ui
+msgid "Time to hold a window button before its additional action is triggered."
+msgstr "추가 동작이 실행될 때까지 창 단추를 누르고 있어야 하는 시간입니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Shows snapping zones when the pointer stays over Maximize, without clicking.\n"
+"Requires the Material Tiling Popup KWin script."
+msgstr ""
+"클릭하지 않고 최대화 단추 위에 포인터를 두면 스냅 영역을 표시합니다.\n"
+"Material Tiling Popup KWin 스크립트가 필요합니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Time to wait before opening the tiling\n"
+"popup while the pointer stays over Maximize."
+msgstr "포인터가 최대화 단추 위에 머무를 때 타일링 팝업을 열기 전까지 기다리는 시간입니다."
+
+#: src/kcm/config.ui
+msgid ""
+"Allows window dragging to start from decoration\n"
+"buttons such as Minimize and Maximize.\n"
+"Application menu buttons still allow dragging when this is disabled."
+msgstr ""
+"최소화 및 최대화 같은 장식 단추에서 창 끌기를 시작할 수 있게 합니다.\n"
+"비활성화해도 애플리케이션 메뉴 단추에서는 계속 끌 수 있습니다."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Enter the text to match against the window title or class.\n"
+"Use Detect Window Properties to capture it from an open window."
+msgstr ""
+"창 제목 또는 클래스와 비교할 텍스트를 입력하세요.\n"
+"창 속성 감지를 사용하면 열려 있는 창에서 가져올 수 있습니다."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"The title is the text shown in\n"
+"the title bar and may change.\n"
+"The class identifies the application."
+msgstr ""
+"제목은 제목 표시줄에 표시되는 텍스트이며 변경될 수 있습니다.\n"
+"클래스는 애플리케이션을 식별합니다."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Exact Match requires the whole value.\n"
+"Substring Match finds the text anywhere within it.\n"
+"Matching is case-insensitive and does not use regular expressions."
+msgstr ""
+"정확히 일치는 전체 값이 같아야 합니다.\n"
+"부분 문자열 일치는 값 안의 모든 위치에서 텍스트를 찾습니다.\n"
+"대소문자를 구분하지 않으며 정규 표현식을 사용하지 않습니다."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Excludes matching windows from saving and restoring their\n"
+"position, even when enabled in the global settings."
+msgstr "전역 설정에서 활성화되어 있어도 일치하는 창의 위치를 저장하거나 복원하지 않습니다."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Overrides whether menus follow decoration colors for matching windows.\n"
+"Use global setting keeps the general preference."
+msgstr ""
+"일치하는 창의 메뉴가 장식 색상을 따를지 지정합니다.\n"
+"전역 설정 사용을 선택하면 일반 설정을 유지합니다."

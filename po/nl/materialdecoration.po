@@ -2,10 +2,9 @@
 # This file is distributed under the same license as the materialdecoration package.
 # Guido Iodice, 2025
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
+"Project-Id-Version: materialdecoration\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-10-08 13:54+0000\n"
 "PO-Revision-Date: 2025-10-10 10:59+0200\n"
@@ -39,11 +38,11 @@ msgstr "Knopgrootte"
 
 #: config.ui:40
 msgid "Active window opacity"
-msgstr "Doorzichtigheid van actieve vensters"
+msgstr "Dekking van actieve vensters"
 
 #: config.ui:58
 msgid "Inactive window opacity"
-msgstr "Doorzichtigheid van inactieve vensters"
+msgstr "Dekking van inactieve vensters"
 
 #: config.ui:76
 msgid "Corner radius"
@@ -123,11 +122,11 @@ msgstr "Verborgen"
 
 #: kcm.cpp:36
 msgid "Very Tiny"
-msgstr "Zeer klein"
+msgstr "Allerkleinst"
 
 #: kcm.cpp:37
 msgid "Tiny"
-msgstr "Erg klein"
+msgstr "Zeer klein"
 
 #: kcm.cpp:38 kcm.cpp:44
 msgid "Small"
@@ -553,7 +552,7 @@ msgstr ""
 
 #: src/kcm/config.ui
 msgid "Let KWin place additional windows of the same application"
-msgstr ""
+msgstr "KWin extra vensters van dezelfde toepassing laten plaatsen"
 
 #: src/kcm/config.ui
 msgid ""
@@ -563,6 +562,11 @@ msgid ""
 "When disabled, apply the restoration settings to\n"
 "additional windows too, cascading overlapping windows."
 msgstr ""
+"Als een ander normaal venster van dezelfde toepassing open is, bepaalt\n"
+"KWin de positie, het scherm, het virtuele bureaublad en de tegelindeling.\n"
+"Het eerste venster herstelt nog steeds de opgeslagen toestand.\n"
+"Anders gelden de herstelinstellingen ook voor extra\n"
+"vensters en worden overlappende vensters trapsgewijs geplaatst."
 
 #: src/kcm/config.ui
 msgid ""
@@ -570,6 +574,9 @@ msgid ""
 "hidden due to limited space or shortened to fit.\n"
 "Requires the application menu to be always visible."
 msgstr ""
+"Toont de venstertitel bij muisaanwijzing wanneer deze\n"
+"wegens ruimtegebrek verborgen of ingekort is.\n"
+"Het toepassingsmenu moet altijd zichtbaar zijn."
 
 #: src/kcm/config.ui
 msgid ""
@@ -834,4 +841,39 @@ msgid ""
 "Use global setting keeps the general preference."
 msgstr ""
 "Bepaalt of menu’s de decoratiekleuren volgen voor overeenkomende vensters.\n"
-"Globale instelling gebruiken behoudt de algemene voorkeur."
+"Algemene instelling gebruiken behoudt de algemene voorkeur."
+
+#: src/kcm/DetectDialog.cc:80 src/kcm/DetectDialog.cc:81
+#, kde-format
+msgid "(unavailable)"
+msgstr "(niet beschikbaar)"
+
+#: src/kcm/config.ui:14
+#, kde-format
+msgid "Form"
+msgstr "Formulier"
+
+#: src/kcm/config.ui:72 src/kcm/config.ui:92
+#, kde-format
+msgid "%"
+msgstr "%"
+
+#: src/kcm/config.ui:112
+#, kde-format
+msgid "px"
+msgstr "px"
+
+#: src/kcm/config.ui:208
+#, kde-format
+msgid " px"
+msgstr " px"
+
+#: src/kcm/config.ui:235
+#, kde-format
+msgid "ms"
+msgstr "ms"
+
+#: src/kcm/config.ui:444 src/kcm/config.ui:466
+#, kde-format
+msgid " ms"
+msgstr " ms"

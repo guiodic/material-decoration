@@ -554,7 +554,7 @@ msgstr ""
 
 #: src/kcm/config.ui
 msgid "Let KWin place additional windows of the same application"
-msgstr ""
+msgstr "Dejar que KWin coloque las ventanas adicionales de la misma aplicación"
 
 #: src/kcm/config.ui
 msgid ""
@@ -564,6 +564,11 @@ msgid ""
 "When disabled, apply the restoration settings to\n"
 "additional windows too, cascading overlapping windows."
 msgstr ""
+"Si ya está abierta otra ventana normal de la misma aplicación,\n"
+"deja a KWin la posición, pantalla, escritorio virtual y mosaico.\n"
+"La primera ventana sigue restaurando el estado guardado.\n"
+"Si se desactiva, también aplica la restauración a ventanas\n"
+"adicionales y coloca en cascada las que se solapen."
 
 #: src/kcm/config.ui
 msgid ""
@@ -571,6 +576,9 @@ msgid ""
 "hidden due to limited space or shortened to fit.\n"
 "Requires the application menu to be always visible."
 msgstr ""
+"Muestra el título al pasar el ratón si\n"
+"está oculto por falta de espacio o recortado.\n"
+"Requiere que el menú de la aplicación esté siempre visible."
 
 #: src/kcm/config.ui
 msgid ""
@@ -848,3 +856,38 @@ msgstr ""
 "Determina si los menús siguen los colores\n"
 "de la decoración en las ventanas coincidentes.\n"
 "Usar configuración global conserva la preferencia general."
+
+#: src/kcm/DetectDialog.cc:80 src/kcm/DetectDialog.cc:81
+#, kde-format
+msgid "(unavailable)"
+msgstr "(no disponible)"
+
+#: src/kcm/config.ui:14
+#, kde-format
+msgid "Form"
+msgstr "Formulario"
+
+#: src/kcm/config.ui:72 src/kcm/config.ui:92
+#, kde-format
+msgid "%"
+msgstr "%"
+
+#: src/kcm/config.ui:112
+#, kde-format
+msgid "px"
+msgstr "px"
+
+#: src/kcm/config.ui:208
+#, kde-format
+msgid " px"
+msgstr " px"
+
+#: src/kcm/config.ui:235
+#, kde-format
+msgid "ms"
+msgstr "ms"
+
+#: src/kcm/config.ui:444 src/kcm/config.ui:466
+#, kde-format
+msgid " ms"
+msgstr " ms"

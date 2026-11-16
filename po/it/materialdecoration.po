@@ -850,3 +850,38 @@ msgid ""
 msgstr ""
 "Scegli se i menu delle finestre corrispondenti seguono i colori della decorazione.\n"
 "Usa impostazione globale mantiene la preferenza generale."
+
+#: src/kcm/DetectDialog.cc:80 src/kcm/DetectDialog.cc:81
+#, kde-format
+msgid "(unavailable)"
+msgstr "(non disponibile)"
+
+#: src/kcm/config.ui:14
+#, kde-format
+msgid "Form"
+msgstr "Modulo"
+
+#: src/kcm/config.ui:72 src/kcm/config.ui:92
+#, kde-format
+msgid "%"
+msgstr "%"
+
+#: src/kcm/config.ui:112
+#, kde-format
+msgid "px"
+msgstr "px"
+
+#: src/kcm/config.ui:208
+#, kde-format
+msgid " px"
+msgstr " px"
+
+#: src/kcm/config.ui:235
+#, kde-format
+msgid "ms"
+msgstr "ms"
+
+#: src/kcm/config.ui:444 src/kcm/config.ui:466
+#, kde-format
+msgid " ms"
+msgstr " ms"

@@ -39,11 +39,11 @@ msgstr "按钮大小"
 
 #: config.ui:40
 msgid "Active window opacity"
-msgstr "活动窗口透明度"
+msgstr "活动窗口不透明度"
 
 #: config.ui:58
 msgid "Inactive window opacity"
-msgstr "非活动窗口透明度"
+msgstr "非活动窗口不透明度"
 
 #: config.ui:76
 msgid "Corner radius"
@@ -551,7 +551,7 @@ msgstr ""
 
 #: src/kcm/config.ui
 msgid "Let KWin place additional windows of the same application"
-msgstr ""
+msgstr "让 KWin 放置同一应用的其他窗口"
 
 #: src/kcm/config.ui
 msgid ""
@@ -561,6 +561,10 @@ msgid ""
 "When disabled, apply the restoration settings to\n"
 "additional windows too, cascading overlapping windows."
 msgstr ""
+"同一应用已有其他普通窗口打开时，将位置、屏幕、虚拟桌面和平铺交给\n"
+"KWin 处理。\n"
+"第一个窗口仍恢复已保存的状态。\n"
+"禁用时，其他窗口也会应用恢复设置，并将重叠的窗口层叠排列。"
 
 #: src/kcm/config.ui
 msgid ""
@@ -568,6 +572,8 @@ msgid ""
 "hidden due to limited space or shortened to fit.\n"
 "Requires the application menu to be always visible."
 msgstr ""
+"标题因空间不足而隐藏或截短时，鼠标悬停可显示标题。\n"
+"需要始终显示应用菜单。"
 
 #: src/kcm/config.ui
 msgid ""
@@ -824,3 +830,38 @@ msgid ""
 msgstr ""
 "为匹配的窗口指定菜单是否跟随装饰颜色。\n"
 "选择使用全局设置将保留通用偏好。"
+
+#: src/kcm/DetectDialog.cc:80 src/kcm/DetectDialog.cc:81
+#, kde-format
+msgid "(unavailable)"
+msgstr "（不可用）"
+
+#: src/kcm/config.ui:14
+#, kde-format
+msgid "Form"
+msgstr "表单"
+
+#: src/kcm/config.ui:72 src/kcm/config.ui:92
+#, kde-format
+msgid "%"
+msgstr "%"
+
+#: src/kcm/config.ui:112
+#, kde-format
+msgid "px"
+msgstr "px"
+
+#: src/kcm/config.ui:208
+#, kde-format
+msgid " px"
+msgstr " px"
+
+#: src/kcm/config.ui:235
+#, kde-format
+msgid "ms"
+msgstr "ms"
+
+#: src/kcm/config.ui:444 src/kcm/config.ui:466
+#, kde-format
+msgid " ms"
+msgstr " ms"

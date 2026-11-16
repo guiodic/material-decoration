@@ -123,11 +123,11 @@ msgstr "Caché"
 
 #: kcm.cpp:36
 msgid "Very Tiny"
-msgstr "Très minuscule"
+msgstr "Extrêmement petit"
 
 #: kcm.cpp:37
 msgid "Tiny"
-msgstr "Minuscule"
+msgstr "Très petit"
 
 #: kcm.cpp:38 kcm.cpp:44
 msgid "Small"
@@ -554,7 +554,7 @@ msgstr ""
 
 #: src/kcm/config.ui
 msgid "Let KWin place additional windows of the same application"
-msgstr ""
+msgstr "Laisser KWin placer les fenêtres supplémentaires de la même application"
 
 #: src/kcm/config.ui
 msgid ""
@@ -564,6 +564,11 @@ msgid ""
 "When disabled, apply the restoration settings to\n"
 "additional windows too, cascading overlapping windows."
 msgstr ""
+"Si une autre fenêtre normale de la même application est ouverte, laisse\n"
+"KWin gérer la position, l’écran, le bureau virtuel et la mosaïque.\n"
+"La première fenêtre restaure toujours son état enregistré.\n"
+"Sinon, applique aussi la restauration aux fenêtres supplémentaires\n"
+"et dispose en cascade celles qui se chevauchent."
 
 #: src/kcm/config.ui
 msgid ""
@@ -571,6 +576,9 @@ msgid ""
 "hidden due to limited space or shortened to fit.\n"
 "Requires the application menu to be always visible."
 msgstr ""
+"Affiche le titre au survol lorsqu’il est\n"
+"masqué par manque d’espace ou raccourci.\n"
+"Nécessite que le menu de l’application soit toujours visible."
 
 #: src/kcm/config.ui
 msgid ""
@@ -845,3 +853,38 @@ msgstr ""
 "Détermine si les menus suivent les couleurs\n"
 "de décoration pour les fenêtres correspondantes.\n"
 "Utiliser le réglage global conserve la préférence générale."
+
+#: src/kcm/DetectDialog.cc:80 src/kcm/DetectDialog.cc:81
+#, kde-format
+msgid "(unavailable)"
+msgstr "(indisponible)"
+
+#: src/kcm/config.ui:14
+#, kde-format
+msgid "Form"
+msgstr "Formulaire"
+
+#: src/kcm/config.ui:72 src/kcm/config.ui:92
+#, kde-format
+msgid "%"
+msgstr "%"
+
+#: src/kcm/config.ui:112
+#, kde-format
+msgid "px"
+msgstr "px"
+
+#: src/kcm/config.ui:208
+#, kde-format
+msgid " px"
+msgstr " px"
+
+#: src/kcm/config.ui:235
+#, kde-format
+msgid "ms"
+msgstr "ms"
+
+#: src/kcm/config.ui:444 src/kcm/config.ui:466
+#, kde-format
+msgid " ms"
+msgstr " ms"
