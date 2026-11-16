@@ -319,6 +319,71 @@ private slots:
         QCOMPARE(immediateRequests.size() - count, restores ? 1 : 0);
         if (restores) QCOMPARE(immediateRequests.last().value("position"), saved.value("position"));
     }
+    void additionalWindowWaitsForWorkspace_data() {
+        QTest::addColumn<bool>("sibling");
+        QTest::addColumn<bool>("beforeMap");
+        QTest::newRow("preparation-first") << false << true;
+        QTest::newRow("preparation-additional") << true << true;
+        QTest::newRow("first-frame-first") << false << false;
+        QTest::newRow("first-frame-additional") << true << false;
+    }
+    void additionalWindowWaitsForWorkspace() {
+        QFETCH(bool, sibling);
+        QFETCH(bool, beforeMap);
+        QScopedValueRollback preparation(prepareAvailable, true);
+        QScopedValueRollback availability(immediateAvailable, true);
+        QScopedValueRollback success(immediateSucceeds, true);
+        const QString app = "org.example.StateTest.Workspace." + QUuid::createUuid().toString();
+        KWin::WaylandWindow window, other;
+        setup(window, app);
+        setup(other, app);
+        defaultWorkspace.setProperty("stackingOrder", QVariant::fromValue(sibling ? QList<QObject *>{&other} : QList<QObject *>{}));
+        auto saved = Material::captureWindowState(&window);
+        saved.insert("position", QVariantMap{{"x", 200}, {"y", 250}});
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), saved, currentScope()));
+        QScopedValueRollback workspace(testWorkspace, static_cast<QObject *>(nullptr));
+        const auto preparations = prepareCalls;
+        const auto restores = immediateRequests.size();
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true, true, true, false, true);
+        QCOMPARE(prepareCalls, preparations);
+        if (!beforeMap) window.map();
+        QCOMPARE(immediateRequests.size(), restores);
+        const auto lookups = workspaceLookups;
+        testWorkspace = &defaultWorkspace;
+        QTRY_VERIFY_WITH_TIMEOUT(workspaceLookups > lookups, 1500);
+        if (beforeMap) {
+            QCOMPARE(prepareCalls - preparations, sibling ? 0 : 1);
+            window.map();
+        }
+        QCOMPARE(immediateRequests.size() - restores, sibling ? 0 : 1);
+        if (!sibling) QCOMPARE(immediateRequests.last().value("position"), saved.value("position"));
+    }
+    void missingWorkspaceNeverAppliesSavedPlacement() {
+        QScopedValueRollback preparation(prepareAvailable, true);
+        QScopedValueRollback availability(immediateAvailable, true);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.NoWorkspace." + QUuid::createUuid().toString());
+        const auto scope = currentScope();
+        const auto key = Material::windowStateKey(&window);
+        const auto saved = Material::captureWindowState(&window);
+        QVERIFY(Material::writeWindowState(key, saved, scope));
+        const auto persisted = Material::readWindowState(key, scope);
+        QScopedValueRollback workspace(testWorkspace, static_cast<QObject *>(nullptr));
+        const auto preparations = prepareCalls;
+        const auto restores = immediateRequests.size();
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true, true, true, false, true);
+        window.map();
+        const auto lookups = workspaceLookups;
+        QTRY_VERIFY_WITH_TIMEOUT(workspaceLookups > lookups, 1500);
+        QCOMPARE(prepareCalls, preparations);
+        QCOMPARE(immediateRequests.size(), restores);
+        window.close();
+        QCOMPARE(Material::readWindowState(key, scope), persisted);
+    }
     void siblingAppearsAfterPreparation() {
         QScopedValueRollback available(prepareAvailable, true);
         QScopedValueRollback minimizes(prepareMinimizes, true);

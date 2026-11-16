@@ -393,7 +393,12 @@ private slots:
         if (!m_enabled || m_restoreCancelled || m_restoreStarted || !m_decoration
             || m_prepareAttempts >= 100 || m_window->property("deleted").toBool()) return;
         m_prepareRetryTimer.stop();
-        if (keepKWinPlacement()) return;
+        bool workspaceAvailable = true;
+        if (keepKWinPlacement(&workspaceAvailable)) return;
+        if (!workspaceAvailable) {
+            if (++m_prepareAttempts < 100) m_prepareRetryTimer.start(50);
+            return;
+        }
         refreshState();
         if (m_prepareFailed || !m_rememberDesktop || m_state.isEmpty()) return;
         const bool wasMinimized = m_window->property("minimized").toBool();
@@ -525,7 +530,12 @@ private slots:
             retry();
             return;
         }
-        if (keepKWinPlacement()) return;
+        bool workspaceAvailable = true;
+        if (keepKWinPlacement(&workspaceAvailable)) return;
+        if (!workspaceAvailable) {
+            retry();
+            return;
+        }
         refreshState();
         const auto inheritedSize = siblingNormalSize();
         if (m_state.isEmpty() && inheritedSize.isEmpty()) return;
@@ -546,12 +556,17 @@ private slots:
     }
 
 private:
-    bool keepKWinPlacement()
+    bool keepKWinPlacement(bool *workspaceAvailable = nullptr)
     {
+        if (workspaceAvailable) *workspaceAvailable = true;
         if (!m_useKWinPlacementForAdditionalWindows) return false;
         const auto app = applicationId(m_window);
         auto *workspace = app.isEmpty() ? nullptr : windowStateWorkspace();
-        if (!workspace) return false;
+        if (!workspace) {
+            // Missing workspace information does not mean there are no siblings.
+            if (workspaceAvailable) *workspaceAvailable = false;
+            return false;
+        }
         for (const auto &entry : workspace->property("stackingOrder").toList()) {
             auto *other = entry.value<QObject *>();
             if (!other || other == m_window || !other->property("normalWindow").toBool()
