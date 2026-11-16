@@ -46,6 +46,7 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
     auto criteriaLayout = new QFormLayout(criteriaGroup);
 
     m_patternLineEdit = new QLineEdit(this);
+    m_patternLineEdit->setToolTip(i18n("Enter the text to match against the window title or class.\nUse Detect Window Properties to capture it from an open window."));
     m_detectButton = new QPushButton(i18n("Detect Window Properties..."), this);
 
     auto patternLayout = new QHBoxLayout();
@@ -55,11 +56,13 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
     criteriaLayout->addRow(i18n("Window Property / Pattern:"), patternLayout);
 
     m_exceptionTypeCombo = new QComboBox(this);
+    m_exceptionTypeCombo->setToolTip(i18n("The title is the text shown in\nthe title bar and may change.\nThe class identifies the application."));
     m_exceptionTypeCombo->addItems({i18n("Window Title"), i18n("Window Class")});
     m_exceptionTypeCombo->setCurrentIndex(1); // Window Class default
     criteriaLayout->addRow(i18n("Match against:"), m_exceptionTypeCombo);
 
     m_matchingModeCombo = new QComboBox(this);
+    m_matchingModeCombo->setToolTip(i18n("Exact Match requires the whole value.\nSubstring Match finds the text anywhere within it.\nMatching is case-insensitive and does not use regular expressions."));
     m_matchingModeCombo->addItems({i18n("Exact Match"), i18n("Substring Match")});
     criteriaLayout->addRow(i18n("Matching mode:"), m_matchingModeCombo);
 
@@ -72,10 +75,13 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
     m_hideTitleBarCheckBox = new QCheckBox(i18n("Hide window title bar"), this);
     m_hideApplicationMenuCheckBox = new QCheckBox(i18n("Show the window title and hide the menu"), this);
     m_hamburgerMenuCheckBox = new QCheckBox(i18n("Show menu as hamburger"), this);
+    m_hamburgerMenuCheckBox->setToolTip(i18n("Collects the application menu in one button instead of\nshowing separate top-level menu buttons in the title bar."));
     m_hideShadowCheckBox = new QCheckBox(i18n("Don't draw window shadow"), this);
     m_squareCornersCheckBox = new QCheckBox(i18n("Don't round window corners"), this);
     m_outlineActiveCheckBox = new QCheckBox(i18n("Paint a thin line around the window"), this);
+    m_outlineActiveCheckBox->setToolTip(i18n("Draws a thin line around the window\nusing the active or inactive border color.\nThe outline stays opaque even when the decoration is transparent."));
     m_excludeWindowPositionCheckBox = new QCheckBox(i18n("Do not remember window position"), this);
+    m_excludeWindowPositionCheckBox->setToolTip(i18n("Excludes matching windows from saving and restoring their\nposition, even when enabled in the global settings."));
 
     optionsLayout->addWidget(m_hideTitleBarCheckBox);
     optionsLayout->addWidget(m_hideApplicationMenuCheckBox);
@@ -87,6 +93,7 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
 
     auto menuColorsLayout = new QFormLayout();
     m_menuColorsCombo = new QComboBox(this);
+    m_menuColorsCombo->setToolTip(i18n("Overrides whether menus follow decoration colors for matching windows.\nUse global setting keeps the general preference."));
     m_menuColorsCombo->addItems({i18n("Use global setting"), i18n("Enabled"), i18n("Disabled")});
     menuColorsLayout->addRow(i18n("Menus follow decoration colors"), m_menuColorsCombo);
     optionsLayout->addLayout(menuColorsLayout);

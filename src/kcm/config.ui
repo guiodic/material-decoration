@@ -56,10 +56,21 @@
          <property name="text">
           <string>Title alignment</string>
          </property>
+         <property name="toolTip">
+          <string>Center aligns the title within the available space.
+Center (Full Width) centers it on the window,
+shifting it to avoid menus and buttons.</string>
+         </property>
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QComboBox" name="kcfg_TitleAlignment"/>
+        <widget class="QComboBox" name="kcfg_TitleAlignment">
+         <property name="toolTip">
+          <string>Center aligns the title within the available space.
+Center (Full Width) centers it on the window,
+shifting it to avoid menus and buttons.</string>
+         </property>
+        </widget>
        </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label_2">
@@ -76,6 +87,10 @@
          <property name="text">
           <string>Active window opacity</string>
          </property>
+         <property name="toolTip">
+          <string>Adjusts the opacity of the active window title bar and borders.
+Does not change the opacity of the window contents.</string>
+         </property>
         </widget>
        </item>
        <item row="2" column="1">
@@ -89,12 +104,20 @@
          <property name="maximum">
           <number>100</number>
          </property>
+         <property name="toolTip">
+          <string>Adjusts the opacity of the active window title bar and borders.
+Does not change the opacity of the window contents.</string>
+         </property>
         </widget>
        </item>
        <item row="3" column="0">
         <widget class="QLabel" name="label_4">
          <property name="text">
           <string>Inactive window opacity</string>
+         </property>
+         <property name="toolTip">
+          <string>Adjusts the opacity of inactive window title bars and borders.
+Does not change the opacity of the window contents.</string>
          </property>
         </widget>
        </item>
@@ -108,6 +131,10 @@
          </property>
          <property name="maximum">
           <number>100</number>
+         </property>
+         <property name="toolTip">
+          <string>Adjusts the opacity of inactive window title bars and borders.
+Does not change the opacity of the window contents.</string>
          </property>
         </widget>
        </item>
@@ -149,12 +176,20 @@
          <property name="checked">
           <bool>false</bool>
          </property>
+         <property name="toolTip">
+          <string>Uses square corners when a window is snapped to a tiling zone.
+Floating windows keep the configured corner rounding.</string>
+         </property>
         </widget>
        </item>
        <item row="7" column="1">
         <widget class="QCheckBox" name="kcfg_UseCustomBorderColors">
          <property name="text">
-          <string>Use custom border colors</string>
+          <string>Use custom border and outline colors</string>
+         </property>
+         <property name="toolTip">
+          <string>Uses the selected colors for borders and the outline, if enabled.
+When disabled, uses the frame color from the window color scheme.</string>
          </property>
         </widget>
        </item>
@@ -174,6 +209,11 @@
             <widget class="QCheckBox" name="kcfg_ActiveBorderUsesAccent">
              <property name="text">
               <string>Use accent color for the active window border</string>
+             </property>
+             <property name="toolTip">
+              <string>Uses the window color scheme accent color instead
+of the manually selected active border color.
+Also applies to the outline.</string>
              </property>
             </widget>
            </item>
@@ -214,6 +254,11 @@
          <property name="text">
           <string>Paint a thin outline around the window</string>
          </property>
+         <property name="toolTip">
+          <string>Draws a thin line around the window
+using the active or inactive border color.
+The outline stays opaque even when the decoration is transparent.</string>
+         </property>
         </widget>
        </item>
        <item row="12" column="1">
@@ -221,27 +266,14 @@
          <property name="text">
           <string>Hide window title when space is limited</string>
          </property>
+         <property name="toolTip">
+          <string>Hides the title when the application menu
+leaves less space than the configured minimum.
+When disabled, keeps the title visible and shortens it as needed.</string>
+         </property>
         </widget>
        </item>
        <item row="13" column="1">
-        <layout class="QHBoxLayout" name="kcfg_ShowCaptionOnHoverIndentLayout">
-         <item>
-          <spacer name="kcfg_ShowCaptionOnHoverIndentSpacer">
-           <property name="orientation"><enum>Qt::Horizontal</enum></property>
-           <property name="sizeType"><enum>QSizePolicy::Fixed</enum></property>
-           <property name="sizeHint" stdset="0"><size><width>20</width><height>0</height></size></property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="kcfg_ShowCaptionOnHover">
-           <property name="text">
-            <string>Show window title on mouse over</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="14" column="1">
         <layout class="QHBoxLayout" name="kcfg_MinWidthForCaptionIndentLayout">
          <item>
           <spacer name="kcfg_MinWidthForCaptionIndentSpacer">
@@ -258,6 +290,11 @@
              <property name="text">
               <string>Minimum reserved space</string>
              </property>
+             <property name="toolTip">
+              <string>Minimum width in pixels available beside the
+application menu before the title is hidden.
+Only applies when hiding the title for limited space is enabled.</string>
+             </property>
             </widget>
            </item>
            <item row="0" column="1">
@@ -271,11 +308,28 @@
              <property name="maximum">
               <number>500</number>
              </property>
+             <property name="toolTip">
+              <string>Minimum width in pixels available beside the
+application menu before the title is hidden.
+Only applies when hiding the title for limited space is enabled.</string>
+             </property>
             </widget>
            </item>
           </layout>
          </item>
         </layout>
+       </item>
+       <item row="14" column="1">
+        <widget class="QCheckBox" name="kcfg_ShowCaptionOnHover">
+         <property name="text">
+          <string>Show window title on mouse over</string>
+         </property>
+         <property name="toolTip">
+          <string>Show the window title on mouse over when it is
+hidden due to limited space or shortened to fit.
+Requires the application menu to be always visible.</string>
+         </property>
+        </widget>
        </item>
        <item row="15" column="1">
         <widget class="QCheckBox" name="kcfg_AnimationsEnabled">
@@ -338,12 +392,20 @@
          <property name="text">
           <string>Always show application menu</string>
          </property>
+         <property name="toolTip">
+          <string>Keeps the application menu visible in the title bar.
+When disabled, the menu appears on mouse over.</string>
+         </property>
         </widget>
        </item>
        <item row="1" column="1">
         <widget class="QCheckBox" name="kcfg_SearchEnabled">
          <property name="text">
           <string>Enable search button</string>
+         </property>
+         <property name="toolTip">
+          <string>Adds a button to find and run application menu commands.
+Requires the application to export its menu to the decoration.</string>
          </property>
         </widget>
        </item>
@@ -360,6 +422,10 @@
           <widget class="QCheckBox" name="kcfg_ShowDisabledActions">
            <property name="text">
             <string>Show disabled menu actions</string>
+           </property>
+           <property name="toolTip">
+            <string>Includes unavailable commands in search results.
+They remain disabled and cannot be run.</string>
            </property>
           </widget>
          </item>
@@ -379,6 +445,10 @@
            <property name="text">
             <string>Ignore top-level menu labels</string>
            </property>
+           <property name="toolTip">
+            <string>Excludes top-level menu names, such as File or Edit, from matching.
+Commands inside those menus are still searched.</string>
+           </property>
           </widget>
          </item>
         </layout>
@@ -396,6 +466,10 @@
           <widget class="QCheckBox" name="kcfg_SearchIgnoreSubMenus">
            <property name="text">
             <string>Also ignore submenu labels</string>
+           </property>
+           <property name="toolTip">
+            <string>Searches command names only, excluding the names of their parent menus.
+Also enables ignoring top-level menu labels.</string>
            </property>
           </widget>
          </item>
@@ -415,6 +489,10 @@
            <property name="text">
             <string>Enable fuzzy search</string>
            </property>
+           <property name="toolTip">
+            <string>Finds approximate matches, including minor typing errors, and ranks results by relevance.
+When disabled, searches for the typed text as a substring.</string>
+           </property>
           </widget>
          </item>
         </layout>
@@ -424,22 +502,41 @@
          <property name="text">
           <string>Use hamburger menu</string>
          </property>
+         <property name="toolTip">
+          <string>Collects the application menu in one button instead of
+showing separate top-level menu buttons in the title bar.</string>
+         </property>
         </widget>
        </item>
        <item row="7" column="0">
         <widget class="QLabel" name="label_5">
          <property name="text">
-          <string>Menu button horizontal padding</string>
+          <string>Menu item spacing</string>
+         </property>
+         <property name="toolTip">
+          <string>Adds horizontal space on both sides of
+menu labels in the title bar.
+Higher values make the buttons wider.</string>
          </property>
         </widget>
        </item>
        <item row="7" column="1">
-        <widget class="QSpinBox" name="kcfg_MenuButtonHorzPadding"/>
+        <widget class="QSpinBox" name="kcfg_MenuButtonHorzPadding">
+         <property name="toolTip">
+          <string>Adds horizontal space on both sides of
+menu labels in the title bar.
+Higher values make the buttons wider.</string>
+         </property>
+        </widget>
        </item>
        <item row="9" column="1">
         <widget class="QCheckBox" name="kcfg_UseSystemMenuFont">
          <property name="text">
           <string>Use system menu font</string>
+         </property>
+         <property name="toolTip">
+          <string>Uses the system menu font.
+When disabled, uses the title bar font.</string>
          </property>
         </widget>
        </item>
@@ -448,12 +545,20 @@
          <property name="text">
           <string>Use system colors</string>
          </property>
+         <property name="toolTip">
+          <string>Uses system selection colors to highlight application menu buttons.
+When disabled, uses the decoration button highlighting.</string>
+         </property>
         </widget>
        </item>
        <item row="11" column="1">
         <widget class="QCheckBox" name="kcfg_MenusFollowDecorationColors">
          <property name="text">
           <string>Menus follow decoration colors</string>
+         </property>
+         <property name="toolTip">
+          <string>Uses the window color scheme for popup menus and the tiling popup.
+When disabled, uses the default system palette.</string>
          </property>
         </widget>
        </item>
@@ -495,6 +600,10 @@
          <property name="text">
           <string>Shadow strength</string>
          </property>
+         <property name="toolTip">
+          <string>Adjusts shadow opacity without changing its size.
+Higher values make the shadow stronger.</string>
+         </property>
         </widget>
        </item>
        <item row="2" column="1">
@@ -507,12 +616,20 @@
            <property name="orientation">
             <enum>Qt::Orientation::Horizontal</enum>
            </property>
+           <property name="toolTip">
+            <string>Adjusts shadow opacity without changing its size.
+Higher values make the shadow stronger.</string>
+           </property>
           </widget>
          </item>
          <item>
           <widget class="QSpinBox" name="spinShadowStrength">
            <property name="maximum">
             <number>255</number>
+           </property>
+           <property name="toolTip">
+            <string>Adjusts shadow opacity without changing its size.
+Higher values make the shadow stronger.</string>
            </property>
           </widget>
          </item>
@@ -537,6 +654,12 @@
           <widget class="QCheckBox" name="kcfg_LongPressEnabled">
            <property name="text">
             <string>Enable long-press actions on window buttons</string>
+           </property>
+           <property name="toolTip">
+            <string>Hold Maximize to show snapping zones, Minimize to minimize other windows
+on the screen, or Close to minimize to the system tray.
+Requires the corresponding support or scripts.
+See the information button for requirements.</string>
            </property>
           </widget>
          </item>
@@ -588,6 +711,9 @@
              <property name="text">
               <string>Long-press duration</string>
              </property>
+             <property name="toolTip">
+              <string>Time to hold a window button before its additional action is triggered.</string>
+             </property>
             </widget>
            </item>
            <item row="0" column="1">
@@ -601,6 +727,9 @@
              <property name="maximum">
               <number>5000</number>
              </property>
+             <property name="toolTip">
+              <string>Time to hold a window button before its additional action is triggered.</string>
+             </property>
             </widget>
            </item>
           </layout>
@@ -610,6 +739,10 @@
        <item row="3" column="1">
         <widget class="QCheckBox" name="kcfg_TilingPopupHoverEnabled">
          <property name="text"><string>Open tiling popup when hovering over maximize</string></property>
+         <property name="toolTip">
+          <string>Shows snapping zones when the pointer stays over Maximize, without clicking.
+Requires the Material Tiling Popup KWin script.</string>
+         </property>
         </widget>
        </item>
        <item row="4" column="1">
@@ -627,6 +760,10 @@
            <item row="0" column="0">
             <widget class="QLabel" name="tilingPopupHoverDelayLabel">
              <property name="text"><string>Tiling popup hover delay</string></property>
+             <property name="toolTip">
+              <string>Time to wait before opening the tiling
+popup while the pointer stays over Maximize.</string>
+             </property>
             </widget>
            </item>
            <item row="0" column="1">
@@ -634,6 +771,10 @@
              <property name="suffix"><string> ms</string></property>
              <property name="minimum"><number>500</number></property>
              <property name="maximum"><number>5000</number></property>
+             <property name="toolTip">
+              <string>Time to wait before opening the tiling
+popup while the pointer stays over Maximize.</string>
+             </property>
             </widget>
            </item>
           </layout>
@@ -644,6 +785,11 @@
         <widget class="QCheckBox" name="kcfg_DragFromButtonsEnabled">
          <property name="text">
           <string>Allow window dragging from buttons</string>
+         </property>
+         <property name="toolTip">
+          <string>Allows window dragging to start from decoration
+buttons such as Minimize and Maximize.
+Application menu buttons still allow dragging when this is disabled.</string>
          </property>
         </widget>
        </item>
@@ -657,7 +803,12 @@
        <item row="0" column="1">
         <widget class="QCheckBox" name="kcfg_RememberWindowState">
          <property name="text"><string>Remember window position (Wayland)</string></property>
-         <property name="toolTip"><string>Save window position when a window closes and restore it when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window.</string></property>
+         <property name="toolTip"><string>Save window position when a window closes
+and restore it when it opens again.
+The application controls its size.
+Requires the Material Tiling Popup KWin script.
+Windows of the same application without a distinct identity
+share the state of the last closed window.</string></property>
         </widget>
        </item>
        <item row="1" column="1">
@@ -670,25 +821,33 @@
           <item>
            <widget class="QCheckBox" name="kcfg_RememberWindowScreen">
             <property name="text"><string>Remember the screen where the window was last closed</string></property>
-            <property name="toolTip"><string>Restore the saved screen. When disabled, use the screen chosen by KWin when the window opens.</string></property>
+            <property name="toolTip"><string>Restore the saved screen.
+When disabled, use the screen chosen by KWin when the window opens.</string></property>
            </widget>
           </item>
           <item>
            <widget class="QCheckBox" name="kcfg_RememberWindowDesktop">
             <property name="text"><string>Remember the virtual desktop where the window was last closed</string></property>
-            <property name="toolTip"><string>Restore the saved virtual desktop, switch to it and activate the window. When disabled, keep the desktop chosen when the window opens.</string></property>
+            <property name="toolTip"><string>Restore the saved virtual desktop, switch to it and activate the window.
+When disabled, keep the desktop chosen when the window opens.</string></property>
            </widget>
           </item>
           <item>
            <widget class="QCheckBox" name="kcfg_UseKWinPlacementForAdditionalWindows">
             <property name="text"><string>Let KWin place additional windows of the same application</string></property>
-            <property name="toolTip"><string>When another normal window of the same application is already open, leave position, screen, virtual desktop and tiling to KWin. The first window still uses saved restoration. When disabled, apply the restoration settings to additional windows too, cascading overlapping windows.</string></property>
+            <property name="toolTip"><string>When another normal window of the same application is already
+open, leave position, screen, virtual desktop and tiling to KWin.
+The first window still uses saved restoration.
+When disabled, apply the restoration settings to
+additional windows too, cascading overlapping windows.</string></property>
            </widget>
           </item>
           <item>
            <widget class="QCheckBox" name="kcfg_ResizeOtherTiledWindows">
             <property name="text"><string>Resize other snapped windows when restoring saved proportions</string></property>
-            <property name="toolTip"><string>Allow restoring a snapped window's saved proportions to resize other windows in the same quick-tile layout. When disabled, restore the saved proportions only to the reopened window.</string></property>
+            <property name="toolTip"><string>Allow restoring a snapped window's saved proportions to
+resize other windows in the same quick-tile layout.
+When disabled, restore the saved proportions only to the reopened window.</string></property>
            </widget>
           </item>
          </layout>
