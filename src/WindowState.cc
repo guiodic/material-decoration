@@ -368,7 +368,7 @@ public:
         m_rememberDesktop = rememberDesktop;
         m_resizeOtherTiledWindows = resizeOtherTiledWindows;
         m_useKWinPlacementForAdditionalWindows = useKWinPlacementForAdditionalWindows;
-        if (enabled && !m_restoreStarted && keepKWinPlacement()) return;
+        if (enabled && !m_restoreStarted && !m_restoreCancelled && keepKWinPlacement()) return;
         if (!enabled || !rememberDesktop) m_prepareRetryTimer.stop();
         if ((!enabled || !rememberDesktop) && !m_restoreStarted) {
             if (m_prepared) {
@@ -557,7 +557,8 @@ private:
             if (!other || other == m_window || !other->property("normalWindow").toBool()
                 || other->property("transient").toBool() || other->property("deleted").toBool()
                 || applicationId(other) != app) continue;
-            m_restoreCancelled = true;
+            // Before the first frame this is provisional: identity, settings
+            // and the set of open siblings can still change.
             m_retryTimer.stop();
             m_prepareRetryTimer.stop();
             // A sibling may become visible after desktop preparation started.
@@ -569,8 +570,11 @@ private:
                 m_prepared = false;
             }
             releaseVisibilityGuard();
-            m_saveAllowed.insert(WindowStateScope::self()->current(), true);
-            Q_EMIT restorationStopped();
+            if (m_restoreStarted) {
+                m_restoreCancelled = true;
+                m_saveAllowed.insert(WindowStateScope::self()->current(), true);
+                Q_EMIT restorationStopped();
+            }
             return true;
         }
         return false;

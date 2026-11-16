@@ -278,6 +278,47 @@ private slots:
                      Material::captureWindowState(&window).value("position").toMap());
         }
     }
+    void additionalWindowPolicyIsRecheckedAtFirstFrame_data() {
+        QTest::addColumn<QString>("change");
+        QTest::addColumn<bool>("userMoved");
+        QTest::addColumn<bool>("restores");
+        QTest::newRow("still-additional") << QString("none") << false << false;
+        QTest::newRow("identity-changed") << QString("identity") << false << true;
+        QTest::newRow("policy-disabled") << QString("policy") << false << true;
+        QTest::newRow("sibling-closed") << QString("closed") << false << true;
+        QTest::newRow("user-moved-identity-changed") << QString("identity") << true << false;
+        QTest::newRow("user-moved-policy-disabled") << QString("policy") << true << false;
+    }
+    void additionalWindowPolicyIsRecheckedAtFirstFrame() {
+        QFETCH(QString, change);
+        QFETCH(bool, userMoved);
+        QFETCH(bool, restores);
+        QScopedValueRollback availability(immediateAvailable, true);
+        QScopedValueRollback success(immediateSucceeds, true);
+        const QString app = "org.example.StateTest.Recheck." + QUuid::createUuid().toString();
+        KWin::WaylandWindow window, other;
+        setup(window, app);
+        setup(other, app);
+        defaultWorkspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&other}));
+        auto saved = Material::captureWindowState(&window);
+        saved.insert("position", QVariantMap{{"x", 200}, {"y", 250}});
+        QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), saved, currentScope()));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true, true, true, false, true);
+        if (userMoved) window.startInteraction();
+        if (change == "identity") {
+            const QString finalApp = app + ".Final";
+            window.setProperty("desktopFileName", finalApp);
+            QVERIFY(Material::writeWindowState(Material::windowStateKey(&window), saved, currentScope()));
+        }
+        if (change == "policy") Material::configureWindowState(&decoration, true, true, true, false, false);
+        if (change == "closed") other.setProperty("deleted", true);
+        const auto count = immediateRequests.size();
+        window.map();
+        QCOMPARE(immediateRequests.size() - count, restores ? 1 : 0);
+        if (restores) QCOMPARE(immediateRequests.last().value("position"), saved.value("position"));
+    }
     void siblingAppearsAfterPreparation() {
         QScopedValueRollback available(prepareAvailable, true);
         QScopedValueRollback minimizes(prepareMinimizes, true);
