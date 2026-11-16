@@ -1,0 +1,1000 @@
+# Translation of materialdecoration into ru.
+# SPDX-FileCopyrightText: 2026 Guido Iodice <guido.iodice@gmail.com>
+# This file is distributed under the same license as materialdecoration.
+msgid ""
+msgstr ""
+"Project-Id-Version: materialdecoration\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-27 00:03+0000\n"
+"PO-Revision-Date: 2026-11-16 17:38+0100\n"
+"Last-Translator: Guido Iodice <guido.iodice@gmail.com>\n"
+"Language-Team: ru\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);\n"
+
+#: src/Button.cc:929
+#, kde-format
+msgid "Press and hold to minimize other windows"
+msgstr "Нажмите и удерживайте, чтобы свернуть остальные окна"
+
+#: src/Button.cc:932
+#, kde-format
+msgid "Press and hold to show snapping zones"
+msgstr "Нажмите и удерживайте, чтобы показать зоны привязки"
+
+#: src/Button.cc:935
+#, kde-format
+msgid "Press and hold to minimize to the notification area"
+msgstr "Нажмите и удерживайте, чтобы свернуть в область уведомлений"
+
+#: src/Button.cc:1012
+#, kde-format
+msgid ""
+"Install kwin-minimize2tray and enable Minimize to Tray in System Settings > "
+"Window Management > KWin Scripts."
+msgstr "Установите kwin-minimize2tray и включите Minimize to Tray в разделе Параметры системы > Управление окнами > Сценарии KWin."
+
+#: src/Button.cc:1018
+#, kde-format
+msgid ""
+"The action to minimize all other windows is unavailable. It requires Plasma "
+"6.6 or later."
+msgstr "Действие сворачивания всех остальных окон недоступно. Требуется Plasma 6.6 или новее."
+
+#: src/Decoration.cc:248
+#, kde-format
+msgid ""
+"Enable the Material Tiling Popup script in System Settings > Window "
+"Management > KWin Scripts."
+msgstr "Включите сценарий Material Tiling Popup в разделе Параметры системы > Управление окнами > Сценарии KWin."
+
+#: src/Decoration.cc:267
+#, kde-format
+msgid "The custom tile is unavailable. Open the popup again."
+msgstr "Пользовательская область мозаики недоступна. Откройте всплывающее окно заново."
+
+#: src/TilingPopup.cc:18
+#, kde-format
+msgid "Left half"
+msgstr "Левая половина"
+
+#: src/TilingPopup.cc:19
+#, kde-format
+msgid "Right half"
+msgstr "Правая половина"
+
+#: src/TilingPopup.cc:20
+#, kde-format
+msgid "Top half"
+msgstr "Верхняя половина"
+
+#: src/TilingPopup.cc:21
+#, kde-format
+msgid "Bottom half"
+msgstr "Нижняя половина"
+
+#: src/TilingPopup.cc:22
+#, kde-format
+msgid "Top left quarter"
+msgstr "Верхняя левая четверть"
+
+#: src/TilingPopup.cc:23
+#, kde-format
+msgid "Top right quarter"
+msgstr "Верхняя правая четверть"
+
+#: src/TilingPopup.cc:24
+#, kde-format
+msgid "Bottom left quarter"
+msgstr "Нижняя левая четверть"
+
+#: src/TilingPopup.cc:25
+#, kde-format
+msgid "Bottom right quarter"
+msgstr "Нижняя правая четверть"
+
+#: src/TilingPopup.cc:36
+#, kde-format
+msgid "Window tiling layouts"
+msgstr "Мозаичные раскладки окон"
+
+#: src/TilingPopup.cc:50
+#, kde-format
+msgid "Custom tiling layout (Meta+T)"
+msgstr "Пользовательская мозаичная раскладка (Meta+T)"
+
+#: src/TilingPopup.cc:51
+#, kde-format
+msgid "Custom layout unavailable"
+msgstr "Пользовательская раскладка недоступна"
+
+#: src/TilingPopup.cc:79
+#, kde-format
+msgid "Meta+T to edit snapping zones"
+msgstr "Meta+T — изменить зоны привязки"
+
+#: src/TilingPopup.cc:102
+#, kde-format
+msgid "Custom tile %1"
+msgstr "Пользовательская область %1"
+
+#: src/kcm/DetectDialog.cc:37
+#, kde-format
+msgid "Detect Window Properties"
+msgstr "Определение свойств окна"
+
+#: src/kcm/DetectDialog.cc:41
+#, kde-format
+msgid ""
+"Click 'Detect' and then click on the target window to capture its properties."
+msgstr "Нажмите «Определить», а затем выберите нужное окно, чтобы получить его свойства."
+
+#: src/kcm/DetectDialog.cc:46
+#, kde-format
+msgid "Detect"
+msgstr "Определить"
+
+#: src/kcm/DetectDialog.cc:60
+#, kde-format
+msgid "Querying KWin for window information..."
+msgstr "Запрос сведений об окне у KWin..."
+
+#: src/kcm/DetectDialog.cc:80 src/kcm/DetectDialog.cc:81
+#, kde-format
+msgid "(unavailable)"
+msgstr "(недоступно)"
+
+#: src/kcm/DetectDialog.cc:83
+#, kde-format
+msgid ""
+"Captured Window Class: %1\n"
+"Captured Window Title: %2"
+msgstr ""
+"Определённый класс окна: %1\n"
+"Определённый заголовок окна: %2"
+
+#: src/kcm/DetectDialog.cc:86
+#, kde-format
+msgid "Failed to detect window info: %1"
+msgstr "Не удалось определить сведения об окне: %1"
+
+#: src/kcm/ExceptionDialog.cc:40
+#, kde-format
+msgid "Window Exception Settings"
+msgstr "Настройка исключений для окон"
+
+#: src/kcm/ExceptionDialog.cc:45
+#, kde-format
+msgid "Window Identification"
+msgstr "Идентификация окна"
+
+#: src/kcm/ExceptionDialog.cc:49
+#, kde-format
+msgid "Detect Window Properties..."
+msgstr "Определить свойства окна..."
+
+#: src/kcm/ExceptionDialog.cc:55
+#, kde-format
+msgid "Window Property / Pattern:"
+msgstr "Свойство окна / шаблон:"
+
+#: src/kcm/ExceptionDialog.cc:58
+#, kde-format
+msgid "Window Class"
+msgstr "Класс окна"
+
+#: src/kcm/ExceptionDialog.cc:58
+#, kde-format
+msgid "Window Title"
+msgstr "Заголовок окна"
+
+#: src/kcm/ExceptionDialog.cc:60
+#, kde-format
+msgid "Match against:"
+msgstr "Сравнивать с:"
+
+#: src/kcm/ExceptionDialog.cc:63
+#, kde-format
+msgid "Exact Match"
+msgstr "Точное совпадение"
+
+#: src/kcm/ExceptionDialog.cc:63
+#, kde-format
+msgid "Substring Match"
+msgstr "Совпадение подстроки"
+
+#: src/kcm/ExceptionDialog.cc:64
+#, kde-format
+msgid "Matching mode:"
+msgstr "Способ сопоставления:"
+
+#: src/kcm/ExceptionDialog.cc:69
+#, kde-format
+msgid "Window Options"
+msgstr "Параметры окна"
+
+#: src/kcm/ExceptionDialog.cc:72
+#, kde-format
+msgid "Hide window title bar"
+msgstr "Скрывать строку заголовка окна"
+
+#: src/kcm/ExceptionDialog.cc:73
+#, kde-format
+msgid "Show the window title and hide the menu"
+msgstr "Показывать заголовок окна и скрывать меню"
+
+#: src/kcm/ExceptionDialog.cc:74
+#, kde-format
+msgid "Show menu as hamburger"
+msgstr "Показывать меню в виде кнопки-гамбургера"
+
+#: src/kcm/ExceptionDialog.cc:75
+#, kde-format
+msgid "Don't draw window shadow"
+msgstr "Не рисовать тень окна"
+
+#: src/kcm/ExceptionDialog.cc:76
+#, kde-format
+msgid "Don't round window corners"
+msgstr "Не скруглять углы окна"
+
+#: src/kcm/ExceptionDialog.cc:77
+#, kde-format
+msgid "Paint a thin line around the window"
+msgstr "Рисовать тонкую линию вокруг окна"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Disabled"
+msgstr "Выключено"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Enabled"
+msgstr "Включено"
+
+#: src/kcm/ExceptionDialog.cc:88
+#, kde-format
+msgid "Use global setting"
+msgstr "Использовать общую настройку"
+
+#: src/kcm/ExceptionDialog.cc:89 src/kcm/config.ui:328
+#, kde-format
+msgid "Menus follow decoration colors"
+msgstr "Меню используют цвета оформления окна"
+
+#: src/kcm/ExceptionDialog.cc:106
+#, kde-format
+msgid "Pattern cannot be empty."
+msgstr "Шаблон не может быть пустым."
+
+#: src/kcm/ExceptionDialog.cc:106
+#, kde-format
+msgid "Warning"
+msgstr "Предупреждение"
+
+#: src/kcm/ExceptionListWidget.cc:66
+#, kde-format
+msgid "Add..."
+msgstr "Добавить..."
+
+#: src/kcm/ExceptionListWidget.cc:67
+#, kde-format
+msgid "Edit..."
+msgstr "Изменить..."
+
+#: src/kcm/ExceptionListWidget.cc:68
+#, kde-format
+msgid "Remove"
+msgstr "Удалить"
+
+#: src/kcm/ExceptionListWidget.cc:69
+#, kde-format
+msgid "Move Up"
+msgstr "Переместить вверх"
+
+#: src/kcm/ExceptionListWidget.cc:70
+#, kde-format
+msgid "Move Down"
+msgstr "Переместить вниз"
+
+#: src/kcm/ExceptionListWidget.cc:82
+#, kde-format
+msgid ""
+"Rules are evaluated from top to bottom; the first matching rule will be "
+"applied."
+msgstr "Правила проверяются сверху вниз; применяется первое совпавшее правило."
+
+#: src/kcm/ExceptionModel.cc:50
+#, kde-format
+msgid "Empty pattern"
+msgstr "Пустой шаблон"
+
+#: src/kcm/ExceptionModel.cc:52
+#, kde-format
+msgid "Class"
+msgstr "Класс"
+
+#: src/kcm/ExceptionModel.cc:52
+#, kde-format
+msgid "Title"
+msgstr "Заголовок"
+
+#: src/kcm/config.ui:14
+#, kde-format
+msgid "Form"
+msgstr "Форма"
+
+#: src/kcm/config.ui:39
+#, kde-format
+msgid "Appearance"
+msgstr "Внешний вид"
+
+#: src/kcm/config.ui:45
+#, kde-format
+msgid "Title alignment"
+msgstr "Выравнивание заголовка"
+
+#: src/kcm/config.ui:55
+#, kde-format
+msgid "Button size"
+msgstr "Размер кнопок"
+
+#: src/kcm/config.ui:65
+#, kde-format
+msgid "Active window opacity"
+msgstr "Непрозрачность активного окна"
+
+#: src/kcm/config.ui:72 src/kcm/config.ui:92
+#, kde-format
+msgid "%"
+msgstr "%"
+
+#: src/kcm/config.ui:85
+#, kde-format
+msgid "Inactive window opacity"
+msgstr "Непрозрачность неактивного окна"
+
+#: src/kcm/config.ui:105
+#, kde-format
+msgid "Corner radius"
+msgstr "Радиус скругления углов"
+
+#: src/kcm/config.ui:112
+#, kde-format
+msgid "px"
+msgstr "пикс."
+
+#: src/kcm/config.ui:125
+#, kde-format
+msgid "Round bottom corners"
+msgstr "Скруглять нижние углы"
+
+#: src/kcm/config.ui:135
+#, kde-format
+msgid "Don't round corners for tiled windows"
+msgstr "Не скруглять углы мозаично размещённых окон"
+
+#: src/kcm/config.ui:145
+#, kde-format
+msgid "Use custom border and outline colors"
+msgstr "Использовать собственные цвета рамки и контура"
+
+#: src/kcm/config.ui:152
+#, kde-format
+msgid "Active window border color"
+msgstr "Цвет рамки активного окна"
+
+#: src/kcm/config.ui:166
+#, kde-format
+msgid "Inactive window border color"
+msgstr "Цвет рамки неактивного окна"
+
+#: src/kcm/config.ui:180
+#, kde-format
+msgid "Paint a thin outline around the window"
+msgstr "Рисовать тонкий контур вокруг окна"
+
+#: src/kcm/config.ui:187
+#, kde-format
+msgid "Hide window title when space is limited"
+msgstr "Скрывать заголовок окна при нехватке места"
+
+#: src/kcm/config.ui:194
+#, kde-format
+msgid "Show window title on mouse over"
+msgstr "Показывать заголовок окна при наведении указателя"
+
+#: src/kcm/config.ui:201
+#, kde-format
+msgid "Minimum reserved space"
+msgstr "Минимальное зарезервированное место"
+
+#: src/kcm/config.ui:208
+#, kde-format
+msgid " px"
+msgstr " пикс."
+
+#: src/kcm/config.ui:221
+#, kde-format
+msgid "Enable animations"
+msgstr "Включить анимацию"
+
+#: src/kcm/config.ui:228
+#, kde-format
+msgid "Animation duration"
+msgstr "Продолжительность анимации"
+
+#: src/kcm/config.ui:235
+#, kde-format
+msgid "ms"
+msgstr "мс"
+
+#: src/kcm/config.ui:249
+#, kde-format
+msgid "Menu and Search"
+msgstr "Меню и поиск"
+
+#: src/kcm/config.ui:255
+#, kde-format
+msgid "Always show application menu"
+msgstr "Всегда показывать меню приложения"
+
+#: src/kcm/config.ui:262
+#, kde-format
+msgid "Enable search button"
+msgstr "Включить кнопку поиска"
+
+#: src/kcm/config.ui:269
+#, kde-format
+msgid "Show disabled menu actions"
+msgstr "Показывать недоступные действия меню"
+
+#: src/kcm/config.ui:276
+#, kde-format
+msgid "Ignore top-level menu labels"
+msgstr "Игнорировать названия меню верхнего уровня"
+
+#: src/kcm/config.ui:283
+#, kde-format
+msgid "Also ignore submenu labels"
+msgstr "Также игнорировать названия подменю"
+
+#: src/kcm/config.ui:290
+#, kde-format
+msgid "Enable fuzzy search"
+msgstr "Включить нечёткий поиск"
+
+#: src/kcm/config.ui:297
+#, kde-format
+msgid "Use hamburger menu"
+msgstr "Использовать меню-гамбургер"
+
+#: src/kcm/config.ui:304
+#, kde-format
+msgid "Menu item spacing"
+msgstr "Расстояние между пунктами меню"
+
+#: src/kcm/config.ui:314
+#, kde-format
+msgid "Use system menu font"
+msgstr "Использовать системный шрифт меню"
+
+#: src/kcm/config.ui:321
+#, kde-format
+msgid "Use system colors"
+msgstr "Использовать системные цвета"
+
+#: src/kcm/config.ui:336
+#, kde-format
+msgid "Shadows"
+msgstr "Тени"
+
+#: src/kcm/config.ui:342
+#, kde-format
+msgid "Shadow size"
+msgstr "Размер тени"
+
+#: src/kcm/config.ui:352
+#, kde-format
+msgid "Shadow color"
+msgstr "Цвет тени"
+
+#: src/kcm/config.ui:362
+#, kde-format
+msgid "Shadow strength"
+msgstr "Интенсивность тени"
+
+#: src/kcm/config.ui:391
+#, kde-format
+msgid "Button Options"
+msgstr "Параметры кнопок"
+
+#: src/kcm/config.ui:399
+#, kde-format
+msgid "Enable long-press actions on window buttons"
+msgstr "Включить действия долгого нажатия на кнопки окна"
+
+#: src/kcm/config.ui:412
+#, kde-format
+msgid ""
+"<html><body><div style=\"width: 350px;\">\n"
+"<p>When enabled:</p>\n"
+"<ul>\n"
+"<li>Long-pressing the close button minimizes the window to the system tray "
+"(requires the kwin-minimize2tray plugin)</li>\n"
+"<li>Long-pressing the minimize button minimizes all windows except the "
+"current one (requires Plasma 6.6 or later)</li>\n"
+"</ul>\n"
+"</div></body></html>"
+msgstr ""
+"<html><body><div style=\"width: 350px;\">\n"
+"<p>Если включено:</p>\n"
+"<ul>\n"
+"<li>Долгое нажатие на кнопку закрытия сворачивает окно в системный лоток (требуется модуль kwin-minimize2tray)</li>\n"
+"<li>Долгое нажатие на кнопку сворачивания сворачивает все окна, кроме текущего (требуется Plasma 6.6 или новее)</li>\n"
+"</ul>\n"
+"</div></body></html>"
+
+#: src/kcm/config.ui:437
+#, kde-format
+msgid "Long-press duration"
+msgstr "Длительность долгого нажатия"
+
+#: src/kcm/config.ui:444 src/kcm/config.ui:466
+#, kde-format
+msgid " ms"
+msgstr " мс"
+
+#: src/kcm/config.ui:456
+#, kde-format
+msgid "Open tiling popup when hovering over maximize"
+msgstr "Открывать окно мозаичного размещения при наведении на кнопку разворачивания"
+
+#: src/kcm/config.ui:461
+#, kde-format
+msgid "Tiling popup hover delay"
+msgstr "Задержка открытия окна мозаичного размещения"
+
+#: src/kcm/config.ui:474
+#, kde-format
+msgid "Allow window dragging from buttons"
+msgstr "Разрешить перетаскивание окна за кнопки"
+
+#: src/kcm/config.ui:482
+#, kde-format
+msgid "Window-Specific Overrides"
+msgstr "Индивидуальные настройки окон"
+
+#: src/kcm/kcm.cpp:34
+#, kde-format
+msgid "Left"
+msgstr "Слева"
+
+#: src/kcm/kcm.cpp:35
+#, kde-format
+msgid "Center"
+msgstr "По центру"
+
+#: src/kcm/kcm.cpp:36
+#, kde-format
+msgid "Center (Full Width)"
+msgstr "По центру (по всей ширине)"
+
+#: src/kcm/kcm.cpp:37
+#, kde-format
+msgid "Right"
+msgstr "Справа"
+
+#: src/kcm/kcm.cpp:38
+#, kde-format
+msgid "Hidden"
+msgstr "Скрыт"
+
+#: src/kcm/kcm.cpp:40
+#, kde-format
+msgid "Very Tiny"
+msgstr "Самый маленький"
+
+#: src/kcm/kcm.cpp:41
+#, kde-format
+msgid "Tiny"
+msgstr "Очень маленький"
+
+#: src/kcm/kcm.cpp:42 src/kcm/kcm.cpp:48
+#, kde-format
+msgid "Small"
+msgstr "Маленький"
+
+#: src/kcm/kcm.cpp:43
+#, kde-format
+msgid "Default"
+msgstr "По умолчанию"
+
+#: src/kcm/kcm.cpp:44 src/kcm/kcm.cpp:50
+#, kde-format
+msgid "Large"
+msgstr "Большой"
+
+#: src/kcm/kcm.cpp:45 src/kcm/kcm.cpp:51
+#, kde-format
+msgid "Very Large"
+msgstr "Очень большой"
+
+#: src/kcm/kcm.cpp:47
+#, kde-format
+msgid "None"
+msgstr "Нет"
+
+#: src/kcm/kcm.cpp:49
+#, kde-format
+msgid "Medium"
+msgstr "Средний"
+
+#: src/kcm/materialdecoration_kcm.json:3
+#, kde-format
+msgid "Configuration module for the Material Decoration"
+msgstr "Модуль настройки оформления окон Material"
+
+#: src/kcm/materialdecoration_kcm.json:5
+#, kde-format
+msgid "Material Decoration"
+msgstr "Оформление окон Material"
+
+#: src/kcm/config.ui
+msgid "Use accent color for the active window border"
+msgstr "Использовать цветовой акцент для рамки активного окна"
+
+#: src/kcm/config.ui
+msgid "Remember window position (Wayland)"
+msgstr "Запоминать положение окна (Wayland)"
+
+#: src/kcm/config.ui
+msgid ""
+"Save window position when a window closes\n"
+"and restore it when it opens again.\n"
+"The application controls its size.\n"
+"Requires the Material Tiling Popup KWin script.\n"
+"Windows of the same application without a distinct identity\n"
+"share the state of the last closed window."
+msgstr ""
+"Сохраняет положение окна при закрытии и восстанавливает его при повторном открытии.\n"
+"Размером управляет приложение.\n"
+"Требуется сценарий Material Tiling Popup для KWin.\n"
+"Окна одного приложения без отдельного идентификатора используют состояние последнего закрытого окна."
+
+#: src/kcm/ExceptionDialog.cc
+msgid "Do not remember window position"
+msgstr "Не запоминать положение окна"
+
+#: src/kcm/config.ui
+msgid "Window Management"
+msgstr "Управление окнами"
+
+#: src/kcm/config.ui
+msgid "Remember the screen where the window was last closed"
+msgstr "Запоминать экран, на котором окно было закрыто в последний раз"
+
+#: src/kcm/config.ui
+msgid ""
+"Restore the saved screen.\n"
+"When disabled, use the screen chosen by KWin when the window opens."
+msgstr ""
+"Восстанавливает сохранённый экран.\n"
+"Если выключено, использует экран, выбранный KWin при открытии окна."
+
+#: src/kcm/config.ui
+msgid "Remember the virtual desktop where the window was last closed"
+msgstr "Запоминать виртуальный рабочий стол, на котором окно было закрыто в последний раз"
+
+#: src/kcm/config.ui
+msgid ""
+"Restore the saved virtual desktop, switch to it and activate the window.\n"
+"When disabled, keep the desktop chosen when the window opens."
+msgstr ""
+"Восстанавливает сохранённый виртуальный рабочий стол, переключается на него и активирует окно.\n"
+"Если выключено, сохраняет рабочий стол, выбранный при открытии окна."
+
+#: src/kcm/config.ui
+msgid "Resize other snapped windows when restoring saved proportions"
+msgstr "Изменять размер других привязанных окон при восстановлении сохранённых пропорций"
+
+#: src/kcm/config.ui
+msgid ""
+"Allow restoring a snapped window's saved proportions to\n"
+"resize other windows in the same quick-tile layout.\n"
+"When disabled, restore the saved proportions only to the reopened window."
+msgstr ""
+"Позволяет при восстановлении сохранённых пропорций привязанного окна изменять размер\n"
+"других окон в той же быстрой мозаичной раскладке.\n"
+"Если выключено, восстанавливает пропорции только повторно открытого окна."
+
+#: src/kcm/config.ui
+msgid "Let KWin place additional windows of the same application"
+msgstr "Размещение дополнительных окон того же приложения выполняет KWin"
+
+#: src/kcm/config.ui
+msgid ""
+"When another normal window of the same application is already\n"
+"open, leave position, screen, virtual desktop and tiling to KWin.\n"
+"The first window still uses saved restoration.\n"
+"When disabled, apply the restoration settings to\n"
+"additional windows too, cascading overlapping windows."
+msgstr ""
+"Если уже открыто другое обычное окно того же приложения, передаёт\n"
+"KWin выбор положения, экрана, виртуального рабочего стола и мозаичного размещения.\n"
+"Первое окно по-прежнему восстанавливает сохранённое состояние.\n"
+"Если выключено, применяет настройки восстановления также к\n"
+"дополнительным окнам, располагая перекрывающиеся окна каскадом."
+
+#: src/kcm/config.ui
+msgid ""
+"Show the window title on mouse over when it is\n"
+"hidden due to limited space or shortened to fit.\n"
+"Requires the application menu to be always visible."
+msgstr ""
+"Показывает при наведении указателя заголовок, скрытый из-за\n"
+"нехватки места или сокращённый по ширине.\n"
+"Требуется постоянное отображение меню приложения."
+
+#: src/kcm/config.ui
+msgid ""
+"Center aligns the title within the available space.\n"
+"Center (Full Width) centers it on the window,\n"
+"shifting it to avoid menus and buttons."
+msgstr ""
+"По центру выравнивает заголовок в доступном пространстве.\n"
+"По центру (по всей ширине) центрирует его относительно\n"
+"окна, сдвигая для обхода меню и кнопок."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts the opacity of the active window title bar and borders.\n"
+"Does not change the opacity of the window contents."
+msgstr ""
+"Настраивает непрозрачность строки заголовка и рамки активного окна.\n"
+"Не изменяет непрозрачность содержимого окна."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts the opacity of inactive window title bars and borders.\n"
+"Does not change the opacity of the window contents."
+msgstr ""
+"Настраивает непрозрачность строк заголовка и рамок неактивных окон.\n"
+"Не изменяет непрозрачность содержимого окон."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses square corners when a window is snapped to a tiling zone.\n"
+"Floating windows keep the configured corner rounding."
+msgstr ""
+"Использует прямые углы, когда окно привязано к мозаичной области.\n"
+"Свободно размещённые окна сохраняют настроенное скругление углов."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the selected colors for borders and the outline, if enabled.\n"
+"When disabled, uses the frame color from the window color scheme."
+msgstr ""
+"Использует выбранные цвета для рамки и контура, если он включён.\n"
+"Если выключено, использует цвет рамки из цветовой схемы окна."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the window color scheme accent color instead\n"
+"of the manually selected active border color.\n"
+"Also applies to the outline."
+msgstr ""
+"Использует цветовой акцент цветовой схемы окна вместо выбранного вручную цвета активной рамки.\n"
+"Также применяется к контуру."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid ""
+"Draws a thin line around the window\n"
+"using the active or inactive border color.\n"
+"The outline stays opaque even when the decoration is transparent."
+msgstr ""
+"Рисует тонкую линию вокруг окна цветом активной или неактивной рамки.\n"
+"Контур остаётся непрозрачным, даже если оформление прозрачно."
+
+#: src/kcm/config.ui
+msgid ""
+"Hides the title when the application menu\n"
+"leaves less space than the configured minimum.\n"
+"When disabled, keeps the title visible and shortens it as needed."
+msgstr ""
+"Скрывает заголовок, если меню приложения оставляет меньше места, чем заданный минимум.\n"
+"Если выключено, оставляет заголовок видимым и при необходимости сокращает его."
+
+#: src/kcm/config.ui
+msgid ""
+"Minimum width in pixels available beside the\n"
+"application menu before the title is hidden.\n"
+"Only applies when hiding the title for limited space is enabled."
+msgstr ""
+"Минимальная доступная ширина в пикселях рядом с меню приложения до скрытия заголовка.\n"
+"Применяется только при включённом скрытии заголовка из-за нехватки места."
+
+#: src/kcm/config.ui
+msgid ""
+"Keeps the application menu visible in the title bar.\n"
+"When disabled, the menu appears on mouse over."
+msgstr ""
+"Сохраняет меню приложения видимым в строке заголовка.\n"
+"Если выключено, меню появляется при наведении указателя."
+
+#: src/kcm/config.ui
+msgid ""
+"Adds a button to find and run application menu commands.\n"
+"Requires the application to export its menu to the decoration."
+msgstr ""
+"Добавляет кнопку поиска и выполнения команд меню приложения.\n"
+"Приложение должно предоставлять своё меню оформлению окна."
+
+#: src/kcm/config.ui
+msgid ""
+"Includes unavailable commands in search results.\n"
+"They remain disabled and cannot be run."
+msgstr ""
+"Включает недоступные команды в результаты поиска.\n"
+"Они остаются отключёнными и не могут быть выполнены."
+
+#: src/kcm/config.ui
+msgid ""
+"Excludes top-level menu names, such as File or Edit, from matching.\n"
+"Commands inside those menus are still searched."
+msgstr ""
+"Исключает из сопоставления названия меню верхнего уровня, например Файл или Правка.\n"
+"Команды внутри этих меню по-прежнему участвуют в поиске."
+
+#: src/kcm/config.ui
+msgid ""
+"Searches command names only, excluding the names of their parent menus.\n"
+"Also enables ignoring top-level menu labels."
+msgstr ""
+"Ищет только по названиям команд, исключая названия содержащих их меню.\n"
+"Также включает игнорирование названий меню верхнего уровня."
+
+#: src/kcm/config.ui
+msgid ""
+"Finds approximate matches, including minor typing errors, and ranks results by relevance.\n"
+"When disabled, searches for the typed text as a substring."
+msgstr ""
+"Находит приблизительные совпадения, включая небольшие опечатки, и сортирует результаты по релевантности.\n"
+"Если выключено, ищет введённый текст как подстроку."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid ""
+"Collects the application menu in one button instead of\n"
+"showing separate top-level menu buttons in the title bar."
+msgstr ""
+"Объединяет меню приложения в одной кнопке вместо отдельных\n"
+"кнопок меню верхнего уровня в строке заголовка."
+
+#: src/kcm/config.ui
+msgid ""
+"Adds horizontal space on both sides of\n"
+"menu labels in the title bar.\n"
+"Higher values make the buttons wider."
+msgstr ""
+"Добавляет горизонтальные отступы с обеих сторон названий меню в строке заголовка.\n"
+"Большие значения увеличивают ширину кнопок."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the system menu font.\n"
+"When disabled, uses the title bar font."
+msgstr ""
+"Использует системный шрифт меню.\n"
+"Если выключено, использует шрифт строки заголовка."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses system selection colors to highlight application menu buttons.\n"
+"When disabled, uses the decoration button highlighting."
+msgstr ""
+"Использует системные цвета выделения для подсветки кнопок меню приложения.\n"
+"Если выключено, использует подсветку кнопок оформления."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the window color scheme for popup menus and the tiling popup.\n"
+"When disabled, uses the default system palette."
+msgstr ""
+"Использует цветовую схему окна для всплывающих меню и окна мозаичного размещения.\n"
+"Если выключено, использует системную палитру по умолчанию."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts shadow opacity without changing its size.\n"
+"Higher values make the shadow stronger."
+msgstr ""
+"Настраивает непрозрачность тени, не изменяя её размер.\n"
+"Большие значения делают тень более выраженной."
+
+#: src/kcm/config.ui
+msgid ""
+"Hold Maximize to show snapping zones, Minimize to minimize other windows\n"
+"on the screen, or Close to minimize to the system tray.\n"
+"Requires the corresponding support or scripts.\n"
+"See the information button for requirements."
+msgstr ""
+"Удерживайте кнопку разворачивания для показа зон привязки, сворачивания — для сворачивания\n"
+"других окон на экране, закрытия — для сворачивания в системный лоток.\n"
+"Требуется соответствующая поддержка или сценарии.\n"
+"Требования указаны на кнопке справки."
+
+#: src/kcm/config.ui
+msgid "Time to hold a window button before its additional action is triggered."
+msgstr "Время удержания кнопки окна до выполнения её дополнительного действия."
+
+#: src/kcm/config.ui
+msgid ""
+"Shows snapping zones when the pointer stays over Maximize, without clicking.\n"
+"Requires the Material Tiling Popup KWin script."
+msgstr ""
+"Показывает зоны привязки, когда указатель остаётся над кнопкой разворачивания, без нажатия.\n"
+"Требуется сценарий Material Tiling Popup для KWin."
+
+#: src/kcm/config.ui
+msgid ""
+"Time to wait before opening the tiling\n"
+"popup while the pointer stays over Maximize."
+msgstr ""
+"Время ожидания до открытия окна мозаичного размещения,\n"
+"пока указатель остаётся над кнопкой разворачивания."
+
+#: src/kcm/config.ui
+msgid ""
+"Allows window dragging to start from decoration\n"
+"buttons such as Minimize and Maximize.\n"
+"Application menu buttons still allow dragging when this is disabled."
+msgstr ""
+"Позволяет начинать перетаскивание окна за кнопки оформления, например сворачивания и разворачивания.\n"
+"Перетаскивание за кнопки меню приложения доступно и при выключенном параметре."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Enter the text to match against the window title or class.\n"
+"Use Detect Window Properties to capture it from an open window."
+msgstr ""
+"Введите текст для сопоставления с заголовком или классом окна.\n"
+"Используйте определение свойств окна, чтобы получить его из открытого окна."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"The title is the text shown in\n"
+"the title bar and may change.\n"
+"The class identifies the application."
+msgstr ""
+"Заголовок — текст строки заголовка, который может меняться.\n"
+"Класс определяет приложение."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Exact Match requires the whole value.\n"
+"Substring Match finds the text anywhere within it.\n"
+"Matching is case-insensitive and does not use regular expressions."
+msgstr ""
+"Точное совпадение требует совпадения всего значения.\n"
+"Совпадение подстроки ищет текст в любой части значения.\n"
+"Регистр букв не учитывается; регулярные выражения не используются."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Excludes matching windows from saving and restoring their\n"
+"position, even when enabled in the global settings."
+msgstr ""
+"Исключает совпавшие окна из сохранения и восстановления положения,\n"
+"даже если это включено в общих настройках."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Overrides whether menus follow decoration colors for matching windows.\n"
+"Use global setting keeps the general preference."
+msgstr ""
+"Переопределяет использование цветов оформления в меню совпавших окон.\n"
+"Использовать общую настройку сохраняет общее предпочтение."
