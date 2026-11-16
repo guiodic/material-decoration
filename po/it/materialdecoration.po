@@ -531,3 +531,7 @@ msgstr "Lascia a KWin il posizionamento delle altre finestre della stessa applic
 #: src/kcm/config.ui
 msgid "When another normal window of the same application is already open, leave position, screen, virtual desktop and tiling to KWin. The first window still uses saved restoration. When disabled, apply the restoration settings to additional windows too, cascading overlapping windows."
 msgstr "Quando è già aperta un’altra finestra normale della stessa applicazione, lascia a KWin posizione, schermo, desktop virtuale e affiancamento. La prima finestra continua a usare il ripristino salvato. Se disattivata, applica le impostazioni di ripristino anche alle finestre aggiuntive, disponendo a cascata quelle che si sovrappongono."
+
+#: src/kcm/config.ui
+msgid "Show the window title on mouse over when it is hidden due to limited space or shortened to fit. Requires the application menu to be always visible."
+msgstr "Mostra il titolo della finestra al passaggio del mouse quando è nascosto per mancanza di spazio o troncato perché troppo lungo. Richiede che il menu dell’applicazione sia sempre visibile."

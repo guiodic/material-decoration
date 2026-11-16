@@ -224,24 +224,6 @@
         </widget>
        </item>
        <item row="13" column="1">
-        <layout class="QHBoxLayout" name="kcfg_ShowCaptionOnHoverIndentLayout">
-         <item>
-          <spacer name="kcfg_ShowCaptionOnHoverIndentSpacer">
-           <property name="orientation"><enum>Qt::Horizontal</enum></property>
-           <property name="sizeType"><enum>QSizePolicy::Fixed</enum></property>
-           <property name="sizeHint" stdset="0"><size><width>20</width><height>0</height></size></property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="kcfg_ShowCaptionOnHover">
-           <property name="text">
-            <string>Show window title on mouse over</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="14" column="1">
         <layout class="QHBoxLayout" name="kcfg_MinWidthForCaptionIndentLayout">
          <item>
           <spacer name="kcfg_MinWidthForCaptionIndentSpacer">
@@ -276,6 +258,16 @@
           </layout>
          </item>
         </layout>
+       </item>
+       <item row="14" column="1">
+        <widget class="QCheckBox" name="kcfg_ShowCaptionOnHover">
+         <property name="text">
+          <string>Show window title on mouse over</string>
+         </property>
+         <property name="toolTip">
+          <string>Show the window title on mouse over when it is hidden due to limited space or shortened to fit. Requires the application menu to be always visible.</string>
+         </property>
+        </widget>
        </item>
        <item row="15" column="1">
         <widget class="QCheckBox" name="kcfg_AnimationsEnabled">

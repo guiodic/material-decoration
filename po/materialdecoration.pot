@@ -687,3 +687,7 @@ msgstr ""
 #: src/kcm/config.ui
 msgid "When another normal window of the same application is already open, leave position, screen, virtual desktop and tiling to KWin. The first window still uses saved restoration. When disabled, apply the restoration settings to additional windows too, cascading overlapping windows."
 msgstr ""
+
+#: src/kcm/config.ui
+msgid "Show the window title on mouse over when it is hidden due to limited space or shortened to fit. Requires the application menu to be always visible."
+msgstr ""
