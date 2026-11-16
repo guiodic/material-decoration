@@ -368,7 +368,8 @@ private slots:
         setup(window, "org.example.StateTest.NoWorkspace." + QUuid::createUuid().toString());
         const auto scope = currentScope();
         const auto key = Material::windowStateKey(&window);
-        const auto saved = Material::captureWindowState(&window);
+        auto saved = Material::captureWindowState(&window);
+        saved.insert("position", QVariantMap{{"x", 200}, {"y", 250}});
         QVERIFY(Material::writeWindowState(key, saved, scope));
         const auto persisted = Material::readWindowState(key, scope);
         QScopedValueRollback workspace(testWorkspace, static_cast<QObject *>(nullptr));
