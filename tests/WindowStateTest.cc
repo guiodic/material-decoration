@@ -270,6 +270,7 @@ private slots:
         }
         window.map();
         QCOMPARE(immediateRequests.size() - restores, skip ? 0 : 1);
+        if (!skip) QCOMPARE(immediateRequests.last().value("position"), saved.value("position"));
         QVERIFY(!window.property("minimized").toBool());
         if (skip) {
             QCOMPARE(window.property("desktops"), originalDesktops);
