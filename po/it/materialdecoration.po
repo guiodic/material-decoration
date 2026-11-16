@@ -529,5 +529,5 @@ msgid "Let KWin place additional windows of the same application"
 msgstr "Lascia a KWin il posizionamento delle altre finestre della stessa applicazione"
 
 #: src/kcm/config.ui
-msgid "When another normal window of the same application is already open, leave position, screen, virtual desktop and tiling to KWin. The first window still uses saved restoration."
-msgstr "Quando è già aperta un’altra finestra normale della stessa applicazione, lascia a KWin posizione, schermo, desktop virtuale e affiancamento. La prima finestra continua a usare il ripristino salvato."
+msgid "When another normal window of the same application is already open, leave position, screen, virtual desktop and tiling to KWin. The first window still uses saved restoration. When disabled, apply the restoration settings to additional windows too, cascading overlapping windows."
+msgstr "Quando è già aperta un’altra finestra normale della stessa applicazione, lascia a KWin posizione, schermo, desktop virtuale e affiancamento. La prima finestra continua a usare il ripristino salvato. Se disattivata, applica le impostazioni di ripristino anche alle finestre aggiuntive, disponendo a cascata quelle che si sovrappongono."
