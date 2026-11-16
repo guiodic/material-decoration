@@ -70,8 +70,8 @@ msgid "Use hamburger menu"
 msgstr "Usa il menu «hamburger»"
 
 #: config.ui:129
-msgid "Menu button horizontal padding"
-msgstr "Spaziatura orizzontale del pulsante del menu"
+msgid "Menu item spacing"
+msgstr "Spazio tra le voci del menu"
 
 #: config.ui:139
 msgid "Shadows"
@@ -158,8 +158,8 @@ msgid "Use system menu font"
 msgstr "Usa il carattere del menu di sistema"
 
 #: config.ui:110
-msgid "Use custom border colors"
-msgstr "Usa colori del bordo personalizzati"
+msgid "Use custom border and outline colors"
+msgstr "Usa colori del bordo e del contorno personalizzati"
 
 #: config.ui:117
 msgid "Active window border color"
@@ -489,8 +489,19 @@ msgid "Remember window position (Wayland)"
 msgstr "Ricorda la posizione delle finestre (Wayland)"
 
 #: src/kcm/config.ui
-msgid "Save window position when a window closes and restore it when it opens again. The application controls its size. Requires the Material Tiling Popup KWin script. Windows of the same application without a distinct identity share the state of the last closed window."
-msgstr "Salva la posizione della finestra alla chiusura e la ripristina alla riapertura. Le dimensioni sono gestite dall’applicazione. Richiede lo script KWin Material Tiling Popup. Le finestre della stessa applicazione prive di un’identità distinta condividono lo stato dell’ultima finestra chiusa."
+msgid ""
+"Save window position when a window closes\n"
+"and restore it when it opens again.\n"
+"The application controls its size.\n"
+"Requires the Material Tiling Popup KWin script.\n"
+"Windows of the same application without a distinct identity\n"
+"share the state of the last closed window."
+msgstr ""
+"Salva la posizione della finestra alla chiusura e la ripristina alla riapertura.\n"
+"Le dimensioni sono gestite dall’applicazione.\n"
+"Richiede lo script KWin Material Tiling Popup.\n"
+"Le finestre della stessa applicazione prive di un’identità\n"
+"distinta condividono lo stato dell’ultima finestra chiusa."
 
 #: src/kcm/ExceptionDialog.cc
 msgid "Do not remember window position"
@@ -505,33 +516,337 @@ msgid "Remember the screen where the window was last closed"
 msgstr "Ricorda lo schermo dell'ultima chiusura"
 
 #: src/kcm/config.ui
-msgid "Restore the saved screen. When disabled, use the screen chosen by KWin when the window opens."
-msgstr "Ripristina lo schermo salvato. Se disattivata, usa lo schermo scelto da KWin all’apertura della finestra."
+msgid ""
+"Restore the saved screen.\n"
+"When disabled, use the screen chosen by KWin when the window opens."
+msgstr ""
+"Ripristina lo schermo salvato.\n"
+"Se disattivata, usa lo schermo scelto da KWin all’apertura della finestra."
 
 #: src/kcm/config.ui
 msgid "Remember the virtual desktop where the window was last closed"
 msgstr "Ricorda il desktop virtuale dell'ultima chiusura"
 
 #: src/kcm/config.ui
-msgid "Restore the saved virtual desktop, switch to it and activate the window. When disabled, keep the desktop chosen when the window opens."
-msgstr "Ripristina il desktop virtuale salvato, passa a quel desktop e attiva la finestra. Se disattivata, mantiene il desktop scelto all’apertura della finestra."
+msgid ""
+"Restore the saved virtual desktop, switch to it and activate the window.\n"
+"When disabled, keep the desktop chosen when the window opens."
+msgstr ""
+"Ripristina il desktop virtuale salvato, passa a\n"
+"quel desktop e attiva la finestra.\n"
+"Se disattivata, mantiene il desktop scelto all’apertura della finestra."
 
 #: src/kcm/config.ui
 msgid "Resize other snapped windows when restoring saved proportions"
 msgstr "Ridimensiona le altre finestre agganciate al ripristino delle proporzioni salvate"
 
 #: src/kcm/config.ui
-msgid "Allow restoring a snapped window's saved proportions to resize other windows in the same quick-tile layout. When disabled, restore the saved proportions only to the reopened window."
-msgstr "Consente al ripristino delle proporzioni salvate di una finestra agganciata di ridimensionare le altre finestre nello stesso layout di aggancio rapido. Se disattivata, ripristina le proporzioni salvate solo per la finestra riaperta."
+msgid ""
+"Allow restoring a snapped window's saved proportions to\n"
+"resize other windows in the same quick-tile layout.\n"
+"When disabled, restore the saved proportions only to the reopened window."
+msgstr ""
+"Consente al ripristino delle proporzioni salvate di una finestra agganciata di\n"
+"ridimensionare le altre finestre nello stesso layout di aggancio rapido.\n"
+"Se disattivata, ripristina le proporzioni salvate solo per la finestra riaperta."
 
 #: src/kcm/config.ui
 msgid "Let KWin place additional windows of the same application"
 msgstr "Lascia a KWin il posizionamento delle altre finestre della stessa applicazione"
 
 #: src/kcm/config.ui
-msgid "When another normal window of the same application is already open, leave position, screen, virtual desktop and tiling to KWin. The first window still uses saved restoration. When disabled, apply the restoration settings to additional windows too, cascading overlapping windows."
-msgstr "Quando è già aperta un’altra finestra normale della stessa applicazione, lascia a KWin posizione, schermo, desktop virtuale e affiancamento. La prima finestra continua a usare il ripristino salvato. Se disattivata, applica le impostazioni di ripristino anche alle finestre aggiuntive, disponendo a cascata quelle che si sovrappongono."
+msgid ""
+"When another normal window of the same application is already\n"
+"open, leave position, screen, virtual desktop and tiling to KWin.\n"
+"The first window still uses saved restoration.\n"
+"When disabled, apply the restoration settings to\n"
+"additional windows too, cascading overlapping windows."
+msgstr ""
+"Quando è già aperta un’altra finestra normale della stessa applicazione,\n"
+"lascia a KWin posizione, schermo, desktop virtuale e affiancamento.\n"
+"La prima finestra continua a usare il ripristino salvato.\n"
+"Se disattivata, applica le impostazioni di ripristino anche alle\n"
+"finestre aggiuntive, disponendo a cascata quelle che si sovrappongono."
 
 #: src/kcm/config.ui
-msgid "Show the window title on mouse over when it is hidden due to limited space or shortened to fit. Requires the application menu to be always visible."
-msgstr "Mostra il titolo della finestra al passaggio del mouse quando è nascosto per mancanza di spazio o troncato perché troppo lungo. Richiede che il menu dell’applicazione sia sempre visibile."
+msgid ""
+"Show the window title on mouse over when it is\n"
+"hidden due to limited space or shortened to fit.\n"
+"Requires the application menu to be always visible."
+msgstr ""
+"Mostra il titolo della finestra al passaggio del mouse quando è\n"
+"nascosto per mancanza di spazio o troncato perché troppo lungo.\n"
+"Richiede che il menu dell’applicazione sia sempre visibile."
+
+#: src/kcm/config.ui
+msgid ""
+"Center aligns the title within the available space.\n"
+"Center (Full Width) centers it on the window,\n"
+"shifting it to avoid menus and buttons."
+msgstr ""
+"Centro allinea il titolo nello spazio disponibile.\n"
+"Centro (larghezza completa) lo centra rispetto alla\n"
+"finestra, spostandolo per evitare menu e pulsanti."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts the opacity of the active window title bar and borders.\n"
+"Does not change the opacity of the window contents."
+msgstr ""
+"Regola l’opacità della barra del titolo e dei bordi della finestra attiva.\n"
+"Non modifica l’opacità del contenuto della finestra."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts the opacity of inactive window title bars and borders.\n"
+"Does not change the opacity of the window contents."
+msgstr ""
+"Regola l’opacità della barra del titolo e dei bordi delle finestre inattive.\n"
+"Non modifica l’opacità del contenuto delle finestre."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses square corners when a window is snapped to a tiling zone.\n"
+"Floating windows keep the configured corner rounding."
+msgstr ""
+"Usa angoli retti quando una finestra è\n"
+"agganciata a una zona di affiancamento.\n"
+"Le finestre libere mantengono l’arrotondamento configurato."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the selected colors for borders and the outline, if enabled.\n"
+"When disabled, uses the frame color from the window color scheme."
+msgstr ""
+"Usa i colori scelti per i bordi\n"
+"e per il contorno, se abilitato.\n"
+"Se disattivata, usa il colore del bordo previsto dallo schema della finestra."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the window color scheme accent color instead\n"
+"of the manually selected active border color.\n"
+"Also applies to the outline."
+msgstr ""
+"Usa il colore d’accento dello schema della finestra\n"
+"al posto del colore attivo scelto manualmente.\n"
+"Si applica anche al contorno."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid ""
+"Draws a thin line around the window\n"
+"using the active or inactive border color.\n"
+"The outline stays opaque even when the decoration is transparent."
+msgstr ""
+"Disegna una linea sottile intorno alla finestra usando\n"
+"il colore del bordo attivo o inattivo.\n"
+"Il contorno rimane opaco anche quando la decorazione è trasparente."
+
+#: src/kcm/config.ui
+msgid ""
+"Hides the title when the application menu\n"
+"leaves less space than the configured minimum.\n"
+"When disabled, keeps the title visible and shortens it as needed."
+msgstr ""
+"Nasconde il titolo quando il menu dell’applicazione\n"
+"lascia meno spazio della soglia configurata.\n"
+"Se disattivata, mantiene visibile il titolo e lo tronca quando necessario."
+
+#: src/kcm/config.ui
+msgid ""
+"Minimum width in pixels available beside the\n"
+"application menu before the title is hidden.\n"
+"Only applies when hiding the title for limited space is enabled."
+msgstr ""
+"Larghezza minima in pixel disponibile accanto al\n"
+"menu prima di nascondere il titolo.\n"
+"Si applica solo quando è attiva l’opzione\n"
+"che nasconde il titolo per spazio limitato."
+
+#: src/kcm/config.ui
+msgid ""
+"Keeps the application menu visible in the title bar.\n"
+"When disabled, the menu appears on mouse over."
+msgstr ""
+"Mantiene visibile il menu dell’applicazione nella barra del titolo.\n"
+"Se disattivata, il menu compare al passaggio del mouse."
+
+#: src/kcm/config.ui
+msgid ""
+"Adds a button to find and run application menu commands.\n"
+"Requires the application to export its menu to the decoration."
+msgstr ""
+"Aggiunge un pulsante per cercare ed eseguire i comandi del menu dell’applicazione.\n"
+"Richiede che l’applicazione esponga il proprio menu alla decorazione."
+
+#: src/kcm/config.ui
+msgid ""
+"Includes unavailable commands in search results.\n"
+"They remain disabled and cannot be run."
+msgstr ""
+"Include nei risultati della ricerca i comandi attualmente non disponibili.\n"
+"Rimangono disabilitati e non possono essere eseguiti."
+
+#: src/kcm/config.ui
+msgid ""
+"Excludes top-level menu names, such as File or Edit, from matching.\n"
+"Commands inside those menus are still searched."
+msgstr ""
+"Esclude dalla ricerca i nomi dei menu principali, come File o Modifica.\n"
+"I comandi contenuti in questi menu continuano a essere cercati."
+
+#: src/kcm/config.ui
+msgid ""
+"Searches command names only, excluding the names of their parent menus.\n"
+"Also enables ignoring top-level menu labels."
+msgstr ""
+"Cerca solo nei nomi dei comandi, escludendo\n"
+"i nomi dei menu che li contengono.\n"
+"Attiva anche l’esclusione delle etichette dei menu principali."
+
+#: src/kcm/config.ui
+msgid ""
+"Finds approximate matches, including minor typing errors, and ranks results by relevance.\n"
+"When disabled, searches for the typed text as a substring."
+msgstr ""
+"Cerca corrispondenze approssimative, inclusi piccoli errori di\n"
+"digitazione, e ordina i risultati per pertinenza.\n"
+"Se disattivata, cerca il testo digitato come parte delle etichette."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid ""
+"Collects the application menu in one button instead of\n"
+"showing separate top-level menu buttons in the title bar."
+msgstr ""
+"Raccoglie il menu dell’applicazione in un unico pulsante invece di\n"
+"mostrare separatamente le voci principali nella barra del titolo."
+
+#: src/kcm/config.ui
+msgid ""
+"Adds horizontal space on both sides of\n"
+"menu labels in the title bar.\n"
+"Higher values make the buttons wider."
+msgstr ""
+"Aggiunge spazio ai lati delle etichette del menu nella barra del titolo.\n"
+"Valori maggiori rendono i pulsanti più larghi."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the system menu font.\n"
+"When disabled, uses the title bar font."
+msgstr ""
+"Usa il carattere dei menu di sistema.\n"
+"Se disattivata, usa il carattere della barra del titolo."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses system selection colors to highlight application menu buttons.\n"
+"When disabled, uses the decoration button highlighting."
+msgstr ""
+"Usa i colori di selezione del sistema\n"
+"per evidenziare i pulsanti del menu dell’applicazione.\n"
+"Se disattivata, usa l’evidenziazione dei pulsanti della decorazione."
+
+#: src/kcm/config.ui
+msgid ""
+"Uses the window color scheme for popup menus and the tiling popup.\n"
+"When disabled, uses the default system palette."
+msgstr ""
+"Usa lo schema colori della finestra per i\n"
+"menu a comparsa e il popup di affiancamento.\n"
+"Se disattivata, usa la palette predefinita del sistema."
+
+#: src/kcm/config.ui
+msgid ""
+"Adjusts shadow opacity without changing its size.\n"
+"Higher values make the shadow stronger."
+msgstr ""
+"Regola l’opacità dell’ombra senza cambiarne le dimensioni.\n"
+"Valori maggiori rendono l’ombra più marcata."
+
+#: src/kcm/config.ui
+msgid ""
+"Hold Maximize to show snapping zones, Minimize to minimize other windows\n"
+"on the screen, or Close to minimize to the system tray.\n"
+"Requires the corresponding support or scripts.\n"
+"See the information button for requirements."
+msgstr ""
+"Tieni premuto Massimizza per mostrare le zone di affiancamento, Minimizza per minimizzare\n"
+"le altre finestre dello schermo o Chiudi per ridurre nell’area di notifica.\n"
+"Richiede il supporto o gli script corrispondenti.\n"
+"Il pulsante informativo mostra i requisiti."
+
+#: src/kcm/config.ui
+msgid "Time to hold a window button before its additional action is triggered."
+msgstr "Tempo per cui tenere premuto un pulsante prima di attivarne l’azione aggiuntiva."
+
+#: src/kcm/config.ui
+msgid ""
+"Shows snapping zones when the pointer stays over Maximize, without clicking.\n"
+"Requires the Material Tiling Popup KWin script."
+msgstr ""
+"Mostra le zone di affiancamento lasciando il puntatore su Massimizza, senza cliccare.\n"
+"Richiede lo script KWin Material Tiling Popup."
+
+#: src/kcm/config.ui
+msgid ""
+"Time to wait before opening the tiling\n"
+"popup while the pointer stays over Maximize."
+msgstr ""
+"Tempo di attesa prima di aprire il popup\n"
+"di affiancamento quando il puntatore rimane su Massimizza."
+
+#: src/kcm/config.ui
+msgid ""
+"Allows window dragging to start from decoration\n"
+"buttons such as Minimize and Maximize.\n"
+"Application menu buttons still allow dragging when this is disabled."
+msgstr ""
+"Permette di iniziare il trascinamento dai pulsanti\n"
+"della decorazione, come Minimizza e Massimizza.\n"
+"Il trascinamento dai pulsanti del menu dell’applicazione rimane disponibile anche se disattivata."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Enter the text to match against the window title or class.\n"
+"Use Detect Window Properties to capture it from an open window."
+msgstr ""
+"Inserisci il testo da confrontare con il\n"
+"titolo o la classe della finestra.\n"
+"Usa Rileva proprietà della finestra per ricavarlo da una finestra aperta."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"The title is the text shown in\n"
+"the title bar and may change.\n"
+"The class identifies the application."
+msgstr ""
+"Il titolo è il testo mostrato nella\n"
+"barra della finestra e può cambiare.\n"
+"La classe identifica l’applicazione."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Exact Match requires the whole value.\n"
+"Substring Match finds the text anywhere within it.\n"
+"Matching is case-insensitive and does not use regular expressions."
+msgstr ""
+"Corrispondenza esatta richiede l’intero valore.\n"
+"Corrispondenza parziale cerca il testo al suo interno.\n"
+"Il confronto ignora maiuscole e minuscole e non usa espressioni regolari."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Excludes matching windows from saving and restoring their\n"
+"position, even when enabled in the global settings."
+msgstr ""
+"Esclude le finestre corrispondenti dal salvataggio e dal ripristino della\n"
+"posizione, anche quando la funzione è attiva nelle impostazioni generali."
+
+#: src/kcm/ExceptionDialog.cc
+msgid ""
+"Overrides whether menus follow decoration colors for matching windows.\n"
+"Use global setting keeps the general preference."
+msgstr ""
+"Scegli se i menu delle finestre corrispondenti seguono i colori della decorazione.\n"
+"Usa impostazione globale mantiene la preferenza generale."
