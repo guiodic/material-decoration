@@ -80,7 +80,14 @@ independently.
   considered overlapping when their horizontal and vertical offsets are both
   less than the title-bar height. Windows cascade by 1.25 times that height,
   with a 30-pixel height fallback when unavailable.
-  Collision checks consider matching screen, desktop and activity contexts.
+  Collision checks consider matching screen, desktop and activity contexts. The
+  **Let KWin place additional windows of the same application** option (off by
+  default) bypasses restoration when another normal, non-transient window of the
+  same application is already open, including on another screen or desktop or
+  when minimized. This comparison uses App ID (falling back to resource class),
+  independently of Wayland tags. Position, screen, desktop, tiling and inherited
+  size correction are then left to KWin. The first window still uses saved
+  restoration. The additional window's placement is tracked and saved normally.
 - **Disconnected screens:** automatic relocation to a remaining screen preserves
   the old configuration's placement. An interactive move or resize afterwards
   also updates the preceding configuration at closure or the next configuration

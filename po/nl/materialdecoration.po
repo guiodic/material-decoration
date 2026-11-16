@@ -523,3 +523,11 @@ msgstr "Andere vastgezette vensters schalen bij het herstellen van opgeslagen ve
 #: src/kcm/config.ui
 msgid "Allow restoring a snapped window's saved proportions to resize other windows in the same quick-tile layout. When disabled, restore the saved proportions only to the reopened window."
 msgstr "Sta toe dat het herstellen van de opgeslagen verhoudingen van een vastgezet venster ook andere vensters in dezelfde snelle tegelindeling schaalt. Indien uitgeschakeld, worden de opgeslagen verhoudingen alleen voor het opnieuw geopende venster hersteld."
+
+#: src/kcm/config.ui
+msgid "Let KWin place additional windows of the same application"
+msgstr ""
+
+#: src/kcm/config.ui
+msgid "When another normal window of the same application is already open, leave position, screen, virtual desktop and tiling to KWin. The first window still uses saved restoration. When disabled, apply the restoration settings to additional windows too, cascading overlapping windows."
+msgstr ""

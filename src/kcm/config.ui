@@ -680,6 +680,12 @@
            </widget>
           </item>
           <item>
+           <widget class="QCheckBox" name="kcfg_UseKWinPlacementForAdditionalWindows">
+            <property name="text"><string>Let KWin place additional windows of the same application</string></property>
+            <property name="toolTip"><string>When another normal window of the same application is already open, leave position, screen, virtual desktop and tiling to KWin. The first window still uses saved restoration. When disabled, apply the restoration settings to additional windows too, cascading overlapping windows.</string></property>
+           </widget>
+          </item>
+          <item>
            <widget class="QCheckBox" name="kcfg_ResizeOtherTiledWindows">
             <property name="text"><string>Resize other snapped windows when restoring saved proportions</string></property>
             <property name="toolTip"><string>Allow restoring a snapped window's saved proportions to resize other windows in the same quick-tile layout. When disabled, restore the saved proportions only to the reopened window.</string></property>
