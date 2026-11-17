@@ -889,10 +889,19 @@ private slots:
     {
         QTest::addColumn<qreal>("scale");
         QTest::addColumn<KDecoration3::BorderSize>("border");
+        QTest::addColumn<bool>("mapped");
+        QTest::addColumn<qreal>("opacity");
+        QTest::addColumn<QPainter::CompositionMode>("composition");
         for (qreal scale : {1.0, 1.25, 1.5, 2.0}) {
             for (auto border : {KDecoration3::BorderSize::None, KDecoration3::BorderSize::Tiny,
                                 KDecoration3::BorderSize::Normal}) {
-                QTest::newRow(qPrintable(QStringLiteral("%1-%2").arg(scale).arg(int(border)))) << scale << border;
+                for (bool mapped : {false, true}) {
+                    const auto name = QStringLiteral("%1-%2-%3").arg(scale).arg(int(border)).arg(mapped);
+                    QTest::newRow(qPrintable(name + QStringLiteral("-opaque")))
+                        << scale << border << mapped << 1.0 << QPainter::CompositionMode_SourceOver;
+                    QTest::newRow(qPrintable(name + QStringLiteral("-faded-source")))
+                        << scale << border << mapped << 0.6 << QPainter::CompositionMode_Source;
+                }
             }
         }
     }
@@ -901,6 +910,9 @@ private slots:
     {
         QFETCH(qreal, scale);
         QFETCH(KDecoration3::BorderSize, border);
+        QFETCH(bool, mapped);
+        QFETCH(qreal, opacity);
+        QFETCH(QPainter::CompositionMode, composition);
         auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
         auto group = config->group(QStringLiteral("Windeco"));
         group.writeEntry("CornerRadius", 16);
@@ -931,22 +943,33 @@ private slots:
         QImage surface(size, QImage::Format_ARGB32_Premultiplied);
         surface.setDevicePixelRatio(scale);
         surface.fill(Qt::transparent);
-        const auto paint = [&](QImage &image) {
+        const auto paint = [&](QImage &image, qreal callerOpacity, QPainter::CompositionMode callerComposition) {
             QPainter painter(&image);
+            if (mapped) {
+                painter.setWindow(0, 0, 800, 600);
+                painter.setViewport(7, 9, 600, 450);
+            }
             painter.translate(3.25, 4.5);
+            painter.setOpacity(callerOpacity);
+            painter.setCompositionMode(callerComposition);
+            const auto transform = painter.deviceTransform();
             decoration->paint(&painter, decoration->rect());
+            QCOMPARE(painter.deviceTransform(), transform);
+            QCOMPARE(painter.opacity(), callerOpacity);
+            QCOMPARE(painter.compositionMode(), callerComposition);
         };
-        paint(surface);
+        paint(surface, 1.0, QPainter::CompositionMode_SourceOver);
         QImage expected = surface;
         expected.fill(QColor(40, 70, 90));
         QImage actual = expected;
         {
             QPainter painter(&expected);
+            painter.setOpacity(opacity);
             painter.drawImage(QPointF(0, 0), surface);
         }
         // KWin's preview already contains the shadow. Painting the hovered
         // decoration must compose over it just as a separate surface would.
-        paint(actual);
+        paint(actual, opacity, composition);
         QCOMPARE(actual, expected);
     }
 

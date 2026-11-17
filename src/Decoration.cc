@@ -399,6 +399,9 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
     }
     painter->save();
     painter->resetTransform();
+    // Composite the decoration over the shadow, applying the caller's opacity
+    // once to the complete layer rather than to overlapping primitives.
+    painter->setCompositionMode(QPainter::CompositionMode_SourceOver);
     painter->drawImage(QPointF(0, 0), layer);
     painter->restore();
 }
