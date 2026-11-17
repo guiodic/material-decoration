@@ -37,7 +37,14 @@ void paintRoundedButtonBackground(QPainter *painter, const QRectF &geometry,
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
     painter->setBrush(borderColor);
-    painter->drawPath(framePath);
+    const QRectF frameRect = framePath.boundingRect();
+    const QRectF titleRect = titleBarPath.boundingRect();
+    // With no top or side offsets, both paths share the outer contour.
+    // A button contained in the titlebar has no frame coverage to restore;
+    // drawing it first would apply the corner's antialias coverage twice.
+    const bool titleOnlyPatch = frameRect.topLeft() == titleRect.topLeft()
+        && frameRect.right() == titleRect.right() && patch.bottom() <= titleRect.bottom();
+    if (!titleOnlyPatch) painter->drawPath(framePath);
     // Replace the frame under the titlebar instead of drawing two separately
     // antialiased paths around a subtracted hole. Source also preserves the
     // intended titlebar alpha rather than blending it over the border color.

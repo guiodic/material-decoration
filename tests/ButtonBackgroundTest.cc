@@ -101,6 +101,55 @@ private slots:
         }
     }
 
+    void sharedOuterContour_data()
+    {
+        QTest::addColumn<qreal>("scale");
+        QTest::addColumn<bool>("right");
+        for (qreal scale : {1.0, 1.25, 1.5, 1.75, 2.0}) {
+            for (bool right : {false, true}) {
+                const auto name = QStringLiteral("%1-%2").arg(scale).arg(right ? "right" : "left");
+                QTest::newRow(qPrintable(name)) << scale << right;
+            }
+        }
+    }
+
+    void sharedOuterContour()
+    {
+        QFETCH(qreal, scale);
+        QFETCH(bool, right);
+        // NoSides + vertical maximization + squareCornersTiled=false:
+        // the frame still exists, but the top and side offsets are zero.
+        const auto frame = Material::DrawHelper::getRoundedPath(QRectF(0, 0, 120, 80), 6);
+        const auto title = Material::DrawHelper::getRoundedPath(QRectF(0, 0, 120, 34), 6);
+        QVERIFY(!frame.isEmpty());
+        QImage actual(QSize(qRound(120 * scale), qRound(80 * scale)), QImage::Format_ARGB32_Premultiplied);
+        actual.setDevicePixelRatio(scale);
+        actual.fill(Qt::transparent);
+        const QRectF geometry = right ? QRectF(83.3, 0, 36.7, 33) : QRectF(0, 0, 36.7, 33);
+        {
+            QPainter painter(&actual);
+            Material::paintRoundedButtonBackground(&painter, geometry, frame, title,
+                Qt::white, Qt::white, Qt::red, 1.0);
+        }
+        QImage expected(actual.size(), actual.format());
+        expected.setDevicePixelRatio(scale);
+        expected.fill(Qt::transparent);
+        {
+            QPainter painter(&expected);
+            painter.setRenderHint(QPainter::Antialiasing);
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(Qt::red);
+            painter.drawPath(title);
+        }
+        const int left = right ? qFloor(114 * scale) : 0;
+        const int end = right ? actual.width() : qCeil(6 * scale);
+        for (int y = 0; y < qCeil(6 * scale); ++y) {
+            for (int x = left; x < end; ++x) {
+                QCOMPARE(actual.pixel(x, y), expected.pixel(x, y));
+            }
+        }
+    }
+
     void fractionalSeam_data() { idle_data(); }
 
     void fractionalSeam()
