@@ -9,7 +9,7 @@ class QPainter;
 namespace Material
 {
 void paintRoundedButtonBackground(QPainter *painter, const QRectF &geometry,
-                                  const QPainterPath &borderPath, const QPainterPath &titleBarPath,
+                                  const QPainterPath &framePath, const QPainterPath &titleBarPath,
                                   const QColor &borderColor, const QColor &baseColor,
                                   const QColor &overlayColor, qreal opacity);
 }

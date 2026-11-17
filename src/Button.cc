@@ -432,7 +432,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
         if (roundedBackground) {
             const bool hasFrameBackground = !deco->hasNoBorders() && !deco->window()->isShaded();
             paintRoundedButtonBackground(painter, backgroundGeometry,
-                hasFrameBackground ? deco->frameBackgroundPath() : QPainterPath(),
+                hasFrameBackground ? deco->m_framePath : QPainterPath(),
                 deco->m_titleBarPath, deco->borderColor(), deco->titleBarBackgroundColor(), bgColor, m_opacity);
         } else {
             painter->fillRect(backgroundGeometry, bgColor);
