@@ -7,7 +7,7 @@
 namespace Material
 {
 void paintRoundedButtonBackground(QPainter *painter, const QRectF &geometry,
-                                  const QPainterPath &borderPath, const QPainterPath &titleBarPath,
+                                  const QPainterPath &framePath, const QPainterPath &titleBarPath,
                                   const QColor &borderColor, const QColor &baseColor,
                                   const QColor &overlayColor, qreal opacity)
 {
@@ -37,7 +37,11 @@ void paintRoundedButtonBackground(QPainter *painter, const QRectF &geometry,
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
     painter->setBrush(borderColor);
-    painter->drawPath(borderPath);
+    painter->drawPath(framePath);
+    // Replace the frame under the titlebar instead of drawing two separately
+    // antialiased paths around a subtracted hole. Source also preserves the
+    // intended titlebar alpha rather than blending it over the border color.
+    painter->setCompositionMode(QPainter::CompositionMode_Source);
     painter->setBrush(composed);
     painter->drawPath(titleBarPath);
     painter->restore();
