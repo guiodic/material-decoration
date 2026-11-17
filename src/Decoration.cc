@@ -386,6 +386,10 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
     // that shadow outside a rounded corner. Match the device and transforms to
     // preserve the original antialiasing grid, including fractional scaling.
     QImage layer(painter->device()->width(), painter->device()->height(), QImage::Format_ARGB32_Premultiplied);
+    if (layer.isNull()) {
+        paintDecoration(painter);
+        return;
+    }
     layer.setDevicePixelRatio(painter->device()->devicePixelRatioF());
     layer.fill(Qt::transparent);
     {
