@@ -885,6 +885,71 @@ private slots:
         }
     }
 
+    void previewButtonBackdrop_data()
+    {
+        QTest::addColumn<qreal>("scale");
+        QTest::addColumn<KDecoration3::BorderSize>("border");
+        for (qreal scale : {1.0, 1.25, 1.5, 2.0}) {
+            for (auto border : {KDecoration3::BorderSize::None, KDecoration3::BorderSize::Tiny,
+                                KDecoration3::BorderSize::Normal}) {
+                QTest::newRow(qPrintable(QStringLiteral("%1-%2").arg(scale).arg(int(border)))) << scale << border;
+            }
+        }
+    }
+
+    void previewButtonBackdrop()
+    {
+        QFETCH(qreal, scale);
+        QFETCH(KDecoration3::BorderSize, border);
+        auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        auto group = config->group(QStringLiteral("Windeco"));
+        group.writeEntry("CornerRadius", 16);
+        group.writeEntry("AnimationsEnabled", false);
+        QVERIFY(config->sync());
+        MaterialTest::Bridge bridge;
+        auto decoration = create(bridge);
+        QVERIFY(decoration);
+        decoration->setProperty("visualParent", QVariant::fromValue<QObject *>(this));
+        decoration->create();
+        decoration->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&bridge));
+        bridge.options->borderMode = border;
+        bridge.options->rightButtons = {KDecoration3::DecorationButtonType::Close};
+        QVERIFY(decoration->init());
+        Q_EMIT decoration->settings()->reconfigured();
+        decoration->apply(decoration->nextState()->clone());
+        QCoreApplication::processEvents();
+        decoration->apply(decoration->nextState()->clone());
+        const auto buttons = decoration->findChildren<KDecoration3::DecorationButton *>();
+        QCOMPARE(buttons.size(), 1);
+        auto *button = buttons.first();
+        const auto center = button->geometry().center();
+        QHoverEvent hover(QEvent::HoverEnter, center, center, QPointF(-1, -1));
+        QCoreApplication::sendEvent(button, &hover);
+        QVERIFY(button->isHovered());
+
+        const QSize size = ((decoration->rect().size() + QSizeF(12, 12)) * scale).toSize();
+        QImage surface(size, QImage::Format_ARGB32_Premultiplied);
+        surface.setDevicePixelRatio(scale);
+        surface.fill(Qt::transparent);
+        const auto paint = [&](QImage &image) {
+            QPainter painter(&image);
+            painter.translate(3.25, 4.5);
+            decoration->paint(&painter, decoration->rect());
+        };
+        paint(surface);
+        QImage expected = surface;
+        expected.fill(QColor(40, 70, 90));
+        QImage actual = expected;
+        {
+            QPainter painter(&expected);
+            painter.drawImage(QPointF(0, 0), surface);
+        }
+        // KWin's preview already contains the shadow. Painting the hovered
+        // decoration must compose over it just as a separate surface would.
+        paint(actual);
+        QCOMPARE(actual, expected);
+    }
+
     void opaqueState()
     {
         MaterialTest::Bridge bridge;

@@ -367,14 +367,40 @@ QRectF Decoration::centerRect() const
 
 void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 {
-    auto *decoratedClient = window();
+    const auto paintDecoration = [&](QPainter *target) {
+        if (!window()->isShaded()) {
+            paintFrameBackground(target, repaintRegion);
+        }
+        paintTitleBarBackground(target, repaintRegion);
+        paintButtons(target, repaintRegion);
+        paintCaption(target, repaintRegion);
+    };
 
-    if (!decoratedClient->isShaded()) {
-        paintFrameBackground(painter, repaintRegion);
+    if (!property("visualParent").isValid()) {
+        paintDecoration(painter);
+        return;
     }
-    paintTitleBarBackground(painter, repaintRegion);
-    paintButtons(painter, repaintRegion);
-    paintCaption(painter, repaintRegion);
+
+    // The preview paints its shadow on the same device before the decoration.
+    // Keep Source-mode button repainting on a separate layer so it cannot erase
+    // that shadow outside a rounded corner. Match the device and transforms to
+    // preserve the original antialiasing grid, including fractional scaling.
+    QImage layer(painter->device()->width(), painter->device()->height(), QImage::Format_ARGB32_Premultiplied);
+    layer.setDevicePixelRatio(painter->device()->devicePixelRatioF());
+    layer.fill(Qt::transparent);
+    {
+        QPainter target(&layer);
+        target.setRenderHints(painter->renderHints());
+        target.setWindow(painter->window());
+        target.setViewport(painter->viewport());
+        target.setWorldTransform(painter->worldTransform());
+        if (painter->hasClipping()) target.setClipPath(painter->clipPath());
+        paintDecoration(&target);
+    }
+    painter->save();
+    painter->resetTransform();
+    painter->drawImage(QPointF(0, 0), layer);
+    painter->restore();
 }
 
 bool Decoration::init()
