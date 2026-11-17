@@ -73,7 +73,7 @@ private slots:
             if (i >= 4 && i <= 6) {
                 QCOMPARE(buttons[i]->toolTip(), buttons[i]->accessibleName() + QLatin1Char('\n') + i18nd("materialdecoration", "Meta+T to edit snapping zones"));
             } else {
-                QCOMPARE(buttons[i]->toolTip(), buttons[i]->accessibleName());
+                QVERIFY(buttons[i]->toolTip().isEmpty());
             }
         }
         for (int i = 0; i < 6; ++i) QTest::keyClick(i ? QApplication::focusWidget() : static_cast<QWidget *>(&popup), Qt::Key_Tab);
