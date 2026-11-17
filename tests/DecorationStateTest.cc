@@ -12,6 +12,7 @@
 #include <KSharedConfig>
 #include <QApplication>
 #include <QPainter>
+#include <QPainterPath>
 #include <QHoverEvent>
 #include <QPluginLoader>
 #include <QTemporaryDir>
@@ -883,6 +884,110 @@ private slots:
             QVERIFY(reopened->isVisible());
             reopened->hide();
         }
+    }
+
+    void previewButtonBackdrop_data()
+    {
+        QTest::addColumn<qreal>("scale");
+        QTest::addColumn<KDecoration3::BorderSize>("border");
+        QTest::addColumn<bool>("mapped");
+        QTest::addColumn<bool>("clipped");
+        QTest::addColumn<qreal>("opacity");
+        QTest::addColumn<QPainter::CompositionMode>("composition");
+        for (qreal scale : {1.0, 1.25, 1.5, 2.0}) {
+            for (auto border : {KDecoration3::BorderSize::None, KDecoration3::BorderSize::Tiny,
+                                KDecoration3::BorderSize::Normal}) {
+                for (bool mapped : {false, true}) {
+                    for (bool clipped : {false, true}) {
+                        const auto name = QStringLiteral("%1-%2-%3-%4").arg(scale).arg(int(border)).arg(mapped).arg(clipped);
+                        QTest::newRow(qPrintable(name + QStringLiteral("-opaque")))
+                            << scale << border << mapped << clipped << 1.0 << QPainter::CompositionMode_SourceOver;
+                        QTest::newRow(qPrintable(name + QStringLiteral("-faded-source")))
+                            << scale << border << mapped << clipped << 0.6 << QPainter::CompositionMode_Source;
+                    }
+                }
+            }
+        }
+    }
+
+    void previewButtonBackdrop()
+    {
+        QFETCH(qreal, scale);
+        QFETCH(KDecoration3::BorderSize, border);
+        QFETCH(bool, mapped);
+        QFETCH(bool, clipped);
+        QFETCH(qreal, opacity);
+        QFETCH(QPainter::CompositionMode, composition);
+        auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
+        auto group = config->group(QStringLiteral("Windeco"));
+        group.writeEntry("CornerRadius", 16);
+        group.writeEntry("AnimationsEnabled", false);
+        QVERIFY(config->sync());
+        MaterialTest::Bridge bridge;
+        auto decoration = create(bridge);
+        QVERIFY(decoration);
+        decoration->setProperty("visualParent", QVariant::fromValue<QObject *>(this));
+        decoration->create();
+        decoration->setSettings(std::make_shared<KDecoration3::DecorationSettings>(&bridge));
+        bridge.options->borderMode = border;
+        bridge.options->rightButtons = {KDecoration3::DecorationButtonType::Close};
+        QVERIFY(decoration->init());
+        Q_EMIT decoration->settings()->reconfigured();
+        decoration->apply(decoration->nextState()->clone());
+        QCoreApplication::processEvents();
+        decoration->apply(decoration->nextState()->clone());
+        const auto buttons = decoration->findChildren<KDecoration3::DecorationButton *>();
+        QCOMPARE(buttons.size(), 1);
+        auto *button = buttons.first();
+        const auto center = button->geometry().center();
+        QHoverEvent hover(QEvent::HoverEnter, center, center, QPointF(-1, -1));
+        QCoreApplication::sendEvent(button, &hover);
+        QVERIFY(button->isHovered());
+
+        const QSize size = ((decoration->rect().size() + QSizeF(12, 12)) * scale).toSize();
+        QImage surface(size, QImage::Format_ARGB32_Premultiplied);
+        surface.setDevicePixelRatio(scale);
+        surface.fill(Qt::transparent);
+        const auto setupPainter = [&](QPainter &painter, bool applyClip) {
+            painter.setRenderHint(QPainter::Antialiasing);
+            if (mapped) {
+                painter.setWindow(0, 0, 800, 600);
+                painter.setViewport(7, 9, 600, 450);
+            }
+            painter.translate(3.25, 4.5);
+            if (applyClip) {
+                QPainterPath clip;
+                clip.addEllipse(QRectF(5.3, 4.7, decoration->rect().width() - 12.1, 90.6));
+                painter.setClipPath(clip);
+            }
+        };
+        const auto paint = [&](QImage &image, qreal callerOpacity, QPainter::CompositionMode callerComposition, bool applyClip) {
+            QPainter painter(&image);
+            setupPainter(painter, applyClip);
+            painter.setOpacity(callerOpacity);
+            painter.setCompositionMode(callerComposition);
+            const auto transform = painter.deviceTransform();
+            decoration->paint(&painter, decoration->rect());
+            QCOMPARE(painter.deviceTransform(), transform);
+            QCOMPARE(painter.opacity(), callerOpacity);
+            QCOMPARE(painter.compositionMode(), callerComposition);
+        };
+        paint(surface, 1.0, QPainter::CompositionMode_SourceOver, false);
+        QImage expected = surface;
+        expected.fill(QColor(40, 70, 90));
+        QImage actual = expected;
+        {
+            QPainter painter(&expected);
+            setupPainter(painter, clipped);
+            painter.resetTransform();
+            painter.setOpacity(opacity);
+            painter.drawImage(QPointF(0, 0), surface);
+        }
+        // KWin's preview already contains the shadow. Painting the hovered
+        // decoration must compose over it just as a separate surface would,
+        // with any antialiased clip applied only when compositing that surface.
+        paint(actual, opacity, composition, clipped);
+        QCOMPARE(actual, expected);
     }
 
     void opaqueState()
