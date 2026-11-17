@@ -398,7 +398,6 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
         target.setWindow(painter->window());
         target.setViewport(painter->viewport());
         target.setWorldTransform(painter->worldTransform());
-        if (painter->hasClipping()) target.setClipPath(painter->clipPath());
         paintDecoration(&target);
     }
     painter->save();

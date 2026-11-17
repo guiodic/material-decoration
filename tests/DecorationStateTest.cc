@@ -12,6 +12,7 @@
 #include <KSharedConfig>
 #include <QApplication>
 #include <QPainter>
+#include <QPainterPath>
 #include <QHoverEvent>
 #include <QPluginLoader>
 #include <QTemporaryDir>
@@ -890,17 +891,20 @@ private slots:
         QTest::addColumn<qreal>("scale");
         QTest::addColumn<KDecoration3::BorderSize>("border");
         QTest::addColumn<bool>("mapped");
+        QTest::addColumn<bool>("clipped");
         QTest::addColumn<qreal>("opacity");
         QTest::addColumn<QPainter::CompositionMode>("composition");
         for (qreal scale : {1.0, 1.25, 1.5, 2.0}) {
             for (auto border : {KDecoration3::BorderSize::None, KDecoration3::BorderSize::Tiny,
                                 KDecoration3::BorderSize::Normal}) {
                 for (bool mapped : {false, true}) {
-                    const auto name = QStringLiteral("%1-%2-%3").arg(scale).arg(int(border)).arg(mapped);
-                    QTest::newRow(qPrintable(name + QStringLiteral("-opaque")))
-                        << scale << border << mapped << 1.0 << QPainter::CompositionMode_SourceOver;
-                    QTest::newRow(qPrintable(name + QStringLiteral("-faded-source")))
-                        << scale << border << mapped << 0.6 << QPainter::CompositionMode_Source;
+                    for (bool clipped : {false, true}) {
+                        const auto name = QStringLiteral("%1-%2-%3-%4").arg(scale).arg(int(border)).arg(mapped).arg(clipped);
+                        QTest::newRow(qPrintable(name + QStringLiteral("-opaque")))
+                            << scale << border << mapped << clipped << 1.0 << QPainter::CompositionMode_SourceOver;
+                        QTest::newRow(qPrintable(name + QStringLiteral("-faded-source")))
+                            << scale << border << mapped << clipped << 0.6 << QPainter::CompositionMode_Source;
+                    }
                 }
             }
         }
@@ -911,6 +915,7 @@ private slots:
         QFETCH(qreal, scale);
         QFETCH(KDecoration3::BorderSize, border);
         QFETCH(bool, mapped);
+        QFETCH(bool, clipped);
         QFETCH(qreal, opacity);
         QFETCH(QPainter::CompositionMode, composition);
         auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
@@ -943,13 +948,22 @@ private slots:
         QImage surface(size, QImage::Format_ARGB32_Premultiplied);
         surface.setDevicePixelRatio(scale);
         surface.fill(Qt::transparent);
-        const auto paint = [&](QImage &image, qreal callerOpacity, QPainter::CompositionMode callerComposition) {
-            QPainter painter(&image);
+        const auto setupPainter = [&](QPainter &painter, bool applyClip) {
+            painter.setRenderHint(QPainter::Antialiasing);
             if (mapped) {
                 painter.setWindow(0, 0, 800, 600);
                 painter.setViewport(7, 9, 600, 450);
             }
             painter.translate(3.25, 4.5);
+            if (applyClip) {
+                QPainterPath clip;
+                clip.addEllipse(QRectF(5.3, 4.7, decoration->rect().width() - 12.1, 90.6));
+                painter.setClipPath(clip);
+            }
+        };
+        const auto paint = [&](QImage &image, qreal callerOpacity, QPainter::CompositionMode callerComposition, bool applyClip) {
+            QPainter painter(&image);
+            setupPainter(painter, applyClip);
             painter.setOpacity(callerOpacity);
             painter.setCompositionMode(callerComposition);
             const auto transform = painter.deviceTransform();
@@ -958,18 +972,21 @@ private slots:
             QCOMPARE(painter.opacity(), callerOpacity);
             QCOMPARE(painter.compositionMode(), callerComposition);
         };
-        paint(surface, 1.0, QPainter::CompositionMode_SourceOver);
+        paint(surface, 1.0, QPainter::CompositionMode_SourceOver, false);
         QImage expected = surface;
         expected.fill(QColor(40, 70, 90));
         QImage actual = expected;
         {
             QPainter painter(&expected);
+            setupPainter(painter, clipped);
+            painter.resetTransform();
             painter.setOpacity(opacity);
             painter.drawImage(QPointF(0, 0), surface);
         }
         // KWin's preview already contains the shadow. Painting the hovered
-        // decoration must compose over it just as a separate surface would.
-        paint(actual, opacity, composition);
+        // decoration must compose over it just as a separate surface would,
+        // with any antialiased clip applied only when compositing that surface.
+        paint(actual, opacity, composition, clipped);
         QCOMPARE(actual, expected);
     }
 
