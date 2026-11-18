@@ -1274,6 +1274,53 @@ private slots:
             if (size) QCOMPARE(after.value("size").toMap(), (QVariantMap{{"width", 1000.0}, {"height", 700.0}}));
         }
     }
+    void additionalWindowProtectsUnrestoredSize_data() {
+        QTest::addColumn<QString>("outcome");
+        for (const auto *name : {"missing", "failed", "succeeded", "user-resized"})
+            QTest::newRow(name) << QString(name);
+    }
+    void additionalWindowProtectsUnrestoredSize() {
+        QFETCH(QString, outcome);
+        KWin::WaylandWindow window, sibling;
+        const auto app = "org.example.StateTest.AdditionalSize." + QUuid::createUuid().toString();
+        setup(window, app);
+        setup(sibling, app);
+        const auto key = Material::windowStateKey(&window);
+        const auto scope = currentScope();
+        auto saved = Material::captureWindowState(&window);
+        saved.insert("size", QVariantMap{{"width", 900}, {"height", 650}});
+        QVERIFY(Material::writeWindowState(key, saved, scope));
+        const auto before = Material::readWindowState(key, scope);
+        window.setProperty("frameGeometry", QRectF(400, 120, 800, 500));
+        defaultWorkspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&sibling}));
+        const bool success = outcome == "succeeded", manual = outcome == "user-resized";
+        QScopedValueRollback availability(immediateAvailable, success || outcome == "failed");
+        QScopedValueRollback result(immediateSucceeds, success);
+        QScopedValueRollback hook(immediateHook, std::function<void()>([&] {
+            if (success) window.setProperty("frameGeometry", QRectF(400, 120, 900, 650));
+        }));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, true, true, false, false, true, true);
+        window.map();
+        if (manual) {
+            window.startInteraction();
+            window.setProperty("frameGeometry", QRectF(400, 120, 1000, 700));
+            Q_EMIT window.frameGeometryChanged();
+            window.stepInteraction();
+            window.finishInteraction();
+        }
+        QVERIFY(Material::snapshotWindowStates(scope, {}));
+        const auto snapshot = Material::readWindowState(key, scope);
+        window.close();
+        const auto after = Material::readWindowState(key, scope);
+        QCOMPARE(after, snapshot);
+        if (!success && !manual) QCOMPARE(after, before);
+        else {
+            QCOMPARE(after.value("position").toMap().value("x").toInt(), 400);
+            QCOMPARE(after.value("size").toMap().value("width").toInt(), manual ? 1000 : 900);
+        }
+    }
     void keepsKnownFloatingSizeWhenOpenedMaximized_data() {
         QTest::addColumn<bool>("savedTile");
         QTest::newRow("floating") << false;

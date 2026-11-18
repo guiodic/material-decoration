@@ -592,8 +592,10 @@ private:
             }
             releaseVisibilityGuard();
             if (m_restoreStarted) {
-                if (!m_restoreSize) m_restoreCancelled = true;
-                m_saveAllowed.insert(WindowStateScope::self()->current(), true);
+                if (!m_restoreSize) {
+                    m_restoreCancelled = true;
+                    m_saveAllowed.insert(WindowStateScope::self()->current(), true);
+                }
                 Q_EMIT restorationStopped();
             }
             return true;
