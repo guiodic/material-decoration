@@ -1,15 +1,16 @@
-![image](data/LIM.png)
+
+![image](/run/media/guido/nvme1/linux/material experiments/material-decoration/data/LIM.png)
 
 
 # material-decoration
-Material-ish window decoration theme for KWin with Locally Integrated Menu and Menu Search and Window Position Restoration.
-Based on zzag's original design. 
-LIM introduction by Zren. 
-Ported to QT6 by nicman23.
-Maintained and improved (search, wayland support, window management) by guiodic.
 
+Material-ish window decoration theme for KWin with Locally Integrated Menu and
+Menu Search and Window Position Restoration. Based on zzag's original design.
+LIM introduction by Zren. Ported to QT6 by nicman23. Maintained and improved
+(search, wayland support, window management) by guiodic.
 
 ### Locally Integrated Menu & Search
+
 This hides the AppMenu icon button and draws the menu in the titlebar. It also
 includes a search button to find actions. It works on both X11 and Wayland. On
 Wayland, GTK apps don't export the menu in a KDE-friendly way. You need to
@@ -20,8 +21,8 @@ experimental
 
 Hold `Alt` to show menu mnemonics; press the indicated letter to open a menu.
 
-
 ### Configuration
+
 Make sure you add the AppMenu button in System Settings > Colors & Themes >
 Window Decorations > Configure Titlebar Buttons….
 
@@ -35,8 +36,8 @@ Note: if you configure the decoration to use Opacity < 100%,
 [Better Blur effect](https://github.com/xarblu/kwin-effects-better-blur-dx) is
 strongly recommended on Wayland.
 
-
 ### Actions on Press-and-Hold buttons
+
 Pressing and holding the “Close” button will minimize the window to the traybar
 if the [kwin-minimize2tray](https://github.com/luisbocanegra/kwin-minimize2tray)
 script is present and enabled ( 
@@ -48,8 +49,8 @@ script (please enable it in System Settings). For X11, please copy the
 directory `/usr/share/kwin-wayland/scripts/minimizeall` to `
 /usr/share/kwin-x11/scripts/minimizeall`.
 
-
 ### Tiling layout popup
+
 Hold the **Maximize** button with the left mouse button to open the tiling
 selector.
 
@@ -58,7 +59,9 @@ Maximize/Restore.
 
 The bottom-left preview shows the current monitor's custom layout (`Meta+T`).
 
-![image](data/TilingPopUp.png)
+
+![image](/run/media/guido/nvme1/linux/material experiments/material-decoration/data/TilingPopUp.png)
+
 
 The popup uses a companion **Material Tiling Popup** KWin script for native quick
 tiling. The script is enabled by default unless explicitly disabled in **System
@@ -68,86 +71,70 @@ it in that panel.
 After the first installation, log out and log back in so KWin discovers and
 loads the companion script.
 
-
 ### Mnemonics
+
 When you press `Alt`, the widget displays the keyboard shortcuts for opening
 menus, just like in traditional menu bars. For example, pressing `Alt+F` opens
 the “File” menu.
 
-![image](data/Mnemonics.png)
+
+![image](/run/media/guido/nvme1/linux/material experiments/material-decoration/data/Mnemonics.png)
+
 
 Limitations: due to the way the Qt toolkit works, you may need to press the key
 combination (e.g., `Alt+F`) twice if there is already an element (e.g., a
 button) in the application interface associated with that shortcut.
 
-
 # Restore Window position
+
 Position restoration is enabled by default and can be configured in the
-configuration module's **Window Management** tab. If **Remember Window Positions**
-is enabled in KWin Scripts, Material automatically suspends its own window
-management and disables its controls to avoid conflicts. The saved preference
-is retained and applies again when that script is disabled. The **Material Tiling Popup**
-script must also be enabled in **System Settings > Window Management > KWin Scripts**.
-It supports native Wayland windows only; X11 (XWayland) windows are excluded; they are already
-managed by kwin/xwayland.
-It works with apps that use Kwin-managed decorations. For other apps 
-(i.e. GNOME apps using GTK’s CSD), you can enable a Kwin rule to add the 
-‘shadow-only’ decoration that will enable position restoration too.
-The restore process also takes into account any connected displays and the 
-configuration of virtual desktops. Restoring the last screen is enabled by default.
-Restoring the last virtual desktop is optional and disabled by default; enabling
-it also switches to the restored desktop and activates the window.
-Restoring saved edge snapping and custom tiling is optional and off by default.
-**Restore snapped window state** can also be enabled or disabled for individual
-windows through exceptions. When off, a previously snapped window reopens floating
-with its known normal size, retaining the initial center chosen by KWin rather
-than the saved tile position, subject to screen bounds. Screen and desktop
-preferences still apply. That size remains saved for subsequent unsnapping.
-By default, KWin places additional windows of the same application
-when another normal window is already open. A new floating window with the same
-identity can still recover the normal size if it inherits the dimensions of a
-tiled window that is still open. Its position is kept unless a small adjustment
-is needed to stay on the same screen. Disabling this option also applies saved
-position, screen, desktop and tiling settings to additional windows.
-Windows of the same application without distinct Wayland tags
-share the state of the last closed window.
+configuration module's **Window Management** tab. The **Material Tiling Popup**
+script must also be enabled in **System Settings > Window Management > KWin
+Scripts**. It supports native Wayland windows only; X11 (XWayland) windows are
+excluded; they are already managed by kwin/xwayland. It works with apps that
+use Kwin-managed decorations. For other apps (i.e. GNOME apps using GTK’s CSD),
+you can enable a Kwin rule to add the ‘shadow-only’ decoration that will enable
+position restoration too.  Windows of the same application without distinct
+Wayland tags share the state of the last closed window.
 
-**After updating the Decoration, it is strongly recommended that you log out and log back in.**
+**After updating the Decoration, it is strongly recommended that you log out and
+log back in.**
 
-The window management settings are stored in
-`$XDG_STATE_HOME/material-window-staterc` 
-(usually `~/.local/state/material-window-staterc`)
-
-This is an experimental feature not enabled by default. 
-Your feedback is welcome!
-
+The window management settings are stored in 
+`$XDG_STATE_HOME/material-window-staterc` (usually `
+~/.local/state/material-window-staterc`)
 
 # Installation
+
 ### Ubuntu
+
 You can find the Ubuntu deb package in the latest 
 [release page](https://github.com/guiodic/material-decoration/releases/latest).
 
 ### Fedora
+
 The package is in [Terra repository](https://terrapkg.com/).
 
 ### Arch and derivatives
+
 Please install the AUR package 
-[material-kwin-decoration-git](https://aur.archlinux.org/packages/material-kwin-decoration-git).
+[material-kwin-decoration-git](https://aur.archlinux.org/packages/material-kwin-decoration-git)
+.
 
 A pre-built package is present in [chaotic-aur](https://aur.chaotic.cx/).
 
-
 ## Build instructions for Plasma 6
+
 Requires a C++20 compiler, CMake, extra-cmake-modules, Qt 6, KDE Frameworks 6
 and KDecoration3.
 
 Optional: `libwayland` development files, `wayland-scanner` and `
 plasma-wayland-protocols` ≥ 1.15 enable showing menu mnemonics while holding `Alt`
 on Wayland. Without them, menu shortcuts still work. These optional packages
-are not needed with `-DFORCE_X11=ON`.
-
+are not needed with `\-DFORCE_X11=ON`.
 
 ### Debian / Ubuntu
+
 Use a release that provides KDecoration3 and the Plasma version supported by
 this branch.
 
@@ -164,9 +151,8 @@ Optional, for Wayland Alt monitoring:
 ```sh
 sudo apt install libwayland-dev libwayland-bin plasma-wayland-protocols
 ```
-
-
 ### Fedora
+
 ```sh
 sudo dnf install gcc-c++ make cmake extra-cmake-modules gettext git \
   qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qttools-devel kdecoration-devel \
@@ -180,23 +166,8 @@ Optional, for Wayland Alt monitoring:
 ```sh
 sudo dnf install wayland-devel plasma-wayland-protocols
 ```
-
-
-### Arch and derivatives
-On Arch Linux, the package dependencies are:
-
-- Runtime: `kwin`, plus `wayland` when Wayland Alt monitoring is compiled in.
-- Build: `base-devel`, `cmake`, `extra-cmake-modules`, `git`, `vulkan-headers`;
-  add `plasma-wayland-protocols` ≥ 1.15 and `wayland` for Wayland Alt
-  monitoring. The `wayland` package includes the development files and `
-  wayland-scanner`.
-- Optional: `plasma-x11-session` for X11; `appmenu-gtk-module` for GTK menus on
-  X11 or `appmenu-gtk-module-wayland` on Wayland; `kwin-minimize2tray-git` for
-  the Close button's long-press action; `kwin-effects-better-blur-dx` for
-  translucent titlebars on Wayland.
-
-
 ### Compile and install
+
 ```sh
 git clone https://github.com/guiodic/material-decoration.git
 cd material-decoration
@@ -205,10 +176,10 @@ cmake -B build . # add this for SonicDE: -DFORCE_X11=ON
 cmake --build build -j$(nproc)
 sudo cmake --install build
 ```
-
 NOTE 1: the master branch is aligned with the latest Plasma version but it is
 compatible with Plasma 6.5+. For earlier ones, see the other (ummantained)
 branches.
 
 NOTE 2: After 5 August 2026 the Decoration Id changed, please select again
 Material in Systemsettings, if needed.
+
