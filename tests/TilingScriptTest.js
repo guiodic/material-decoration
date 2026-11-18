@@ -1311,3 +1311,33 @@ for (const kind of ['quick', 'custom']) {
         assert.equal(f.root.tiles[0].owner, undefined);
     }
 }
+
+// A saved tile reopened floating keeps KWin's initial placement, not the tile corner.
+for (const kind of ['quick', 'custom']) {
+    for (const rememberScreen of [false, true]) {
+        for (const rememberDesktop of [false, true]) {
+            const f = fixture();
+            const savedOutput = {name: 'Saved', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
+            const savedDesktop = {id: 'desktop-2'};
+            f.workspace.screens.push(savedOutput);
+            f.workspace.desktops.push(savedDesktop);
+            f.target.frameGeometry = {x: 320, y: 0, width: 640, height: 800};
+            Object.defineProperty(f.target, 'output', {get() {
+                return this.frameGeometry.x + this.frameGeometry.width / 2 >= 1280 ? savedOutput : f.output;
+            }});
+            const x = rememberScreen ? 1470 : 190;
+            // Centered KWin placement can intentionally overlap another window.
+            f.workspace.windows.push({normalWindow: true, output: rememberScreen ? savedOutput : f.output,
+                desktops: [rememberDesktop ? savedDesktop : f.workspace.desktops[0]],
+                frameGeometry: {x, y: 100, width: 900, height: 600}});
+            assert.equal(f.restoreImmediately(savedState({restoreWindowTiling: false, rememberScreen, rememberDesktop,
+                outputName: savedOutput.name, outputPosition: {x: 1280, y: 0}, position: {x: 1280, y: 0},
+                desktopIds: [savedDesktop.id], tile: {kind, edges: 2, path: [0],
+                    region: {x: 0, y: 0, width: .5, height: 1}, normalSize: {width: 900, height: 600}}})), true);
+            assert.deepEqual({...f.target.frameGeometry}, {x, y: 100, width: 900, height: 600});
+            assert.equal(f.target.tile, null);
+            assert.equal(f.target.desktops[0].id, rememberDesktop ? savedDesktop.id : 'desktop-1');
+            assert.equal(f.workspace.activeWindow, rememberDesktop ? f.target : f.other);
+        }
+    }
+}

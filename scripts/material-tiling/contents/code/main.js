@@ -308,14 +308,15 @@ var materialTiling;
             }
             return true;
         }
-        const normalSize = inheritedSize || (state.restoreWindowTiling !== true && state.tile &&
+        const reopenFloating = state.restoreWindowTiling !== true && state.tile;
+        const normalSize = inheritedSize || (reopenFloating &&
             !target.tile && !target.fullScreen && !target.maximizeMode && target.resizeable &&
             state.tile.normalSize && sizeKeys.every(function (key) {
                 return typeof state.tile.normalSize[key] === "number" && Number.isFinite(state.tile.normalSize[key]) && state.tile.normalSize[key] > 0;
             }) ? state.tile.normalSize : null);
-        if (inheritedSize || state.restoreWindowTiling !== true && state.tile) {
+        if (inheritedSize || reopenFloating) {
             // Reopen floating when snap restoration is off, or for a new sibling.
-            // Keep saved placement, but do not clone a saved snap onto it.
+            // Do not clone the saved tile onto the new floating frame.
             state = Object.assign({}, state);
             delete state.tile;
         }
@@ -340,19 +341,23 @@ var materialTiling;
         }
 
         const area = workspace.clientArea(KWin.PlacementArea, output, target.desktops[0] || workspace.currentDesktop);
-        const before = state.outputPosition;
+        const current = normalSize ? {width: normalSize.width, height: normalSize.height} : original;
+        const before = reopenFloating ? target.output.geometry : state.outputPosition;
         let x = position.x, y = position.y;
+        if (reopenFloating) {
+            // Retain KWin's placement center instead of the old tile's corner.
+            x = original.x + (original.width - current.width) / 2;
+            y = original.y + (original.height - current.height) / 2;
+        }
         if (before && Number.isFinite(before.x) && Number.isFinite(before.y)) {
             x += output.geometry.x - before.x;
             y += output.geometry.y - before.y;
         }
-        // Recover normal sizes from live siblings or tiles reopened floating.
         // Moving to a smaller output still must not shrink a normal window.
-        const current = normalSize ? {width: normalSize.width, height: normalSize.height} : original;
         x = Math.max(area.x, Math.min(x, area.x + area.width - current.width));
         y = Math.max(area.y, Math.min(y, area.y + area.height - current.height));
         const constrained = positionOnOutput(output, {x: x, y: y}, current);
-        const placed = state.tile ? constrained : vacantPosition(target, output, area, constrained, current, state.titleBarHeight);
+        const placed = state.tile || reopenFloating ? constrained : vacantPosition(target, output, area, constrained, current, state.titleBarHeight);
         x = placed.x;
         y = placed.y;
         if (!state.tile) placement.geometry = {x: x, y: y, width: current.width, height: current.height};
