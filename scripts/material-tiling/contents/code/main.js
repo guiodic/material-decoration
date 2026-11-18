@@ -391,6 +391,8 @@ var materialTiling;
                 };
                 function whenPlaced() {
                     if (target.output !== placement.output) return;
+                    const frame = target.frameGeometry;
+                    if (geometry && (Math.abs(frame.x - geometry.x) > 1 || Math.abs(frame.y - geometry.y) > 1)) return;
                     cancel();
                     if (state.rememberDesktop !== true) return;
                     showRestoredDesktop(target, placement.output);

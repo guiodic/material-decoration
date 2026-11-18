@@ -1220,3 +1220,26 @@ for (const rememberDesktop of [false, true]) {
         assert.equal(fifth.pending.requests.at(-1).x, 100, 'closed windows release their pending position');
     }
 }
+
+// An older configure can change size without applying the pending position.
+{
+    const f = fixture();
+    f.workspace.screens.push({name: 'Source', geometry: {x: -1280, y: 0, width: 1280, height: 800}});
+    const first = deferredWindow(f, f.target);
+    first.commit({x: 0, y: 0, width: 640, height: 480});
+    const state = savedState({rememberDesktop: false, inheritedTileSize: {
+        tileSize: {width: 640, height: 480}, normalSize: {width: 900, height: 600}
+    }});
+    assert.equal(f.restoreImmediately(state), true);
+    first.commit({x: 0, y: 0, width: 650, height: 480});
+    assert.equal(f.target.frameGeometryChanged.count, 1, 'an older buffer must retain the reservation');
+    const second = {internalId: 'later', normalWindow: true, resizeable: true, tile: null,
+        desktops: [f.workspace.desktops[0]], onAllDesktops: false};
+    f.workspace.windows.push(second);
+    const pending = deferredWindow(f, second);
+    pending.commit({x: 0, y: 0, width: 640, height: 480});
+    assert.equal(f.send(0, 'later', 'restoreState', {state}).success, true);
+    assert.deepEqual(pending.requests.at(-1), {x: 137.5, y: 117.5, width: 900, height: 600});
+    first.commit({x: 100.5, y: 79.5, width: 900, height: 600});
+    assert.equal(f.target.frameGeometryChanged.count, 0, 'release the reservation once the position arrives, allowing rounding');
+}
