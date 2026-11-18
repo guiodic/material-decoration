@@ -1243,3 +1243,23 @@ for (const rememberDesktop of [false, true]) {
     first.commit({x: 100.5, y: 79.5, width: 900, height: 600});
     assert.equal(f.target.frameGeometryChanged.count, 0, 'release the reservation once the position arrives, allowing rounding');
 }
+
+// Keep the titlebar below a top panel when the inward step can be horizontal.
+{
+    const f = fixture();
+    f.workspace.clientArea = () => ({x: 0, y: 40, width: 1280, height: 760});
+    f.workspace.windows.push({normalWindow: true, output: f.output, desktops: f.target.desktops,
+        frameGeometry: {x: -221, y: 40, width: 3000, height: 780}});
+    const pending = deferredWindow(f, f.target);
+    Object.defineProperty(f.target, 'output', {get() { return f.output; }});
+    pending.commit({x: 100, y: 100, width: 640, height: 480});
+    const restorationStopped = testSignal();
+    assert.equal(f.restoreImmediately(savedState({position: {x: -221, y: 40},
+        restoreContext: {restorationStopped}, inheritedTileSize: {
+            tileSize: {width: 640, height: 480}, normalSize: {width: 3000, height: 780}
+        }})), true);
+    assert.deepEqual(pending.requests.at(-1), {x: -258.5, y: 40, width: 3000, height: 780});
+    pending.commit();
+    assert.equal(restorationStopped.count, 0);
+    assert.equal(f.workspace.activeWindow, f.target);
+}
