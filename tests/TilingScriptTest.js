@@ -44,7 +44,8 @@ function fixture(extraWindows = []) {
     vm.runInNewContext(source, context);
     function restore(target, state) {
         const {resizeOtherTiledWindows, restoreContext, ...request} = state;
-        request.restoreContext = restoreContext || {resizeOtherTiledWindows: resizeOtherTiledWindows === true};
+        request.restoreContext = restoreContext || {resizeOtherTiledWindows: resizeOtherTiledWindows === true,
+            restorationStopped: {connect() {}, disconnect() {}}};
         return context.materialRestoreWindowState(target, request);
     }
     return {workspace, target, other, calls, output, root, leaf,
@@ -215,6 +216,42 @@ function savedState(extra = {}) {
         rememberScreen: true, rememberDesktop: true, resizeOtherTiledWindows: true,
         onAllDesktops: false, outputName: 'Virtual-1',
         outputPosition: {x: 0, y: 0}, ...extra};
+}
+function testSignal() {
+    const callbacks = new Set();
+    return {connect(fn) { callbacks.add(fn); }, disconnect(fn) { callbacks.delete(fn); },
+        emit() { for (const fn of [...callbacks]) fn(); }, get count() { return callbacks.size; }};
+}
+function deferredWindow(f, window) {
+    let frame = {x: -1000, y: 0, width: 640, height: 480};
+    const requests = [];
+    window.outputChanged = testSignal();
+    window.frameGeometryChanged = testSignal();
+    Object.defineProperty(window, 'frameGeometry', {get() { return frame; }, set(value) { requests.push({...value}); }});
+    Object.defineProperty(window, 'output', {get() { return frame.x >= 0 ? f.output : f.workspace.screens[1]; }});
+    return {requests, commit(value = requests.at(-1)) {
+        const output = window.output;
+        frame = {...value};
+        window.frameGeometryChanged.emit();
+        if (window.output !== output) window.outputChanged.emit();
+    }};
+}
+{
+    const f = fixture();
+    f.workspace.screens.push({name: 'Source', geometry: {x: -1280, y: 0, width: 1280, height: 800}});
+    const pending = deferredWindow(f, f.target);
+    const restorationStopped = testSignal();
+    f.restoreImmediately(savedState({restoreContext: {restorationStopped}, inheritedTileSize: {
+        tileSize: {width: 640, height: 480}, normalSize: {width: 900, height: 600}
+    }}));
+    assert.equal(restorationStopped.count, 1);
+    restorationStopped.emit(); // WindowStateController cancels at the start of a drag.
+    assert.equal(restorationStopped.count, 0);
+    assert.equal(f.target.outputChanged.count, 0);
+    const requests = pending.requests.length;
+    pending.commit({x: 300, y: 200, width: 640, height: 480});
+    assert.equal(pending.requests.length, requests, 'crossing the saved output must not undo the user drag');
+    assert.equal(f.workspace.activeWindow, f.other);
 }
 {
     const f = fixture();

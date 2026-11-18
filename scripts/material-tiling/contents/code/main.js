@@ -375,14 +375,19 @@ var materialTiling;
             else {
                 // Fractional-scale moves can await a buffer too. Activate only
                 // on the destination, without changing the source desktop.
-                function activateOnOutput() {
+                const cancel = function () {
                     target.outputChanged.disconnect(activateOnOutput);
+                    state.restoreContext.restorationStopped.disconnect(cancel);
+                };
+                function activateOnOutput() {
+                    cancel();
                     if (target.output !== placement.output) return;
                     workspace.activeWindow = target;
                     // Activation can reconcile a previously hidden window to
                     // its old size; retain the requested floating geometry.
                     if (placement.geometry) target.frameGeometry = placement.geometry;
                 }
+                state.restoreContext.restorationStopped.connect(cancel);
                 target.outputChanged.connect(activateOnOutput);
             }
         }
