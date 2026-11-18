@@ -532,11 +532,12 @@ private slots:
             return;
         }
         bool workspaceAvailable = true;
-        const bool keepPlacement = keepKWinPlacement(&workspaceAvailable);
+        const bool keepPlacement = m_keepKWinPlacement || keepKWinPlacement(&workspaceAvailable);
         if (!workspaceAvailable) {
             retry();
             return;
         }
+        m_keepKWinPlacement = keepPlacement;
         refreshState();
         const auto inheritedSize = siblingNormalSize();
         if (keepPlacement && inheritedSize.isEmpty()) return;
@@ -722,6 +723,7 @@ private:
     bool m_resizeOtherTiledWindows;
     bool m_useKWinPlacementForAdditionalWindows;
     bool m_restoreStarted = false;
+    bool m_keepKWinPlacement = false;
     // New states are writable; existing ones need a successful restore or a user move.
     QHash<QString, bool> m_saveAllowed;
     QString m_previousScope;

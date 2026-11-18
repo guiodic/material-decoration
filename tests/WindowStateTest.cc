@@ -1345,7 +1345,7 @@ private slots:
     }
     void newSiblingSizeHint_data() {
         QTest::addColumn<QString>("scenario");
-        for (const auto *scenario : {"matching", "different-size", "different-identity", "excluded-source", "special-target", "fixed-target", "uncommitted-source", "ambiguous-source", "kwin-placement", "kwin-placement-retry"})
+        for (const auto *scenario : {"matching", "different-size", "different-identity", "excluded-source", "special-target", "fixed-target", "uncommitted-source", "ambiguous-source", "kwin-placement", "kwin-placement-retry", "kwin-placement-retry-sibling-closed"})
             QTest::newRow(scenario) << QString::fromLatin1(scenario);
     }
     void newSiblingSizeHint() {
@@ -1399,7 +1399,7 @@ private slots:
             workspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&source, &extra}));
         }
         const bool keepPlacement = scenario.startsWith("kwin-placement");
-        const bool delayedScript = scenario == "kwin-placement-retry";
+        const bool delayedScript = scenario.startsWith("kwin-placement-retry");
         if (keepPlacement) {
             auto saved = Material::captureWindowState(&target);
             saved.insert("position", QVariantMap{{"x", 999}, {"y", 500}});
@@ -1415,6 +1415,15 @@ private slots:
         target.map();
         if (delayedScript) {
             QCOMPARE(immediateRequests.size(), count);
+            if (scenario == "kwin-placement-retry-sibling-closed") {
+                source.close();
+                source.setProperty("deleted", true);
+                workspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&target}));
+                immediateAvailable = true;
+                QTest::qWait(300); // Let the already scheduled 250 ms retry run.
+                QCOMPARE(immediateRequests.size(), count);
+                return;
+            }
             immediateAvailable = true;
             QTRY_COMPARE(immediateRequests.size(), count + 1);
         }
