@@ -39,7 +39,12 @@ as stable.
 
 When disabled, restoration controllers are not created. Disabling the feature
 removes existing controllers after cancelling pending restoration. Topology
-monitoring stops when no active controllers remain. The tiling popup operates
+monitoring stops when no active controllers remain. Enabling **Remember Window
+Positions** in KWin Scripts automatically suspends this feature, including existing
+controllers, and disables its KCM controls. Detection uses
+`kwinrc` → `Plugins` → `rememberwindowpositionsEnabled` and follows settings
+changes without polling. The saved preference is preserved and takes effect again
+when that script is disabled. The tiling popup operates
 independently.
 
 ## 2. Current restoration policies

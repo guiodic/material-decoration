@@ -893,3 +893,7 @@ msgstr "Ripristina lo stato agganciato delle finestre"
 #: src/kcm/config.ui src/kcm/ExceptionDialog.cc
 msgid "Restore saved edge snapping or custom tiling when a window reopens.\nWhen disabled, reopen it floating with its known normal size."
 msgstr "Ripristina l’aggancio ai bordi o il posizionamento nei riquadri personalizzati alla riapertura.\nSe disattivato, riapre la finestra flottante con le dimensioni normali note."
+
+#: src/kcm/config.ui
+msgid "Window management is disabled while Remember Window Positions is enabled in KWin Scripts."
+msgstr "La gestione delle finestre è disattivata mentre Remember Window Positions è abilitato negli script di KWin."

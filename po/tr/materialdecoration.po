@@ -1004,3 +1004,7 @@ msgstr "Pencerelerin yapıştırılmış durumunu geri yükle"
 #: src/kcm/config.ui src/kcm/ExceptionDialog.cc
 msgid "Restore saved edge snapping or custom tiling when a window reopens.\nWhen disabled, reopen it floating with its known normal size."
 msgstr "Pencere yeniden açıldığında kayıtlı kenara yapıştırma veya özel döşeme düzenini geri yükle.\nDevre dışıysa pencereyi bilinen normal boyutuyla yüzen olarak aç."
+
+#: src/kcm/config.ui
+msgid "Window management is disabled while Remember Window Positions is enabled in KWin Scripts."
+msgstr "KWin Betiklerinde Remember Window Positions etkinken pencere yönetimi devre dışıdır."

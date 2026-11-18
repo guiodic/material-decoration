@@ -1008,3 +1008,7 @@ msgstr "استعادة حالة تثبيت النافذة"
 #: src/kcm/config.ui src/kcm/ExceptionDialog.cc
 msgid "Restore saved edge snapping or custom tiling when a window reopens.\nWhen disabled, reopen it floating with its known normal size."
 msgstr "استعد التثبيت المحفوظ على الحواف أو التبليط المخصص عند إعادة فتح النافذة.\nعند التعطيل، افتحها كنافذة عائمة بحجمها العادي المعروف."
+
+#: src/kcm/config.ui
+msgid "Window management is disabled while Remember Window Positions is enabled in KWin Scripts."
+msgstr "تُعطَّل إدارة النوافذ أثناء تفعيل Remember Window Positions في سكربتات KWin."

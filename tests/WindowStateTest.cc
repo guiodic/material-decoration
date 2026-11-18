@@ -15,6 +15,7 @@
 #include <QRectF>
 #include <QScopedValueRollback>
 #include <QSignalSpy>
+#include <QScopeGuard>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTest>
@@ -183,6 +184,45 @@ private slots:
         defaultWorkspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&defaultOutput}));
         defaultWorkspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{}));
         testWorkspace = &defaultWorkspace;
+    }
+    void conflictingScriptDisablesRestorationWithoutChangingPreference() {
+        auto kwin = KSharedConfig::openConfig("kwinrc");
+        auto material = KSharedConfig::openConfig("kdecoration_materialrc");
+        auto plugins = kwin->group("Plugins");
+        auto windeco = material->group("Windeco");
+        const auto originalScript = plugins.readEntry("rememberwindowpositionsEnabled", QVariant());
+        const auto originalPreference = windeco.readEntry("RememberWindowState", QVariant());
+        const auto restore = qScopeGuard([&] {
+            if (originalScript.isValid()) plugins.writeEntry("rememberwindowpositionsEnabled", originalScript);
+            else plugins.deleteEntry("rememberwindowpositionsEnabled");
+            if (originalPreference.isValid()) windeco.writeEntry("RememberWindowState", originalPreference);
+            else windeco.deleteEntry("RememberWindowState");
+            kwin->sync();
+            material->sync();
+        });
+        for (bool preference : {false, true}) {
+            plugins.writeEntry("rememberwindowpositionsEnabled", false);
+            kwin->sync();
+            windeco.writeEntry("RememberWindowState", preference);
+            material->sync();
+            Material::SettingsProvider provider;
+            QCOMPARE(provider.internalSettings("ConflictTest")->rememberWindowState(), preference);
+            for (bool enabled : {true, false, true, false}) {
+                if (enabled) plugins.writeEntry("rememberwindowpositionsEnabled", true);
+                else plugins.deleteEntry("rememberwindowpositionsEnabled");
+                kwin->sync(); // Same atomic KConfig save used by the KWin Scripts KCM.
+                QTRY_COMPARE(provider.rememberWindowPositionsEnabled(), enabled);
+                const auto settings = provider.internalSettings("ConflictTest");
+                QCOMPARE(settings->rememberWindowState(), preference && !enabled);
+                auto exception = Material::InternalSettingsPtr::create();
+                exception->setMask(Material::ExceptionMask::ExcludeWindowPosition | Material::ExceptionMask::RestoreWindowTiling);
+                exception->setExcludeWindowPosition(false);
+                exception->setRestoreWindowTiling(true);
+                QCOMPARE(provider.createMergedSettings(settings, exception)->rememberWindowState(), preference && !enabled);
+                material->reparseConfiguration();
+                QCOMPARE(windeco.readEntry("RememberWindowState", !preference), preference);
+            }
+        }
     }
     void defaultsAndSettingsCopy() {
         Material::InternalSettings settings;
@@ -1477,6 +1517,60 @@ private slots:
             if (!keepPlacement) QVERIFY(Material::readWindowState(Material::windowStateKey(&source), currentScope()).isEmpty());
         } else {
             QCOMPARE(immediateRequests.size(), count);
+        }
+    }
+    void decorationlessControllerRespectsConflict_data() {
+        QTest::addColumn<bool>("blocked");
+        QTest::addColumn<bool>("snapshot");
+        QTest::addColumn<bool>("existingState");
+        for (bool blocked : {false, true}) for (bool snapshot : {false, true}) for (bool existing : {false, true}) {
+            const auto name = QStringLiteral("%1-%2-%3").arg(blocked ? "blocked" : "normal", snapshot ? "snapshot" : "close", existing ? "existing" : "new");
+            QTest::newRow(qPrintable(name)) << blocked << snapshot << existing;
+        }
+    }
+    void decorationlessControllerRespectsConflict() {
+        QFETCH(bool, blocked);
+        QFETCH(bool, snapshot);
+        QFETCH(bool, existingState);
+        auto kwin = KSharedConfig::openConfig("kwinrc");
+        auto plugins = kwin->group("Plugins");
+        const auto original = plugins.readEntry("rememberwindowpositionsEnabled", QVariant());
+        const auto restore = qScopeGuard([&] {
+            if (original.isValid()) plugins.writeEntry("rememberwindowpositionsEnabled", original);
+            else plugins.deleteEntry("rememberwindowpositionsEnabled");
+            kwin->sync();
+        });
+        plugins.writeEntry("rememberwindowpositionsEnabled", false);
+        kwin->sync();
+        auto *provider = Material::SettingsProvider::self();
+        provider->reconfigure();
+        QScopedValueRollback available(immediateAvailable, true);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.DecorationlessConflict." + QUuid::createUuid().toString());
+        const auto key = Material::windowStateKey(&window);
+        const auto scope = currentScope();
+        if (existingState) QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), scope));
+        const auto before = Material::readWindowState(key, scope);
+        MaterialTest::Bridge bridge;
+        auto decoration = std::make_unique<StateDecoration>(&window, &bridge);
+        Material::configureWindowState(decoration.get(), true);
+        window.map();
+        decoration.reset();
+        plugins.writeEntry("rememberwindowpositionsEnabled", blocked);
+        kwin->sync();
+        QTRY_COMPARE(provider->rememberWindowPositionsEnabled(), blocked);
+        window.setProperty("frameGeometry", QRectF(120, 150, 900, 700));
+        if (snapshot) QVERIFY(Material::snapshotWindowStates(scope, {}));
+        else window.close();
+        const auto after = Material::readWindowState(key, scope);
+        if (blocked) QCOMPARE(after, before);
+        else QCOMPARE(after.value("position").toMap().value("x").toDouble(), 120);
+        if (blocked && snapshot) {
+            plugins.writeEntry("rememberwindowpositionsEnabled", false);
+            kwin->sync();
+            QTRY_VERIFY(!provider->rememberWindowPositionsEnabled());
+            window.close();
+            QCOMPARE(Material::readWindowState(key, scope).value("position").toMap().value("x").toDouble(), 120);
         }
     }
     void savesOnlyOnCloseAndSurvivesDecorationRemoval() {

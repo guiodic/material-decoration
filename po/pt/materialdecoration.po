@@ -1028,3 +1028,7 @@ msgstr "Restaurar o estado das janelas encaixadas"
 #: src/kcm/config.ui src/kcm/ExceptionDialog.cc
 msgid "Restore saved edge snapping or custom tiling when a window reopens.\nWhen disabled, reopen it floating with its known normal size."
 msgstr "Restaurar o encaixe às margens ou a disposição em mosaicos personalizados ao reabrir uma janela.\nSe desativado, reabrir a janela flutuante com o tamanho normal conhecido."
+
+#: src/kcm/config.ui
+msgid "Window management is disabled while Remember Window Positions is enabled in KWin Scripts."
+msgstr "A gestão de janelas está desativada enquanto Remember Window Positions estiver ativo nos scripts do KWin."
