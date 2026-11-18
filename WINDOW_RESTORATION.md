@@ -87,8 +87,10 @@ independently.
   default) bypasses restoration when another normal, non-transient window of the
   same application is already open, including on another screen or desktop or
   when minimized. This comparison uses App ID (falling back to resource class),
-  independently of Wayland tags. Position, screen, desktop, tiling and inherited
-  size correction are then left to KWin. The first window still uses saved
+  independently of Wayland tags. Position, screen, desktop and tiling are then
+  left to KWin. Inherited tile sizes are still corrected using a matching live
+  sibling's normal size, keeping KWin's position unless a small adjustment is
+  needed to stay on the same screen. The first window still uses saved
   restoration. The additional window's placement is tracked and saved normally.
 - **Disconnected screens:** automatic relocation to a remaining screen preserves
   the old configuration's placement. An interactive move or resize afterwards
