@@ -354,6 +354,7 @@ public:
                         m_normalSize = tile.value("normalSize").toMap();
                     } else if (match == WindowRestoreResult::Unavailable) m_saveAllowed.insert(currentScope, false);
                 }
+                if (m_restoreSize && !validSize(m_normalSize)) m_normalSize = saved.value("size").toMap();
                 return;
             }
         }

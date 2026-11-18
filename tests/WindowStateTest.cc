@@ -1346,6 +1346,43 @@ private slots:
         window.close();
         QCOMPARE(Material::readWindowState(key, scope).value("size").toMap(), size);
     }
+    void reenabledSizeTrackingKeepsKnownNormalSize_data() {
+        QTest::addColumn<bool>("maximized");
+        QTest::newRow("maximized") << true;
+        QTest::newRow("floating") << false;
+    }
+    void reenabledSizeTrackingKeepsKnownNormalSize() {
+        QFETCH(bool, maximized);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.ReenabledSize." + QUuid::createUuid().toString());
+        window.setProperty("frameGeometry", QRectF(40, 60, 900, 650));
+        const auto key = Material::windowStateKey(&window);
+        const auto scope = currentScope();
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, false, true, false, false, false, true);
+        window.map();
+        if (maximized) {
+            Q_EMIT window.maximizedAboutToChange(3);
+            Q_EMIT window.frameGeometryAboutToChange();
+            window.setProperty("maximizeMode", 3);
+            window.setProperty("frameGeometry", QRectF(0, 0, 1280, 800));
+            Q_EMIT window.frameGeometryChanged();
+            Q_EMIT window.maximizedChanged();
+            QCoreApplication::processEvents();
+        }
+        Material::configureWindowState(&decoration, false);
+        QCOMPARE(Material::readWindowState(key, scope).value("size").toMap().value("width").toInt(), 900);
+        if (!maximized) window.setProperty("frameGeometry", QRectF(40, 60, 1100, 700));
+        defaultWorkspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&window}));
+        const auto requests = immediateRequests.size();
+        Material::configureWindowState(&decoration, false, true, false, false, false, true);
+        QCOMPARE(immediateRequests.size(), requests);
+        window.close();
+        const auto size = Material::readWindowState(key, scope).value("size").toMap();
+        QCOMPARE(size.value("width").toInt(), maximized ? 900 : 1100);
+        QCOMPARE(size.value("height").toInt(), maximized ? 650 : 700);
+    }
     void invalidFloatingSizesAreDiscarded() {
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.InvalidSizes");
