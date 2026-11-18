@@ -950,6 +950,8 @@ for (const scenario of ['enabled', 'disabled', 'missing', 'invalid', 'fixed', 'm
     if (scenario === 'maximized') f.target.maximizeMode = 3;
     if (scenario === 'fullscreen') f.target.fullScreen = true;
     if (scenario === 'size-only') {
+        f.workspace.screens.push({name: 'another-output', geometry: {x: 1280, y: 0, width: 1280, height: 800}});
+        f.workspace.desktops.push({id: 'another-desktop'});
         state.restorePosition = false;
         state.rememberDesktop = false;
         state.desktopIds = ['another-desktop'];
@@ -967,6 +969,7 @@ for (const scenario of ['enabled', 'disabled', 'missing', 'invalid', 'fixed', 'm
         assert.equal(f.target.output, f.output);
         assert.equal(f.workspace.activeWindow, active);
         assert.equal(f.target.desktops[0].id, 'desktop-1');
+        assert.equal(f.workspace.currentDesktop.id, 'desktop-1');
     }
 }
 
