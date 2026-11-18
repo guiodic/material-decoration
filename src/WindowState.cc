@@ -2,6 +2,7 @@
 #include "WindowState.h"
 #include "WindowStateScope.h"
 #include "TilingController.h"
+#include "SettingsProvider.h"
 
 #include <KConfigGroup>
 #include <KSharedConfig>
@@ -639,6 +640,7 @@ private:
     }
     bool canSave(const QString &scope)
     {
+        if (SettingsProvider::self()->rememberWindowPositionsEnabled()) return false;
         // Preserve an existing placement if startup restoration failed or is
         // still waiting for the script. New states and explicit user moves or
         // resizes remain writable; use the same policy for topology snapshots.
