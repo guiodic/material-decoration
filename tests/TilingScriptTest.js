@@ -939,6 +939,36 @@ for (const [resizeOthers, currentPolicy, canceled] of [
     assert.equal(tile.relativeGeometry.width, .5);
 }
 
+// Oversized floating frames must keep the selected output after placement.
+for (const scene of [
+    {area: {x: 0, y: 0, width: 1280, height: 800}, adjacent: {x: 1280, y: 0, width: 3840, height: 800},
+        size: {width: 3000, height: 600}, original: {x: -1000, y: 100}, expected: {x: -221, y: 80}},
+    {area: {x: 0, y: 0, width: 1280, height: 800}, adjacent: {x: 0, y: 800, width: 1280, height: 3000},
+        size: {width: 600, height: 2000}, original: {x: 100, y: -600}, expected: {x: 100, y: -201}},
+    {area: {x: -1280, y: 0, width: 1280, height: 800}, adjacent: {x: 0, y: 0, width: 3840, height: 800},
+        size: {width: 3000, height: 600}, original: {x: -2280, y: 100}, expected: {x: -1501, y: 80}}
+]) for (const rememberScreen of [false, true]) {
+    const f = fixture();
+    f.output.geometry = scene.area;
+    const adjacent = {name: 'Adjacent', geometry: scene.adjacent};
+    f.workspace.screens.push(adjacent);
+    f.target.frameGeometry = {...(rememberScreen ? {x: scene.adjacent.x + 100, y: scene.adjacent.y + 100} : scene.original), ...scene.size};
+    Object.defineProperty(f.target, 'output', {get() {
+        const g = this.frameGeometry, x = g.x + g.width / 2, y = g.y + g.height / 2;
+        return f.workspace.screens.find(screen => {
+            const r = screen.geometry;
+            return x >= r.x && x < r.x + r.width && y >= r.y && y < r.y + r.height;
+        });
+    }});
+    assert.equal(f.target.output, rememberScreen ? adjacent : f.output);
+    const savedOutput = rememberScreen ? f.output : adjacent;
+    assert.equal(f.restoreImmediately(savedState({rememberScreen, rememberDesktop: false,
+        outputName: savedOutput.name, outputPosition: {x: savedOutput.geometry.x, y: savedOutput.geometry.y},
+        position: {x: savedOutput.geometry.x + 100, y: savedOutput.geometry.y + 80}})), true);
+    assert.equal(f.target.output, f.output, 'placement must not transfer the frame to an adjacent output');
+    assert.deepEqual({...f.target.frameGeometry}, {...scene.expected, ...scene.size}, 'preserve size and correct position only as needed');
+}
+
 // Matching an already mapped window is read-only and compares saved geometry.
 for (const mismatch of [null, 'rounding', 'outside-tolerance', 'size', 'position', 'edges', 'output', 'desktop', 'sticky', 'no-region', 'standard', 'floating']) {
     const f = fixture();

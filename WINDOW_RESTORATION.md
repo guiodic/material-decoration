@@ -76,7 +76,9 @@ independently.
   unambiguous. App-requested maximization and fullscreen take precedence;
   maximized, fullscreen and minimized states are not persisted.
 - **Placement:** positions are translated relative to the saved screen origin
-  and constrained to the available work area. Floating window positions are
+  and constrained to the available work area. Oversized windows keep their size;
+  placement may extend outside the work area to keep their center on the selected
+  screen rather than transferring them to an adjacent screen. Floating window positions are
   considered overlapping when their horizontal and vertical offsets are both
   less than the title-bar height. Windows cascade by 1.25 times that height,
   with a 30-pixel height fallback when unavailable.

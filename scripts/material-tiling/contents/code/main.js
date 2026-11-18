@@ -319,6 +319,11 @@ var materialTiling;
             x = vacant.x;
             y = vacant.y;
         }
+        // Oversized windows may not fit the work area. KWin assigns their
+        // output by frame center, so keep that center on the selected output.
+        const bounds = output.geometry;
+        x = Math.max(bounds.x - current.width / 2, Math.min(x, bounds.x + bounds.width - 1 - current.width / 2));
+        y = Math.max(bounds.y - current.height / 2, Math.min(y, bounds.y + bounds.height - 1 - current.height / 2));
         // Move first so activation sees the destination output even if the
         // subsequent resize needs a new Wayland buffer. Preserve the app's size.
         if (target.output !== output && (original.width !== current.width || original.height !== current.height)) {
