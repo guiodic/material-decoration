@@ -15,7 +15,7 @@ function fixture(extraWindows = []) {
     const other = {internalId: '{other}', caption: 'other'};
     const desktop = {id: 'desktop-1'};
     const target = {internalId: '{target}', resizeable: true, specialWindow: false, normalWindow: true,
-        output, tile: null, desktops: [desktop], frameGeometry: {x: 0, y: 0, width: 640, height: 480},
+        output, outputChanged: {connect() {}, disconnect() {}}, frameGeometryChanged: {connect() {}, disconnect() {}}, tile: null, desktops: [desktop], frameGeometry: {x: 0, y: 0, width: 640, height: 480},
         setMaximize(vertical, horizontal) { this.maximizeMode = Number(vertical) | (Number(horizontal) << 1); }};
     Object.defineProperty(target, 'onAllDesktops', {
         get() { return this.desktops.length === 0; },
@@ -44,7 +44,8 @@ function fixture(extraWindows = []) {
     vm.runInNewContext(source, context);
     function restore(target, state) {
         const {resizeOtherTiledWindows, restoreContext, ...request} = state;
-        request.restoreContext = restoreContext || {resizeOtherTiledWindows: resizeOtherTiledWindows === true};
+        request.restoreContext = restoreContext || {resizeOtherTiledWindows: resizeOtherTiledWindows === true,
+            restorationStopped: {connect() {}, disconnect() {}}};
         return context.materialRestoreWindowState(target, request);
     }
     return {workspace, target, other, calls, output, root, leaf,
@@ -215,6 +216,42 @@ function savedState(extra = {}) {
         rememberScreen: true, rememberDesktop: true, resizeOtherTiledWindows: true,
         onAllDesktops: false, outputName: 'Virtual-1',
         outputPosition: {x: 0, y: 0}, ...extra};
+}
+function testSignal() {
+    const callbacks = new Set();
+    return {connect(fn) { callbacks.add(fn); }, disconnect(fn) { callbacks.delete(fn); },
+        emit() { for (const fn of [...callbacks]) fn(); }, get count() { return callbacks.size; }};
+}
+function deferredWindow(f, window) {
+    let frame = {x: -1000, y: 0, width: 640, height: 480};
+    const requests = [];
+    window.outputChanged = testSignal();
+    window.frameGeometryChanged = testSignal();
+    Object.defineProperty(window, 'frameGeometry', {get() { return frame; }, set(value) { requests.push({...value}); }});
+    Object.defineProperty(window, 'output', {get() { return frame.x >= 0 ? f.output : f.workspace.screens[1]; }});
+    return {requests, commit(value = requests.at(-1)) {
+        const output = window.output;
+        frame = {...value};
+        window.frameGeometryChanged.emit();
+        if (window.output !== output) window.outputChanged.emit();
+    }};
+}
+{
+    const f = fixture();
+    f.workspace.screens.push({name: 'Source', geometry: {x: -1280, y: 0, width: 1280, height: 800}});
+    const pending = deferredWindow(f, f.target);
+    const restorationStopped = testSignal();
+    f.restoreImmediately(savedState({restoreContext: {restorationStopped}, inheritedTileSize: {
+        tileSize: {width: 640, height: 480}, normalSize: {width: 900, height: 600}
+    }}));
+    assert.equal(restorationStopped.count, 1);
+    restorationStopped.emit(); // WindowStateController cancels at the start of a drag.
+    assert.equal(restorationStopped.count, 0);
+    assert.equal(f.target.frameGeometryChanged.count, 0);
+    const requests = pending.requests.length;
+    pending.commit({x: 300, y: 200, width: 640, height: 480});
+    assert.equal(pending.requests.length, requests, 'crossing the saved output must not undo the user drag');
+    assert.equal(f.workspace.activeWindow, f.other);
 }
 {
     const f = fixture();
@@ -454,6 +491,9 @@ for (const rememberScreen of [false, true]) {
         const savedOutput = {name: 'Virtual-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
         f.workspace.screens.push(savedOutput);
         f.workspace.desktops.push(second);
+        Object.defineProperty(f.target, 'output', {get() {
+            return this.frameGeometry.x >= 1280 ? savedOutput : f.output;
+        }});
         const state = savedState({rememberScreen, rememberDesktop, desktopIds: [second.id],
             outputName: savedOutput.name, outputPosition: {x: 1280, y: 0},
             position: {x: 1380, y: 80}});
@@ -512,6 +552,9 @@ for (const rememberDesktop of [false, true]) {
     const output = {name: 'Virtual-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
     f.workspace.screens.push(output);
     f.workspace.desktops.push(second);
+    Object.defineProperty(f.target, 'output', {get() {
+        return this.frameGeometry.x >= 1280 ? output : f.output;
+    }});
     let outputDesktop = first;
     const events = [];
     f.workspace.currentDesktopForScreen = screen => { assert.equal(screen, output); return outputDesktop; };
@@ -939,6 +982,101 @@ for (const [resizeOthers, currentPolicy, canceled] of [
     assert.equal(tile.relativeGeometry.width, .5);
 }
 
+// Oversized floating frames must keep the selected output after placement.
+for (const scene of [
+    {area: {x: 0, y: 0, width: 1280, height: 800}, adjacent: {x: 1280, y: 0, width: 3840, height: 800},
+        size: {width: 3000, height: 600}, original: {x: -1000, y: 100}, expected: {x: -221, y: 80}},
+    {area: {x: 0, y: 0, width: 1280, height: 800}, adjacent: {x: 0, y: 800, width: 1280, height: 3000},
+        size: {width: 600, height: 2000}, original: {x: 100, y: -600}, expected: {x: 100, y: -201}},
+    {area: {x: 0, y: 0, width: 1280, height: 800}, adjacent: {x: 1280, y: 0, width: 3840, height: 800},
+        workArea: {x: 0, y: 0, width: 1200, height: 760},
+        size: {width: 3000, height: 600}, original: {x: -1000, y: 100}, expected: {x: -221, y: 80}},
+    {area: {x: -1280, y: 0, width: 1280, height: 800}, adjacent: {x: 0, y: 0, width: 3840, height: 800},
+        size: {width: 3000, height: 600}, original: {x: -2280, y: 100}, expected: {x: -1501, y: 80}}
+]) for (const rememberScreen of [false, true]) {
+    const f = fixture();
+    f.output.geometry = scene.area;
+    if (scene.workArea) f.workspace.clientArea = () => scene.workArea;
+    const adjacent = {name: 'Adjacent', geometry: scene.adjacent};
+    f.workspace.screens.push(adjacent);
+    f.target.frameGeometry = {...(rememberScreen ? {x: scene.adjacent.x + 100, y: scene.adjacent.y + 100} : scene.original), ...scene.size};
+    Object.defineProperty(f.target, 'output', {get() {
+        const g = this.frameGeometry, x = g.x + g.width / 2, y = g.y + g.height / 2;
+        return f.workspace.screens.find(screen => {
+            const r = screen.geometry;
+            return x >= r.x && x < r.x + r.width && y >= r.y && y < r.y + r.height;
+        });
+    }});
+    assert.equal(f.target.output, rememberScreen ? adjacent : f.output);
+    const savedOutput = rememberScreen ? f.output : adjacent;
+    assert.equal(f.restoreImmediately(savedState({rememberScreen, rememberDesktop: false,
+        outputName: savedOutput.name, outputPosition: {x: savedOutput.geometry.x, y: savedOutput.geometry.y},
+        position: {x: savedOutput.geometry.x + 100, y: savedOutput.geometry.y + 80}})), true);
+    assert.equal(f.target.output, f.output, 'placement must not transfer the frame to an adjacent output');
+    assert.deepEqual({...f.target.frameGeometry}, {...scene.expected, ...scene.size}, 'preserve size and correct position only as needed');
+}
+
+// Fractional-scale moves and resizes can both wait for a client buffer.
+for (const normalWidth of [1200, 3500]) {
+    const f = fixture();
+    const left = {name: 'Wide', geometry: {x: -3840, y: 0, width: 3840, height: 800}};
+    f.workspace.screens.push(left);
+    let frame = {x: -3000, y: 100, width: 802.4, height: 500}, pending, activationOutput;
+    const callbacks = new Set();
+    f.target.frameGeometryChanged = {connect(fn) { callbacks.add(fn); }, disconnect(fn) { callbacks.delete(fn); }};
+    Object.defineProperty(f.target, 'frameGeometry', {get() { return frame; }, set(next) { pending = {...next}; }});
+    Object.defineProperty(f.target, 'output', {get() {
+        const x = frame.x + frame.width / 2;
+        return f.workspace.screens.find(screen => x >= screen.geometry.x && x < screen.geometry.x + screen.geometry.width);
+    }});
+    Object.defineProperty(f.workspace, 'activeWindow', {set(window) {
+        activationOutput = window.output;
+        // KWin can reconcile a formerly hidden window to its old size on activation.
+        pending = {...frame, width: 802, height: 500};
+    }});
+    assert.equal(f.restoreImmediately(savedState({inheritedTileSize: {
+        tileSize: {width: 802.4, height: 500}, normalSize: {width: normalWidth, height: 600}
+    }})), true);
+    assert.equal(activationOutput, undefined, 'do not activate on the source output while the buffer is pending');
+    assert.equal(callbacks.size, 1);
+    const requested = {...pending};
+    frame = {...pending, width: normalWidth === 1200 ? 802 : normalWidth};
+    for (const fn of callbacks) fn();
+    assert.equal(activationOutput, f.output);
+    assert.equal(callbacks.size, 0, 'disconnect before activation can trigger further output changes');
+    assert.deepEqual(pending, requested, 'activation must retain the requested floating geometry');
+    frame = pending;
+    assert.equal(f.target.output, f.output);
+    assert.equal(frame.width, normalWidth);
+    assert.equal(frame.height, 600);
+}
+
+// Collision checks must use the final coordinates, including cascading and wrapping.
+for (const [count, expectedY] of [[1, 117.5], [2, 155], [3, 192.5], [4, 0]]) {
+    const f = fixture();
+    f.workspace.screens.push({name: 'Adjacent', geometry: {x: 1280, y: 0, width: 3840, height: 800}});
+    for (let i = 0; i < count; ++i) f.workspace.windows.push({normalWindow: true, output: f.output,
+        desktops: f.target.desktops, frameGeometry: {x: -221, y: 80 + i * 37.5, width: 3000, height: 600}});
+    f.target.frameGeometry = {x: -1000, y: 100, width: 3000, height: 600};
+    assert.equal(f.restoreImmediately(savedState({rememberScreen: false, rememberDesktop: false})), true);
+    assert.equal(f.target.frameGeometry.x, -221);
+    assert.equal(f.target.frameGeometry.y, expectedY, 'cascade from the center-constrained position');
+}
+
+// An oversized frame can exhaust the forward cascade while an inward step is free.
+for (const vertical of [false, true]) {
+    const f = fixture();
+    const size = vertical ? {width: 1260, height: 2000} : {width: 3000, height: 780};
+    const position = vertical ? {x: 0, y: -201} : {x: -221, y: 0};
+    f.target.frameGeometry = {...position, ...size};
+    f.workspace.windows.push({normalWindow: true, output: f.output, desktops: f.target.desktops,
+        frameGeometry: {...position, ...size}});
+    assert.equal(f.restoreImmediately(savedState({position, rememberDesktop: false})), true);
+    assert.deepEqual({...f.target.frameGeometry}, {
+        x: position.x - (vertical ? 0 : 37.5), y: position.y - (vertical ? 37.5 : 0), ...size
+    });
+}
+
 // Matching an already mapped window is read-only and compares saved geometry.
 for (const mismatch of [null, 'rounding', 'outside-tolerance', 'size', 'position', 'edges', 'output', 'desktop', 'sticky', 'no-region', 'standard', 'floating']) {
     const f = fixture();
@@ -1016,4 +1154,112 @@ for (const requested of ['quick', 'none', 'custom']) {
     assert.equal(f.send(0, 'target', 'matchWindowState', savedState({tile: {
         kind: 'quick', edges: 3, normalSize: {width: 900, height: 650}
     }})).success, false);
+}
+
+// Concurrent restores can change the desktop before the first buffer arrives.
+{
+    const f = fixture();
+    f.workspace.screens.push({name: 'Source', geometry: {x: -1280, y: 0, width: 1280, height: 800}});
+    const firstDesktop = {id: 'desktop-2'}, secondDesktop = {id: 'desktop-3'};
+    f.workspace.desktops.push(firstDesktop, secondDesktop);
+    const first = deferredWindow(f, f.target);
+    const second = {internalId: 'second', normalWindow: true, resizeable: true, tile: null,
+        desktops: [f.workspace.desktops[0]], onAllDesktops: false};
+    f.workspace.windows.push(second);
+    const secondPending = deferredWindow(f, second);
+    Object.defineProperty(f.workspace, 'activeWindow', {set(window) {
+        if (!window.desktops.includes(f.workspace.currentDesktop)) window.desktops.push(f.workspace.currentDesktop);
+    }});
+    const inheritedTileSize = {tileSize: {width: 640, height: 480}, normalSize: {width: 900, height: 600}};
+    assert.equal(f.restoreImmediately(savedState({desktopIds: [firstDesktop.id], inheritedTileSize})), true);
+    assert.equal(f.send(0, 'second', 'restoreState', {state: savedState({desktopIds: [secondDesktop.id], inheritedTileSize})}).success, true);
+    assert.equal(f.workspace.currentDesktop, secondDesktop);
+    first.commit();
+    assert.equal(f.workspace.currentDesktop, firstDesktop);
+    assert.deepEqual(Array.from(f.target.desktops), [firstDesktop]);
+    secondPending.commit();
+    assert.equal(f.workspace.currentDesktop, secondDesktop);
+    assert.deepEqual(Array.from(second.desktops), [secondDesktop]);
+}
+
+// Reserve requested positions until buffers arrive, including same-output moves.
+for (const rememberDesktop of [false, true]) {
+    for (const sameOutput of [false, true]) {
+        const f = fixture();
+        f.workspace.screens.push({name: 'Source', geometry: {x: -1280, y: 0, width: 1280, height: 800}});
+        function addWindow(name) {
+            const window = {internalId: name, normalWindow: true, resizeable: true, tile: null,
+                desktops: [f.workspace.desktops[0]], onAllDesktops: false};
+            f.workspace.windows.push(window);
+            const pending = deferredWindow(f, window), restorationStopped = testSignal();
+            if (sameOutput) pending.commit({x: 0, y: 0, width: 640, height: 480});
+            const state = savedState({rememberDesktop, restoreContext: {restorationStopped}, inheritedTileSize: {
+                tileSize: {width: 640, height: 480}, normalSize: {width: 900, height: 600}
+            }});
+            assert.equal(f.send(0, name, 'restoreState', {state}).success, true);
+            return {window, pending, restorationStopped};
+        }
+        const first = addWindow('first'), second = addWindow('second');
+        assert.equal(first.pending.requests.at(-1).x, 100);
+        assert.equal(second.pending.requests.at(-1).x, 137.5);
+        assert.equal(second.pending.requests.at(-1).y, 117.5);
+        first.pending.commit();
+        assert.equal(first.restorationStopped.count, 0);
+        assert.equal(first.window.frameGeometryChanged.count, 0);
+        first.pending.commit({x: 300, y: 200, width: 900, height: 600});
+        const third = addWindow('third');
+        assert.equal(third.pending.requests.at(-1).x, 100, 'completed placements use the actual geometry');
+        second.restorationStopped.emit();
+        assert.equal(second.window.frameGeometryChanged.count, 0);
+        const fourth = addWindow('fourth');
+        assert.equal(fourth.pending.requests.at(-1).x, 137.5, 'cancelled requests release their position');
+        third.window.deleted = true;
+        f.workspace.windowRemoved.callback(third.window);
+        assert.equal(third.restorationStopped.count, 0);
+        const fifth = addWindow('fifth');
+        assert.equal(fifth.pending.requests.at(-1).x, 100, 'closed windows release their pending position');
+    }
+}
+
+// An older configure can change size without applying the pending position.
+{
+    const f = fixture();
+    f.workspace.screens.push({name: 'Source', geometry: {x: -1280, y: 0, width: 1280, height: 800}});
+    const first = deferredWindow(f, f.target);
+    first.commit({x: 0, y: 0, width: 640, height: 480});
+    const state = savedState({rememberDesktop: false, inheritedTileSize: {
+        tileSize: {width: 640, height: 480}, normalSize: {width: 900, height: 600}
+    }});
+    assert.equal(f.restoreImmediately(state), true);
+    first.commit({x: 0, y: 0, width: 650, height: 480});
+    assert.equal(f.target.frameGeometryChanged.count, 1, 'an older buffer must retain the reservation');
+    const second = {internalId: 'later', normalWindow: true, resizeable: true, tile: null,
+        desktops: [f.workspace.desktops[0]], onAllDesktops: false};
+    f.workspace.windows.push(second);
+    const pending = deferredWindow(f, second);
+    pending.commit({x: 0, y: 0, width: 640, height: 480});
+    assert.equal(f.send(0, 'later', 'restoreState', {state}).success, true);
+    assert.deepEqual(pending.requests.at(-1), {x: 137.5, y: 117.5, width: 900, height: 600});
+    first.commit({x: 100.5, y: 79.5, width: 900, height: 600});
+    assert.equal(f.target.frameGeometryChanged.count, 0, 'release the reservation once the position arrives, allowing rounding');
+}
+
+// Keep the titlebar below a top panel when the inward step can be horizontal.
+{
+    const f = fixture();
+    f.workspace.clientArea = () => ({x: 0, y: 40, width: 1280, height: 760});
+    f.workspace.windows.push({normalWindow: true, output: f.output, desktops: f.target.desktops,
+        frameGeometry: {x: -221, y: 40, width: 3000, height: 780}});
+    const pending = deferredWindow(f, f.target);
+    Object.defineProperty(f.target, 'output', {get() { return f.output; }});
+    pending.commit({x: 100, y: 100, width: 640, height: 480});
+    const restorationStopped = testSignal();
+    assert.equal(f.restoreImmediately(savedState({position: {x: -221, y: 40},
+        restoreContext: {restorationStopped}, inheritedTileSize: {
+            tileSize: {width: 640, height: 480}, normalSize: {width: 3000, height: 780}
+        }})), true);
+    assert.deepEqual(pending.requests.at(-1), {x: -258.5, y: 40, width: 3000, height: 780});
+    pending.commit();
+    assert.equal(restorationStopped.count, 0);
+    assert.equal(f.workspace.activeWindow, f.target);
 }

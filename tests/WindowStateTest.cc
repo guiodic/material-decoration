@@ -571,8 +571,11 @@ private slots:
         auto *context = immediateRequests.last().value("restoreContext").value<QObject *>();
         QVERIFY(context->property("resizeOtherTiledWindows").toBool());
         QSignalSpy stopped(context, SIGNAL(restorationStopped()));
-        window.startInteraction();
+        Q_EMIT window.maximizedAboutToChange(3);
         QCOMPARE(stopped.count(), 1);
+        QCOMPARE(window.property("maximizeMode").toInt(), 0);
+        window.startInteraction();
+        QCOMPARE(stopped.count(), 2);
         Material::configureWindowState(&decoration, true, true, false, false);
         QVERIFY(!context->property("resizeOtherTiledWindows").toBool());
         window.close();

@@ -25,9 +25,12 @@ var materialTiling;
     };
     const lastSelection = {};
     const layouts = {};
+    const pendingPlacements = new Map();
     let layoutGeneration = 0;
     function id(window) { return String(window.internalId).replace(/[{}]/g, "").toLowerCase(); }
     workspace.windowRemoved.connect(function (window) {
+        const pending = pendingPlacements.get(id(window));
+        if (pending) pending.cancel();
         delete lastSelection[id(window)];
         delete layouts[id(window)];
     });
@@ -207,6 +210,15 @@ var materialTiling;
         return false;
     }
 
+    // KWin assigns outputs by frame center, even when a window cannot fit.
+    function positionOnOutput(output, position, size) {
+        const bounds = output.geometry;
+        return {
+            x: Math.max(bounds.x - size.width / 2, Math.min(position.x, bounds.x + bounds.width - 1 - size.width / 2)),
+            y: Math.max(bounds.y - size.height / 2, Math.min(position.y, bounds.y + bounds.height - 1 - size.height / 2))
+        };
+    }
+
     function vacantPosition(target, output, area, position, size, titleBarHeight) {
         const height = Number.isFinite(titleBarHeight) && titleBarHeight > 0 ? titleBarHeight : 30;
         const step = 1.25 * height;
@@ -221,14 +233,21 @@ var materialTiling;
         // Include windows awaiting their first buffer, so simultaneous openings
         // also cascade. Read each relevant geometry just once.
         const occupied = workspace.windowList().filter(function (other) {
+            const pending = pendingPlacements.get(id(other));
             return other !== target && other.normalWindow && !other.popupWindow && !other.deleted && !other.minimized &&
-                other.output === output && sharesDesktop(other) && sharesActivity(other);
-        }).map(function (other) { return other.frameGeometry; });
+                (pending ? pending.output : other.output) === output && sharesDesktop(other) && sharesActivity(other);
+        }).map(function (other) {
+            const pending = pendingPlacements.get(id(other));
+            return pending ? pending.geometry : other.frameGeometry;
+        });
         const maxX = Math.max(area.x, area.x + area.width - size.width);
         const maxY = Math.max(area.y, area.y + area.height - size.height);
         let x = position.x, y = position.y;
         const visited = new Set();
         for (let attempt = 0; attempt < 64; ++attempt) {
+            const candidate = positionOnOutput(output, {x: x, y: y}, size);
+            x = candidate.x;
+            y = candidate.y;
             const key = x + ":" + y;
             if (visited.has(key)) break;
             visited.add(key);
@@ -238,6 +257,11 @@ var materialTiling;
             x = x + step <= maxX ? x + step : area.x;
             y = y + step <= maxY ? y + step : area.y;
         }
+        const inward = positionOnOutput(output, {
+            x: position.x - (size.width > area.width ? step : 0),
+            y: position.y - (size.width <= area.width && size.height > area.height ? step : 0)
+        }, size);
+        if (!occupied.some(function (g) { return Math.abs(g.x - inward.x) < height && Math.abs(g.y - inward.y) < height; })) return inward;
         return position;
     }
 
@@ -262,7 +286,7 @@ var materialTiling;
         else workspace.currentDesktop = desktop;
     }
 
-    function restoreState(target, state) {
+    function restoreState(target, state, placement) {
         if (!target.normalWindow || target.transient || target.deleted) throw new Error("Target window cannot be restored");
         const position = state && state.position;
         if (!state || state.version !== 3 || !position ||
@@ -285,6 +309,7 @@ var materialTiling;
         }
         const output = restorationOutput(target, state);
         if (!output) throw new Error("No screen is available");
+        placement.output = output;
         const desktops = workspace.desktops.filter(function (desktop) { return state.desktopIds.indexOf(desktop.id) !== -1; });
 
         if (state.rememberDesktop === true) {
@@ -314,16 +339,11 @@ var materialTiling;
         const current = inheritedSize ? {width: inheritedSize.width, height: inheritedSize.height} : original;
         x = Math.max(area.x, Math.min(x, area.x + area.width - current.width));
         y = Math.max(area.y, Math.min(y, area.y + area.height - current.height));
-        if (!state.tile) {
-            const vacant = vacantPosition(target, output, area, {x: x, y: y}, current, state.titleBarHeight);
-            x = vacant.x;
-            y = vacant.y;
-        }
-        // Move first so activation sees the destination output even if the
-        // subsequent resize needs a new Wayland buffer. Preserve the app's size.
-        if (target.output !== output && (original.width !== current.width || original.height !== current.height)) {
-            target.frameGeometry = {x: x, y: y, width: original.width, height: original.height};
-        }
+        const constrained = positionOnOutput(output, {x: x, y: y}, current);
+        const placed = state.tile ? constrained : vacantPosition(target, output, area, constrained, current, state.titleBarHeight);
+        x = placed.x;
+        y = placed.y;
+        if (!state.tile) placement.geometry = {x: x, y: y, width: current.width, height: current.height};
         if (original.x !== x || original.y !== y || original.width !== current.width || original.height !== current.height) {
             target.frameGeometry = {x: x, y: y, width: current.width, height: current.height};
         }
@@ -353,10 +373,39 @@ var materialTiling;
     };
 
     materialRestoreWindowState = function (target, state) {
-        const restored = restoreState(target, state);
+        const placement = {};
+        const restored = restoreState(target, state, placement);
         // Even a partial tile failure leaves a real window on its restored
         // desktop; focus policy is independent of protecting the saved tile.
-        if (state.rememberDesktop === true && !target.deleted) workspace.activeWindow = target;
+        if ((state.rememberDesktop === true || placement.geometry) && !target.deleted) {
+            const frame = target.frameGeometry, geometry = placement.geometry;
+            const pending = target.output !== placement.output || geometry &&
+                (Math.abs(frame.x - geometry.x) > 1 || Math.abs(frame.y - geometry.y) > 1);
+            if (pending) {
+                // Fractional-scale moves can await a buffer too. Activate only
+                // on the destination, without changing the source desktop.
+                const cancel = function () {
+                    pendingPlacements.delete(id(target));
+                    target.frameGeometryChanged.disconnect(whenPlaced);
+                    state.restoreContext.restorationStopped.disconnect(cancel);
+                };
+                function whenPlaced() {
+                    if (target.output !== placement.output) return;
+                    const frame = target.frameGeometry;
+                    if (geometry && (Math.abs(frame.x - geometry.x) > 1 || Math.abs(frame.y - geometry.y) > 1)) return;
+                    cancel();
+                    if (state.rememberDesktop !== true) return;
+                    showRestoredDesktop(target, placement.output);
+                    workspace.activeWindow = target;
+                    // Activation can reconcile a previously hidden window to
+                    // its old size; retain the requested floating geometry.
+                    if (placement.geometry) target.frameGeometry = placement.geometry;
+                }
+                if (geometry) pendingPlacements.set(id(target), {output: placement.output, geometry: geometry, cancel: cancel});
+                state.restoreContext.restorationStopped.connect(cancel);
+                target.frameGeometryChanged.connect(whenPlaced);
+            } else if (state.rememberDesktop === true) workspace.activeWindow = target;
+        }
         return restored;
     };
 
