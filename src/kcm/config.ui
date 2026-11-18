@@ -860,6 +860,13 @@ When disabled, restore the saved proportions only to the reopened window.</strin
          </layout>
         </widget>
        </item>
+       <item row="2" column="1">
+        <widget class="QLabel" name="windowManagementConflictLabel">
+         <property name="text"><string>Window management is disabled while Remember Window Positions is enabled in KWin Scripts.</string></property>
+         <property name="wordWrap"><bool>true</bool></property>
+         <property name="visible"><bool>false</bool></property>
+        </widget>
+       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="exceptionsTab">

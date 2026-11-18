@@ -22,9 +22,18 @@
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QStringList>
+#include <QFileInfo>
+#include <QStandardPaths>
 
 namespace Material
 {
+
+static bool rememberWindowPositionsEnabledInConfig()
+{
+    auto config = KSharedConfig::openConfig(QStringLiteral("kwinrc"));
+    config->reparseConfiguration();
+    return config->group(QStringLiteral("Plugins")).readEntry("rememberwindowpositionsEnabled", false);
+}
 
 SettingsProvider *SettingsProvider::self()
 {
@@ -35,6 +44,20 @@ SettingsProvider *SettingsProvider::self()
 SettingsProvider::SettingsProvider()
 {
     reconfigure();
+
+    // The KWin Scripts KCM starts scripts directly, without reconfiguring decorations.
+    // Watch kwinrc and re-arm its file watch after KConfig's atomic replacement.
+    const QString directory = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
+    const QString path = directory + QStringLiteral("/kwinrc");
+    m_kwinConfigWatcher.addPath(directory);
+    if (QFileInfo::exists(path)) m_kwinConfigWatcher.addPath(path);
+    const auto changed = [this, path](const QString &changedPath) {
+        if (changedPath != path && m_kwinConfigWatcher.files().contains(path)) return;
+        if (!m_kwinConfigWatcher.files().contains(path) && QFileInfo::exists(path)) m_kwinConfigWatcher.addPath(path);
+        if (rememberWindowPositionsEnabledInConfig() != m_rememberWindowPositionsEnabled) reconfigure();
+    };
+    connect(&m_kwinConfigWatcher, &QFileSystemWatcher::fileChanged, this, changed);
+    connect(&m_kwinConfigWatcher, &QFileSystemWatcher::directoryChanged, this, changed);
 
     QDBusConnection::sessionBus().connect(
         QString(),
@@ -49,6 +72,8 @@ void SettingsProvider::reconfigure()
 {
     m_defaultSettings = InternalSettingsPtr::create();
     m_defaultSettings->load();
+    m_rememberWindowPositionsEnabled = rememberWindowPositionsEnabledInConfig();
+    if (m_rememberWindowPositionsEnabled) m_defaultSettings->setRememberWindowState(false);
 
     auto config = KSharedConfig::openConfig(QStringLiteral("kdecoration_materialrc"));
     config->reparseConfiguration();

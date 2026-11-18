@@ -15,6 +15,7 @@
 #include <QRectF>
 #include <QScopedValueRollback>
 #include <QSignalSpy>
+#include <QScopeGuard>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTest>
@@ -183,6 +184,45 @@ private slots:
         defaultWorkspace.setProperty("screens", QVariant::fromValue(QList<QObject *>{&defaultOutput}));
         defaultWorkspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{}));
         testWorkspace = &defaultWorkspace;
+    }
+    void conflictingScriptDisablesRestorationWithoutChangingPreference() {
+        auto kwin = KSharedConfig::openConfig("kwinrc");
+        auto material = KSharedConfig::openConfig("kdecoration_materialrc");
+        auto plugins = kwin->group("Plugins");
+        auto windeco = material->group("Windeco");
+        const auto originalScript = plugins.readEntry("rememberwindowpositionsEnabled", QVariant());
+        const auto originalPreference = windeco.readEntry("RememberWindowState", QVariant());
+        const auto restore = qScopeGuard([&] {
+            if (originalScript.isValid()) plugins.writeEntry("rememberwindowpositionsEnabled", originalScript);
+            else plugins.deleteEntry("rememberwindowpositionsEnabled");
+            if (originalPreference.isValid()) windeco.writeEntry("RememberWindowState", originalPreference);
+            else windeco.deleteEntry("RememberWindowState");
+            kwin->sync();
+            material->sync();
+        });
+        for (bool preference : {false, true}) {
+            plugins.writeEntry("rememberwindowpositionsEnabled", false);
+            kwin->sync();
+            windeco.writeEntry("RememberWindowState", preference);
+            material->sync();
+            Material::SettingsProvider provider;
+            QCOMPARE(provider.internalSettings("ConflictTest")->rememberWindowState(), preference);
+            for (bool enabled : {true, false, true, false}) {
+                if (enabled) plugins.writeEntry("rememberwindowpositionsEnabled", true);
+                else plugins.deleteEntry("rememberwindowpositionsEnabled");
+                kwin->sync(); // Same atomic KConfig save used by the KWin Scripts KCM.
+                QTRY_COMPARE(provider.rememberWindowPositionsEnabled(), enabled);
+                const auto settings = provider.internalSettings("ConflictTest");
+                QCOMPARE(settings->rememberWindowState(), preference && !enabled);
+                auto exception = Material::InternalSettingsPtr::create();
+                exception->setMask(Material::ExceptionMask::ExcludeWindowPosition | Material::ExceptionMask::RestoreWindowTiling);
+                exception->setExcludeWindowPosition(false);
+                exception->setRestoreWindowTiling(true);
+                QCOMPARE(provider.createMergedSettings(settings, exception)->rememberWindowState(), preference && !enabled);
+                material->reparseConfiguration();
+                QCOMPARE(windeco.readEntry("RememberWindowState", !preference), preference);
+            }
+        }
     }
     void defaultsAndSettingsCopy() {
         Material::InternalSettings settings;

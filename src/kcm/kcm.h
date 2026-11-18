@@ -39,5 +39,6 @@ private:
     void setupConnections();
     bool isChanged() const;
     void updateUI();
+    void updateWindowManagementAvailability();
     void loadUIFromSettings(const Material::InternalSettings &settings);
 };

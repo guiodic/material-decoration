@@ -4,6 +4,7 @@
 #include <QObject>
 
 #include "../InternalSettings.h"
+#include "../SettingsProvider.h"
 
 #include <ui_config.h>
 
@@ -146,13 +147,14 @@ void MaterialDecorationKCM::setupConnections()
 
     connect(m_ui->kcfg_DragFromButtonsEnabled, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_RememberWindowState, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
-    connect(m_ui->kcfg_RememberWindowState, &QCheckBox::toggled, m_ui->windowRestorationOptions, &QWidget::setEnabled);
+    connect(m_ui->kcfg_RememberWindowState, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateWindowManagementAvailability);
     connect(m_ui->kcfg_RememberWindowScreen, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_RememberWindowDesktop, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_RestoreWindowTiling, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_ResizeOtherTiledWindows, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
     connect(m_ui->kcfg_UseKWinPlacementForAdditionalWindows, &QCheckBox::toggled, this, &MaterialDecorationKCM::updateChanged);
 
+    connect(Material::SettingsProvider::self(), &Material::SettingsProvider::configChanged, this, &MaterialDecorationKCM::updateWindowManagementAvailability);
     connect(m_ui->exceptionsWidget, &Material::ExceptionListWidget::changed, this, &MaterialDecorationKCM::updateChanged);
 }
 
@@ -225,7 +227,15 @@ void MaterialDecorationKCM::loadUIFromSettings(const Material::InternalSettings 
     m_ui->kcfg_RestoreWindowTiling->setChecked(settings.restoreWindowTiling());
     m_ui->kcfg_ResizeOtherTiledWindows->setChecked(settings.resizeOtherTiledWindows());
     m_ui->kcfg_UseKWinPlacementForAdditionalWindows->setChecked(settings.useKWinPlacementForAdditionalWindows());
-    m_ui->windowRestorationOptions->setEnabled(settings.rememberWindowState());
+    updateWindowManagementAvailability();
+}
+
+void MaterialDecorationKCM::updateWindowManagementAvailability()
+{
+    const bool conflict = Material::SettingsProvider::self()->rememberWindowPositionsEnabled();
+    m_ui->windowManagementConflictLabel->setVisible(conflict);
+    m_ui->kcfg_RememberWindowState->setEnabled(!conflict);
+    m_ui->windowRestorationOptions->setEnabled(!conflict && m_ui->kcfg_RememberWindowState->isChecked());
 }
 
 void MaterialDecorationKCM::updateUI()

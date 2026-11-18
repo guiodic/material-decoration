@@ -83,7 +83,10 @@ button) in the application interface associated with that shortcut.
 
 # Restore Window position
 Position restoration is enabled by default and can be configured in the
-configuration module's **Window Management** tab. The **Material Tiling Popup**
+configuration module's **Window Management** tab. If **Remember Window Positions**
+is enabled in KWin Scripts, Material automatically suspends its own window
+management and disables its controls to avoid conflicts. The saved preference
+is retained and applies again when that script is disabled. The **Material Tiling Popup**
 script must also be enabled in **System Settings > Window Management > KWin Scripts**.
 It supports native Wayland windows only; X11 (XWayland) windows are excluded; they are already
 managed by kwin/xwayland.

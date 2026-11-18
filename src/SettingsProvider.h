@@ -21,6 +21,7 @@
 #include "InternalSettings.h"
 
 #include <QHash>
+#include <QFileSystemWatcher>
 #include <QObject>
 #include <QSharedPointer>
 
@@ -46,6 +47,7 @@ public:
                                               const InternalSettingsPtr &exceptionSettings);
 
     void clearCache();
+    bool rememberWindowPositionsEnabled() const { return m_rememberWindowPositionsEnabled; }
 
 public slots:
     void reconfigure();
@@ -62,6 +64,8 @@ private:
         bool enabled = true;
     };
 
+    QFileSystemWatcher m_kwinConfigWatcher;
+    bool m_rememberWindowPositionsEnabled = false;
     InternalSettingsPtr m_defaultSettings;
     ExceptionList m_exceptions;
     QList<CompiledException> m_compiledExceptions;
