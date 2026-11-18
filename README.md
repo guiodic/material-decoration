@@ -94,7 +94,9 @@ The restore process also takes into account any connected displays and the
 configuration of virtual desktops. Restoring the last screen is enabled by default.
 Restoring the last virtual desktop is optional and disabled by default; enabling
 it also switches to the restored desktop and activates the window.
-The normal size of a tiled window is retained for unsnapping after reopening.
+**Restore window sizes** is an independent option, disabled by default. It can
+restore floating window sizes while leaving placement to KWin, including for
+additional windows. The normal size of a tiled window is retained for unsnapping after reopening.
 By default, additional windows of the same application are left entirely to KWin
 when another normal window is already open. If this option is disabled, a new
 floating window with the same identity can also recover the normal size if it

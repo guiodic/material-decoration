@@ -805,7 +805,6 @@ Application menu buttons still allow dragging when this is disabled.</string>
          <property name="text"><string>Remember window position (Wayland)</string></property>
          <property name="toolTip"><string>Save window position when a window closes
 and restore it when it opens again.
-The application controls its size.
 Requires the Material Tiling Popup KWin script.
 Windows of the same application without a distinct identity
 share the state of the last closed window.</string></property>
@@ -851,6 +850,14 @@ When disabled, restore the saved proportions only to the reopened window.</strin
            </widget>
           </item>
          </layout>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QCheckBox" name="kcfg_RestoreWindowSize">
+         <property name="text"><string>Restore window sizes</string></property>
+         <property name="toolTip"><string>Restore the saved size of floating windows independently of their position.
+When disabled, applications choose the size.
+Maximized, fullscreen and snapped windows keep their existing behavior.</string></property>
         </widget>
        </item>
       </layout>

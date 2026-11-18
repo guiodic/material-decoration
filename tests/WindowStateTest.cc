@@ -189,6 +189,7 @@ private slots:
         settings.setDefaults();
         QVERIFY(settings.rememberWindowState());
         QVERIFY(settings.rememberWindowScreen());
+        QVERIFY(!settings.restoreWindowSize());
         QVERIFY(!settings.rememberWindowDesktop());
         QVERIFY(!settings.resizeOtherTiledWindows());
         QVERIFY(settings.useKWinPlacementForAdditionalWindows());
@@ -196,12 +197,14 @@ private slots:
         auto copy = Material::InternalSettingsPtr::create();
         source->setRememberWindowState(false);
         source->setRememberWindowScreen(false);
+        source->setRestoreWindowSize(true);
         source->setRememberWindowDesktop(true);
         source->setResizeOtherTiledWindows(true);
         source->setUseKWinPlacementForAdditionalWindows(false);
         Material::copyInternalSettings(source, copy);
         QVERIFY(!copy->rememberWindowState());
         QVERIFY(!copy->rememberWindowScreen());
+        QVERIFY(copy->restoreWindowSize());
         QVERIFY(copy->rememberWindowDesktop());
         QVERIFY(copy->resizeOtherTiledWindows());
         QVERIFY(!copy->useKWinPlacementForAdditionalWindows());
@@ -652,6 +655,7 @@ private slots:
         settings.setDefaults();
         settings.setRememberWindowState(false);
         settings.setRememberWindowScreen(false);
+        settings.setRestoreWindowSize(true);
         settings.setRememberWindowDesktop(true);
         settings.setResizeOtherTiledWindows(true);
         settings.setUseKWinPlacementForAdditionalWindows(false);
@@ -661,6 +665,7 @@ private slots:
         loaded.load();
         QVERIFY(!loaded.rememberWindowState());
         QVERIFY(!loaded.rememberWindowScreen());
+        QVERIFY(loaded.restoreWindowSize());
         QVERIFY(loaded.rememberWindowDesktop());
         QVERIFY(loaded.resizeOtherTiledWindows());
         QVERIFY(!loaded.useKWinPlacementForAdditionalWindows());
@@ -668,6 +673,7 @@ private slots:
         auto defaults = Material::InternalSettingsPtr::create();
         defaults->setRememberWindowState(true);
         defaults->setRememberWindowScreen(false);
+        defaults->setRestoreWindowSize(true);
         defaults->setRememberWindowDesktop(true);
         defaults->setResizeOtherTiledWindows(true);
         defaults->setUseKWinPlacementForAdditionalWindows(true);
@@ -677,6 +683,7 @@ private slots:
         const auto merged = provider.createMergedSettings(defaults, exception);
         QVERIFY(!merged->rememberWindowState());
         QVERIFY(!merged->rememberWindowScreen());
+        QVERIFY(merged->restoreWindowSize());
         QVERIFY(merged->rememberWindowDesktop());
         QVERIFY(merged->resizeOtherTiledWindows());
         QVERIFY(merged->useKWinPlacementForAdditionalWindows());
@@ -1219,6 +1226,83 @@ private slots:
             QCOMPARE(tile.value("kind").toString(), "quick");
             QCOMPARE(tile.value("edges").toInt(), 2);
         } else QCOMPARE(after, before);
+    }
+    void sizeRestorationIsIndependent_data() {
+        QTest::addColumn<bool>("position");
+        QTest::addColumn<bool>("size");
+        QTest::addColumn<bool>("additional");
+        for (bool position : {false, true}) for (bool size : {false, true}) for (bool additional : {false, true})
+            QTest::newRow(qPrintable(QString("position-%1-size-%2-additional-%3").arg(position).arg(size).arg(additional)))
+                << position << size << additional;
+    }
+    void sizeRestorationIsIndependent() {
+        QFETCH(bool, position);
+        QFETCH(bool, size);
+        QFETCH(bool, additional);
+        KWin::WaylandWindow window, sibling;
+        const auto app = "org.example.StateTest.Size." + QUuid::createUuid().toString();
+        setup(window, app);
+        setup(sibling, app);
+        const auto key = Material::windowStateKey(&window);
+        const auto scope = currentScope();
+        auto saved = Material::captureWindowState(&window);
+        saved.insert("size", QVariantMap{{"width", 900}, {"height", 650}});
+        QVERIFY(Material::writeWindowState(key, saved, scope));
+        if (additional) defaultWorkspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&sibling}));
+        const auto calls = immediateRequests.size();
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, position, true, true, false, true, size);
+        window.map();
+        const bool expectedPosition = position && !additional;
+        if (size || expectedPosition) {
+            QCOMPARE(immediateRequests.size(), calls + 1);
+            const auto request = immediateRequests.last();
+            QCOMPARE(request.value("restoreSize").toBool(), size);
+            QCOMPARE(request.value("restorePosition").toBool(), expectedPosition);
+            QCOMPARE(request.value("rememberDesktop").toBool(), expectedPosition);
+        } else QCOMPARE(immediateRequests.size(), calls);
+        if (position || size) {
+            window.startInteraction();
+            window.setProperty("frameGeometry", QRectF(40, 60, 1000, 700));
+            Q_EMIT window.frameGeometryChanged();
+            window.stepInteraction();
+            window.finishInteraction();
+            window.close();
+            const auto after = Material::readWindowState(key, scope);
+            QCOMPARE(after.contains("size"), size);
+            if (size) QCOMPARE(after.value("size").toMap(), (QVariantMap{{"width", 1000.0}, {"height", 700.0}}));
+        }
+    }
+    void keepsKnownFloatingSizeWhenOpenedMaximized() {
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.MaximizedSize." + QUuid::createUuid().toString());
+        const auto key = Material::windowStateKey(&window);
+        const auto scope = currentScope();
+        auto state = Material::captureWindowState(&window);
+        const QVariantMap size{{"width", 900.0}, {"height", 650.0}};
+        state.insert("size", size);
+        QVERIFY(Material::writeWindowState(key, state, scope));
+        window.setProperty("maximizeMode", 3);
+        window.setProperty("frameGeometry", QRectF(0, 0, 1280, 800));
+        MaterialTest::Bridge bridge;
+        StateDecoration decoration(&window, &bridge);
+        Material::configureWindowState(&decoration, false, true, false, false, false, true);
+        window.map();
+        window.close();
+        QCOMPARE(Material::readWindowState(key, scope).value("size").toMap(), size);
+    }
+    void invalidFloatingSizesAreDiscarded() {
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.InvalidSizes");
+        auto state = Material::captureWindowState(&window);
+        const auto key = Material::windowStateKey(&window);
+        for (const auto &size : {QVariantMap{{"width", -1}, {"height", 600}}, QVariantMap{{"width", 900}},
+                                QVariantMap{{"width", 900}, {"height", 0}}}) {
+            state.insert("size", size);
+            QVERIFY(Material::writeWindowState(key, state, currentScope()));
+            QVERIFY(!Material::readWindowState(key, currentScope()).contains("size"));
+        }
     }
     void savesNormalSizeOnlyWithValidTileMetadata() {
         KWin::WaylandWindow window;

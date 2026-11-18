@@ -939,6 +939,37 @@ for (const [resizeOthers, currentPolicy, canceled] of [
     assert.equal(tile.relativeGeometry.width, .5);
 }
 
+// Size restoration is optional and independent from placement and app modes.
+for (const scenario of ['enabled', 'disabled', 'missing', 'invalid', 'fixed', 'maximized', 'fullscreen', 'size-only']) {
+    const f = fixture();
+    const original = {...f.target.frameGeometry};
+    const state = savedState({restoreSize: scenario !== 'disabled', size: {width: 900, height: 600}});
+    if (scenario === 'missing') delete state.size;
+    if (scenario === 'invalid') state.size.width = -1;
+    if (scenario === 'fixed') f.target.resizeable = false;
+    if (scenario === 'maximized') f.target.maximizeMode = 3;
+    if (scenario === 'fullscreen') f.target.fullScreen = true;
+    if (scenario === 'size-only') {
+        state.restorePosition = false;
+        state.rememberDesktop = false;
+        state.desktopIds = ['another-desktop'];
+        state.outputName = 'another-output';
+        f.workspace.clientArea = () => { throw new Error('size-only must not compute placement'); };
+    }
+    const active = f.workspace.activeWindow;
+    assert.equal(f.restoreImmediately(state), true, scenario);
+    const resized = scenario === 'enabled' || scenario === 'size-only';
+    assert.equal(f.target.frameGeometry.width, resized ? 900 : original.width, scenario);
+    assert.equal(f.target.frameGeometry.height, resized ? 600 : original.height, scenario);
+    if (scenario === 'size-only') {
+        assert.equal(f.target.frameGeometry.x, original.x);
+        assert.equal(f.target.frameGeometry.y, original.y);
+        assert.equal(f.target.output, f.output);
+        assert.equal(f.workspace.activeWindow, active);
+        assert.equal(f.target.desktops[0].id, 'desktop-1');
+    }
+}
+
 // Matching an already mapped window is read-only and compares saved geometry.
 for (const mismatch of [null, 'rounding', 'outside-tolerance', 'size', 'position', 'edges', 'output', 'desktop', 'sticky', 'no-region', 'standard', 'floating']) {
     const f = fixture();

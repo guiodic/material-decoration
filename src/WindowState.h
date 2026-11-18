@@ -18,5 +18,5 @@ bool writeWindowState(const QString &key, const QVariantMap &state, const QStrin
 bool snapshotWindowStates(const QString &scope, const QVariantMap &outputOrigins);
 void configureWindowState(KDecoration3::Decoration *decoration, bool enabled,
                           bool rememberScreen = true, bool rememberDesktop = false, bool resizeOtherTiledWindows = false,
-                          bool useKWinPlacementForAdditionalWindows = false);
+                          bool useKWinPlacementForAdditionalWindows = false, bool restoreSize = false);
 }

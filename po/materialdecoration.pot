@@ -648,7 +648,6 @@ msgstr ""
 msgid ""
 "Save window position when a window closes\n"
 "and restore it when it opens again.\n"
-"The application controls its size.\n"
 "Requires the Material Tiling Popup KWin script.\n"
 "Windows of the same application without a distinct identity\n"
 "share the state of the last closed window."
@@ -906,4 +905,15 @@ msgstr ""
 msgid ""
 "Overrides whether menus follow decoration colors for matching windows.\n"
 "Use global setting keeps the general preference."
+msgstr ""
+
+#: src/kcm/config.ui
+msgid "Restore window sizes"
+msgstr ""
+
+#: src/kcm/config.ui
+msgid ""
+"Restore the saved size of floating windows independently of their position.\n"
+"When disabled, applications choose the size.\n"
+"Maximized, fullscreen and snapped windows keep their existing behavior."
 msgstr ""

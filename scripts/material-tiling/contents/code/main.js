@@ -283,6 +283,14 @@ var materialTiling;
             state = Object.assign({}, state);
             delete state.tile;
         }
+        const savedSize = state.restoreSize === true && !state.tile && target.resizeable && state.size && sizeKeys.every(function (key) {
+            return typeof state.size[key] === "number" && Number.isFinite(state.size[key]) && state.size[key] > 0;
+        }) ? state.size : null;
+        if (state.restorePosition === false) {
+            if (savedSize && !target.tile && !target.fullScreen && !target.maximizeMode)
+                target.frameGeometry = {x: original.x, y: original.y, width: savedSize.width, height: savedSize.height};
+            return true;
+        }
         const output = restorationOutput(target, state);
         if (!output) throw new Error("No screen is available");
         const desktops = workspace.desktops.filter(function (desktop) { return state.desktopIds.indexOf(desktop.id) !== -1; });
@@ -309,9 +317,8 @@ var materialTiling;
             x += output.geometry.x - before.x;
             y += output.geometry.y - before.y;
         }
-        // Preserve the app's size except for a matched inherited tile size.
-        // Moving to a smaller output still must not shrink a normal window.
-        const current = inheritedSize ? {width: inheritedSize.width, height: inheritedSize.height} : original;
+        // Apply optional saved sizes before constraining placement to the work area.
+        const current = savedSize || inheritedSize || original;
         x = Math.max(area.x, Math.min(x, area.x + area.width - current.width));
         y = Math.max(area.y, Math.min(y, area.y + area.height - current.height));
         if (!state.tile) {
@@ -327,7 +334,7 @@ var materialTiling;
         if (original.x !== x || original.y !== y || original.width !== current.width || original.height !== current.height) {
             target.frameGeometry = {x: x, y: y, width: current.width, height: current.height};
         }
-        // KWin owns the size of a snapped window; floating app sizes stay intact.
+        // KWin owns the size of a snapped window.
         return !state.tile || restoreNativeTile(target, state.tile, output, state.restoreContext);
     }
 

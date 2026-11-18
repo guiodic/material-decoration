@@ -27,8 +27,8 @@ Placement and native tiling are restored when the window becomes ready for
 painting, before rendering resumes. A controller attached to an already visible
 window tracks its state without restoring or minimizing it. Saved custom
 proportions are retained only when its output, desktops, snap mode and current
-frame match the saved state (within two logical pixels). Disabling restoration
-saves the current state before removing the controller. If the script is
+frame match the saved state (within two logical pixels). Disabling both position
+and size restoration saves the current state before removing the controller. If the script is
 unavailable when tracking an existing tiled window, its saved state is protected
 until a new user placement permits saving it.
 If the script is unavailable, bounded retries run for about five seconds.
@@ -37,9 +37,9 @@ An App ID supplied late is handled at the first frame; identity changes do not
 restart early preparation. After opening, the application/tag identity is treated
 as stable.
 
-When disabled, restoration controllers are not created. Disabling the feature
-removes existing controllers after cancelling pending restoration. Topology
-monitoring stops when no active controllers remain. The tiling popup operates
+When both position and size restoration are disabled, restoration controllers
+are not created. Disabling both removes existing controllers after cancelling
+pending restoration. Topology monitoring stops when no active controllers remain. The tiling popup operates
 independently.
 
 ## 2. Current restoration policies
@@ -69,8 +69,12 @@ independently.
   focus are left to KWin. For multiple saved desktops, the current one is used
   if included, otherwise the first available saved desktop. Sticky windows do
   not require a desktop switch.
-- **Sizes and modes:** floating sizes belong to the application. For tiled
-  windows, the known normal size is saved only as tile metadata, allowing
+- **Sizes and modes:** **Restore window sizes** is off by default and independent
+  of position restoration. When enabled, the last floating size is saved and
+  restored even if position restoration is disabled or additional windows are
+  left to KWin placement. In size-only mode, position, screen, desktop and tiling
+  remain unchanged. When disabled, floating sizes belong to the application.
+  For tiled windows, the known normal size is saved as tile metadata, allowing
   unsnapping after reopening. A new floating sibling can recover that size if
   its initial dimensions match a live tiled sibling and the normal size is
   unambiguous. App-requested maximization and fullscreen take precedence;
@@ -82,11 +86,12 @@ independently.
   with a 30-pixel height fallback when unavailable.
   Collision checks consider matching screen, desktop and activity contexts. The
   **Let KWin place additional windows of the same application** option (on by
-  default) bypasses restoration when another normal, non-transient window of the
-  same application is already open, including on another screen or desktop or
+  default) bypasses position and tiling restoration when another normal,
+  non-transient window of the same application is already open, including on another screen or desktop or
   when minimized. This comparison uses App ID (falling back to resource class),
   independently of Wayland tags. Position, screen, desktop, tiling and inherited
-  size correction are then left to KWin. The first window still uses saved
+  size correction are then left to KWin. Explicit size restoration remains independent.
+  The first window still uses saved
   restoration. The additional window's placement is tracked and saved normally.
 - **Disconnected screens:** automatic relocation to a remaining screen preserves
   the old configuration's placement. An interactive move or resize afterwards

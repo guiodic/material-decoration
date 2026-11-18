@@ -146,6 +146,8 @@ QVariantMap positionState(const QVariantMap &state)
     QVariantMap saved{{"version", 3}, {"position", QVariantMap{{"x", coordinates.value("x")}, {"y", coordinates.value("y")}}},
                       {"desktopIds", state.value("desktopIds")}, {"onAllDesktops", state.value("onAllDesktops").toBool()},
                       {"outputName", state.value("outputName")}};
+    const auto size = state.value("size").toMap();
+    if (validSize(size)) saved.insert("size", QVariantMap{{"width", size.value("width").toDouble()}, {"height", size.value("height").toDouble()}});
     const auto output = state.value("outputPosition").toMap();
     if (validPosition(output)) saved.insert("outputPosition", QVariantMap{{"x", output.value("x")}, {"y", output.value("y")}});
     const auto tile = state.value("tile").toMap();
@@ -169,10 +171,10 @@ QVariantMap positionState(const QVariantMap &state)
         for (const auto &index : path) if (index.toDouble() != index.toInt() || index.toInt() < 0) valid = false;
         if (valid) saved.insert("tile", QVariantMap{{"kind", kind}, {"path", path}, {"region", region}});
     }
-    const auto size = tile.value("normalSize").toMap();
-    if (saved.contains("tile") && validSize(size)) {
+    const auto tileSize = tile.value("normalSize").toMap();
+    if (saved.contains("tile") && validSize(tileSize)) {
         auto savedTile = saved.value("tile").toMap();
-        savedTile.insert("normalSize", QVariantMap{{"width", size.value("width").toDouble()}, {"height", size.value("height").toDouble()}});
+        savedTile.insert("normalSize", QVariantMap{{"width", tileSize.value("width").toDouble()}, {"height", tileSize.value("height").toDouble()}});
         saved.insert("tile", savedTile);
     }
     return saved;
@@ -261,10 +263,10 @@ class WindowStateController : public QObject
 public:
     bool resizeOtherTiledWindows() const { return m_resizeOtherTiledWindows; }
     explicit WindowStateController(KDecoration3::Decoration *decoration, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows,
-        bool useKWinPlacementForAdditionalWindows)
+        bool useKWinPlacementForAdditionalWindows, bool restoreSize, bool restorePosition)
         : QObject(decoration->parent()), m_window(decoration->parent()), m_decoration(decoration), m_enabled(true)
         , m_rememberScreen(rememberScreen), m_rememberDesktop(rememberDesktop), m_resizeOtherTiledWindows(resizeOtherTiledWindows)
-        , m_useKWinPlacementForAdditionalWindows(useKWinPlacementForAdditionalWindows)
+        , m_useKWinPlacementForAdditionalWindows(useKWinPlacementForAdditionalWindows), m_restoreSize(restoreSize), m_restorePosition(restorePosition)
     {
         // Read synchronously on closed(), before KWin releases the window.
         connect(m_window, SIGNAL(closed()), this, SLOT(save()), Qt::DirectConnection);
@@ -358,16 +360,18 @@ public:
         prepare();
     }
     void configure(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows,
-        bool useKWinPlacementForAdditionalWindows)
+        bool useKWinPlacementForAdditionalWindows, bool restoreSize)
     {
         m_decoration = decoration;
-        if (!enabled && m_restoreStarted) save();
-        m_enabled = enabled;
+        if (!enabled && !restoreSize && m_restoreStarted) save();
+        m_enabled = enabled || restoreSize;
+        m_restorePosition = enabled;
         if (!enabled) Q_EMIT restorationStopped();
         m_rememberScreen = rememberScreen;
         m_rememberDesktop = rememberDesktop;
         m_resizeOtherTiledWindows = resizeOtherTiledWindows;
         m_useKWinPlacementForAdditionalWindows = useKWinPlacementForAdditionalWindows;
+        m_restoreSize = restoreSize;
         if (enabled && !m_restoreStarted && !m_restoreCancelled && keepKWinPlacement()) return;
         if (!enabled || !rememberDesktop) m_prepareRetryTimer.stop();
         if ((!enabled || !rememberDesktop) && !m_restoreStarted) {
@@ -390,7 +394,7 @@ Q_SIGNALS:
 private slots:
     void prepare()
     {
-        if (!m_enabled || m_restoreCancelled || m_restoreStarted || !m_decoration
+        if (!m_enabled || !m_restorePosition || m_restoreCancelled || m_restoreStarted || !m_decoration
             || m_prepareAttempts >= 100 || m_window->property("deleted").toBool()) return;
         m_prepareRetryTimer.stop();
         bool workspaceAvailable = true;
@@ -531,26 +535,28 @@ private slots:
             return;
         }
         bool workspaceAvailable = true;
-        if (keepKWinPlacement(&workspaceAvailable)) return;
+        const bool keepPlacement = !m_restorePosition || keepKWinPlacement(&workspaceAvailable);
+        if (keepPlacement && !m_restoreSize) return;
         if (!workspaceAvailable) {
             retry();
             return;
         }
         refreshState();
-        const auto inheritedSize = siblingNormalSize();
+        const auto inheritedSize = keepPlacement ? QVariantMap() : siblingNormalSize();
         if (m_state.isEmpty() && inheritedSize.isEmpty()) return;
         auto state = m_state.isEmpty() ? captureWindowState(m_window) : m_state;
         if (!inheritedSize.isEmpty()) state.insert("inheritedTileSize", inheritedSize);
         // Ignore synthetic intermediate sizes while seeding KWin's unsnap
         // geometry. Missing metadata must not turn a tile-sized startup frame
         // into an allegedly known normal size.
-        if (m_state.contains("tile")) m_normalSize = m_state.value("tile").toMap().value("normalSize").toMap();
+        if (!keepPlacement && m_state.contains("tile")) m_normalSize = m_state.value("tile").toMap().value("normalSize").toMap();
+        if (m_restoreSize && !validSize(m_normalSize)) m_normalSize = state.value("size").toMap();
         QScopedValueRollback restoring(m_restoring, true);
-        const auto result = restoreWindowStateImmediately(m_decoration, restorationRequest(state));
+        const auto result = restoreWindowStateImmediately(m_decoration, restorationRequest(state, !keepPlacement));
         if (result == WindowRestoreResult::Succeeded) {
             m_saveAllowed.insert(m_stateScope, true);
             updateTile();
-            const auto tile = state.value("tile").toMap();
+            const auto tile = keepPlacement ? QVariantMap() : state.value("tile").toMap();
             m_customQuickTile = tile.value("kind") == QLatin1String("quick") ? tile : QVariantMap();
         } else if (result == WindowRestoreResult::Unavailable) retry();
     }
@@ -586,7 +592,7 @@ private:
             }
             releaseVisibilityGuard();
             if (m_restoreStarted) {
-                m_restoreCancelled = true;
+                if (!m_restoreSize) m_restoreCancelled = true;
                 m_saveAllowed.insert(WindowStateScope::self()->current(), true);
                 Q_EMIT restorationStopped();
             }
@@ -595,11 +601,17 @@ private:
         return false;
     }
 
-    QVariantMap restorationRequest(QVariantMap state)
+    QVariantMap restorationRequest(QVariantMap state, bool restorePosition = true)
     {
         // Policy belongs to the current settings, never to the persisted state.
-        state.insert("rememberScreen", m_rememberScreen);
-        state.insert("rememberDesktop", m_rememberDesktop);
+        state.insert("restorePosition", restorePosition);
+        state.insert("restoreSize", m_restoreSize);
+        if (!restorePosition) {
+            if (!state.contains("size")) state.insert("size", state.value("tile").toMap().value("normalSize"));
+            state.remove("tile");
+        }
+        state.insert("rememberScreen", restorePosition && m_rememberScreen);
+        state.insert("rememberDesktop", restorePosition && m_rememberDesktop);
         state.insert("restoreContext", QVariant::fromValue<QObject *>(this));
         return state;
     }
@@ -696,6 +708,10 @@ private:
             }
             if (validSize(m_normalSize)) tile.insert("normalSize", m_normalSize);
             state.insert("tile", tile);
+        } else if (m_restoreSize) {
+            const auto size = m_window->property("fullScreen").toBool() || m_window->property("maximizeMode").toInt()
+                ? m_normalSize : normalSize(m_window->property("frameGeometry"));
+            if (validSize(size)) state.insert("size", size);
         }
         return state;
     }
@@ -719,6 +735,8 @@ private:
     bool m_rememberDesktop;
     bool m_resizeOtherTiledWindows;
     bool m_useKWinPlacementForAdditionalWindows;
+    bool m_restoreSize;
+    bool m_restorePosition;
     bool m_restoreStarted = false;
     // New states are writable; existing ones need a successful restore or a user move.
     QHash<QString, bool> m_saveAllowed;
@@ -751,15 +769,15 @@ private:
 };
 
 void configureWindowState(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows,
-        bool useKWinPlacementForAdditionalWindows)
+        bool useKWinPlacementForAdditionalWindows, bool restoreSize)
 {
     if (KWindowSystem::isPlatformX11()) return;
     auto *window = decoration->parent();
     if (!window) return;
     auto *controller = window->findChild<WindowStateController *>(QString(), Qt::FindDirectChildrenOnly);
-    if (!enabled) {
+    if (!enabled && !restoreSize) {
         if (controller) {
-            controller->configure(decoration, false, rememberScreen, rememberDesktop, resizeOtherTiledWindows, useKWinPlacementForAdditionalWindows);
+            controller->configure(decoration, false, rememberScreen, rememberDesktop, resizeOtherTiledWindows, useKWinPlacementForAdditionalWindows, restoreSize);
             delete controller;
         }
         return;
@@ -768,11 +786,11 @@ void configureWindowState(KDecoration3::Decoration *decoration, bool enabled, bo
     if (!window->inherits("KWin::WaylandWindow") || !window->property("normalWindow").toBool()
         || window->property("transient").toBool()) return;
     if (controller) {
-        controller->configure(decoration, true, rememberScreen, rememberDesktop, resizeOtherTiledWindows, useKWinPlacementForAdditionalWindows);
+        controller->configure(decoration, enabled, rememberScreen, rememberDesktop, resizeOtherTiledWindows, useKWinPlacementForAdditionalWindows, restoreSize);
     } else {
         // Owned by the KWin window, so fullscreen/decoration removal cannot lose
         // the close handler. Normal sizes are tracked in memory, never polled.
-        new WindowStateController(decoration, rememberScreen, rememberDesktop, resizeOtherTiledWindows, useKWinPlacementForAdditionalWindows);
+        new WindowStateController(decoration, rememberScreen, rememberDesktop, resizeOtherTiledWindows, useKWinPlacementForAdditionalWindows, restoreSize, enabled);
     }
 }
 }

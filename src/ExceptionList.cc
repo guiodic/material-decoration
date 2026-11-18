@@ -63,6 +63,7 @@ void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettings
     dst->setLongPressDuration(src->longPressDuration());
     dst->setDragFromButtonsEnabled(src->dragFromButtonsEnabled());
     dst->setRememberWindowState(src->rememberWindowState());
+    dst->setRestoreWindowSize(src->restoreWindowSize());
     dst->setRememberWindowScreen(src->rememberWindowScreen());
     dst->setRememberWindowDesktop(src->rememberWindowDesktop());
     dst->setResizeOtherTiledWindows(src->resizeOtherTiledWindows());

@@ -152,6 +152,9 @@
         <entry name="RememberWindowState" type="Bool">
             <default>true</default>
         </entry>
+        <entry name="RestoreWindowSize" type="Bool">
+            <default>false</default>
+        </entry>
         <entry name="RememberWindowScreen" type="Bool">
             <default>true</default>
         </entry>
