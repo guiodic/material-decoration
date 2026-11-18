@@ -1259,6 +1259,7 @@ private slots:
             QCOMPARE(immediateRequests.size(), calls + 1);
             const auto request = immediateRequests.last();
             QCOMPARE(request.value("restoreSize").toBool(), size);
+            QCOMPARE(request.value("restorePosition").metaType().id(), QMetaType::Bool);
             QCOMPARE(request.value("restorePosition").toBool(), expectedPosition);
             QCOMPARE(request.value("rememberDesktop").toBool(), expectedPosition);
         } else QCOMPARE(immediateRequests.size(), calls);
