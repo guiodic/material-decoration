@@ -1012,6 +1012,20 @@ for (const [count, expectedY] of [[1, 117.5], [2, 155], [3, 192.5], [4, 0]]) {
     assert.equal(f.target.frameGeometry.y, expectedY, 'cascade from the center-constrained position');
 }
 
+// An oversized frame can exhaust the forward cascade while an inward step is free.
+for (const vertical of [false, true]) {
+    const f = fixture();
+    const size = vertical ? {width: 1260, height: 2000} : {width: 3000, height: 780};
+    const position = vertical ? {x: 0, y: -201} : {x: -221, y: 0};
+    f.target.frameGeometry = {...position, ...size};
+    f.workspace.windows.push({normalWindow: true, output: f.output, desktops: f.target.desktops,
+        frameGeometry: {...position, ...size}});
+    assert.equal(f.restoreImmediately(savedState({position, rememberDesktop: false})), true);
+    assert.deepEqual({...f.target.frameGeometry}, {
+        x: position.x - (vertical ? 0 : 37.5), y: position.y - (vertical ? 37.5 : 0), ...size
+    });
+}
+
 // Matching an already mapped window is read-only and compares saved geometry.
 for (const mismatch of [null, 'rounding', 'outside-tolerance', 'size', 'position', 'edges', 'output', 'desktop', 'sticky', 'no-region', 'standard', 'floating']) {
     const f = fixture();

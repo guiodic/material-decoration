@@ -250,6 +250,11 @@ var materialTiling;
             x = x + step <= maxX ? x + step : area.x;
             y = y + step <= maxY ? y + step : area.y;
         }
+        const inward = positionOnOutput(output, {
+            x: position.x - (size.width > area.width ? step : 0),
+            y: position.y - (size.height > area.height ? step : 0)
+        }, size);
+        if (!occupied.some(function (g) { return Math.abs(g.x - inward.x) < height && Math.abs(g.y - inward.y) < height; })) return inward;
         return position;
     }
 
