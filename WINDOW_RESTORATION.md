@@ -72,8 +72,9 @@ independently.
 - **Sizes and modes:** **Restore window sizes** is off by default and independent
   of position restoration. When enabled, the last floating size is saved and
   restored even if position restoration is disabled or additional windows are
-  left to KWin placement. In size-only mode, position, screen, desktop and tiling
-  remain unchanged. When disabled, floating sizes belong to the application.
+  left to KWin placement. In size-only mode, screen, desktop and tiling remain
+  unchanged. Position changes only as far as needed to keep the resized window
+  center on its original screen. When disabled, floating sizes belong to the application.
   For tiled windows, the known normal size is saved as tile metadata, allowing
   unsnapping after reopening. A new floating sibling can recover that size if
   its initial dimensions match a live tiled sibling and the normal size is

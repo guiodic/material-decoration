@@ -970,6 +970,36 @@ for (const scenario of ['enabled', 'disabled', 'missing', 'invalid', 'fixed', 'm
     }
 }
 
+// KWin assigns the output from the applied frame's center, even for size-only restores.
+for (const [original, size, expectedX, expectedY] of [
+    [{x: 1400, y: 200, width: 400, height: 500}, {width: 1200, height: 500}, 1319, 200],
+    [{x: 200, y: 800, width: 400, height: 200}, {width: 400, height: 800}, 200, 679],
+    [{x: -200, y: 100, width: 600, height: 400}, {width: 100, height: 400}, -50, 100],
+    [{x: 100, y: -200, width: 400, height: 600}, {width: 400, height: 100}, 100, -50]
+]) {
+    const f = fixture();
+    f.output.geometry = {x: 0, y: 0, width: 1920, height: 1080};
+    f.workspace.screens.push(...[[1920, 0], [0, 1080], [-1920, 0], [0, -1080]].map(([x, y], i) => ({
+        name: 'Adjacent-' + i, geometry: {x, y, width: 1920, height: 1080}
+    })));
+    f.target.frameGeometry = {...original};
+    Object.defineProperty(f.target, 'output', {get() {
+        const g = this.frameGeometry, x = g.x + g.width / 2, y = g.y + g.height / 2;
+        return f.workspace.screens.find(screen => {
+            const r = screen.geometry;
+            return x >= r.x && x < r.x + r.width && y >= r.y && y < r.y + r.height;
+        });
+    }});
+    assert.equal(f.target.output, f.output);
+    assert.equal(f.restoreImmediately(savedState({restorePosition: false, restoreSize: true,
+        rememberDesktop: false, size})), true);
+    assert.equal(f.target.output, f.output, 'resizing must keep the original output');
+    assert.equal(f.target.frameGeometry.width, size.width);
+    assert.equal(f.target.frameGeometry.height, size.height);
+    assert.equal(f.target.frameGeometry.x, expectedX, 'move only as far as needed');
+    assert.equal(f.target.frameGeometry.y, expectedY, 'move only as far as needed');
+}
+
 // Matching an already mapped window is read-only and compares saved geometry.
 for (const mismatch of [null, 'rounding', 'outside-tolerance', 'size', 'position', 'edges', 'output', 'desktop', 'sticky', 'no-region', 'standard', 'floating']) {
     const f = fixture();

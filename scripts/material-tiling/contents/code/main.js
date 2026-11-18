@@ -287,8 +287,14 @@ var materialTiling;
             return typeof state.size[key] === "number" && Number.isFinite(state.size[key]) && state.size[key] > 0;
         }) ? state.size : null;
         if (state.restorePosition === false) {
-            if (savedSize && !target.tile && !target.fullScreen && !target.maximizeMode)
-                target.frameGeometry = {x: original.x, y: original.y, width: savedSize.width, height: savedSize.height};
+            if (savedSize && !target.tile && !target.fullScreen && !target.maximizeMode) {
+                // KWin chooses the output from the frame center. Keep it on the
+                // original output, moving only when the new size requires it.
+                const area = target.output.geometry;
+                const x = Math.max(area.x - savedSize.width / 2, Math.min(original.x, area.x + area.width - 1 - savedSize.width / 2));
+                const y = Math.max(area.y - savedSize.height / 2, Math.min(original.y, area.y + area.height - 1 - savedSize.height / 2));
+                target.frameGeometry = {x: x, y: y, width: savedSize.width, height: savedSize.height};
+            }
             return true;
         }
         const output = restorationOutput(target, state);
