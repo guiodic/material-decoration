@@ -25,9 +25,12 @@ var materialTiling;
     };
     const lastSelection = {};
     const layouts = {};
+    const pendingPlacements = new Map();
     let layoutGeneration = 0;
     function id(window) { return String(window.internalId).replace(/[{}]/g, "").toLowerCase(); }
     workspace.windowRemoved.connect(function (window) {
+        const pending = pendingPlacements.get(id(window));
+        if (pending) pending.cancel();
         delete lastSelection[id(window)];
         delete layouts[id(window)];
     });
@@ -230,9 +233,13 @@ var materialTiling;
         // Include windows awaiting their first buffer, so simultaneous openings
         // also cascade. Read each relevant geometry just once.
         const occupied = workspace.windowList().filter(function (other) {
+            const pending = pendingPlacements.get(id(other));
             return other !== target && other.normalWindow && !other.popupWindow && !other.deleted && !other.minimized &&
-                other.output === output && sharesDesktop(other) && sharesActivity(other);
-        }).map(function (other) { return other.frameGeometry; });
+                (pending ? pending.output : other.output) === output && sharesDesktop(other) && sharesActivity(other);
+        }).map(function (other) {
+            const pending = pendingPlacements.get(id(other));
+            return pending ? pending.geometry : other.frameGeometry;
+        });
         const maxX = Math.max(area.x, area.x + area.width - size.width);
         const maxY = Math.max(area.y, area.y + area.height - size.height);
         let x = position.x, y = position.y;
@@ -370,27 +377,32 @@ var materialTiling;
         const restored = restoreState(target, state, placement);
         // Even a partial tile failure leaves a real window on its restored
         // desktop; focus policy is independent of protecting the saved tile.
-        if (state.rememberDesktop === true && !target.deleted) {
-            if (target.output === placement.output) workspace.activeWindow = target;
-            else {
+        if ((state.rememberDesktop === true || placement.geometry) && !target.deleted) {
+            const frame = target.frameGeometry, geometry = placement.geometry;
+            const pending = target.output !== placement.output || geometry &&
+                (Math.abs(frame.x - geometry.x) > 1 || Math.abs(frame.y - geometry.y) > 1);
+            if (pending) {
                 // Fractional-scale moves can await a buffer too. Activate only
                 // on the destination, without changing the source desktop.
                 const cancel = function () {
-                    target.outputChanged.disconnect(activateOnOutput);
+                    pendingPlacements.delete(id(target));
+                    target.frameGeometryChanged.disconnect(whenPlaced);
                     state.restoreContext.restorationStopped.disconnect(cancel);
                 };
-                function activateOnOutput() {
-                    cancel();
+                function whenPlaced() {
                     if (target.output !== placement.output) return;
+                    cancel();
+                    if (state.rememberDesktop !== true) return;
                     showRestoredDesktop(target, placement.output);
                     workspace.activeWindow = target;
                     // Activation can reconcile a previously hidden window to
                     // its old size; retain the requested floating geometry.
                     if (placement.geometry) target.frameGeometry = placement.geometry;
                 }
+                if (geometry) pendingPlacements.set(id(target), {output: placement.output, geometry: geometry, cancel: cancel});
                 state.restoreContext.restorationStopped.connect(cancel);
-                target.outputChanged.connect(activateOnOutput);
-            }
+                target.frameGeometryChanged.connect(whenPlaced);
+            } else if (state.rememberDesktop === true) workspace.activeWindow = target;
         }
         return restored;
     };

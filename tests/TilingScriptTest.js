@@ -15,7 +15,7 @@ function fixture(extraWindows = []) {
     const other = {internalId: '{other}', caption: 'other'};
     const desktop = {id: 'desktop-1'};
     const target = {internalId: '{target}', resizeable: true, specialWindow: false, normalWindow: true,
-        output, outputChanged: {connect() {}, disconnect() {}}, tile: null, desktops: [desktop], frameGeometry: {x: 0, y: 0, width: 640, height: 480},
+        output, outputChanged: {connect() {}, disconnect() {}}, frameGeometryChanged: {connect() {}, disconnect() {}}, tile: null, desktops: [desktop], frameGeometry: {x: 0, y: 0, width: 640, height: 480},
         setMaximize(vertical, horizontal) { this.maximizeMode = Number(vertical) | (Number(horizontal) << 1); }};
     Object.defineProperty(target, 'onAllDesktops', {
         get() { return this.desktops.length === 0; },
@@ -247,7 +247,7 @@ function deferredWindow(f, window) {
     assert.equal(restorationStopped.count, 1);
     restorationStopped.emit(); // WindowStateController cancels at the start of a drag.
     assert.equal(restorationStopped.count, 0);
-    assert.equal(f.target.outputChanged.count, 0);
+    assert.equal(f.target.frameGeometryChanged.count, 0);
     const requests = pending.requests.length;
     pending.commit({x: 300, y: 200, width: 640, height: 480});
     assert.equal(pending.requests.length, requests, 'crossing the saved output must not undo the user drag');
@@ -1023,7 +1023,7 @@ for (const normalWidth of [1200, 3500]) {
     f.workspace.screens.push(left);
     let frame = {x: -3000, y: 100, width: 802.4, height: 500}, pending, activationOutput;
     const callbacks = new Set();
-    f.target.outputChanged = {connect(fn) { callbacks.add(fn); }, disconnect(fn) { callbacks.delete(fn); }};
+    f.target.frameGeometryChanged = {connect(fn) { callbacks.add(fn); }, disconnect(fn) { callbacks.delete(fn); }};
     Object.defineProperty(f.target, 'frameGeometry', {get() { return frame; }, set(next) { pending = {...next}; }});
     Object.defineProperty(f.target, 'output', {get() {
         const x = frame.x + frame.width / 2;
@@ -1180,4 +1180,43 @@ for (const requested of ['quick', 'none', 'custom']) {
     secondPending.commit();
     assert.equal(f.workspace.currentDesktop, secondDesktop);
     assert.deepEqual(Array.from(second.desktops), [secondDesktop]);
+}
+
+// Reserve requested positions until buffers arrive, including same-output moves.
+for (const rememberDesktop of [false, true]) {
+    for (const sameOutput of [false, true]) {
+        const f = fixture();
+        f.workspace.screens.push({name: 'Source', geometry: {x: -1280, y: 0, width: 1280, height: 800}});
+        function addWindow(name) {
+            const window = {internalId: name, normalWindow: true, resizeable: true, tile: null,
+                desktops: [f.workspace.desktops[0]], onAllDesktops: false};
+            f.workspace.windows.push(window);
+            const pending = deferredWindow(f, window), restorationStopped = testSignal();
+            if (sameOutput) pending.commit({x: 0, y: 0, width: 640, height: 480});
+            const state = savedState({rememberDesktop, restoreContext: {restorationStopped}, inheritedTileSize: {
+                tileSize: {width: 640, height: 480}, normalSize: {width: 900, height: 600}
+            }});
+            assert.equal(f.send(0, name, 'restoreState', {state}).success, true);
+            return {window, pending, restorationStopped};
+        }
+        const first = addWindow('first'), second = addWindow('second');
+        assert.equal(first.pending.requests.at(-1).x, 100);
+        assert.equal(second.pending.requests.at(-1).x, 137.5);
+        assert.equal(second.pending.requests.at(-1).y, 117.5);
+        first.pending.commit();
+        assert.equal(first.restorationStopped.count, 0);
+        assert.equal(first.window.frameGeometryChanged.count, 0);
+        first.pending.commit({x: 300, y: 200, width: 900, height: 600});
+        const third = addWindow('third');
+        assert.equal(third.pending.requests.at(-1).x, 100, 'completed placements use the actual geometry');
+        second.restorationStopped.emit();
+        assert.equal(second.window.frameGeometryChanged.count, 0);
+        const fourth = addWindow('fourth');
+        assert.equal(fourth.pending.requests.at(-1).x, 137.5, 'cancelled requests release their position');
+        third.window.deleted = true;
+        f.workspace.windowRemoved.callback(third.window);
+        assert.equal(third.restorationStopped.count, 0);
+        const fifth = addWindow('fifth');
+        assert.equal(fifth.pending.requests.at(-1).x, 100, 'closed windows release their pending position');
+    }
 }
