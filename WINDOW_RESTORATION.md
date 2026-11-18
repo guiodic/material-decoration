@@ -23,7 +23,7 @@ there is no polling or disk write on every movement.
 **Restore the state.** The controller reads the matching entry and calls the
 Material Tiling Popup script synchronously inside KWin's JavaScript engine.
 When desktop restoration is enabled, membership is prepared before mapping.
-Placement and native tiling are restored when the window becomes ready for
+Placement and optional native tiling are restored when the window becomes ready for
 painting, before rendering resumes. A controller attached to an already visible
 window tracks its state without restoring or minimizing it. Saved custom
 proportions are retained only when its output, desktops, snap mode and current
@@ -51,7 +51,11 @@ independently.
   restoration initialization returns before accessing the decoration parent.
   Per-window exceptions can disable it
   through normal decoration settings updates; App ID changes are not monitored.
-- **Restored data:** position and native quick or custom tiling. Quick tiling
+- **Restored data:** position; native quick or custom tiling is restored only when
+  **Restore snapped window state** is enabled (off by default). A per-window
+  exception can inherit, enable or disable this option. When disabled, a saved
+  snapped window reopens floating with its known normal size. App-requested
+  fullscreen, maximization and tiling still take precedence. Quick tiling
   uses the current tile proportions unless the window was explicitly resized
   by the user. User-resized proportions are restored to that window only.
   **Resize other snapped windows when restoring saved proportions** (off by
@@ -70,8 +74,8 @@ independently.
   if included, otherwise the first available saved desktop. Sticky windows do
   not require a desktop switch.
 - **Sizes and modes:** floating sizes belong to the application. For tiled
-  windows, the known normal size is saved only as tile metadata, allowing
-  unsnapping after reopening. A new floating sibling can recover that size if
+  windows, the known normal size remains saved as tile metadata, allowing
+  unsnapping after reopening or reopening floating when snap restoration is off. A new floating sibling can recover that size if
   its initial dimensions match a live tiled sibling and the normal size is
   unambiguous. App-requested maximization and fullscreen take precedence;
   maximized, fullscreen and minimized states are not persisted.

@@ -865,3 +865,11 @@ msgstr "ms"
 #, kde-format
 msgid " ms"
 msgstr " ms"
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore snapped window state"
+msgstr "恢复窗口贴靠状态"
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore saved edge snapping or custom tiling when a window reopens.\nWhen disabled, reopen it floating with its known normal size."
+msgstr "重新打开窗口时恢复已保存的边缘贴靠或自定义平铺状态。\n禁用时，以已知的正常大小作为浮动窗口打开。"

@@ -885,3 +885,11 @@ msgstr "ms"
 #, kde-format
 msgid " ms"
 msgstr " ms"
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore snapped window state"
+msgstr "Ripristina lo stato agganciato delle finestre"
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore saved edge snapping or custom tiling when a window reopens.\nWhen disabled, reopen it floating with its known normal size."
+msgstr "Ripristina l’aggancio ai bordi o il posizionamento nei riquadri personalizzati alla riapertura.\nSe disattivato, riapre la finestra flottante con le dimensioni normali note."

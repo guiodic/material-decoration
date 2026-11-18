@@ -907,3 +907,11 @@ msgid ""
 "Overrides whether menus follow decoration colors for matching windows.\n"
 "Use global setting keeps the general preference."
 msgstr ""
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore snapped window state"
+msgstr ""
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore saved edge snapping or custom tiling when a window reopens.\nWhen disabled, reopen it floating with its known normal size."
+msgstr ""

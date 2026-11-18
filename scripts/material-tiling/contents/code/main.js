@@ -308,8 +308,13 @@ var materialTiling;
             }
             return true;
         }
-        if (inheritedSize) {
-            // This is a new floating sibling, not a reopening of the old tile.
+        const normalSize = inheritedSize || (state.restoreWindowTiling !== true && state.tile &&
+            !target.tile && !target.fullScreen && !target.maximizeMode && target.resizeable &&
+            state.tile.normalSize && sizeKeys.every(function (key) {
+                return typeof state.tile.normalSize[key] === "number" && Number.isFinite(state.tile.normalSize[key]) && state.tile.normalSize[key] > 0;
+            }) ? state.tile.normalSize : null);
+        if (inheritedSize || state.restoreWindowTiling !== true && state.tile) {
+            // Reopen floating when snap restoration is off, or for a new sibling.
             // Keep saved placement, but do not clone a saved snap onto it.
             state = Object.assign({}, state);
             delete state.tile;
@@ -341,9 +346,9 @@ var materialTiling;
             x += output.geometry.x - before.x;
             y += output.geometry.y - before.y;
         }
-        // Preserve the app's size except for a matched inherited tile size.
+        // Recover normal sizes from live siblings or tiles reopened floating.
         // Moving to a smaller output still must not shrink a normal window.
-        const current = inheritedSize ? {width: inheritedSize.width, height: inheritedSize.height} : original;
+        const current = normalSize ? {width: normalSize.width, height: normalSize.height} : original;
         x = Math.max(area.x, Math.min(x, area.x + area.width - current.width));
         y = Math.max(area.y, Math.min(y, area.y + area.height - current.height));
         const constrained = positionOnOutput(output, {x: x, y: y}, current);

@@ -1016,3 +1016,11 @@ msgid ""
 msgstr ""
 "Ορίζει αν τα μενού των αντίστοιχων παραθύρων ακολουθούν τα χρώματα διακόσμησης.\n"
 "Η Χρήση της καθολικής ρύθμισης διατηρεί τη γενική προτίμηση."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore snapped window state"
+msgstr "Επαναφορά κατάστασης προσκολλημένων παραθύρων"
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore saved edge snapping or custom tiling when a window reopens.\nWhen disabled, reopen it floating with its known normal size."
+msgstr "Επαναφορά της αποθηκευμένης προσκόλλησης στις άκρες ή της προσαρμοσμένης διάταξης κατά το άνοιγμα.\nΑν απενεργοποιηθεί, το παράθυρο ανοίγει αιωρούμενο με το γνωστό κανονικό του μέγεθος."

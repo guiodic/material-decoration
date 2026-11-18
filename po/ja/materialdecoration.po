@@ -1023,3 +1023,11 @@ msgid ""
 msgstr ""
 "一致するウィンドウのメニューを装飾の配色に合わせるかを指定します。\n"
 "「全体設定を使用」では全体の設定を維持します。"
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore snapped window state"
+msgstr "ウィンドウのスナップ状態を復元する"
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore saved edge snapping or custom tiling when a window reopens.\nWhen disabled, reopen it floating with its known normal size."
+msgstr "ウィンドウを再度開くときに、保存された画面端へのスナップやカスタムタイル配置を復元します。\n無効の場合、記録された通常のサイズでフローティングウィンドウとして開きます。"

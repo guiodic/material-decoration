@@ -1009,3 +1009,11 @@ msgid ""
 msgstr ""
 "Hubatilisha mpangilio wa kufuata rangi za mapambo kwa menyu za madirisha yanayolingana.\n"
 "Tumia mpangilio wa jumla huhifadhi chaguo la jumla."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore snapped window state"
+msgstr "Rejesha hali ya madirisha yaliyopachikwa"
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore saved edge snapping or custom tiling when a window reopens.\nWhen disabled, reopen it floating with its known normal size."
+msgstr "Rejesha upachikaji kwenye kingo au mpangilio maalumu wa vigae uliohifadhiwa dirisha linapofunguliwa tena.\nIkizimwa, fungua dirisha linaloelea kwa ukubwa wake wa kawaida unaojulikana."

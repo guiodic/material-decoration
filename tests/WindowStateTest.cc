@@ -191,6 +191,7 @@ private slots:
         QVERIFY(settings.rememberWindowScreen());
         QVERIFY(!settings.rememberWindowDesktop());
         QVERIFY(!settings.resizeOtherTiledWindows());
+        QVERIFY(!settings.restoreWindowTiling());
         QVERIFY(settings.useKWinPlacementForAdditionalWindows());
         auto source = Material::InternalSettingsPtr::create();
         auto copy = Material::InternalSettingsPtr::create();
@@ -519,6 +520,41 @@ private slots:
         QVERIFY(immediateRequests.last().value("rememberScreen").toBool());
         QVERIFY(!immediateRequests.last().value("rememberDesktop").toBool());
         QVERIFY(!immediateRequests.last().value("restoreContext").value<QObject *>()->property("resizeOtherTiledWindows").toBool());
+    }
+    void snapRestorationSettings() {
+        auto defaults = Material::InternalSettingsPtr::create();
+        auto exception = Material::InternalSettingsPtr::create();
+        Material::SettingsProvider provider;
+        QTemporaryDir directory;
+        auto config = KSharedConfig::openConfig(directory.filePath("snap-exceptionsrc"), KConfig::SimpleConfig);
+        for (bool enabled : {false, true}) {
+            defaults->setRestoreWindowTiling(enabled);
+            exception->setMask(Material::ExceptionMask::None);
+            QCOMPARE(Material::cloneInternalSettings(defaults)->restoreWindowTiling(), enabled);
+            QCOMPARE(provider.createMergedSettings(defaults, exception)->restoreWindowTiling(), enabled);
+            exception->setMask(Material::ExceptionMask::RestoreWindowTiling);
+            exception->setRestoreWindowTiling(!enabled);
+            QCOMPARE(provider.createMergedSettings(defaults, exception)->restoreWindowTiling(), !enabled);
+            Material::ExceptionList written, loaded;
+            written.setExceptions({exception});
+            written.writeConfig(config);
+            loaded.readConfig(config);
+            QVERIFY(loaded.exceptions().first()->mask() & Material::ExceptionMask::RestoreWindowTiling);
+            QCOMPARE(loaded.exceptions().first()->restoreWindowTiling(), !enabled);
+
+            QScopedValueRollback availability(immediateAvailable, true);
+            KWin::WaylandWindow window;
+            setup(window, "org.example.SnapPolicy." + QUuid::createUuid().toString());
+            const auto key = Material::windowStateKey(&window);
+            QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), currentScope()));
+            MaterialTest::Bridge bridge;
+            StateDecoration decoration(&window, &bridge);
+            Material::configureWindowState(&decoration, true, true, false, false, false, enabled);
+            window.map();
+            QCOMPARE(immediateRequests.last().value("restoreWindowTiling").toBool(), enabled);
+            window.close();
+            QVERIFY(!Material::readWindowState(key, currentScope()).contains("restoreWindowTiling"));
+        }
     }
     void restoresWithCurrentPolicy_data() {
         QTest::addColumn<bool>("screen");
@@ -1062,7 +1098,7 @@ private slots:
         }));
         MaterialTest::Bridge bridge;
         StateDecoration decoration(&window, &bridge);
-        Material::configureWindowState(&decoration, true);
+        Material::configureWindowState(&decoration, true, true, false, false, false, true);
         window.map();
         window.setProperty("resize", true);
         window.startInteraction();

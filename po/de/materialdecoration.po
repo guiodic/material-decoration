@@ -871,3 +871,11 @@ msgstr "ms"
 #, kde-format
 msgid " ms"
 msgstr " ms"
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore snapped window state"
+msgstr "Andockzustand von Fenstern wiederherstellen"
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore saved edge snapping or custom tiling when a window reopens.\nWhen disabled, reopen it floating with its known normal size."
+msgstr "Gespeichertes Andocken an Bildschirmrändern oder benutzerdefinierte Kacheln beim erneuten Öffnen wiederherstellen.\nWenn deaktiviert, wird das Fenster schwebend mit seiner bekannten normalen Größe geöffnet."
