@@ -301,6 +301,13 @@ var materialTiling;
                     typeof inherited.tileSize[key] === "number" && Number.isFinite(inherited.tileSize[key]) && inherited.tileSize[key] > 0 &&
                     Math.abs(original[key] - inherited.tileSize[key]) <= 2;
             }) ? inherited.normalSize : null;
+        if (state.keepKWinPlacement === true) {
+            if (inheritedSize) {
+                const position = positionOnOutput(target.output, original, inheritedSize);
+                target.frameGeometry = {x: position.x, y: position.y, width: inheritedSize.width, height: inheritedSize.height};
+            }
+            return true;
+        }
         if (inheritedSize) {
             // This is a new floating sibling, not a reopening of the old tile.
             // Keep saved placement, but do not clone a saved snap onto it.
@@ -375,6 +382,7 @@ var materialTiling;
     materialRestoreWindowState = function (target, state) {
         const placement = {};
         const restored = restoreState(target, state, placement);
+        if (state.keepKWinPlacement === true) return restored;
         // Even a partial tile failure leaves a real window on its restored
         // desktop; focus policy is independent of protecting the saved tile.
         if ((state.rememberDesktop === true || placement.geometry) && !target.deleted) {

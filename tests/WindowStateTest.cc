@@ -1345,12 +1345,13 @@ private slots:
     }
     void newSiblingSizeHint_data() {
         QTest::addColumn<QString>("scenario");
-        for (const auto *scenario : {"matching", "different-size", "different-identity", "excluded-source", "special-target", "fixed-target", "uncommitted-source", "ambiguous-source", "kwin-placement"})
+        for (const auto *scenario : {"matching", "different-size", "different-identity", "excluded-source", "special-target", "fixed-target", "uncommitted-source", "ambiguous-source", "kwin-placement", "kwin-placement-retry"})
             QTest::newRow(scenario) << QString::fromLatin1(scenario);
     }
     void newSiblingSizeHint() {
         QFETCH(QString, scenario);
         QObject workspace;
+        if (scenario.startsWith("kwin-placement")) workspace.setProperty("screens", defaultWorkspace.property("screens"));
         QScopedValueRollback restoreWorkspace(testWorkspace, &workspace);
         KWin::WaylandWindow source, target;
         const auto app = "org.example.StateTest.Sibling." + QUuid::createUuid().toString();
@@ -1397,20 +1398,38 @@ private slots:
             QCoreApplication::processEvents();
             workspace.setProperty("stackingOrder", QVariant::fromValue(QList<QObject *>{&source, &extra}));
         }
-        immediateAvailable = true;
+        const bool keepPlacement = scenario.startsWith("kwin-placement");
+        const bool delayedScript = scenario == "kwin-placement-retry";
+        if (keepPlacement) {
+            auto saved = Material::captureWindowState(&target);
+            saved.insert("position", QVariantMap{{"x", 999}, {"y", 500}});
+            saved.insert("tile", QVariantMap{{"kind", "quick"}, {"edges", 4}});
+            QVERIFY(Material::writeWindowState(Material::windowStateKey(&target), saved, currentScope()));
+        }
+        immediateAvailable = !delayedScript;
         const auto count = immediateRequests.size();
-        Material::configureWindowState(&targetDecoration, true, true, true, false, scenario == "kwin-placement");
+        Material::configureWindowState(&targetDecoration, true, true, true, false, keepPlacement);
         auto stacking = workspace.property("stackingOrder").toList();
         stacking.append(QVariant::fromValue<QObject *>(&target));
         workspace.setProperty("stackingOrder", stacking);
         target.map();
-        if (scenario == "matching") {
+        if (delayedScript) {
+            QCOMPARE(immediateRequests.size(), count);
+            immediateAvailable = true;
+            QTRY_COMPARE(immediateRequests.size(), count + 1);
+        }
+        if (scenario == "matching" || keepPlacement) {
             QCOMPARE(immediateRequests.size(), count + 1);
+            QCOMPARE(immediateRequests.last().value("keepKWinPlacement").toBool(), keepPlacement);
+            if (keepPlacement) {
+                QCOMPARE(immediateRequests.last().value("position").toMap(), (QVariantMap{{"x", 100}, {"y", 100}}));
+                QVERIFY(!immediateRequests.last().contains("tile"));
+            }
             const auto hint = immediateRequests.last().value("inheritedTileSize").toMap();
             QCOMPARE(hint.value("normalSize").toMap(), (QVariantMap{{"width", 800}, {"height", 500}}));
             QCOMPARE(hint.value("tileSize").toMap(), (QVariantMap{{"width", 640}, {"height", 800}}));
             // A live sibling can provide this information before any close/save.
-            QVERIFY(Material::readWindowState(Material::windowStateKey(&source), currentScope()).isEmpty());
+            if (!keepPlacement) QVERIFY(Material::readWindowState(Material::windowStateKey(&source), currentScope()).isEmpty());
         } else {
             QCOMPARE(immediateRequests.size(), count);
         }

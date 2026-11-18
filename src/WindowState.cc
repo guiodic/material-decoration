@@ -532,20 +532,22 @@ private slots:
             return;
         }
         bool workspaceAvailable = true;
-        if (keepKWinPlacement(&workspaceAvailable)) return;
+        const bool keepPlacement = keepKWinPlacement(&workspaceAvailable);
         if (!workspaceAvailable) {
             retry();
             return;
         }
         refreshState();
         const auto inheritedSize = siblingNormalSize();
+        if (keepPlacement && inheritedSize.isEmpty()) return;
         if (m_state.isEmpty() && inheritedSize.isEmpty()) return;
-        auto state = m_state.isEmpty() ? captureWindowState(m_window) : m_state;
+        auto state = keepPlacement || m_state.isEmpty() ? captureWindowState(m_window) : m_state;
+        if (keepPlacement) state.insert("keepKWinPlacement", true);
         if (!inheritedSize.isEmpty()) state.insert("inheritedTileSize", inheritedSize);
         // Ignore synthetic intermediate sizes while seeding KWin's unsnap
         // geometry. Missing metadata must not turn a tile-sized startup frame
         // into an allegedly known normal size.
-        if (m_state.contains("tile")) m_normalSize = m_state.value("tile").toMap().value("normalSize").toMap();
+        if (!keepPlacement && m_state.contains("tile")) m_normalSize = m_state.value("tile").toMap().value("normalSize").toMap();
         QScopedValueRollback restoring(m_restoring, true);
         const auto result = restoreWindowStateImmediately(m_decoration, restorationRequest(state));
         if (result == WindowRestoreResult::Succeeded) {
@@ -587,7 +589,6 @@ private:
             }
             releaseVisibilityGuard();
             if (m_restoreStarted) {
-                m_restoreCancelled = true;
                 m_saveAllowed.insert(WindowStateScope::self()->current(), true);
                 Q_EMIT restorationStopped();
             }

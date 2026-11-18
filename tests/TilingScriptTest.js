@@ -1263,3 +1263,30 @@ for (const rememberDesktop of [false, true]) {
     assert.equal(restorationStopped.count, 0);
     assert.equal(f.workspace.activeWindow, f.target);
 }
+
+// Additional siblings keep KWin's placement while correcting inherited tile sizes.
+for (const scenario of ['matching', 'different-size', 'fullscreen', 'maximized', 'tiled', 'fixed', 'oversized']) {
+    const f = fixture();
+    const secondDesktop = {id: 'desktop-2'};
+    f.workspace.desktops.push(secondDesktop);
+    f.workspace.screens.push({name: 'Saved', geometry: {x: 1280, y: 0, width: 1280, height: 800}});
+    f.target.frameGeometry = {x: 320, y: 0, width: scenario === 'different-size' ? 700 : 640, height: 800};
+    if (scenario === 'fullscreen') f.target.fullScreen = true;
+    if (scenario === 'maximized') f.target.maximizeMode = 3;
+    if (scenario === 'tiled') f.target.tile = {};
+    if (scenario === 'fixed') f.target.resizeable = false;
+    const original = {...f.target.frameGeometry}, tile = f.target.tile;
+    const normalSize = {width: scenario === 'oversized' ? 3500 : 900, height: 600};
+    assert.equal(f.restoreImmediately(savedState({keepKWinPlacement: true, outputName: 'Saved',
+        desktopIds: [secondDesktop.id], position: {x: 1400, y: 80}, tile: {kind: 'quick', edges: 4},
+        inheritedTileSize: {tileSize: {width: 640, height: 800}, normalSize}})), true);
+    if (scenario === 'matching' || scenario === 'oversized') {
+        assert.deepEqual({...f.target.frameGeometry}, {x: scenario === 'oversized' ? -471 : 320, y: 0, ...normalSize});
+    } else assert.deepEqual({...f.target.frameGeometry}, original);
+    assert.equal(f.target.output, f.output);
+    assert.equal(f.target.tile, tile);
+    assert.equal(f.workspace.activeWindow, f.other);
+    assert.equal(f.workspace.currentDesktop.id, 'desktop-1');
+    assert.equal(f.target.desktops[0].id, 'desktop-1');
+    assert.equal(f.workspace.lastClientAreaOutput, undefined);
+}
