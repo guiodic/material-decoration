@@ -1155,3 +1155,29 @@ for (const requested of ['quick', 'none', 'custom']) {
         kind: 'quick', edges: 3, normalSize: {width: 900, height: 650}
     }})).success, false);
 }
+
+// Concurrent restores can change the desktop before the first buffer arrives.
+{
+    const f = fixture();
+    f.workspace.screens.push({name: 'Source', geometry: {x: -1280, y: 0, width: 1280, height: 800}});
+    const firstDesktop = {id: 'desktop-2'}, secondDesktop = {id: 'desktop-3'};
+    f.workspace.desktops.push(firstDesktop, secondDesktop);
+    const first = deferredWindow(f, f.target);
+    const second = {internalId: 'second', normalWindow: true, resizeable: true, tile: null,
+        desktops: [f.workspace.desktops[0]], onAllDesktops: false};
+    f.workspace.windows.push(second);
+    const secondPending = deferredWindow(f, second);
+    Object.defineProperty(f.workspace, 'activeWindow', {set(window) {
+        if (!window.desktops.includes(f.workspace.currentDesktop)) window.desktops.push(f.workspace.currentDesktop);
+    }});
+    const inheritedTileSize = {tileSize: {width: 640, height: 480}, normalSize: {width: 900, height: 600}};
+    assert.equal(f.restoreImmediately(savedState({desktopIds: [firstDesktop.id], inheritedTileSize})), true);
+    assert.equal(f.send(0, 'second', 'restoreState', {state: savedState({desktopIds: [secondDesktop.id], inheritedTileSize})}).success, true);
+    assert.equal(f.workspace.currentDesktop, secondDesktop);
+    first.commit();
+    assert.equal(f.workspace.currentDesktop, firstDesktop);
+    assert.deepEqual(Array.from(f.target.desktops), [firstDesktop]);
+    secondPending.commit();
+    assert.equal(f.workspace.currentDesktop, secondDesktop);
+    assert.deepEqual(Array.from(second.desktops), [secondDesktop]);
+}

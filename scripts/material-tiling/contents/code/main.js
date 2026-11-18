@@ -382,6 +382,7 @@ var materialTiling;
                 function activateOnOutput() {
                     cancel();
                     if (target.output !== placement.output) return;
+                    showRestoredDesktop(target, placement.output);
                     workspace.activeWindow = target;
                     // Activation can reconcile a previously hidden window to
                     // its old size; retain the requested floating geometry.
