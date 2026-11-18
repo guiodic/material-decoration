@@ -1274,14 +1274,21 @@ private slots:
             if (size) QCOMPARE(after.value("size").toMap(), (QVariantMap{{"width", 1000.0}, {"height", 700.0}}));
         }
     }
+    void keepsKnownFloatingSizeWhenOpenedMaximized_data() {
+        QTest::addColumn<bool>("savedTile");
+        QTest::newRow("floating") << false;
+        QTest::newRow("tiled") << true;
+    }
     void keepsKnownFloatingSizeWhenOpenedMaximized() {
+        QFETCH(bool, savedTile);
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.MaximizedSize." + QUuid::createUuid().toString());
         const auto key = Material::windowStateKey(&window);
         const auto scope = currentScope();
         auto state = Material::captureWindowState(&window);
         const QVariantMap size{{"width", 900.0}, {"height", 650.0}};
-        state.insert("size", size);
+        if (savedTile) state.insert("tile", QVariantMap{{"kind", "quick"}, {"edges", 2}, {"normalSize", size}});
+        else state.insert("size", size);
         QVERIFY(Material::writeWindowState(key, state, scope));
         window.setProperty("maximizeMode", 3);
         window.setProperty("frameGeometry", QRectF(0, 0, 1280, 800));

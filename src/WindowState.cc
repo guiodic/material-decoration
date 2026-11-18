@@ -550,7 +550,7 @@ private slots:
         // geometry. Missing metadata must not turn a tile-sized startup frame
         // into an allegedly known normal size.
         if (!keepPlacement && m_state.contains("tile")) m_normalSize = m_state.value("tile").toMap().value("normalSize").toMap();
-        if (m_restoreSize && !validSize(m_normalSize)) m_normalSize = state.value("size").toMap();
+        if (m_restoreSize && !validSize(m_normalSize)) m_normalSize = state.value("size", state.value("tile").toMap().value("normalSize")).toMap();
         QScopedValueRollback restoring(m_restoring, true);
         const auto result = restoreWindowStateImmediately(m_decoration, restorationRequest(state, !keepPlacement));
         if (result == WindowRestoreResult::Succeeded) {
