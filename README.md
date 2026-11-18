@@ -95,10 +95,12 @@ configuration of virtual desktops. Restoring the last screen is enabled by defau
 Restoring the last virtual desktop is optional and disabled by default; enabling
 it also switches to the restored desktop and activates the window.
 The normal size of a tiled window is retained for unsnapping after reopening.
-By default, additional windows of the same application are left entirely to KWin
-when another normal window is already open. If this option is disabled, a new
-floating window with the same identity can also recover the normal size if it
-inherits the dimensions of a tiled window that is still open.
+By default, KWin places additional windows of the same application
+when another normal window is already open. A new floating window with the same
+identity can still recover the normal size if it inherits the dimensions of a
+tiled window that is still open. Its position is kept unless a small adjustment
+is needed to stay on the same screen. Disabling this option also applies saved
+position, screen, desktop and tiling settings to additional windows.
 Windows of the same application without distinct Wayland tags
 share the state of the last closed window.
 
