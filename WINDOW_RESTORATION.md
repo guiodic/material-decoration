@@ -54,7 +54,12 @@ independently.
 - **Restored data:** position; native quick or custom tiling is restored only when
   **Restore snapped window state** is enabled (off by default). A per-window
   exception can inherit, enable or disable this option. When disabled, a saved
-  snapped window reopens floating with its known normal size. App-requested
+  snapped window reopens floating with its known normal size. Its position comes
+  from KWin: normal-size recovery preserves the initial center where possible,
+  rather than restoring the tile corner or applying our collision cascade.
+  Position is adjusted to keep the center on the selected screen; oversized
+  windows retain their size and may extend beyond the screen or work area.
+  Screen and virtual-desktop preferences still apply. App-requested
   fullscreen, maximization and tiling still take precedence. Quick tiling
   uses the current tile proportions unless the window was explicitly resized
   by the user. User-resized proportions are restored to that window only.

@@ -97,7 +97,9 @@ it also switches to the restored desktop and activates the window.
 Restoring saved edge snapping and custom tiling is optional and off by default.
 **Restore snapped window state** can also be enabled or disabled for individual
 windows through exceptions. When off, a previously snapped window reopens floating
-with its known normal size. That size remains saved for subsequent unsnapping.
+with its known normal size, retaining the initial center chosen by KWin rather
+than the saved tile position, subject to screen bounds. Screen and desktop
+preferences still apply. That size remains saved for subsequent unsnapping.
 By default, KWin places additional windows of the same application
 when another normal window is already open. A new floating window with the same
 identity can still recover the normal size if it inherits the dimensions of a
