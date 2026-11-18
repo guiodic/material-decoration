@@ -1519,6 +1519,60 @@ private slots:
             QCOMPARE(immediateRequests.size(), count);
         }
     }
+    void decorationlessControllerRespectsConflict_data() {
+        QTest::addColumn<bool>("blocked");
+        QTest::addColumn<bool>("snapshot");
+        QTest::addColumn<bool>("existingState");
+        for (bool blocked : {false, true}) for (bool snapshot : {false, true}) for (bool existing : {false, true}) {
+            const auto name = QStringLiteral("%1-%2-%3").arg(blocked ? "blocked" : "normal", snapshot ? "snapshot" : "close", existing ? "existing" : "new");
+            QTest::newRow(qPrintable(name)) << blocked << snapshot << existing;
+        }
+    }
+    void decorationlessControllerRespectsConflict() {
+        QFETCH(bool, blocked);
+        QFETCH(bool, snapshot);
+        QFETCH(bool, existingState);
+        auto kwin = KSharedConfig::openConfig("kwinrc");
+        auto plugins = kwin->group("Plugins");
+        const auto original = plugins.readEntry("rememberwindowpositionsEnabled", QVariant());
+        const auto restore = qScopeGuard([&] {
+            if (original.isValid()) plugins.writeEntry("rememberwindowpositionsEnabled", original);
+            else plugins.deleteEntry("rememberwindowpositionsEnabled");
+            kwin->sync();
+        });
+        plugins.writeEntry("rememberwindowpositionsEnabled", false);
+        kwin->sync();
+        auto *provider = Material::SettingsProvider::self();
+        provider->reconfigure();
+        QScopedValueRollback available(immediateAvailable, true);
+        KWin::WaylandWindow window;
+        setup(window, "org.example.StateTest.DecorationlessConflict." + QUuid::createUuid().toString());
+        const auto key = Material::windowStateKey(&window);
+        const auto scope = currentScope();
+        if (existingState) QVERIFY(Material::writeWindowState(key, Material::captureWindowState(&window), scope));
+        const auto before = Material::readWindowState(key, scope);
+        MaterialTest::Bridge bridge;
+        auto decoration = std::make_unique<StateDecoration>(&window, &bridge);
+        Material::configureWindowState(decoration.get(), true);
+        window.map();
+        decoration.reset();
+        plugins.writeEntry("rememberwindowpositionsEnabled", blocked);
+        kwin->sync();
+        QTRY_COMPARE(provider->rememberWindowPositionsEnabled(), blocked);
+        window.setProperty("frameGeometry", QRectF(120, 150, 900, 700));
+        if (snapshot) QVERIFY(Material::snapshotWindowStates(scope, {}));
+        else window.close();
+        const auto after = Material::readWindowState(key, scope);
+        if (blocked) QCOMPARE(after, before);
+        else QCOMPARE(after.value("position").toMap().value("x").toDouble(), 120);
+        if (blocked && snapshot) {
+            plugins.writeEntry("rememberwindowpositionsEnabled", false);
+            kwin->sync();
+            QTRY_VERIFY(!provider->rememberWindowPositionsEnabled());
+            window.close();
+            QCOMPARE(Material::readWindowState(key, scope).value("position").toMap().value("x").toDouble(), 120);
+        }
+    }
     void savesOnlyOnCloseAndSurvivesDecorationRemoval() {
         KWin::WaylandWindow window;
         setup(window, "org.example.StateTest.Close." + QUuid::createUuid().toString());
