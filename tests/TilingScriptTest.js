@@ -15,7 +15,7 @@ function fixture(extraWindows = []) {
     const other = {internalId: '{other}', caption: 'other'};
     const desktop = {id: 'desktop-1'};
     const target = {internalId: '{target}', resizeable: true, specialWindow: false, normalWindow: true,
-        output, tile: null, desktops: [desktop], frameGeometry: {x: 0, y: 0, width: 640, height: 480},
+        output, outputChanged: {connect() {}, disconnect() {}}, tile: null, desktops: [desktop], frameGeometry: {x: 0, y: 0, width: 640, height: 480},
         setMaximize(vertical, horizontal) { this.maximizeMode = Number(vertical) | (Number(horizontal) << 1); }};
     Object.defineProperty(target, 'onAllDesktops', {
         get() { return this.desktops.length === 0; },
@@ -454,6 +454,9 @@ for (const rememberScreen of [false, true]) {
         const savedOutput = {name: 'Virtual-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
         f.workspace.screens.push(savedOutput);
         f.workspace.desktops.push(second);
+        Object.defineProperty(f.target, 'output', {get() {
+            return this.frameGeometry.x >= 1280 ? savedOutput : f.output;
+        }});
         const state = savedState({rememberScreen, rememberDesktop, desktopIds: [second.id],
             outputName: savedOutput.name, outputPosition: {x: 1280, y: 0},
             position: {x: 1380, y: 80}});
@@ -512,6 +515,9 @@ for (const rememberDesktop of [false, true]) {
     const output = {name: 'Virtual-2', geometry: {x: 1280, y: 0, width: 1280, height: 800}};
     f.workspace.screens.push(output);
     f.workspace.desktops.push(second);
+    Object.defineProperty(f.target, 'output', {get() {
+        return this.frameGeometry.x >= 1280 ? output : f.output;
+    }});
     let outputDesktop = first;
     const events = [];
     f.workspace.currentDesktopForScreen = screen => { assert.equal(screen, output); return outputDesktop; };
@@ -973,30 +979,38 @@ for (const scene of [
     assert.deepEqual({...f.target.frameGeometry}, {...scene.expected, ...scene.size}, 'preserve size and correct position only as needed');
 }
 
-// The move-only frame must reach the destination before a delayed resize is committed.
-{
+// Fractional-scale moves and resizes can both wait for a client buffer.
+for (const normalWidth of [1200, 3500]) {
     const f = fixture();
     const left = {name: 'Wide', geometry: {x: -3840, y: 0, width: 3840, height: 800}};
     f.workspace.screens.push(left);
-    let frame = {x: -3000, y: 100, width: 800, height: 500}, pending, activationOutput;
-    Object.defineProperty(f.target, 'frameGeometry', {get() { return frame; }, set(next) {
-        if (next.width === frame.width && next.height === frame.height) frame = {...next};
-        else pending = {...next};
-    }});
+    let frame = {x: -3000, y: 100, width: 802.4, height: 500}, pending, activationOutput;
+    const callbacks = new Set();
+    f.target.outputChanged = {connect(fn) { callbacks.add(fn); }, disconnect(fn) { callbacks.delete(fn); }};
+    Object.defineProperty(f.target, 'frameGeometry', {get() { return frame; }, set(next) { pending = {...next}; }});
     Object.defineProperty(f.target, 'output', {get() {
         const x = frame.x + frame.width / 2;
         return f.workspace.screens.find(screen => x >= screen.geometry.x && x < screen.geometry.x + screen.geometry.width);
     }});
-    Object.defineProperty(f.workspace, 'activeWindow', {set(window) { activationOutput = window.output; }});
+    Object.defineProperty(f.workspace, 'activeWindow', {set(window) {
+        activationOutput = window.output;
+        // KWin can reconcile a formerly hidden window to its old size on activation.
+        pending = {...frame, width: 802, height: 500};
+    }});
     assert.equal(f.restoreImmediately(savedState({inheritedTileSize: {
-        tileSize: {width: 800, height: 500}, normalSize: {width: 3500, height: 600}
+        tileSize: {width: 802.4, height: 500}, normalSize: {width: normalWidth, height: 600}
     }})), true);
-    assert.equal(activationOutput, f.output, 'activation must see the destination before the resize buffer arrives');
-    assert.equal(f.target.output, f.output);
-    assert.equal(frame.width, 800, 'the move-only frame keeps the uncommitted size');
+    assert.equal(activationOutput, undefined, 'do not activate on the source output while the buffer is pending');
+    assert.equal(callbacks.size, 1);
+    const requested = {...pending};
+    frame = {...pending, width: normalWidth === 1200 ? 802 : normalWidth};
+    for (const fn of callbacks) fn();
+    assert.equal(activationOutput, f.output);
+    assert.equal(callbacks.size, 0, 'disconnect before activation can trigger further output changes');
+    assert.deepEqual(pending, requested, 'activation must retain the requested floating geometry');
     frame = pending;
-    assert.equal(f.target.output, f.output, 'the committed resize must stay on the destination too');
-    assert.equal(frame.width, 3500);
+    assert.equal(f.target.output, f.output);
+    assert.equal(frame.width, normalWidth);
     assert.equal(frame.height, 600);
 }
 

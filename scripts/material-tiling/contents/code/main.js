@@ -279,7 +279,7 @@ var materialTiling;
         else workspace.currentDesktop = desktop;
     }
 
-    function restoreState(target, state) {
+    function restoreState(target, state, placement) {
         if (!target.normalWindow || target.transient || target.deleted) throw new Error("Target window cannot be restored");
         const position = state && state.position;
         if (!state || state.version !== 3 || !position ||
@@ -302,6 +302,7 @@ var materialTiling;
         }
         const output = restorationOutput(target, state);
         if (!output) throw new Error("No screen is available");
+        placement.output = output;
         const desktops = workspace.desktops.filter(function (desktop) { return state.desktopIds.indexOf(desktop.id) !== -1; });
 
         if (state.rememberDesktop === true) {
@@ -335,12 +336,7 @@ var materialTiling;
         const placed = state.tile ? constrained : vacantPosition(target, output, area, constrained, current, state.titleBarHeight);
         x = placed.x;
         y = placed.y;
-        // Move first so activation sees the destination output even if the
-        // subsequent resize needs a new Wayland buffer. Preserve the app's size.
-        if (target.output !== output && (original.width !== current.width || original.height !== current.height)) {
-            const interim = positionOnOutput(output, {x: x, y: y}, original);
-            target.frameGeometry = {x: interim.x, y: interim.y, width: original.width, height: original.height};
-        }
+        if (!state.tile) placement.geometry = {x: x, y: y, width: current.width, height: current.height};
         if (original.x !== x || original.y !== y || original.width !== current.width || original.height !== current.height) {
             target.frameGeometry = {x: x, y: y, width: current.width, height: current.height};
         }
@@ -370,10 +366,26 @@ var materialTiling;
     };
 
     materialRestoreWindowState = function (target, state) {
-        const restored = restoreState(target, state);
+        const placement = {};
+        const restored = restoreState(target, state, placement);
         // Even a partial tile failure leaves a real window on its restored
         // desktop; focus policy is independent of protecting the saved tile.
-        if (state.rememberDesktop === true && !target.deleted) workspace.activeWindow = target;
+        if (state.rememberDesktop === true && !target.deleted) {
+            if (target.output === placement.output) workspace.activeWindow = target;
+            else {
+                // Fractional-scale moves can await a buffer too. Activate only
+                // on the destination, without changing the source desktop.
+                function activateOnOutput() {
+                    target.outputChanged.disconnect(activateOnOutput);
+                    if (target.output !== placement.output) return;
+                    workspace.activeWindow = target;
+                    // Activation can reconcile a previously hidden window to
+                    // its old size; retain the requested floating geometry.
+                    if (placement.geometry) target.frameGeometry = placement.geometry;
+                }
+                target.outputChanged.connect(activateOnOutput);
+            }
+        }
         return restored;
     };
 
