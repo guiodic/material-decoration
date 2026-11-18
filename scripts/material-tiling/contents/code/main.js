@@ -207,6 +207,15 @@ var materialTiling;
         return false;
     }
 
+    // KWin assigns outputs by frame center, even when a window cannot fit.
+    function positionOnOutput(output, position, size) {
+        const bounds = output.geometry;
+        return {
+            x: Math.max(bounds.x - size.width / 2, Math.min(position.x, bounds.x + bounds.width - 1 - size.width / 2)),
+            y: Math.max(bounds.y - size.height / 2, Math.min(position.y, bounds.y + bounds.height - 1 - size.height / 2))
+        };
+    }
+
     function vacantPosition(target, output, area, position, size, titleBarHeight) {
         const height = Number.isFinite(titleBarHeight) && titleBarHeight > 0 ? titleBarHeight : 30;
         const step = 1.25 * height;
@@ -229,6 +238,9 @@ var materialTiling;
         let x = position.x, y = position.y;
         const visited = new Set();
         for (let attempt = 0; attempt < 64; ++attempt) {
+            const candidate = positionOnOutput(output, {x: x, y: y}, size);
+            x = candidate.x;
+            y = candidate.y;
             const key = x + ":" + y;
             if (visited.has(key)) break;
             visited.add(key);
@@ -314,20 +326,15 @@ var materialTiling;
         const current = inheritedSize ? {width: inheritedSize.width, height: inheritedSize.height} : original;
         x = Math.max(area.x, Math.min(x, area.x + area.width - current.width));
         y = Math.max(area.y, Math.min(y, area.y + area.height - current.height));
-        if (!state.tile) {
-            const vacant = vacantPosition(target, output, area, {x: x, y: y}, current, state.titleBarHeight);
-            x = vacant.x;
-            y = vacant.y;
-        }
-        // Oversized windows may not fit the work area. KWin assigns their
-        // output by frame center, so keep that center on the selected output.
-        const bounds = output.geometry;
-        x = Math.max(bounds.x - current.width / 2, Math.min(x, bounds.x + bounds.width - 1 - current.width / 2));
-        y = Math.max(bounds.y - current.height / 2, Math.min(y, bounds.y + bounds.height - 1 - current.height / 2));
+        const constrained = positionOnOutput(output, {x: x, y: y}, current);
+        const placed = state.tile ? constrained : vacantPosition(target, output, area, constrained, current, state.titleBarHeight);
+        x = placed.x;
+        y = placed.y;
         // Move first so activation sees the destination output even if the
         // subsequent resize needs a new Wayland buffer. Preserve the app's size.
         if (target.output !== output && (original.width !== current.width || original.height !== current.height)) {
-            target.frameGeometry = {x: x, y: y, width: original.width, height: original.height};
+            const interim = positionOnOutput(output, {x: x, y: y}, original);
+            target.frameGeometry = {x: interim.x, y: interim.y, width: original.width, height: original.height};
         }
         if (original.x !== x || original.y !== y || original.width !== current.width || original.height !== current.height) {
             target.frameGeometry = {x: x, y: y, width: current.width, height: current.height};

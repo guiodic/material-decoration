@@ -945,11 +945,15 @@ for (const scene of [
         size: {width: 3000, height: 600}, original: {x: -1000, y: 100}, expected: {x: -221, y: 80}},
     {area: {x: 0, y: 0, width: 1280, height: 800}, adjacent: {x: 0, y: 800, width: 1280, height: 3000},
         size: {width: 600, height: 2000}, original: {x: 100, y: -600}, expected: {x: 100, y: -201}},
+    {area: {x: 0, y: 0, width: 1280, height: 800}, adjacent: {x: 1280, y: 0, width: 3840, height: 800},
+        workArea: {x: 0, y: 0, width: 1200, height: 760},
+        size: {width: 3000, height: 600}, original: {x: -1000, y: 100}, expected: {x: -221, y: 80}},
     {area: {x: -1280, y: 0, width: 1280, height: 800}, adjacent: {x: 0, y: 0, width: 3840, height: 800},
         size: {width: 3000, height: 600}, original: {x: -2280, y: 100}, expected: {x: -1501, y: 80}}
 ]) for (const rememberScreen of [false, true]) {
     const f = fixture();
     f.output.geometry = scene.area;
+    if (scene.workArea) f.workspace.clientArea = () => scene.workArea;
     const adjacent = {name: 'Adjacent', geometry: scene.adjacent};
     f.workspace.screens.push(adjacent);
     f.target.frameGeometry = {...(rememberScreen ? {x: scene.adjacent.x + 100, y: scene.adjacent.y + 100} : scene.original), ...scene.size};
@@ -967,6 +971,45 @@ for (const scene of [
         position: {x: savedOutput.geometry.x + 100, y: savedOutput.geometry.y + 80}})), true);
     assert.equal(f.target.output, f.output, 'placement must not transfer the frame to an adjacent output');
     assert.deepEqual({...f.target.frameGeometry}, {...scene.expected, ...scene.size}, 'preserve size and correct position only as needed');
+}
+
+// The move-only frame must reach the destination before a delayed resize is committed.
+{
+    const f = fixture();
+    const left = {name: 'Wide', geometry: {x: -3840, y: 0, width: 3840, height: 800}};
+    f.workspace.screens.push(left);
+    let frame = {x: -3000, y: 100, width: 800, height: 500}, pending, activationOutput;
+    Object.defineProperty(f.target, 'frameGeometry', {get() { return frame; }, set(next) {
+        if (next.width === frame.width && next.height === frame.height) frame = {...next};
+        else pending = {...next};
+    }});
+    Object.defineProperty(f.target, 'output', {get() {
+        const x = frame.x + frame.width / 2;
+        return f.workspace.screens.find(screen => x >= screen.geometry.x && x < screen.geometry.x + screen.geometry.width);
+    }});
+    Object.defineProperty(f.workspace, 'activeWindow', {set(window) { activationOutput = window.output; }});
+    assert.equal(f.restoreImmediately(savedState({inheritedTileSize: {
+        tileSize: {width: 800, height: 500}, normalSize: {width: 3500, height: 600}
+    }})), true);
+    assert.equal(activationOutput, f.output, 'activation must see the destination before the resize buffer arrives');
+    assert.equal(f.target.output, f.output);
+    assert.equal(frame.width, 800, 'the move-only frame keeps the uncommitted size');
+    frame = pending;
+    assert.equal(f.target.output, f.output, 'the committed resize must stay on the destination too');
+    assert.equal(frame.width, 3500);
+    assert.equal(frame.height, 600);
+}
+
+// Collision checks must use the final coordinates, including cascading and wrapping.
+for (const [count, expectedY] of [[1, 117.5], [2, 155], [3, 192.5], [4, 0]]) {
+    const f = fixture();
+    f.workspace.screens.push({name: 'Adjacent', geometry: {x: 1280, y: 0, width: 3840, height: 800}});
+    for (let i = 0; i < count; ++i) f.workspace.windows.push({normalWindow: true, output: f.output,
+        desktops: f.target.desktops, frameGeometry: {x: -221, y: 80 + i * 37.5, width: 3000, height: 600}});
+    f.target.frameGeometry = {x: -1000, y: 100, width: 3000, height: 600};
+    assert.equal(f.restoreImmediately(savedState({rememberScreen: false, rememberDesktop: false})), true);
+    assert.equal(f.target.frameGeometry.x, -221);
+    assert.equal(f.target.frameGeometry.y, expectedY, 'cascade from the center-constrained position');
 }
 
 // Matching an already mapped window is read-only and compares saved geometry.
