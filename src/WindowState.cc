@@ -491,6 +491,7 @@ private slots:
     {
         rememberNormalSize();
         m_maximizeChanging = true;
+        Q_EMIT restorationStopped();
     }
     void maximizeFinished()
     {
