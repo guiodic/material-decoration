@@ -1000,3 +1000,11 @@ msgid ""
 msgstr ""
 "يحدد ما إذا كانت قوائم النوافذ المطابقة تتبع ألوان الزخرفة.\n"
 "يحتفظ خيار «استخدام الإعداد العام» بالتفضيل العام."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore snapped window state"
+msgstr "استعادة حالة تثبيت النافذة"
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore saved edge snapping or custom tiling when a window reopens.\nWhen disabled, reopen it floating with its known normal size."
+msgstr "استعد التثبيت المحفوظ على الحواف أو التبليط المخصص عند إعادة فتح النافذة.\nعند التعطيل، افتحها كنافذة عائمة بحجمها العادي المعروف."

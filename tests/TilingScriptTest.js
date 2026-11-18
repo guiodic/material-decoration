@@ -213,7 +213,7 @@ for (const change of [
 }
 function savedState(extra = {}) {
     return {version: 3, position: {x: 100, y: 80}, desktopIds: ['desktop-1'],
-        rememberScreen: true, rememberDesktop: true, resizeOtherTiledWindows: true,
+        rememberScreen: true, rememberDesktop: true, restoreWindowTiling: true, resizeOtherTiledWindows: true,
         onAllDesktops: false, outputName: 'Virtual-1',
         outputPosition: {x: 0, y: 0}, ...extra};
 }
@@ -1289,4 +1289,25 @@ for (const scenario of ['matching', 'different-size', 'fullscreen', 'maximized',
     assert.equal(f.workspace.currentDesktop.id, 'desktop-1');
     assert.equal(f.target.desktops[0].id, 'desktop-1');
     assert.equal(f.workspace.lastClientAreaOutput, undefined);
+}
+
+// Saved snap state is optional, but the normal size remains useful when reopening floating.
+for (const kind of ['quick', 'custom']) {
+    for (const mode of ['floating', 'maximized', 'fullscreen', 'tiled', 'fixed', 'unknown-size']) {
+        const f = fixture();
+        f.target.frameGeometry = {x: 0, y: 0, width: 640, height: 800};
+        if (mode === 'maximized') f.target.maximizeMode = 3;
+        if (mode === 'fullscreen') f.target.fullScreen = true;
+        if (mode === 'tiled') f.target.tile = {};
+        if (mode === 'fixed') f.target.resizeable = false;
+        const appTile = f.target.tile;
+        const tile = {kind, edges: 2, path: [0], region: {x: 0, y: 0, width: .5, height: 1}};
+        if (mode !== 'unknown-size') tile.normalSize = {width: 900, height: 600};
+        assert.equal(f.restoreImmediately(savedState({restoreWindowTiling: false, tile})), true);
+        assert.equal(f.target.tile, appTile, 'saved tiling must not replace app-requested modes');
+        const normal = mode === 'floating';
+        assert.equal(f.target.frameGeometry.width, normal ? 900 : 640);
+        assert.equal(f.target.frameGeometry.height, normal ? 600 : 800);
+        assert.equal(f.root.tiles[0].owner, undefined);
+    }
 }

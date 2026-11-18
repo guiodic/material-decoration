@@ -843,6 +843,13 @@ additional windows too, cascading overlapping windows.</string></property>
            </widget>
           </item>
           <item>
+           <widget class="QCheckBox" name="kcfg_RestoreWindowTiling">
+            <property name="text"><string>Restore snapped window state</string></property>
+            <property name="toolTip"><string>Restore saved edge snapping or custom tiling when a window reopens.
+When disabled, reopen it floating with its known normal size.</string></property>
+           </widget>
+          </item>
+          <item>
            <widget class="QCheckBox" name="kcfg_ResizeOtherTiledWindows">
             <property name="text"><string>Resize other snapped windows when restoring saved proportions</string></property>
             <property name="toolTip"><string>Allow restoring a snapped window's saved proportions to

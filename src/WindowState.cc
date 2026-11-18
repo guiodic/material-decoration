@@ -136,8 +136,8 @@ QVariantMap windowTile(const QObject *window)
     return {{"kind", "custom"}, {"path", path}, {"region", region}};
 }
 
-// Dimensions are retained only as tile metadata for subsequent unsnapping.
-// Floating window sizes remain under the application's control.
+// Tile metadata retains normal dimensions for unsnapping or reopening floating.
+// Sizes of windows closed floating remain under the application's control.
 QVariantMap positionState(const QVariantMap &state)
 {
     if (state.value("version").toInt() != 3) return {};
@@ -261,10 +261,10 @@ class WindowStateController : public QObject
 public:
     bool resizeOtherTiledWindows() const { return m_resizeOtherTiledWindows; }
     explicit WindowStateController(KDecoration3::Decoration *decoration, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows,
-        bool useKWinPlacementForAdditionalWindows)
+        bool useKWinPlacementForAdditionalWindows, bool restoreWindowTiling)
         : QObject(decoration->parent()), m_window(decoration->parent()), m_decoration(decoration), m_enabled(true)
         , m_rememberScreen(rememberScreen), m_rememberDesktop(rememberDesktop), m_resizeOtherTiledWindows(resizeOtherTiledWindows)
-        , m_useKWinPlacementForAdditionalWindows(useKWinPlacementForAdditionalWindows)
+        , m_useKWinPlacementForAdditionalWindows(useKWinPlacementForAdditionalWindows), m_restoreWindowTiling(restoreWindowTiling)
     {
         // Read synchronously on closed(), before KWin releases the window.
         connect(m_window, SIGNAL(closed()), this, SLOT(save()), Qt::DirectConnection);
@@ -358,7 +358,7 @@ public:
         prepare();
     }
     void configure(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows,
-        bool useKWinPlacementForAdditionalWindows)
+        bool useKWinPlacementForAdditionalWindows, bool restoreWindowTiling)
     {
         m_decoration = decoration;
         if (!enabled && m_restoreStarted) save();
@@ -368,6 +368,7 @@ public:
         m_rememberDesktop = rememberDesktop;
         m_resizeOtherTiledWindows = resizeOtherTiledWindows;
         m_useKWinPlacementForAdditionalWindows = useKWinPlacementForAdditionalWindows;
+        m_restoreWindowTiling = restoreWindowTiling;
         if (enabled && !m_restoreStarted && !m_restoreCancelled && keepKWinPlacement()) return;
         if (!enabled || !rememberDesktop) m_prepareRetryTimer.stop();
         if ((!enabled || !rememberDesktop) && !m_restoreStarted) {
@@ -555,7 +556,7 @@ private slots:
             m_saveAllowed.insert(m_stateScope, true);
             updateTile();
             const auto tile = state.value("tile").toMap();
-            m_customQuickTile = tile.value("kind") == QLatin1String("quick") ? tile : QVariantMap();
+            m_customQuickTile = m_restoreWindowTiling && tile.value("kind") == QLatin1String("quick") ? tile : QVariantMap();
         } else if (result == WindowRestoreResult::Unavailable) retry();
     }
 
@@ -601,6 +602,7 @@ private:
     QVariantMap restorationRequest(QVariantMap state)
     {
         // Policy belongs to the current settings, never to the persisted state.
+        state.insert("restoreWindowTiling", m_restoreWindowTiling);
         state.insert("rememberScreen", m_rememberScreen);
         state.insert("rememberDesktop", m_rememberDesktop);
         state.insert("restoreContext", QVariant::fromValue<QObject *>(this));
@@ -722,6 +724,7 @@ private:
     bool m_rememberDesktop;
     bool m_resizeOtherTiledWindows;
     bool m_useKWinPlacementForAdditionalWindows;
+    bool m_restoreWindowTiling;
     bool m_restoreStarted = false;
     bool m_keepKWinPlacement = false;
     // New states are writable; existing ones need a successful restore or a user move.
@@ -755,7 +758,7 @@ private:
 };
 
 void configureWindowState(KDecoration3::Decoration *decoration, bool enabled, bool rememberScreen, bool rememberDesktop, bool resizeOtherTiledWindows,
-        bool useKWinPlacementForAdditionalWindows)
+        bool useKWinPlacementForAdditionalWindows, bool restoreWindowTiling)
 {
     if (KWindowSystem::isPlatformX11()) return;
     auto *window = decoration->parent();
@@ -763,7 +766,7 @@ void configureWindowState(KDecoration3::Decoration *decoration, bool enabled, bo
     auto *controller = window->findChild<WindowStateController *>(QString(), Qt::FindDirectChildrenOnly);
     if (!enabled) {
         if (controller) {
-            controller->configure(decoration, false, rememberScreen, rememberDesktop, resizeOtherTiledWindows, useKWinPlacementForAdditionalWindows);
+            controller->configure(decoration, false, rememberScreen, rememberDesktop, resizeOtherTiledWindows, useKWinPlacementForAdditionalWindows, restoreWindowTiling);
             delete controller;
         }
         return;
@@ -772,11 +775,11 @@ void configureWindowState(KDecoration3::Decoration *decoration, bool enabled, bo
     if (!window->inherits("KWin::WaylandWindow") || !window->property("normalWindow").toBool()
         || window->property("transient").toBool()) return;
     if (controller) {
-        controller->configure(decoration, true, rememberScreen, rememberDesktop, resizeOtherTiledWindows, useKWinPlacementForAdditionalWindows);
+        controller->configure(decoration, true, rememberScreen, rememberDesktop, resizeOtherTiledWindows, useKWinPlacementForAdditionalWindows, restoreWindowTiling);
     } else {
         // Owned by the KWin window, so fullscreen/decoration removal cannot lose
         // the close handler. Normal sizes are tracked in memory, never polled.
-        new WindowStateController(decoration, rememberScreen, rememberDesktop, resizeOtherTiledWindows, useKWinPlacementForAdditionalWindows);
+        new WindowStateController(decoration, rememberScreen, rememberDesktop, resizeOtherTiledWindows, useKWinPlacementForAdditionalWindows, restoreWindowTiling);
     }
 }
 }

@@ -49,6 +49,7 @@ enum ExceptionMask {
     OutlineActive = 1 << 5,
     MenusFollowDecorationColors = 1 << 6,
     ExcludeWindowPosition = 1 << 7,
+    RestoreWindowTiling = 1 << 8,
 };
 
 void copyInternalSettings(const InternalSettingsPtr &src, const InternalSettingsPtr &dst);

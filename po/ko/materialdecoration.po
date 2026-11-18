@@ -991,3 +991,11 @@ msgid ""
 msgstr ""
 "일치하는 창의 메뉴가 장식 색상을 따를지 지정합니다.\n"
 "전역 설정 사용을 선택하면 일반 설정을 유지합니다."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore snapped window state"
+msgstr "창의 스냅 상태 복원"
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore saved edge snapping or custom tiling when a window reopens.\nWhen disabled, reopen it floating with its known normal size."
+msgstr "창을 다시 열 때 저장된 화면 가장자리 스냅이나 사용자 정의 타일 배치를 복원합니다.\n비활성화하면 알려진 일반 크기의 떠 있는 창으로 엽니다."

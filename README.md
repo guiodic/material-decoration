@@ -94,7 +94,10 @@ The restore process also takes into account any connected displays and the
 configuration of virtual desktops. Restoring the last screen is enabled by default.
 Restoring the last virtual desktop is optional and disabled by default; enabling
 it also switches to the restored desktop and activates the window.
-The normal size of a tiled window is retained for unsnapping after reopening.
+Restoring saved edge snapping and custom tiling is optional and off by default.
+**Restore snapped window state** can also be enabled or disabled for individual
+windows through exceptions. When off, a previously snapped window reopens floating
+with its known normal size. That size remains saved for subsequent unsnapping.
 By default, KWin places additional windows of the same application
 when another normal window is already open. A new floating window with the same
 identity can still recover the normal size if it inherits the dimensions of a

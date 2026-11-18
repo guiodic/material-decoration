@@ -59,6 +59,7 @@ private:
     QCheckBox *m_squareCornersCheckBox = nullptr;
     QCheckBox *m_outlineActiveCheckBox = nullptr;
     QCheckBox *m_excludeWindowPositionCheckBox = nullptr;
+    QComboBox *m_restoreWindowTilingCombo = nullptr;
     QComboBox *m_menuColorsCombo = nullptr;
 };
 

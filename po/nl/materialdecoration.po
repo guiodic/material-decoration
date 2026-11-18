@@ -877,3 +877,11 @@ msgstr "ms"
 #, kde-format
 msgid " ms"
 msgstr " ms"
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore snapped window state"
+msgstr "Vastgezette vensterstatus herstellen"
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore saved edge snapping or custom tiling when a window reopens.\nWhen disabled, reopen it floating with its known normal size."
+msgstr "Herstel de opgeslagen plaatsing aan schermranden of in aangepaste tegels bij het opnieuw openen.\nIndien uitgeschakeld wordt het venster zwevend geopend met de bekende normale grootte."

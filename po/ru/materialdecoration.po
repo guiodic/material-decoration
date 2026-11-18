@@ -998,3 +998,11 @@ msgid ""
 msgstr ""
 "Переопределяет использование цветов оформления в меню совпавших окон.\n"
 "Использовать общую настройку сохраняет общее предпочтение."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore snapped window state"
+msgstr "Восстанавливать привязку окон"
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore saved edge snapping or custom tiling when a window reopens.\nWhen disabled, reopen it floating with its known normal size."
+msgstr "Восстанавливать сохранённую привязку к краям или размещение в пользовательских плитках при повторном открытии.\nЕсли отключено, открывать плавающее окно с известным обычным размером."

@@ -134,6 +134,9 @@ InternalSettingsPtr SettingsProvider::createMergedSettings(const InternalSetting
     if (mask & ExceptionMask::MenusFollowDecorationColors) {
         merged->setMenusFollowDecorationColors(exceptionSettings->menusFollowDecorationColors());
     }
+    if (mask & ExceptionMask::RestoreWindowTiling) {
+        merged->setRestoreWindowTiling(exceptionSettings->restoreWindowTiling());
+    }
     if (mask & ExceptionMask::ExcludeWindowPosition) {
         merged->setRememberWindowState(defaultSettings->rememberWindowState() && !exceptionSettings->excludeWindowPosition());
     }

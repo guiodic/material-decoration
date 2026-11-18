@@ -96,6 +96,9 @@ ExceptionDialog::ExceptionDialog(QWidget *parent)
     m_menuColorsCombo->setToolTip(i18n("Overrides whether menus follow decoration colors for matching windows.\nUse global setting keeps the general preference."));
     m_menuColorsCombo->addItems({i18n("Use global setting"), i18n("Enabled"), i18n("Disabled")});
     menuColorsLayout->addRow(i18n("Menus follow decoration colors"), m_menuColorsCombo);
+    m_restoreWindowTilingCombo = new QComboBox(this);
+    m_restoreWindowTilingCombo->addItems({i18n("Use global setting"), i18n("Enabled"), i18n("Disabled")});
+    menuColorsLayout->addRow(i18n("Restore snapped window state"), m_restoreWindowTilingCombo);
     optionsLayout->addLayout(menuColorsLayout);
 
     mainLayout->addWidget(optionsGroup);
@@ -164,6 +167,8 @@ void ExceptionDialog::setException(const InternalSettingsPtr &exception)
     m_menuColorsCombo->setCurrentIndex((exception->mask() & ExceptionMask::MenusFollowDecorationColors)
         ? (exception->menusFollowDecorationColors() ? 1 : 2) : 0);
 
+    m_restoreWindowTilingCombo->setCurrentIndex((exception->mask() & ExceptionMask::RestoreWindowTiling)
+        ? (exception->restoreWindowTiling() ? 1 : 2) : 0);
     onHideTitleBarToggled(exception->hideTitleBar());
 }
 
@@ -197,6 +202,8 @@ void ExceptionDialog::applyToException(InternalSettingsPtr &exception)
         mask |= ExceptionMask::MenusFollowDecorationColors;
     }
     exception->setMenusFollowDecorationColors(m_menuColorsCombo->currentIndex() == 1);
+    if (m_restoreWindowTilingCombo->currentIndex() != 0) mask |= ExceptionMask::RestoreWindowTiling;
+    exception->setRestoreWindowTiling(m_restoreWindowTilingCombo->currentIndex() == 1);
     exception->setMask(mask);
 }
 

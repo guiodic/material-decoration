@@ -1018,3 +1018,11 @@ msgid ""
 msgstr ""
 "تعیین می‌کند که آیا منوهای پنجره‌های منطبق از رنگ‌های تزئین پیروی کنند.\n"
 "استفاده از تنظیم عمومی، ترجیح عمومی را نگه می‌دارد."
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore snapped window state"
+msgstr "بازیابی وضعیت چسبیدن پنجره"
+
+#: src/kcm/config.ui src/kcm/ExceptionDialog.cc
+msgid "Restore saved edge snapping or custom tiling when a window reopens.\nWhen disabled, reopen it floating with its known normal size."
+msgstr "هنگام باز کردن دوبارهٔ پنجره، چسبیدن به لبه‌ها یا چیدمان کاشی سفارشی ذخیره‌شده را بازیابی کنید.\nاگر غیرفعال باشد، پنجره با اندازهٔ عادی شناخته‌شده به‌صورت شناور باز می‌شود."
