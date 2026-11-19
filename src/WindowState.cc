@@ -370,20 +370,9 @@ public:
         m_resizeOtherTiledWindows = resizeOtherTiledWindows;
         m_useKWinPlacementForAdditionalWindows = useKWinPlacementForAdditionalWindows;
         m_restoreWindowTiling = restoreWindowTiling;
-        if (enabled && !m_restoreStarted && !m_restoreCancelled && keepKWinPlacement()) return;
+        if (enabled && !m_restoreStarted && !m_restoreCancelled && applyKWinPlacementForAdditionalWindow()) return;
         if (!enabled || !rememberDesktop) m_prepareRetryTimer.stop();
-        if ((!enabled || !rememberDesktop) && !m_restoreStarted) {
-            if (m_prepared) {
-                QVariantList desktops;
-                for (const auto &desktop : m_originalDesktops) if (desktop) desktops.append(QVariant::fromValue(desktop.data()));
-                // An empty original list means all desktops. If every original
-                // desktop was deleted, leave KWin's current membership intact.
-                if (m_originalDesktops.isEmpty() || !desktops.isEmpty())
-                    QQmlProperty::write(m_window, QStringLiteral("desktops"), desktops);
-            }
-            releaseVisibilityGuard();
-            m_prepared = false;
-        }
+        if ((!enabled || !rememberDesktop) && !m_restoreStarted) undoPreparation();
     }
 
 Q_SIGNALS:
@@ -396,7 +385,7 @@ private slots:
             || m_prepareAttempts >= 100 || m_window->property("deleted").toBool()) return;
         m_prepareRetryTimer.stop();
         bool workspaceAvailable = true;
-        if (keepKWinPlacement(&workspaceAvailable)) return;
+        if (applyKWinPlacementForAdditionalWindow(&workspaceAvailable)) return;
         if (!workspaceAvailable) {
             if (++m_prepareAttempts < 100) m_prepareRetryTimer.start(50);
             return;
@@ -534,15 +523,15 @@ private slots:
             return;
         }
         bool workspaceAvailable = true;
-        const bool keepPlacement = m_keepKWinPlacement || keepKWinPlacement(&workspaceAvailable);
+        const bool keepPlacement = m_keepKWinPlacement || applyKWinPlacementForAdditionalWindow(&workspaceAvailable);
         if (!workspaceAvailable) {
             retry();
             return;
         }
         m_keepKWinPlacement = keepPlacement;
-        refreshState();
         const auto inheritedSize = siblingNormalSize();
         if (keepPlacement && inheritedSize.isEmpty()) return;
+        refreshState();
         if (m_state.isEmpty() && inheritedSize.isEmpty()) return;
         auto state = keepPlacement || m_state.isEmpty() ? captureWindowState(m_window) : m_state;
         if (keepPlacement) state.insert("keepKWinPlacement", true);
@@ -562,7 +551,21 @@ private slots:
     }
 
 private:
-    bool keepKWinPlacement(bool *workspaceAvailable = nullptr)
+    void undoPreparation()
+    {
+        if (m_prepared) {
+            QVariantList desktops;
+            for (const auto &desktop : m_originalDesktops) if (desktop) desktops.append(QVariant::fromValue(desktop.data()));
+            // An empty original list means all desktops. If every original
+            // desktop was deleted, leave KWin's current membership intact.
+            if (m_originalDesktops.isEmpty() || !desktops.isEmpty())
+                QQmlProperty::write(m_window, QStringLiteral("desktops"), desktops);
+        }
+        releaseVisibilityGuard();
+        m_prepared = false;
+    }
+
+    bool applyKWinPlacementForAdditionalWindow(bool *workspaceAvailable = nullptr)
     {
         if (workspaceAvailable) *workspaceAvailable = true;
         if (!m_useKWinPlacementForAdditionalWindows) return false;
@@ -583,14 +586,7 @@ private:
             m_retryTimer.stop();
             m_prepareRetryTimer.stop();
             // A sibling may become visible after desktop preparation started.
-            if (m_prepared) {
-                QVariantList desktops;
-                for (const auto &desktop : m_originalDesktops) if (desktop) desktops.append(QVariant::fromValue(desktop.data()));
-                if (m_originalDesktops.isEmpty() || !desktops.isEmpty())
-                    QQmlProperty::write(m_window, QStringLiteral("desktops"), desktops);
-                m_prepared = false;
-            }
-            releaseVisibilityGuard();
+            undoPreparation();
             if (m_restoreStarted) {
                 m_saveAllowed.insert(WindowStateScope::self()->current(), true);
                 Q_EMIT restorationStopped();
