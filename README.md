@@ -1,6 +1,5 @@
 
-![image](/run/media/guido/nvme1/linux/material experiments/material-decoration/data/LIM.png)
-
+![Locally integrated menu](data/LIM.png)
 
 # material-decoration
 
@@ -60,7 +59,7 @@ Maximize/Restore.
 The bottom-left preview shows the current monitor's custom layout (`Meta+T`).
 
 
-![image](/run/media/guido/nvme1/linux/material experiments/material-decoration/data/TilingPopUp.png)
+![Tiling popup](data/TilingPopUp.png)
 
 
 The popup uses a companion **Material Tiling Popup** KWin script for native quick
@@ -78,7 +77,7 @@ menus, just like in traditional menu bars. For example, pressing `Alt+F` opens
 the “File” menu.
 
 
-![image](/run/media/guido/nvme1/linux/material experiments/material-decoration/data/Mnemonics.png)
+![Mnemonics](data/Mnemonics.png)
 
 
 Limitations: due to the way the Qt toolkit works, you may need to press the key
@@ -118,8 +117,7 @@ The package is in [Terra repository](https://terrapkg.com/).
 ### Arch and derivatives
 
 Please install the AUR package 
-[material-kwin-decoration-git](https://aur.archlinux.org/packages/material-kwin-decoration-git)
-.
+[material-kwin-decoration-git](https://aur.archlinux.org/packages/material-kwin-decoration-git).
 
 A pre-built package is present in [chaotic-aur](https://aur.chaotic.cx/).
 
@@ -128,8 +126,7 @@ A pre-built package is present in [chaotic-aur](https://aur.chaotic.cx/).
 Requires a C++20 compiler, CMake, extra-cmake-modules, Qt 6, KDE Frameworks 6
 and KDecoration3.
 
-Optional: `libwayland` development files, `wayland-scanner` and `
-plasma-wayland-protocols` ≥ 1.15 enable showing menu mnemonics while holding `Alt`
+Optional: `libwayland` development files, `wayland-scanner` and `plasma-wayland-protocols` ≥ 1.15 enable showing menu mnemonics while holding `Alt`
 on Wayland. Without them, menu shortcuts still work. These optional packages
 are not needed with `\-DFORCE_X11=ON`.
 
